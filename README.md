@@ -49,4 +49,4 @@ The following describes how to install an all purpose `conda` environment.
 
 8. Keep the environment up to date:
 
-   <pre>mamba update -n env --all</pre>
+   <pre>mamba update -n notes --all</pre>
