@@ -56,3 +56,8 @@ The following describes how to install an all purpose `conda` environment.
 9. Keep the environment up to date:
 
    <pre>mamba update -n notes --all</pre>
+
+*Adapted from the [Toolbox Workshop](https://toolbox.pep-dortmund.org/install/linux/).*
+
+> Mamba is a drop in replacement for Conda that is significantly faster at resolving dependencies
+> and installing packages due to utilizing `C++` and parallel processing.
