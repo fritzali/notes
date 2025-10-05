@@ -1,0 +1,15 @@
+name: notes
+channels:
+ - conda-forge
+dependencies:
+ - astropy
+ - ipython
+ - jupyter
+ - matplotlib
+ - numba
+ - numpy
+ - pandas
+ - python
+ - scipy
+ - sympy
+ - uncertainties
