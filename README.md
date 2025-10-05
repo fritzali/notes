@@ -37,16 +37,22 @@ The following describes how to install an all purpose `conda` environment.
 
    as a line in your shell configuration file.
 
-6. Test the installation by activating the included environment
+6. To initialize the `mamba` interface, also include
 
-   <pre>mamba activate notes</pre>
+   <pre>eval "$(mamba shell hook --shell <i>shell</i>)"</pre>
+
+   in your shell configuration.
+
+7. Test the installation by creating and activating an environment, such as from the included file,
+
+   <pre>mamba create -f environment.yml<br>mamba activate <i>environment</i></pre>
 
    and running any command of interest inside an `ipython` prompt.
 
-7. After confirming success, remove the installer script:
+8. After confirming success, remove the installer script:
 
    <pre>rm ~/.local/Miniforge3-*.sh</pre>
 
-8. Keep the environment up to date:
+9. Keep the environment up to date:
 
    <pre>mamba update -n notes --all</pre>
