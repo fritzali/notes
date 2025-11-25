@@ -40,14 +40,14 @@
 	 	leftskip=15pt,
 	 	rightskip=1em,
 	]{headline}
-		\hspace{-2.75ex}\includegraphics[height=2.5\headerheight]{content/mass.pdf}
+		\hspace{-2.75ex}\includegraphics[height=2.5\headerheight]{content/mass.pdf}\vspace{-1.25\headerheight}
 		\hfill
-		\includegraphics[height=1.5\headerheight]{content/unitov.pdf}\hspace{2.75ex}
-%		\vspace{-1.5\headerheight}
+		\raisebox{0.5\headerheight}{\includegraphics[height=1.5\headerheight]{content/unitov.pdf}}\hspace{3.75ex}
 	\end{beamercolorbox}
 	\ifnum\insertframenumber=0
 	\else
-		\vspace{12.5ex}
+		\raisebox{-10ex}{\hspace{5.61ex}\textcolor{MASS}{\rule{\linewidth}{0.8pt}}}
+		\vspace{2.5ex}
 	\fi
 }
 
@@ -102,7 +102,7 @@
 			wd=\textwidth,
 		]{title}
 			\vspace{-1ex}
-			\textcolor{fore}{\rule{\textwidth}{0.8pt}}\\[0.2\baselineskip]
+			\textcolor{MASS}{\rule{\textwidth}{0.8pt}}\\[0.2\baselineskip]
 			\usebeamerfont{title}\inserttitle
 			\ifx\insertsubtitle\empty
 				\newline
@@ -110,11 +110,12 @@
 				\\[0.2\baselineskip]
 				\usebeamerfont{subtitle}\insertsubtitle\newline
 			\fi
-			\textcolor{fore}{\rule{\textwidth}{0.8pt}}
+			\textcolor{MASS}{\rule{\textwidth}{0.8pt}}
 		\end{beamercolorbox}
 		\vspace{-1ex}
 	\fi
 	\ifx\insertauthor\empty\else
+		\vspace{5.0ex}
 		\begin{beamercolorbox}[
 			leftskip=0.2\textwidth,
 			rightskip=0.2\textwidth,
@@ -143,44 +144,7 @@
 			\centering\usebeamerfont{institute}\insertinstitute
 		\end{beamercolorbox}
 	\fi
-	\vspace{2ex}
-	\begin{figure}
-		\centering
-		\begin{subfigure}{0.20\textwidth}
-			\raggedright
-			\includegraphics[height=0.07\textheight]{content/unitov.pdf}
-		\end{subfigure}
-		\hfill
-		\begin{subfigure}{0.23\textwidth}
-			\raggedright
-			\includegraphics[height=0.07\textheight]{content/unib.pdf}
-		\end{subfigure}
-		\hfill
-		\begin{subfigure}{0.14\textwidth}
-			\raggedright
-			\includegraphics[height=0.07\textheight]{content/unihb.pdf}
-		\end{subfigure}
-		\hfill
-		\begin{subfigure}{0.19\textwidth}
-			\raggedright
-			\includegraphics[height=0.07\textheight]{content/unica.pdf}
-		\end{subfigure}
-		\hfill
-		\begin{subfigure}{0.19\textwidth}
-			\raggedright
-			\includegraphics[height=0.07\textheight]{content/eu.pdf}
-		\end{subfigure}
-	\end{figure}
-	\vspace{-2ex}
-	\begin{center}
-		\resizebox{\linewidth}{!}{\shortstack{
-		Cofunded by the European Union. Views and opinions expressed are however
-		those of the author only and do not necessarily reflect those of the
-		European Union or granting\\authority European Education and Culture
-		Executive Agency. Neither the European Union nor the granting authority
-		can be held responsible for them.}}
-	\end{center}
-	\vspace{-8ex}
+	\vspace{-2.5ex}
 }
 
 \setbeamertemplate{itemize item}[square]
