@@ -1,4 +1,4 @@
-all: build/main
+all: build/main build/flat
 
 build:
 	mkdir -p build
@@ -17,3 +17,11 @@ build/main: FORCE | build
 		--interaction=batchmode \
 		--halt-on-error \
 	main.tex
+
+build/flat: FORCE | build
+	latexmk \
+		--lualatex \
+		--output-directory=build \
+		--interaction=batchmode \
+		--halt-on-error \
+	flat.tex

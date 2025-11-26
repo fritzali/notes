@@ -1,9 +1,3 @@
-\documentclass[
-	aspectratio=1610,
-	usepdftitle=false,
-	xcolor=table,
-]{beamer}
-
 \setbeamersize{text margin left=15pt, text margin right=15pt}
 \usefonttheme{professionalfonts}
 \usepackage{fontspec}
@@ -263,23 +257,7 @@
 
 \usepackage{textpos}
 
-\usepackage{enumitem}
-
-\newlist{customlist}{itemize}{4} 
-
-\setlist[customlist, 1]{
-	label={},
-	leftmargin=0ex,
-	before=\bfseries,
-	after=\normalfont
-}
-
-\setlist[customlist, 2]{
-	label={},
-	leftmargin=3ex,
-	before=\mdseries,
-	after=\normalfont
-}
-
 \usepackage{color}
 \usepackage{transparent}
+
+\setbeamerfont{block title}{series=\itshape}

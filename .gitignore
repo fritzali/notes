@@ -1,3 +1,4 @@
 .ipynb_checkpoints
 **/build/*
 !**/build/main.pdf
+!**/build/flat.pdf
