@@ -34,7 +34,13 @@
 		\frametitle{Overview}
 		\bfseries{Probability Refresher}\\[1.5pt]
 		\hspace*{3ex}\mdseries{Definitions \& Notation}\\
+		\only<1|handout:0>{
 		\hspace*{3ex}\mdseries{Random Numbers}\\[3.0pt]
+		}
+		\only<2-|handout:1>{
+		\transparent{0.25}
+		\hspace*{3ex}\mdseries{Random Numbers}\\[3.0pt]
+		}
 		\transparent{0.25}
 		\bfseries{Optimisation}\\[1.5pt]
 		\hspace*{3ex}\mdseries{Common Methods}\\
@@ -87,11 +93,89 @@
 		\frametitle{Expectation Values}
 			\visible<2->{$$E[h(x)] = \!\!\int_{-\infty}^{+\infty} h(x) \,f(x) \,dx$$\vspace{4ex}}
 		\begin{itemize}
-			\item<3-> \itshape{Mean} or first raw moment $\displaystyle{\mu = E[X] = \!\!\int_{-\infty}^{+\infty} xf(x) \,dx}$
-			\item<4-> \itshape{Variance} or second raw moment $\displaystyle{\sigma^2 = E\bigl[(X - E[X])^2\bigr] =
+			\item<3-> \itshape{Mean} or first raw moment: $\displaystyle{\mu = E[X] = \!\!\int_{-\infty}^{+\infty} xf(x) \,dx}$
+			\item<4-> \itshape{Variance} or second raw moment: $\displaystyle{\sigma^2 = E\bigl[(X - E[X])^2\bigr] =
 															   \!\!\int_{-\infty}^{+\infty} \bigl(x - E[x]\bigr)^2 f(x) \,dx}$
 		\end{itemize}
 	\end{frame}
+
+	\section{Probability}
+
+	\begin{frame}
+		\frametitle{Overview}
+		\bfseries{Probability Refresher}\\[1.5pt]
+		\transparent{0.25}
+		\hspace*{3ex}\mdseries{Definitions \& Notation}\\
+		\transparent{1}
+		\hspace*{3ex}\mdseries{Random Numbers}\\[3.0pt]
+		\transparent{0.25}
+		\bfseries{Optimisation}\\[1.5pt]
+		\hspace*{3ex}\mdseries{Common Methods}\\
+		\hspace*{3ex}\mdseries{Problems}\\[3.0pt]
+		\bfseries{Markov Chain Monte Carlo}\\[1.5pt]
+		\hspace*{3ex}\mdseries{Popular Algorithms}\\
+		\hspace*{3ex}\mdseries{Tuning \& Diagnosing}\\
+		\hspace*{3ex}\mdseries{Alternatives}\\[3.0pt]
+	\end{frame}
+
+	\subsection{Notation}
+
+	\begin{frame}
+		\frametitle{Drawing Numbers}
+			\visible<2->{$$x \sim \mathcal{U}(a, b) \qquad\qquad y \sim \mathcal{N}(\mu, \sigma)$$\vspace{3ex}}
+		\begin{itemize}
+			\item<3-> \itshape{Uniform Distribution:} $\displaystyle{\mathcal{U}(a,b) = f(x|a,b) =
+													   \begin{cases}
+														   \frac{1}{b-a} & a\leq x\leq b \\
+														   0 & \symup{otherwise}
+													   \end{cases}}$
+			\item<4-> \itshape{Gaussian Distribution:} $\displaystyle{\mathcal{N}(\mu,\sigma) = f(y|\mu,\sigma) =
+														\frac{1}{\sqrt{2\pi \sigma^2}} \symup{exp}\left(-\frac{1}{2}
+														\left(\frac{y - \mu}{\sigma}\right)^2\right)}$
+		\end{itemize}
+	\end{frame}
+
+	\subsection{Randomness}
+
+	\begin{frame}
+		\frametitle{Number Generation}
+		\begin{itemize}
+			\item<2-> \itshape{Pseudo Random Numbers:} $x_{j+1} = \,g(x_1,\ldots,x_j)$
+			\begin{itemize}
+				\item<3-> deterministic \& reproducible
+				\item<4-> efficient \& transparent
+				\item<5-> almost indistinguishable with long periods of recurrence
+			\end{itemize}
+			\item<6-> \itshape{Equal Distribution Generators:}
+			\begin{itemize}
+				\item<7-> \itshape{Linear Congruential}
+				\item<8-> \itshape{Linear Feedback Shift}
+				\item<9-> \itshape{Permutated Congruential}
+			\end{itemize}
+			\item<10-> \itshape{Arbitrary Distributions:} obtained from uniformly distributed numbers by various methods
+		\end{itemize}
+	\end{frame}
+
+	\section{Optimisation}
+
+	\begin{frame}
+		\transparent{0.25}
+		\frametitle{Overview}
+		\bfseries{Probability Refresher}\\[1.5pt]
+		\hspace*{3ex}\mdseries{Definitions \& Notation}\\
+		\hspace*{3ex}\mdseries{Random Numbers}\\[3.0pt]
+		\transparent{1}
+		\bfseries{Optimisation}\\[1.5pt]
+		\hspace*{3ex}\mdseries{Common Methods}\\
+		\hspace*{3ex}\mdseries{Problems}\\[3.0pt]
+		\transparent{0.25}
+		\bfseries{Markov Chain Monte Carlo}\\[1.5pt]
+		\hspace*{3ex}\mdseries{Popular Algorithms}\\
+		\hspace*{3ex}\mdseries{Tuning \& Diagnosing}\\
+		\hspace*{3ex}\mdseries{Alternatives}\\[3.0pt]
+	\end{frame}
+
+
 
 
 
