@@ -80,8 +80,8 @@
 	\begin{frame}
 		\frametitle{Continuous Distributions}
 		\begin{itemize}
-			\item<2-> \itshape{Cumulative Distribution Function:} $F(x) = P(X \leq x)$
-			\item<3-> \itshape{Probability Density Function:} $f(x) = \dfrac{d}{dx} F(x)$
+			\item<2-> \itshape{Cumulative Distribution Function:} $\qquad F(x) = P(X \leq x)$
+			\item<3-> \itshape{Probability Density Function:} $\qquad f(x) = \dfrac{d}{dx} F(x)$
 					  \visible<4->{$$P(a \leq X \leq b) = \!\!\int_a^b f(x) \, dx = F(b) - F(a)$$}
 			\item<5-> \itshape{Normalization:} \visible<6->{$\qquad\displaystyle{1 = \!\!\int_{-\infty}^{+\infty} f(x)\,dx}$}
 											   \visible<7->{$\qquad\displaystyle{\underset{x \to -\infty}{\symup{lim}} F(x) = 0}$}
@@ -240,7 +240,7 @@
 		\frametitle{Measurements}
 		\begin{columns}[onlytextwidth]
 			\begin{column}{0.35\textwidth}
-				\visible<3->{How to we proceed from this data to maximise the likelihood for our nonlinear model?}
+				\visible<3->{How do we proceed from this dataset to maximise the likelihood for our nonlinear model?}
 			\end{column}
 			\begin{column}{0.6\textwidth}
 				\visible<2->{\includegraphics[width=\textwidth]{../right/truth_measure.jpg}}
@@ -288,7 +288,7 @@
 		\frametitle{Parameter Grid}
 		\begin{columns}[onlytextwidth]
 			\begin{column}{0.375\textwidth}
-				\visible<3->{Can we think of more elegant ways to move even through high dimensional parameter spaces?}
+				\visible<3->{Can we think of more elegant ways to explore even very high dimensional parameter spaces?}
 			\end{column}
 			\begin{column}{0.475\textwidth}
 				\vspace*{-4.75ex}
@@ -297,175 +297,120 @@
 		\end{columns}
 	\end{frame}
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 	\begin{frame}
-		\visible<1->{
-			\frametitle{Where I Studied}
-		}
-		\visible<2>{
-			\begin{textblock}{1}(9.03,-7.23)
-				\includegraphics[height=1.2\textheight]{../right/lin_like.jpg}
-    		\end{textblock}
-		}
-		\visible<3->{
-			\begin{textblock}{1}(9.03,-7.23)
-				\includegraphics[height=1.2\textheight]{../right/lin_like.jpg}
-    		\end{textblock}
-		}
-		\visible<4->{
-			\begin{textblock}{1}(3.93,0.62)
-				\includegraphics[height=0.48\textheight]{../right/lin_like.jpg}
-    		\end{textblock}
-			\begin{textblock}{1}(0,3.97)
-				\includegraphics[height=0.09\textheight]{../right/lin_like.jpg}
-    		\end{textblock}
-		}
-		\visible<5->{
-			\begin{textblock}{1}(3.93,-4.97)
-				\includegraphics[height=0.48\textheight]{../right/lin_like.jpg}
-    		\end{textblock}
-			\begin{textblock}{1}(0.5,-1.72)
-				\includegraphics[height=0.09\textheight]{../right/lin_like.jpg}
-    		\end{textblock}
-		}
-	\end{frame}
-
-	\begin{frame}
-		\visible<1->{
-			\frametitle{What I Studied}
-		}
-		\begin{figure}
-			\centering
-			\begin{subfigure}{0.3\textwidth}
-				\visible<2->{\fbox{\includegraphics[page=1,height=0.85\textheight]{../right/lin_like.jpg}}}
-			\end{subfigure}
-			\hspace{-1.5ex}
-			\begin{subfigure}{0.3\textwidth}
-				\visible<3->{\fbox{\includegraphics[page=2,height=0.85\textheight]{../right/lin_like.jpg}}}
-			\end{subfigure}
-			\hspace{-1.5ex}
-			\begin{subfigure}{0.3\textwidth}
-				\visible<4->{\fbox{\includegraphics[page=3,height=0.85\textheight]{../right/lin_like.jpg}}}
-			\end{subfigure}
-		\end{figure}
-	\end{frame}
-
-	\begin{frame}
-		\visible<1->{
-			\frametitle{Why Astrophysics}
-		}
+		\frametitle{General Case}
 		\begin{itemize}
-			\item<2-> Interesting
-			\begin{itemize}
-				\item<3-> Awesome Scales
-				\item<6-> Readily Observable
-			\end{itemize}
-			\item<9-> Interdisciplinary
-			\item<10-> International
+			\item<2-> \itshape{Optimisation Algorithms:} intelligently move through parameter space towards optimum
+			\item<3-> \itshape{Common Attributes:}
+				\begin{enumerate}
+					\item<4-> choose initialisation point
+					\item<5-> evaluate objective function or its derivatives to estimate local curvature
+					\item<6-> propose new step in parameter space
+					\item<7-> decide whether proposal is a good step and update position accordingly
+					\item<8-> repeat until some predefined cutoff is satisfied
+				\end{enumerate}
+			\item<9-> \itshape{Interactive Visualisations:} check out Ben Frederickson$^{\href{https://www.benfrederickson.com/numerical-optimization/}{1}}$
+					  and Andy Casey$^{\href{https://andycasey.github.io/teaching/phs5000/4/}{\,2}}$ to see some nice examples
 		\end{itemize}
-		\visible<4->{
-			\begin{textblock}{1}(5,-7.5)
-				\includegraphics[height=0.44\textheight]{../right/lin_like.jpg}
-    		\end{textblock}
-		}
-		\visible<5->{
-			\begin{textblock}{1}(10,-8.5)
-				\includegraphics[height=0.44\textheight]{../right/lin_like.jpg}
-    		\end{textblock}
-		}
-		\visible<7->{
-			\begin{textblock}{1}(5.43,-2.125)
-				\includegraphics[height=0.44\textheight]{../right/lin_like.jpg}
-    		\end{textblock}
-		}
-		\visible<8->{
-			\begin{textblock}{1}(10.43,-3.125)
-				\includegraphics[height=0.44\textheight]{../right/lin_like.jpg}
-    		\end{textblock}
-		}
 	\end{frame}
 
 	\begin{frame}
-		\visible<1->{
-			\frametitle{Where I Have Been}
-		}
-		\visible<2->{
-			\begin{textblock}{1}(0.5,-3.25)
-				\includegraphics[height=0.35\textheight,trim={0 15em 0 20em},clip]{../right/lin_like.jpg}
-    		\end{textblock}
-			\begin{textblock}{1}(8.25,-3.25)
-				\includegraphics[height=0.2\textheight]{../right/lin_like.jpg}
-    		\end{textblock}
-		}
-		\visible<3->{
-			\begin{textblock}{1}(0.5,1.25)
-				\includegraphics[height=0.35\textheight,trim={0 10em 0 25em},clip]{../right/lin_like.jpg}
-    		\end{textblock}
-			\begin{textblock}{1}(6.375,1)
-				\includegraphics[height=0.2\textheight]{../right/lin_like.jpg}
-    		\end{textblock}
-		}
-		\visible<4->{
-			\begin{textblock}{1}(9.94,-0.25)
-				\includegraphics[height=0.55\textheight]{../right/lin_like.jpg}
-    		\end{textblock}
-			\begin{textblock}{1}(7.85,3.85)
-				\includegraphics[height=0.2\textheight]{../right/lin_like.jpg}
-    		\end{textblock}
-		}
-	\end{frame}
-
-	\begin{frame}
-		\visible<1->{
-			\frametitle{Other Interests}
-		}
+		\frametitle{Nelder-Mead}
 		\begin{itemize}
-			\item<2-> Nature Photography
-			\item<8-> Hiking \& Cycling
-			\item<9-> Programming
-			\item<10-> Politics
-			\item<11-> Meeting New People
+			\item<2-> \itshape{Requirements:} only objective function, no information on gradients
+			\item<3-> \itshape{Algorithm:}
+				\begin{enumerate}
+					\item<4-> initialize simplex of $d+1$ points in $d$ dimensional parameter space
+					\item<5-> rank points in order of values $f(x_1) \leq \cdots \leq f(x_d) \leq f(x_{d+1})$
+					\item<6-> compute centroid $x_0$ of $x_1\, , \ldots \, , x_d$
+					\item<7-> perform a bunch of conditional evaluations between $x_0$ and $x_{d+1}$
+					\item<8-> reflect, expand, contract or shrink based on results to move points downhill and repeat
+				\end{enumerate}
+			\item<9-> \itshape{Notes:}
+				\begin{itemize}
+					\item<10-> extrapolates function to slowly move geometric blob through parameter space
+					\item<11-> zeroth order method since no derivatives are used
+				\end{itemize}
 		\end{itemize}
-		\visible<3->{
-			\begin{textblock}{1}(6.2,-8)
-				\includegraphics[height=0.42\textheight]{../right/lin_like.jpg}
-    		\end{textblock}
-		}
-		\visible<4->{
-			\begin{textblock}{1}(10.64,-11)
-				\includegraphics[height=0.42\textheight]{../right/lin_like.jpg}
-    		\end{textblock}
-		}
-		\visible<5->{
-			\begin{textblock}{1}(10.64,-6.2)
-				\includegraphics[height=0.42\textheight]{../right/lin_like.jpg}
-    		\end{textblock}
-		}
-		\visible<6->{
-			\begin{textblock}{1}(6.2,-3.175)
-				\includegraphics[height=0.42\textheight]{../right/lin_like.jpg}
-    		\end{textblock}
-		}
-		\visible<7->{
-			\begin{textblock}{1}(10.64,-1.4)
-				\includegraphics[height=0.42\textheight]{../right/lin_like.jpg}
-    		\end{textblock}
-		}
 	\end{frame}
+
+	\begin{frame}
+		\frametitle{Random Descent}
+		\begin{itemize}
+			\item<2-> \itshape{Requirements:} only objective function, no information on gradients
+			\item<3-> \itshape{Algorithm:}
+				\begin{enumerate}
+					\item<4-> start from arbitrary inital value $x_0$
+					\item<5-> draw a proposed shift from some chosen probability distribution $X \sim g(x)$
+					\item<6-> propose updated position $\hat{x}_{k+1} = x_k + X$
+					\item<7-> accept proposal $x_{k+1} = \hat{x}_{k+1}$ only if $f(\hat{x}_{k+1}) < f(x_{k+1})$ and repeat
+				\end{enumerate}
+			\item<8-> \itshape{Notes:}
+				\begin{itemize}
+					\item<9-> traverses parameter space via random walk, can be very slow
+					\item<10-> zeroth order method since no derivatives are used
+					\item<11-> improve by considering last step and optimizing step range
+				\end{itemize}
+		\end{itemize}
+	\end{frame}
+
+	\begin{frame}
+		\frametitle{Gradient Descent}
+		\begin{itemize}
+			\item<2-> \itshape{Requirements:} first derivatives of the objective function, can be estimated numerically
+			\item<3-> \itshape{Algorithm:}
+				\begin{enumerate}
+					\item<4-> initialize at some $x_0$
+					\item<5-> update current point with $x_{k+1} = x_k - \alpha\nabla f(x_k)$
+					\item<6-> iterate until convergence $|x_{k+1} / x_k - 1| < \epsilon$ or maximum step count is reached
+				\end{enumerate}
+			\item<7-> \itshape{Notes:}
+				\begin{itemize}
+					\item<8-> moves along direction of steepest descent at each point with fixed learning rate $\alpha$
+					\item<9-> first order method since only the gradient is used
+					\item<10-> improve by performing line search for $\alpha_k$ at every step
+				\end{itemize}
+		\end{itemize}
+	\end{frame}
+
+	\begin{frame}
+		\frametitle{Backtracking Line Search}
+		\begin{itemize}
+			\item<2-> \itshape{Requirements:} first derivatives of the objective function, can be estimated numerically
+			\item<3-> \itshape{Algorithm:}
+				\begin{enumerate}
+					\item<4-> start from some fixed large $\alpha_0$ for each step $k$ of the gradient descent
+					\item<5-> set $\alpha_{j+1} = \tau\alpha_j$ until $f\left(x_k\right) - f\left(x_k - \alpha_j\nabla f(x_k)\right)
+							  \geq \kappa\alpha_j\left(\nabla f(x_k)\right)^2$ where $\tau, \kappa \in (0,1)$
+					\item<6-> use last value to set learning rate $\alpha_k = \alpha_j$ for next step
+				\end{enumerate}
+			\item<7-> \itshape{Notes:}
+				\begin{itemize}
+					\item<8-> ensures $f(x_{k+1}) < f(x_k)$ such that the function steadily descreases with increasing $k$
+					\item<9-> favours secant between $x_k$ and $x_{k+1}$ steeper or almost as steep as tangent $\nabla f(x_k)$
+					\item<10-> robust convergence guarantees, larger step size for flat areas avoids saddle points
+					\item<11-> first order method since only the gradient is used
+					\item<12-> typical settings are $\tau = \kappa = 0.5$ (L. Armijo, {\itshape{Pac. J. Math.}} 1966)
+				\end{itemize}
+		\end{itemize}
+	\end{frame}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 	\begin{frame}
 		\centering\usebeamerfont{title}\textcolor{MASS}{\resizebox{0.75\linewidth}{!}{Thank You!}}
