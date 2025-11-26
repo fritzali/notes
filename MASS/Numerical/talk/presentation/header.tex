@@ -68,7 +68,7 @@
 			dp=10pt,
 			leftskip=15pt,
 		]{author in head/foot}
-			{\usebeamerfont{author in head/foot}\insertshortauthor}
+			{\usebeamerfont{author in head/foot}\insertshortauthor}~|~{\usebeamerfont{date in head/foot}\insertshortdate}
 		\end{beamercolorbox}
 		\begin{beamercolorbox}[
 			wd=\footercenterwidth,
@@ -90,7 +90,7 @@
 			dp=10pt,
 		]{frame}
 			\raggedleft
-			{\usebeamerfont{date in head/foot}\insertshortdate}
+			\usebeamerfont{framenumber}\insertframenumber~/~\inserttotalframenumber
 		\end{beamercolorbox}
 	\fi
 }
@@ -262,3 +262,24 @@
 \usepackage[usestackEOL]{stackengine}
 
 \usepackage{textpos}
+
+\usepackage{enumitem}
+
+\newlist{customlist}{itemize}{4} 
+
+\setlist[customlist, 1]{
+	label={},
+	leftmargin=0ex,
+	before=\bfseries,
+	after=\normalfont
+}
+
+\setlist[customlist, 2]{
+	label={},
+	leftmargin=3ex,
+	before=\mdseries,
+	after=\normalfont
+}
+
+\usepackage{color}
+\usepackage{transparent}
