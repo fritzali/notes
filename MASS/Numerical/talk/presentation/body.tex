@@ -280,7 +280,7 @@
 					\item<5-> resize these intervals by defining $T \mapsto \tilde{T} = T / \, 30$ with $I_\nu(T, \beta) \rightarrow I_\nu(\tilde{T}, \beta)$
 				\end{itemize}
 			\item<6-> \itshape{Problem:} as $D$ increases we have $N^D$ gridpoints, and with more complex parameter distributions, this procedure
-										 quickly becomes intractable due to computational limits
+										 quickly becomes intractable due to computational limitations
 		\end{itemize}
 	\end{frame}
 
@@ -474,8 +474,64 @@
 		\end{itemize}
 	\end{frame}
 
-	\begin{frame}
+	\begin{frame}<handout:0>
 		\frametitle{Application}
+		\begin{columns}[onlytextwidth]
+			\begin{column}{0.4\textwidth}
+				\vspace{-2ex}
+				\begin{itemize}
+					\item<only@2-> \itshape{Example:} minimise $\chi^2(\theta)$ using the gradient descent algorithm
+					\item<only@4-5> \itshape{Fixed Rate:} $\alpha = 10^{-9}$
+					\begin{itemize}
+						\item<only@5> very smooth, but does not converge, step size too small
+					\end{itemize}
+					\item<only@6-7> \itshape{Fixed Rate:} $\alpha = 3\cdot10^{-6}$
+					\begin{itemize}
+						\item<only@7> oscillations, does not converge, step size too large
+					\end{itemize}
+					\item<only@8-> \itshape{Fixed Rate:} $\alpha = 7\cdot10^{-7}$
+					\begin{itemize}
+						\item<only@9> this looks good, optimisers converge
+						\item<only@10-> $T_{400} = 14.96 \:\symup{K}\;\&\;\beta_{400} = 1.866$
+					\end{itemize}
+					\item<only@11-> \itshape{Line Search:} $\alpha_0 = 10^{-4} \;\&\; \tau = \kappa = 0.5$
+					\begin{itemize}
+						\item<only@12-> $T_{40} = 14.96 \:\symup{K}\;\&\;\beta_{40} = 1.866$
+					\end{itemize}
+				\end{itemize}
+			\end{column}
+			\begin{column}{0.575\textwidth}
+				\only<2>{\includegraphics[width=\textwidth]{../right/log_like.jpg}}
+				\only<3>{\includegraphics[width=\textwidth]{../right/log_like_quiv.jpg}}
+				\only<4-5>{\includegraphics[width=\textwidth]{../right/grad_desc_smooth.jpg}}
+				\only<6-7>{\includegraphics[width=\textwidth]{../right/grad_desc_osc.jpg}}
+				\only<8-10>{\includegraphics[width=\textwidth]{../right/grad_desc.jpg}}
+				\only<11->{\includegraphics[width=\textwidth]{../right/grad_desc_lin_sear.jpg}}
+			\end{column}
+		\end{columns}
+	\end{frame}
+
+	\begin{frame}<beamer:0>
+		\frametitle{Application}
+		\begin{columns}[onlytextwidth]
+			\begin{column}{0.4\textwidth}
+				\vspace{-2ex}
+				\begin{itemize}
+					\item \itshape{Example:} minimise $\chi^2(\theta)$ using the gradient descent algorithm
+					\item \itshape{Fixed Rate:} $\alpha = 7\cdot10^{-7}$
+					\begin{itemize}
+						\item $T_{400} = 14.96 \:\symup{K}\;\&\;\beta_{400} = 1.866$
+					\end{itemize}
+					\item \itshape{Line Search:} $\alpha_0 = 10^{-4} \;\&\; \tau = \kappa = 0.5$
+					\begin{itemize}
+						\item $T_{40} = 14.96 \:\symup{K}\;\&\;\beta_{40} = 1.866$
+					\end{itemize}
+				\end{itemize}
+			\end{column}
+			\begin{column}{0.575\textwidth}
+				\includegraphics[width=\textwidth]{../right/log_like_quiv.jpg}
+			\end{column}
+		\end{columns}
 	\end{frame}
 
 	\section{Optimisation}
