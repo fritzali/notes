@@ -469,7 +469,8 @@
 				\item<6-> Migrad
 				\item<7-> Root Mean Square Propagation
 			\end{itemize}
-			\item<8-> \itshape{Usage:} found in many modern libraries, suited to specialised use cases like nonlinear least squares
+			\item<8-> \itshape{Usage:} found in many modern libraries, suited to specialised use cases like nonlinear least squares,
+									   problems with parameter bounds or arbitrary constraints
 		\end{itemize}
 	\end{frame}
 
@@ -503,15 +504,46 @@
 	\begin{frame}
 		\frametitle{Limitations \& Curses}
 		\begin{itemize}
-			\item \itshape{Convergence \& Silent Failures:}
-			\item \itshape{Dimensionality:}
-			\item \itshape{Scaling:}
-			\item \itshape{Convexity:}
-			\item \itshape{Initialisation:}
+			\item<2-> \itshape{Convergence \& Silent Failures:}
+			\begin{itemize}
+				\item<3-> algorithm continues until convergence threshold is met or optimisation fails
+				\item<4-> check output for which termination reason applies
+				\item<5-> verify that parameters have actually changed from initial guess
+			\end{itemize}
+			\item<6-> \itshape{Dimensionality:}
+			\begin{itemize}
+				\item<7-> volume and distance become somewhat meaningless in higher dimensions
+				\item<8-> impossible to determine where to step or which parameter is important
+				\item<9-> gridding uniformly in linear or logarithmic space is expensive but a useful option
+				\item<10-> fixing some parameters or optimising independently are potential solutions
+			\end{itemize}
+			\item<11-> \itshape{Scaling:}
+			\begin{itemize}
+				\item<12-> parameter scalings of different magnitudes produce pathological stopping criteria
+			\end{itemize}
 		\end{itemize}
 	\end{frame}
 
-
+	\begin{frame}[noframenumbering]
+		\frametitle{Limitations \& Curses}
+		\begin{columns}[onlytextwidth]
+			\begin{column}{0.4\textwidth}
+				\begin{itemize}
+					\item \itshape{Nonconvexity:}
+					\begin{itemize}
+						\item convergence does not guarantee global optimum
+					\end{itemize}
+					\item \itshape{Initialisation:}
+					\begin{itemize}
+						\item optimisation can converge to different local optima
+					\end{itemize}
+				\end{itemize}
+			\end{column}
+			\begin{column}{0.55\textwidth}
+				\includegraphics[width=\textwidth]{../wrong/log_like.jpg}
+			\end{column}
+		\end{columns}
+	\end{frame}
 
 
 
