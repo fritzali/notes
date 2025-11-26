@@ -285,14 +285,14 @@
 	\end{frame}
 
 	\begin{frame}[noframenumbering]
-		\frametitle{Parameter Grid}
+		\frametitle{Parameter Grid}\vspace{-2ex}
 		\begin{columns}[onlytextwidth]
 			\begin{column}{0.375\textwidth}
 				\visible<3->{Can we think of more elegant ways to explore even very high dimensional parameter spaces?}
 			\end{column}
 			\begin{column}{0.475\textwidth}
 				\vspace*{-4.75ex}
-				\visible<2->{\includegraphics[width=\textwidth]{../right/lin_like.jpg}}
+				\visible<2->{\includegraphics[trim={0 0 4.25cm 3.5cm},clip,height=0.9\textwidth]{../right/lin_like.jpg}}
 			\end{column}
 		\end{columns}
 	\end{frame}
@@ -517,9 +517,24 @@
 				\item<9-> gridding uniformly in linear or logarithmic space is expensive but a useful option
 				\item<10-> fixing some parameters or optimising independently are potential solutions
 			\end{itemize}
-			\item<11-> \itshape{Scaling:}
+		\end{itemize}
+	\end{frame}
+
+	\begin{frame}[noframenumbering]
+		\frametitle{Limitations \& Curses}
+		\begin{itemize}
+			\item<2-> \itshape{Scaling:}
 			\begin{itemize}
-				\item<12-> parameter scalings of different magnitudes produce pathological stopping criteria
+				\item<3-> parameter scalings of different magnitudes produce pathological stopping criteria
+			\end{itemize}
+			\item<4-> \itshape{Nonconvexity:}
+			\begin{itemize}
+				\item<5-> convergence does not guarantee that the global optimum has been found
+				\item<6-> basin hopping or simulated annealing as potential fixes
+			\end{itemize}
+			\item<7-> \itshape{Initialisation:}
+			\begin{itemize}
+				\item<8-> optimisation can converge to different local optima depending on starting point and algorithm
 			\end{itemize}
 		\end{itemize}
 	\end{frame}
@@ -528,19 +543,19 @@
 		\frametitle{Limitations \& Curses}
 		\begin{columns}[onlytextwidth]
 			\begin{column}{0.4\textwidth}
+				\vspace{-2ex}
 				\begin{itemize}
-					\item \itshape{Nonconvexity:}
-					\begin{itemize}
-						\item convergence does not guarantee global optimum
-					\end{itemize}
-					\item \itshape{Initialisation:}
-					\begin{itemize}
-						\item optimisation can converge to different local optima
-					\end{itemize}
+					\item<only@2-> \itshape{Example:} $T_0 = 13.8 \:\symup{K}\: \& \:\beta_0 = 1.861$
+						\begin{itemize}
+							\item<only@3-> Fixed Rate Gradient Descent: $T_{2700} = 16.86 \:\symup{K}\; \& \;\beta_{2700} = 1.872$
+							\item<only@4-> Line Search Gradient Descent: $T_{656} = 10.93 \:\symup{K}\; \& \;\beta_{656} = 1.948$
+						\end{itemize}
 				\end{itemize}
 			\end{column}
-			\begin{column}{0.55\textwidth}
-				\includegraphics[width=\textwidth]{../wrong/log_like.jpg}
+			\begin{column}{0.575\textwidth}
+				\only<2>{\includegraphics[width=\textwidth]{../wrong/log_like.jpg}}
+				\only<3|handout:0>{\includegraphics[width=\textwidth]{../wrong/grad_desc.jpg}}
+				\only<4|handout:0>{\includegraphics[width=\textwidth]{../wrong/grad_desc_lin_sear.jpg}}
 			\end{column}
 		\end{columns}
 	\end{frame}
