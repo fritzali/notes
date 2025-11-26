@@ -271,15 +271,15 @@
 	\begin{frame}
 		\frametitle{Parameter Grid}
 		\begin{itemize}
-			\item<2-6> \itshape{Idea:} in our $D=2$ dimensional parameter space, we can create an $N \times N$ grid of $(T, \beta)$ points
-									  and evaluate the likelihood at each one
-			\item<3-6> \itshape{Preparation:} for this as well as some of the following methods, it is a good idea to normalize the variation
+			\item<2-> \itshape{Idea:} in our $D=2$ dimensional parameter space, we can create an $N \times N$ grid of $(T, \beta)$ points
+									  and evaluate the scalar function at each one
+			\item<3-> \itshape{Preparation:} for this as well as some of the following methods, it is a good idea to normalize the variation
 											 of each individual parameter
 				\begin{itemize}
-					\item<4-6> from the literature we expect $(T,\beta) \in [10, 25] \times [1.5, 2.0]$ as constraints
-					\item<5-6> resize these intervals by defining $T \mapsto \tilde{T} = T / \, 30$ with $I_\nu(T, \beta) \rightarrow I_\nu(\tilde{T}, \beta)$
+					\item<4-> from the literature we expect $(T,\beta) \in [10, 25] \times [1.5, 2.0]$ as constraints
+					\item<5-> resize these intervals by defining $T \mapsto \tilde{T} = T / \, 30$ with $I_\nu(T, \beta) \rightarrow I_\nu(\tilde{T}, \beta)$
 				\end{itemize}
-			\item<6-6> \itshape{Problem:} as $D$ increases we have $N^D$ gridpoints, and with more complex parameter distributions, this procedure
+			\item<6-> \itshape{Problem:} as $D$ increases we have $N^D$ gridpoints, and with more complex parameter distributions, this procedure
 										 quickly becomes intractable due to computational limits
 		\end{itemize}
 	\end{frame}
@@ -368,7 +368,7 @@
 				\begin{itemize}
 					\item<8-> moves along direction of steepest descent at each point with fixed learning rate $\alpha$
 					\item<9-> first order method since only the gradient is used
-					\item<10-> improve by performing line search for $\alpha_k$ at every step
+					\item<10-> improve by performing line search for $\alpha$ at every step
 				\end{itemize}
 		\end{itemize}
 	\end{frame}
@@ -382,7 +382,7 @@
 					\item<4-> start from some fixed large $\alpha_0$ for each step $k$ of the gradient descent
 					\item<5-> set $\alpha_{j+1} = \tau\alpha_j$ until $f\left(x_k\right) - f\left(x_k - \alpha_j\nabla f(x_k)\right)
 							  \geq \kappa\alpha_j\left(\nabla f(x_k)\right)^2$ where $\tau, \kappa \in (0,1)$
-					\item<6-> use last value to set learning rate $\alpha_k = \alpha_j$ for next step
+					\item<6-> use last value to set learning rate $\alpha = \alpha_j$ for next step
 				\end{enumerate}
 			\item<7-> \itshape{Notes:}
 				\begin{itemize}
@@ -394,6 +394,124 @@
 				\end{itemize}
 		\end{itemize}
 	\end{frame}
+
+	\begin{frame}
+		\frametitle{Conjugate Gradient Descent}
+		\begin{itemize}
+			\item<2-> \itshape{Requirements:} first derivatives of the objective function, can be estimated numerically
+			\item<3-> \itshape{Algorithm:}\vspace{-1.25ex}
+				\begin{enumerate}
+					\item<4-> calculate search direction $s_k = \nabla f(x_k) + \beta s_{k-1}$ where $\beta = \dfrac{\nabla f(x_k) \left(\nabla f(x_k) -
+							  \nabla f(x_{k-1})\right)}{\left(\nabla f(x_{k-1})\right)^2}$\vspace{-1.25ex}
+					\item<5-> update point with $x_{k+1} = x_k + \alpha s_k$ after a line search for $\alpha$\vspace{0.25ex}
+					\item<6-> iterate until convergence $|x_{k+1} / x_k - 1| < \epsilon$ or maximum step count is reached
+				\end{enumerate}
+			\item<7-> \itshape{Notes:}
+				\begin{itemize}
+					\item<8-> uses gradients from previous evaluations to estimate curvature
+					\item<9-> smooths oscillatory behaviour of naive gradient descent, especially in tight valleys with nearby
+							  gradients almost orthogonal to search direction
+					\item<10-> first order method since only the gradient is used
+				\end{itemize}
+		\end{itemize}
+	\end{frame}
+
+	\begin{frame}
+		\frametitle{Adaptive Moment Estimation}
+		\begin{itemize}
+			\item<2-> \itshape{Requirements:} first derivatives of the objective function, can be estimated numerically
+			\item<3-> \itshape{Algorithm:}
+				\begin{enumerate}
+					\item<4-> initialize position $x_0$ as well as moving averages $m_0 = 0$ and $v_0 = 0$\vspace{0.5ex}
+					\item<5-> set $m_{k+1} = \beta_1 m_k + (1 - \beta_1) \nabla f(x_k)$ and
+							  $v_{k+1} = \beta_2 v_k + (1 - \beta_2) \left(\nabla f(x_k)\right)^2$\vspace{0.5ex}
+					\item<6-> correct estimator bias with $\tilde{m}_k = m_{k+1}(1 - \beta_1^k)^{-1}$ and $\tilde{v}_k = v_{k+1}(1 - \beta_2^k)^{-1}$
+					\item<7-> update the position $x_{k+1} = x_k - \alpha \tilde{m}_k \left(\sqrt{\tilde{v}_k} + \varepsilon\right)^{-1}$ and repeat
+				\end{enumerate}
+			\item<8-> \itshape{Notes:}
+				\begin{itemize}
+					\item<9-> point behaves as iterative analogue to ball rolling in landscape with friction
+					\item<10-> hyperparameters $\beta_1, \beta_2 \in (0,1)$ are forgetting factors for previous gradients, and $\varepsilon \ll 1$ 
+					\item<11-> first order method since only the gradient is used
+				\end{itemize}
+		\end{itemize}
+	\end{frame}
+
+	\begin{frame}
+		\frametitle{Newton Method}
+		\begin{itemize}
+			\item<2-> \itshape{Requirements:} first and second derivatives of the objective function, can be estimated numerically
+			\item<3-> \itshape{Algorithm:}
+				\begin{enumerate}
+					\item<4-> choose some initial $x_0$\vspace{1ex}
+					\item<5-> calculate $\nabla f(x_k) = \left(\frac{\partial f(x_k)}{\partial z_i}\right)_{i = 1,\ldots,d}$ and
+							  $H_{f(x_k)} = \left(\frac{\partial^2 f(x_k)}{\partial z_i \partial z_j}\right)_{i,\,j = 1,\ldots,d}$
+					\item<6-> update the parameters $x_{k+1} = x_k - \alpha H_{f(x_k)}^{-1} \nabla f(x_k)$ with dampening $\alpha$
+				\end{enumerate}
+			\item<7-> \itshape{Notes:}
+				\begin{itemize}
+					\item<8-> generalises Newton-Raphson method for finding roots of derivative to multiple dimensions
+					\item<9-> finds critical point, no matter if maximum, minimum or saddle point, sensitive to initialisation
+					\item<10-> second order method since both gradient and Hessian are used
+					\item<11-> related Gauss-Newton algorithm employs Jacobian instead of Hessian
+				\end{itemize}
+		\end{itemize}
+	\end{frame}
+
+	\begin{frame}
+		\frametitle{Advanced Algorithms}
+		\begin{itemize}
+			\item<2-> \itshape{Traits:} quasi second order methods, interpolate between optimsers, various curvature estimations
+			\begin{itemize}
+				\item<3-> Broyden–Fletcher–Goldfarb–Shanno
+				\item<4-> Sequential Least Squares Programming
+				\item<5-> Levenberg–Marquardt
+				\item<6-> Migrad
+				\item<7-> Root Mean Square Propagation
+			\end{itemize}
+			\item<8-> \itshape{Usage:} found in many modern libraries, suited to specialised use cases like nonlinear least squares
+		\end{itemize}
+	\end{frame}
+
+	\begin{frame}
+		\frametitle{Application}
+	\end{frame}
+
+	\section{Optimisation}
+
+	\begin{frame}
+		\transparent{0.25}
+		\frametitle{Overview}
+		\bfseries{Probability Refresher}\\[1.5pt]
+		\hspace*{3ex}\mdseries{Definitions \& Notation}\\
+		\hspace*{3ex}\mdseries{Random Numbers}\\[3.0pt]
+		\transparent{1}
+		\bfseries{Optimisation}\\[1.5pt]
+		\transparent{0.25}
+		\hspace*{3ex}\mdseries{Common Methods}\\
+		\transparent{1}
+		\hspace*{3ex}\mdseries{Problems}\\[3.0pt]
+		\transparent{0.25}
+		\bfseries{Markov Chain Monte Carlo}\\[1.5pt]
+		\hspace*{3ex}\mdseries{Popular Algorithms}\\
+		\hspace*{3ex}\mdseries{Tuning \& Diagnosing}\\
+		\hspace*{3ex}\mdseries{Alternatives}\\[3.0pt]
+	\end{frame}
+
+	\subsection{Problems}
+
+	\begin{frame}
+		\frametitle{Limitations \& Curses}
+		\begin{itemize}
+			\item \itshape{Convergence \& Silent Failures:}
+			\item \itshape{Dimensionality:}
+			\item \itshape{Scaling:}
+			\item \itshape{Convexity:}
+			\item \itshape{Initialisation:}
+		\end{itemize}
+	\end{frame}
+
+
 
 
 
