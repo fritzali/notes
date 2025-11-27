@@ -729,7 +729,7 @@
 		\begin{itemize}
 			\item<2-> \itshape{Metropolis-Hastings:}
 			\begin{itemize}
-				\item<3-> a proposal $x_j$ is drawn from an asymmetrix distribution $g(x_j|x_i) \neq g(x_i|x_j)$\vspace{0.5ex}
+				\item<3-> a proposal $x_j$ is drawn from an asymmetric distribution $g(x_j|x_i) \neq g(x_i|x_j)$\vspace{0.5ex}
 				\item<4-> this itself violates detailed balance but is fixed by $M_{i \to j}f(x_i)g(x_j|x_i) = M_{j \to \i}f(x_j)g(x_i|x_j)$ with
 						  $$M_{i \to j} = \symup{min}\left(1\, , \frac{f(x_j)g(x_i|x_j)}{f(x_i)g(x_j|x_i)}\right)$$
 				\item<5-> generate a random number $\xi \sim \mathcal{U}(0,1)$ and decide according to
