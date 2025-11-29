@@ -322,7 +322,7 @@
 				\begin{enumerate}
 					\item<4-> initialize simplex of $d+1$ points in $d$ dimensional parameter space
 					\item<5-> rank points in order of values $f(x_1) \leq \cdots \leq f(x_d) \leq f(x_{d+1})$
-					\item<6-> compute centroid $x_0$ of $x_1\, , \ldots \, , x_d$
+					\item<6-> compute centroid $x_0$ of $x_1\, , \ldots , x_d$
 					\item<7-> perform a bunch of conditional evaluations between $x_0$ and $x_{d+1}$
 					\item<8-> reflect, expand, contract or shrink based on results to move points downhill and repeat
 				\end{enumerate}
@@ -331,6 +331,83 @@
 					\item<10-> extrapolates function to slowly move geometric blob through parameter space
 					\item<11-> zeroth order method since no derivatives are used
 				\end{itemize}
+		\end{itemize}
+	\end{frame}
+
+	\begin{frame}[noframenumbering]
+		\frametitle{Nelder-Mead}
+		\begin{itemize}
+			\item<2-> \itshape{Conditions:}
+				\begin{enumerate}
+					\item<3-> \itshape{Reflection:}
+					\begin{itemize}
+						\item<4-> compute reflected point $x_r = x_0 + \alpha(x_0 - x_{d+1})$ with $\alpha > 0$
+						\item<5-> if $x_r$ better than second worst $x_d$ but not better than best $x_1$ with $f(x_1) \leq f(x_r) < f(x_d)$ then
+								  obtain new simplex by replacing $x_{d+1}$ with $x_r$ and repeat from start
+						\item<6-> continue to the next step instead if $x_r$ is the best point with $f(x_r) < f(x_1)$
+						\item<7-> skip the next skip and go to the one after it if $x_r$ is not better than the second worst $x_d$ with
+								  $f(x_r) \geq f(x_d)$
+					\end{itemize}
+				\end{enumerate}
+		\end{itemize}
+	\end{frame}
+
+	\begin{frame}[noframenumbering]
+		\frametitle{Nelder-Mead}
+		\begin{itemize}
+			\item<2-> \itshape{Conditions:}
+				\begin{enumerate}
+					\setcounter{enumi}{1}
+					\item<3-> \itshape{Expansion:}
+					\begin{itemize}
+						\item<4-> compute expanded point $x_e = x_0 + \gamma(x_r - x_0)$ with $\gamma > 1$
+						\item<5-> if $x_e$ is better than $x_r$ with $f(x_e) < f(x_r)$ then obtain new simplex by replacing the worst $x_{d+1}$
+								   with $x_e$ and repeat from start
+						\item<6-> else obtain new simplex by replacing the worst $x_{d+1}$ with $x_r$ and repeat from start
+					\end{itemize}
+					\item<7-> \itshape{Contraction:}
+					\begin{itemize}
+						\item<8-> if $x_r$ is better than the worst $x_{d+1}$ with $f(x_r) < f(x_{d+1})$ then compute the outside contracted point
+								  $x_c = x_0 + \rho (x_r - x_0)$ where $0 < \rho \leq 0.5$
+						\item<9-> for $x_c$ better than $x_r$ with $f(x_c) < f(x_r)$ obtain new simplex by replacing worst $x_{d+1}$ with $x_c$
+								  and repeat from start, otherwise go to the next step
+					\end{itemize}
+				\end{enumerate}
+		\end{itemize}
+	\end{frame}
+
+	\begin{frame}[noframenumbering]
+		\frametitle{Nelder-Mead}
+		\begin{itemize}
+			\item<2-> \itshape{Conditions:}
+				\begin{enumerate}
+					\setcounter{enumi}{2}
+					\item<3-> \itshape{Contraction:}
+					\begin{itemize}
+						\item<4-> if $x_r$ is not better than the worst $x_{d+1}$ with $f(x_r) \geq f(x_{d+1})$ then compute the inside contracted point
+								  $x_c = x_0 + \rho (x_{d+1} - x_0)$ where $0 < \rho \leq 0.5$
+						\item<5-> for $x_c$ better than the worst $x_{d+1}$ with $f(x_c) < f(x_{d+1})$ obtain new simplex by replacing worst $x_{d+1}$
+								  with $x_c$ and repeat from start, otherwise go to next step
+					\end{itemize}
+					\item<6-> \itshape{Shrink:}
+					\begin{itemize}
+						\item<7-> obtain new simplex by replacing all points except the best $x_1$ with $x_i = x_1 + \sigma(x_i - x_1)$ and
+								  coefficient $0 < \sigma < 1$ before repeating from start
+					\end{itemize}
+				\end{enumerate}
+		\end{itemize}
+	\end{frame}
+
+	\begin{frame}[noframenumbering]
+		\frametitle{Nelder-Mead}
+		\begin{itemize}
+			\item<2-> \itshape{Standard Values:}
+			\begin{itemize}
+				\item<3-> $\alpha = 1$
+				\item<4-> $\gamma = 2$
+				\item<5-> $\rho = 0.5$
+				\item<6-> $\sigma = 0.5$
+			\end{itemize}
 		\end{itemize}
 	\end{frame}
 
