@@ -380,34 +380,22 @@
 		\frametitle{Nelder-Mead}
 		\begin{itemize}
 			\item<2-> \itshape{Conditions:}
-				\begin{enumerate}
-					\setcounter{enumi}{2}
-					\item<3-> \itshape{Contraction:}
-					\begin{itemize}
-						\item<4-> if $x_r$ is not better than the worst $x_{d+1}$ with $f(x_r) \geq f(x_{d+1})$ then compute the inside contracted point
-								  $x_c = x_0 + \rho (x_{d+1} - x_0)$ where $0 < \rho \leq 0.5$
-						\item<5-> for $x_c$ better than the worst $x_{d+1}$ with $f(x_c) < f(x_{d+1})$ obtain new simplex by replacing worst $x_{d+1}$
-								  with $x_c$ and repeat from start, otherwise go to next step
-					\end{itemize}
-					\item<6-> \itshape{Shrink:}
-					\begin{itemize}
-						\item<7-> obtain new simplex by replacing all points except the best $x_1$ with $x_i = x_1 + \sigma(x_i - x_1)$ and
-								  coefficient $0 < \sigma < 1$ before repeating from start
-					\end{itemize}
-				\end{enumerate}
-		\end{itemize}
-	\end{frame}
-
-	\begin{frame}[noframenumbering]
-		\frametitle{Nelder-Mead}
-		\begin{itemize}
-			\item<2-> \itshape{Standard Values:}
-			\begin{itemize}
-				\item<3-> $\alpha = 1$
-				\item<4-> $\gamma = 2$
-				\item<5-> $\rho = 0.5$
-				\item<6-> $\sigma = 0.5$
-			\end{itemize}
+			\begin{enumerate}
+				\setcounter{enumi}{2}
+				\item<3-> \itshape{Contraction:}
+				\begin{itemize}
+					\item<4-> if $x_r$ is not better than the worst $x_{d+1}$ with $f(x_r) \geq f(x_{d+1})$ then compute the inside contracted point
+							  $x_c = x_0 + \rho (x_{d+1} - x_0)$ where $0 < \rho \leq 0.5$
+					\item<5-> for $x_c$ better than the worst $x_{d+1}$ with $f(x_c) < f(x_{d+1})$ obtain new simplex by replacing worst $x_{d+1}$
+							  with $x_c$ and repeat from start, otherwise go to next step
+				\end{itemize}
+				\item<6-> \itshape{Shrink:}
+				\begin{itemize}
+					\item<7-> obtain new simplex by replacing all points except the best $x_1$ with $x_i = x_1 + \sigma(x_i - x_1)$ and
+							  coefficient $0 < \sigma < 1$ before repeating from start
+				\end{itemize}
+			\end{enumerate}
+			\item<8-> \itshape{Standard Values:} $\alpha = 1 \;\&\; \gamma = 2 \;\&\; \rho = \sigma = 0.5$
 		\end{itemize}
 	\end{frame}
 
@@ -638,6 +626,34 @@
 	\end{frame}
 
 	\subsection{Problems}
+
+	\begin{frame}
+		\frametitle{Estimating Covariance}\vspace{1ex}
+		\begin{columns}[onlytextwidth]
+			\begin{column}{0.475\textwidth}
+				\vspace{-9ex}
+				\begin{itemize}
+					\item<only@2-> \itshape{Gridded Posterior Contours}
+					\item<only@3-> \itshape{Gaussian Approximations} \newline $x \sim \displaystyle{\mathcal{N}(\mu, \Sigma) \propto
+							  \symup{exp} \left( -\frac{1}{2} (x-\mu)^{\symup{T}} \Sigma^{-1} (x-\mu) \right)}$\vspace{1ex}
+					\begin{itemize}
+						\item<only@4-> \itshape{Inverse Fisher Information} \newline $I(\theta) = \symup{Var}[\nabla \ell] =
+																		E\left[(\nabla\ell)(\nabla\ell)^{\symup{T}}
+																		\right] = -E[H\ell]$ with $\ell = \symup{log}\,P$\vspace{1ex}
+						\item<only@5-> {Integrating Posterior} $P$ for \newline $\symup{Cov}(\theta_1 , \theta_2) =
+																			E\left[(\theta_1 - E[\theta_1])(\theta_2 - E[\theta_2])\right]$
+					\end{itemize}
+				\end{itemize}
+			\end{column}
+			\begin{column}{0.5125\textwidth}
+				\begin{overlayarea}{\textwidth}{\textheight}
+					\only<2-3>{\includegraphics[width=\textwidth]{../right/lin_like_comp.jpg}}
+					\only<4|handout:0>{\includegraphics[width=\textwidth]{../right/lin_like_comp_fisher.jpg}}
+					\only<5|handout:0>{\includegraphics[width=\textwidth]{../right/lin_like_comp_integral.jpg}}
+				\end{overlayarea}
+			\end{column}
+		\end{columns}
+	\end{frame}
 
 	\begin{frame}
 		\frametitle{Limitations \& Curses}
