@@ -242,6 +242,10 @@
 		\frametitle{Poisson Equation}
 	\end{frame}
 
+	\begin{frame}
+		\frametitle{Navier-Stokes Equations}
+	\end{frame}
+
 	\section{Physical Background}
 
 	\begin{frame}
@@ -328,16 +332,60 @@
 	\end{frame}
 
 	\begin{frame}
-		\frametitle{Integration Schemes}
+		\frametitle{Integration Techniques}
 		\begin{itemize}
-			\item<2-> a
+			\item<2-> \itshape{Spatial:}
+			\begin{itemize}
+				\item<3-> \itshape{Downwind Scheme:} looks forward in direction of transport, unstable due to causality violation
+				\item<4-> \itshape{Upwind Scheme:} looks backward against the direction of transport, very stable but diffusive
+				\begin{itemize}
+					\item<5-> used to model transport with defined direction
+				\end{itemize}
+				\item<6-> \itshape{Central Difference:} considers both directions, more precise but can lead to oscillations
+				\begin{itemize}
+					\item<7-> used to model symmetric dispersion processes
+				\end{itemize}
+				\item<8-> \itshape{Multi Point Stencil:} higher order central method for computing $\nabla^2$ in multiple dimensions
+			\end{itemize}
+			\item<9-> \itshape{Temporal:}
+			\begin{itemize}
+				\item<10-> \itshape{Backward Euler:} looks to future to calculate next step implicitly by inversion, extremely stable
+				\item<11-> \itshape{Forward Euler:} looks to past to find next step explicitly, simple but unstable for large intervals
+				\item<12-> \itshape{Leapfrog:} reaches back to previous step instead of current one, symplectic and invertible
+			\end{itemize}
+		\end{itemize}
+	\end{frame}
+
+	\begin{frame}[noframenumbering]
+		\frametitle{Integration Techniques}
+		\begin{itemize}
+			\item<1-> \itshape{Precision Methods:}
+			\begin{itemize}
+				\item<2-> \itshape{Lax-Wendroff:} take intermediate step, equivalent to series expansion to second order
+				\item<3-> \itshape{Runge-Kutta:} take trial steps to estimate curvature, then make informed jump
+				\item<4-> \itshape{Predictor-Corrector:} take roughly predicted step, then recalculate with new information
+				\item<5-> \itshape{Leapfrog:} preserve phasespace volume and total energy, enable backward reconstruction
+			\end{itemize}
+			\vspace{1ex}
+			\item<6-> \itshape{Courant-Friedrichs-Lewy Condition:} $\displaystyle{\frac{v\Delta t}{\Delta x} \leq 1}$
+			\item<8-> \itshape{Pure Diffusion Condition:} $\displaystyle{\frac{2\nu\Delta t}{\Delta x^2} \leq 1}$
 		\end{itemize}
 	\end{frame}
 
 	\begin{frame}
-		\frametitle{Discretization}
+		\frametitle{Discretized Formulation}
 		\begin{itemize}
-			\item<2-> a
+			\item<2-> \itshape{Convection:} $\displaystyle{\;\frac{\partial u}{\partial t} + u \frac{\partial u}{\partial x} = 0\;\longrightarrow\;
+											 \frac{u_i^{n+1} - u_i^n}{\Delta t} + u_i^n \frac{u_i^n - u_{i-1}^n}{\Delta x} = 0}$
+			\item<3-> \itshape{Diffusion:} $\displaystyle{\;\frac{\partial u}{\partial t} = \nu\frac{\partial^2 u}{\partial x^2}\;\longrightarrow\;
+											\frac{u_i^{n+1} - u_i^n}{\Delta t} = \nu\frac{u_{i+1}^n - 2u_i^n + u_{i-1}^n}{\Delta x^2}}$
+			\item<4-> \itshape{Bateman-Burgers Equation:} $\displaystyle{\; \frac{\partial u}{\partial t} + u \frac{\partial u}{\partial x} =
+														   \nu\frac{\partial^2 u}{\partial x^2}\;\longrightarrow\;
+														   \frac{u_i^{n+1} - u_i^n}{\Delta t} + u_i^n \frac{u_i^n - u_{i-1}^n}{\Delta x} =
+														   \nu\frac{u_{i+1}^n - 2u_i^n + u_{i-1}^n}{\Delta x^2}}$
+			\item<5-> \itshape{Laplace Equation:} $\displaystyle{\;\frac{\partial^2 p}{\partial x^2} + \frac{\partial^2 u}{\partial y^2} = 0\;
+												   \longrightarrow\; \frac{p_{i+1, j}^n - 2u_{i, j}^n + u_{i-1, j}^n}{\Delta x^2} +
+												   \frac{u_{i, j+1}^n - 2u_{i, j}^n + u_{i, j-1}^n}{\Delta y^2} = 0}$
 		\end{itemize}
 	\end{frame}
 
@@ -369,16 +417,17 @@
 	\begin{frame}
 		\frametitle{Conceptual Overview}
 		\begin{itemize}
-			\item<2-> \mdseries{Idea:} calculate flux through faces of control volumes that divide the domain in integral form
-					  \visible<3->{$$\frac{\partial}{\partial t} \int_V Q \: dV + \oint_S (F \cdot n) \: dS = \int_V \Sigma \: dV$$\\[-1ex]}
+			\item<2-> \mdseries{Idea:} calculate flux through faces of control volumes that divide the domain using integral form
+					  \visible<3->{$$\frac{\partial}{\partial t} \int_V Q \: dV + \oint_S (F \cdot n) \: dS = \int_V \Sigma \: dV$$\\[-2ex]}
 			\item<4-> \mdseries{Advantages:}
 				\begin{itemize}
 					\item<5-> inherently strictly conservative for total mass and energy
 					\item<6-> unstructured grid handles complex geometries well
+					\item<7-> easily deals with shock discontinuities
 				\end{itemize}
-			\item<7-> \mdseries{Drawbacks:} 
+			\item<8-> \mdseries{Drawbacks:} 
 				\begin{itemize}
-					\item<8-> mathematically complex at higher order accuracy
+					\item<9-> mathematically complex at higher order accuracy
 				\end{itemize}
 		\end{itemize}
 	\end{frame}
@@ -411,9 +460,18 @@
 	\begin{frame}
 		\frametitle{Conceptual Overview}
 		\begin{itemize}
-			\item<2-> \mdseries{Idea:} 
-			\item<3-> \mdseries{Advantages:} 
-			\item<4-> \mdseries{Drawbacks:} 
+			\item<2-> \mdseries{Idea:} optimize polynomial shape function to approximate solution across whole grid elements
+			\item<3-> \mdseries{Advantages:}
+			\begin{itemize}
+				\item<4-> highly mathematically robust
+				\item<5-> precise gradient calculation at boundaries
+				\item<6-> handles extremely complex mesh geometries well
+			\end{itemize}
+			\item<7-> \mdseries{Drawbacks:}
+			\begin{itemize}
+				\item<8-> computationally expensive and memory intensive
+				\item<9-> bad stability for fast turbulent flows
+			\end{itemize}
 		\end{itemize}
 	\end{frame}
 
