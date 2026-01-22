@@ -117,7 +117,7 @@
 			\setlength{\columnsep}{-25ex}
 			\begin{multicols}{2}
 				\begin{itemize}
-					\item<12-> viscosity $\nu$ \itshape{(scalar)}
+					\item<12-> viscosity $\eta$ \itshape{(scalar)}
 					\item<13-> vorticity $\omega$ \itshape{(vector)}
 				\end{itemize}
 			\end{multicols}
@@ -147,96 +147,299 @@
 
 	\subsection{Basic Equations}
 
-	\section{Probability}
+	\begin{frame}
+		\frametitle{Dimensionless Numbers}
+		\begin{itemize}
+			\item<2-> \itshape{Reynolds Number:} ratio of inertial to viscous forces
+					  \visible<3->{$$R = \frac{\rho u L}{\eta} = \frac{u L}{\nu}$$\\[-1ex]}
+			\begin{itemize}
+				\item<3-> $R < 1000\kern+1pt${\bfseries{:}} Laminar Flow (reversible and ordered stream)
+				\begin{itemize}
+					\item<4-> $R < 1\kern+1pt${\bfseries{:}} Stokes Regime (without any separation)
+					\item<5-> $10 \lesssim R \lesssim 40\kern+1pt${\bfseries{:}} Separation Zone (stable and stationary vortices)
+				\end{itemize}
+				\item<6-> $R > 1000\kern+1pt${\bfseries{:}} Turbulent Flow (stochastic and chaotic stream)
+				\begin{itemize}
+					\item<7-> $40 \lesssim R \lesssim 4000\kern+1pt${\bfseries{:}} Transitional Kármán Street (vortex shedding)
+					\item<8-> $R > 4000\kern+1pt${\bfseries{:}} Kolmogorov Energy Cascade (fully developed phase)
+				\end{itemize}
+			\end{itemize}
+		\end{itemize}
+	\end{frame}
+
+	\begin{frame}[noframenumbering]
+		\frametitle{Dimensionless Numbers}
+		\begin{itemize}
+			\item<1-> \itshape{Mach Number:} ratio of bulk velocity magnitude to local sound speed
+					  \visible<2->{$$M = \frac{u}{c}$$\\[-1ex]}
+			\begin{itemize}
+				\item<3-> $M \lesssim 0.3\kern+1pt${\bfseries{:}} Incompressible (negligible density variations, pressure signals faster than flow)
+				\item<4-> $M \approx 1\kern+1pt${\bfseries{:}} Transonic (local excess of sound speed, weak shocks create drag)
+				\item<5-> $M > 1\kern+1pt${\bfseries{:}} Supersonic (thin front of discontinuity, bow shock heating)
+				\item<6-> $M > 3\kern+1pt${\bfseries{:}} Hypersonic (ram pressure stripping, dissociation and ionization)
+			\end{itemize}
+		\end{itemize}
+	\end{frame}
+
+	\begin{frame}
+		\frametitle{Bulk Transport}
+		\begin{itemize}
+			\item<2-> \itshape{Continuity Equation:} density $\rho$ must increase where a fluid is compressed
+					  \visible<3->{$$\frac{\partial \rho}{\partial t} + \nabla \cdot (\rho u) = 0$$\\[-1ex]}
+			\item<4-> \itshape{Linear Advection:} velocity field $v$ is free of divergence for incompressible fluids
+					  \visible<5->{$$\frac{\partial u}{\partial t} + (v \cdot \nabla) u = 0$$\\[-1ex]}
+			\item<6-> \itshape{Nonlinear Advection:} velocity field $u$ is carried by itself instead of fixed background flow
+					  \visible<7->{$$\frac{\partial u}{\partial t} + (u \cdot \nabla) u = 0$$\\[-1ex]}
+		\end{itemize}
+	\end{frame}
+
+	\begin{frame}
+		\frametitle{Stochastic Transport}
+		\begin{itemize}
+			\item<2-> \itshape{Diffusion:} kinematic viscosity $\nu$ describes spread due to random motion
+					  \visible<3->{$$\frac{\partial u}{\partial t} = \nu \nabla^2 u$$\\[-1ex]}
+			\item<4-> \itshape{Bateman-Burgers Equation:} combines shock generation with counteracting diffusive term
+					  \visible<5->{$$\frac{\partial u}{\partial t} + (u \cdot \nabla) u = \nu \nabla^2 u$$\\[-1ex]}
+		\end{itemize}
+	\end{frame}
+
+	\begin{frame}
+		\frametitle{Equilibrium Search}
+		\begin{itemize}
+			\item<2-> \itshape{Laplace Equation:} maximally smooth solution dictated solely by boundary conditions
+					  \visible<3->{$$\nabla^2 p = 0$$\\[-1ex]}
+			\item<4-> \itshape{Poisson Equation:} extension for steady state to accomodate internal sources and sinks
+					  \visible<5->{$$\nabla^2 p = f(r)$$\\[-1ex]}
+			\begin{itemize}
+				\item<6-> \itshape{Gravity:} $\nabla^2 \Phi = 4\pi G \rho$
+				\item<7-> \itshape{Electrostatics:} $\nabla^2 V = -\rho / \varepsilon$
+				\item<8-> \itshape{Pressure:} $\nabla^2 p = \rho\nabla\cdot\bigl((u\cdot\nabla) u\bigr)$
+			\end{itemize}
+		\end{itemize}
+	\end{frame}
+
+	\section{Physical Background}
 
 	\begin{frame}
 		\frametitle{Overview}
-		\bfseries{Probability Refresher}\\[1.5pt]
-		\hspace*{3ex}\mdseries{Definitions \& Notation}\\
+		\bfseries{Physical Background}\\[1.5pt]
+		\transparent{0.25}
+		\hspace*{3ex}\mdseries{Fundamental Definitions}\\
+		\hspace*{3ex}\mdseries{Basic Equations}\\
+		\transparent{1}
+		\hspace*{3ex}\mdseries{Examples}\\[3.0pt]
+		\transparent{0.25}
+		\bfseries{Numerical Approaches}\\[1.5pt]
+		\hspace*{3ex}\mdseries{Finite Difference Method}\\
+		\hspace*{3ex}\mdseries{Finite Volume Method}\\
+		\hspace*{3ex}\mdseries{Finite Element Method}\\[3.0pt]
+		\bfseries{Practical Implementation}\\[1.5pt]
+		\hspace*{3ex}\mdseries{Kelvin-Helmholtz Instability}\\
+		\hspace*{3ex}\mdseries{Rayleigh–Taylor Instability}\\
+		\hspace*{3ex}\mdseries{Outlook}\\[3.0pt]
+	\end{frame}
+
+	\subsection{Examples}
+
+	\section{Numerical Approaches}
+
+	\begin{frame}
+		\frametitle{Overview}
+		\transparent{0.25}
+		\bfseries{Physical Background}\\[1.5pt]
+		\hspace*{3ex}\mdseries{Fundamental Definitions}\\
+		\hspace*{3ex}\mdseries{Basic Equations}\\
+		\hspace*{3ex}\mdseries{Examples}\\[3.0pt]
+		\transparent{1}
+		\bfseries{Numerical Approaches}\\[1.5pt]
+		\hspace*{3ex}\mdseries{Finite Difference Method}\\
 		\only<1|handout:0>{
-		\hspace*{3ex}\mdseries{Random Numbers}\\[3.0pt]
+		\hspace*{3ex}\mdseries{Finite Volume Method}\\
+		\hspace*{3ex}\mdseries{Finite Element Method}\\[3.0pt]
 		}
 		\only<2-|handout:1>{
 		\transparent{0.25}
-		\hspace*{3ex}\mdseries{Random Numbers}\\[3.0pt]
+		\hspace*{3ex}\mdseries{Finite Volume Method}\\
+		\hspace*{3ex}\mdseries{Finite Element Method}\\[3.0pt]
 		}
 		\transparent{0.25}
-		\bfseries{Optimisation}\\[1.5pt]
-		\hspace*{3ex}\mdseries{Common Methods}\\
-		\hspace*{3ex}\mdseries{Problems}\\[3.0pt]
-		\bfseries{Markov Chain Monte Carlo}\\[1.5pt]
-		\hspace*{3ex}\mdseries{Popular Algorithms}\\
-		\hspace*{3ex}\mdseries{Tuning \& Diagnosing}\\
-		\hspace*{3ex}\mdseries{Alternatives}\\[3.0pt]
+		\bfseries{Practical Implementation}\\[1.5pt]
+		\hspace*{3ex}\mdseries{Kelvin-Helmholtz Instability}\\
+		\hspace*{3ex}\mdseries{Rayleigh–Taylor Instability}\\
+		\hspace*{3ex}\mdseries{Outlook}\\[3.0pt]
 	\end{frame}
 
-	\subsection{Definitions}
+	\subsection{Finite Difference Method}
 
-	\begin{frame}
-		\frametitle{Frequentist View}
-		\begin{itemize}
-			\item<2-> \itshape{With Prior Knowledge:} out of all $n$ different but equally likely possible outcomes of an event,
-													  there are $k$ that have a property $A$ which is therefore measured with probability
-													  $$P(A) = \frac{k}{n}$$
-			\item<3-> \itshape{Without Prior Knowledge:} out of $n$ independent measurements the outcome $A$ occurs $k$ times, defining
-														 $$P(A) = \underset{n \to \infty}{\symup{lim}} \frac{k}{n}$$
-		\end{itemize}
-	\end{frame}
-
-	\begin{frame}
-		\frametitle{Bayesian View}
-		\begin{itemize}
-			\item<2-> $P(A|B)$ quantifies the plausibility of an assumption $A$ under known information given by $B$
-			\item<3-> \itshape{Kolmogorov Axioms} underpin the rules for calculating with probabilities
-			\item<4-> $P(A,B) = P(A)\,P(B|A)$ quantifies the probability of measuring $A$ and $B$ simultaneously, and from assuming
-					  $P(A,B) = P(B,A)$ we find
-					  \visible<5->{\begin{center}\begin{minipage}{0.3\textwidth}\begin{block}{\centering Bayes' Theorem}
-						  \vspace{-1ex}$$P(A|B) = \frac{P(B|A)\,P(A)}{P(B)}$$\vspace{-1.5ex}
-					  \end{block}\end{minipage}\end{center}}
-		\end{itemize}
-	\end{frame}
-
-	\begin{frame}
-		\frametitle{Continuous Distributions}
-		\begin{itemize}
-			\item<2-> \itshape{Cumulative Distribution Function:} $\qquad F(x) = P(X \leq x)$
-			\item<3-> \itshape{Probability Density Function:} $\qquad f(x) = \dfrac{d}{dx} F(x)$
-					  \visible<4->{$$P(a \leq X \leq b) = \!\!\int_a^b f(x) \, dx = F(b) - F(a)$$}
-			\item<5-> \itshape{Normalization:} \visible<6->{$\qquad\displaystyle{1 = \!\!\int_{-\infty}^{+\infty} f(x)\,dx}$}
-											   \visible<7->{$\qquad\displaystyle{\underset{x \to -\infty}{\symup{lim}} F(x) = 0}$}
-											   \visible<7->{$\qquad\displaystyle{\underset{x \to +\infty}{\symup{lim}} F(x) = 1}$}
-		\end{itemize}
-	\end{frame}
-
-	\begin{frame}
-		\frametitle{Expectation Values}
-			\visible<2->{$$E[h(x)] = \!\!\int_{-\infty}^{+\infty} h(x) \,f(x) \,dx$$\vspace{4ex}}
-		\begin{itemize}
-			\item<3-> \itshape{Mean} or first raw moment: $\displaystyle{\mu = E[X] = \!\!\int_{-\infty}^{+\infty} xf(x) \,dx}$
-			\item<4-> \itshape{Variance} or second raw moment: $\displaystyle{\sigma^2 = E\bigl[(X - E[X])^2\bigr] =
-															   \!\!\int_{-\infty}^{+\infty} \bigl(x - E[x]\bigr)^2 f(x) \,dx}$
-		\end{itemize}
-	\end{frame}
-
-	\section{Probability}
+	\section{Numerical Approaches}
 
 	\begin{frame}
 		\frametitle{Overview}
-		\bfseries{Probability Refresher}\\[1.5pt]
 		\transparent{0.25}
-		\hspace*{3ex}\mdseries{Definitions \& Notation}\\
+		\bfseries{Physical Background}\\[1.5pt]
+		\hspace*{3ex}\mdseries{Fundamental Definitions}\\
+		\hspace*{3ex}\mdseries{Basic Equations}\\
+		\hspace*{3ex}\mdseries{Examples}\\[3.0pt]
 		\transparent{1}
-		\hspace*{3ex}\mdseries{Random Numbers}\\[3.0pt]
+		\bfseries{Numerical Approaches}\\[1.5pt]
 		\transparent{0.25}
-		\bfseries{Optimisation}\\[1.5pt]
-		\hspace*{3ex}\mdseries{Common Methods}\\
-		\hspace*{3ex}\mdseries{Problems}\\[3.0pt]
-		\bfseries{Markov Chain Monte Carlo}\\[1.5pt]
-		\hspace*{3ex}\mdseries{Popular Algorithms}\\
-		\hspace*{3ex}\mdseries{Tuning \& Diagnosing}\\
-		\hspace*{3ex}\mdseries{Alternatives}\\[3.0pt]
+		\hspace*{3ex}\mdseries{Finite Difference Method}\\
+		\transparent{1}
+		\hspace*{3ex}\mdseries{Finite Volume Method}\\
+		\transparent{0.25}
+		\hspace*{3ex}\mdseries{Finite Element Method}\\[3.0pt]
+		\bfseries{Practical Implementation}\\[1.5pt]
+		\hspace*{3ex}\mdseries{Kelvin-Helmholtz Instability}\\
+		\hspace*{3ex}\mdseries{Rayleigh–Taylor Instability}\\
+		\hspace*{3ex}\mdseries{Outlook}\\[3.0pt]
 	\end{frame}
 
+	\subsection{Finite Volume Method}
+
+	\section{Numerical Approaches}
+
+	\begin{frame}
+		\frametitle{Overview}
+		\transparent{0.25}
+		\bfseries{Physical Background}\\[1.5pt]
+		\hspace*{3ex}\mdseries{Fundamental Definitions}\\
+		\hspace*{3ex}\mdseries{Basic Equations}\\
+		\hspace*{3ex}\mdseries{Examples}\\[3.0pt]
+		\transparent{1}
+		\bfseries{Numerical Approaches}\\[1.5pt]
+		\transparent{0.25}
+		\hspace*{3ex}\mdseries{Finite Difference Method}\\
+		\hspace*{3ex}\mdseries{Finite Volume Method}\\
+		\transparent{1}
+		\hspace*{3ex}\mdseries{Finite Element Method}\\[3.0pt]
+		\transparent{0.25}
+		\bfseries{Practical Implementation}\\[1.5pt]
+		\hspace*{3ex}\mdseries{Kelvin-Helmholtz Instability}\\
+		\hspace*{3ex}\mdseries{Rayleigh–Taylor Instability}\\
+		\hspace*{3ex}\mdseries{Outlook}\\[3.0pt]
+	\end{frame}
+
+	\subsection{Finite Element Method}
+
+	\section{Practical Implementation}
+
+	\begin{frame}
+		\frametitle{Overview}
+		\transparent{0.25}
+		\bfseries{Physical Background}\\[1.5pt]
+		\hspace*{3ex}\mdseries{Fundamental Definitions}\\
+		\hspace*{3ex}\mdseries{Basic Equations}\\
+		\hspace*{3ex}\mdseries{Examples}\\[3.0pt]
+		\bfseries{Numerical Approaches}\\[1.5pt]
+		\hspace*{3ex}\mdseries{Finite Difference Method}\\
+		\hspace*{3ex}\mdseries{Finite Volume Method}\\
+		\hspace*{3ex}\mdseries{Finite Element Method}\\[3.0pt]
+		\transparent{1}
+		\bfseries{Practical Implementation}\\[1.5pt]
+		\hspace*{3ex}\mdseries{Kelvin-Helmholtz Instability}\\
+		\only<1|handout:0>{
+		\hspace*{3ex}\mdseries{Rayleigh–Taylor Instability}\\
+		\hspace*{3ex}\mdseries{Outlook}\\[3.0pt]
+		}
+		\only<2-|handout:1>{
+		\transparent{0.25}
+		\hspace*{3ex}\mdseries{Rayleigh–Taylor Instability}\\
+		\hspace*{3ex}\mdseries{Outlook}\\[3.0pt]
+		}
+	\end{frame}
+
+	\subsection{Kelvin-Helmholtz Instability}
+
+%	\section{Probability}
+%
+%	\begin{frame}
+%		\frametitle{Overview}
+%		\bfseries{Probability Refresher}\\[1.5pt]
+%		\hspace*{3ex}\mdseries{Definitions \& Notation}\\
+%		\only<1|handout:0>{
+%		\hspace*{3ex}\mdseries{Random Numbers}\\[3.0pt]
+%		}
+%		\only<2-|handout:1>{
+%		\transparent{0.25}
+%		\hspace*{3ex}\mdseries{Random Numbers}\\[3.0pt]
+%		}
+%		\transparent{0.25}
+%		\bfseries{Optimisation}\\[1.5pt]
+%		\hspace*{3ex}\mdseries{Common Methods}\\
+%		\hspace*{3ex}\mdseries{Problems}\\[3.0pt]
+%		\bfseries{Markov Chain Monte Carlo}\\[1.5pt]
+%		\hspace*{3ex}\mdseries{Popular Algorithms}\\
+%		\hspace*{3ex}\mdseries{Tuning \& Diagnosing}\\
+%		\hspace*{3ex}\mdseries{Alternatives}\\[3.0pt]
+%	\end{frame}
+%
+%	\subsection{Definitions}
+%
+%	\begin{frame}
+%		\frametitle{Frequentist View}
+%		\begin{itemize}
+%			\item<2-> \itshape{With Prior Knowledge:} out of all $n$ different but equally likely possible outcomes of an event,
+%													  there are $k$ that have a property $A$ which is therefore measured with probability
+%													  $$P(A) = \frac{k}{n}$$
+%			\item<3-> \itshape{Without Prior Knowledge:} out of $n$ independent measurements the outcome $A$ occurs $k$ times, defining
+%														 $$P(A) = \underset{n \to \infty}{\symup{lim}} \frac{k}{n}$$
+%		\end{itemize}
+%	\end{frame}
+%
+%	\begin{frame}
+%		\frametitle{Bayesian View}
+%		\begin{itemize}
+%			\item<2-> $P(A|B)$ quantifies the plausibility of an assumption $A$ under known information given by $B$
+%			\item<3-> \itshape{Kolmogorov Axioms} underpin the rules for calculating with probabilities
+%			\item<4-> $P(A,B) = P(A)\,P(B|A)$ quantifies the probability of measuring $A$ and $B$ simultaneously, and from assuming
+%					  $P(A,B) = P(B,A)$ we find
+%					  \visible<5->{\begin{center}\begin{minipage}{0.3\textwidth}\begin{block}{\centering Bayes' Theorem}
+%						  \vspace{-1ex}$$P(A|B) = \frac{P(B|A)\,P(A)}{P(B)}$$\vspace{-1.5ex}
+%					  \end{block}\end{minipage}\end{center}}
+%		\end{itemize}
+%	\end{frame}
+%
+%	\begin{frame}
+%		\frametitle{Continuous Distributions}
+%		\begin{itemize}
+%			\item<2-> \itshape{Cumulative Distribution Function:} $\qquad F(x) = P(X \leq x)$
+%			\item<3-> \itshape{Probability Density Function:} $\qquad f(x) = \dfrac{d}{dx} F(x)$
+%					  \visible<4->{$$P(a \leq X \leq b) = \!\!\int_a^b f(x) \, dx = F(b) - F(a)$$}
+%			\item<5-> \itshape{Normalization:} \visible<6->{$\qquad\displaystyle{1 = \!\!\int_{-\infty}^{+\infty} f(x)\,dx}$}
+%											   \visible<7->{$\qquad\displaystyle{\underset{x \to -\infty}{\symup{lim}} F(x) = 0}$}
+%											   \visible<7->{$\qquad\displaystyle{\underset{x \to +\infty}{\symup{lim}} F(x) = 1}$}
+%		\end{itemize}
+%	\end{frame}
+%
+%	\begin{frame}
+%		\frametitle{Expectation Values}
+%			\visible<2->{$$E[h(x)] = \!\!\int_{-\infty}^{+\infty} h(x) \,f(x) \,dx$$\vspace{4ex}}
+%		\begin{itemize}
+%			\item<3-> \itshape{Mean} or first raw moment: $\displaystyle{\mu = E[X] = \!\!\int_{-\infty}^{+\infty} xf(x) \,dx}$
+%			\item<4-> \itshape{Variance} or second raw moment: $\displaystyle{\sigma^2 = E\bigl[(X - E[X])^2\bigr] =
+%															   \!\!\int_{-\infty}^{+\infty} \bigl(x - E[x]\bigr)^2 f(x) \,dx}$
+%		\end{itemize}
+%	\end{frame}
+%
+%	\section{Probability}
+%
+%	\begin{frame}
+%		\frametitle{Overview}
+%		\bfseries{Probability Refresher}\\[1.5pt]
+%		\transparent{0.25}
+%		\hspace*{3ex}\mdseries{Definitions \& Notation}\\
+%		\transparent{1}
+%		\hspace*{3ex}\mdseries{Random Numbers}\\[3.0pt]
+%		\transparent{0.25}
+%		\bfseries{Optimisation}\\[1.5pt]
+%		\hspace*{3ex}\mdseries{Common Methods}\\
+%		\hspace*{3ex}\mdseries{Problems}\\[3.0pt]
+%		\bfseries{Markov Chain Monte Carlo}\\[1.5pt]
+%		\hspace*{3ex}\mdseries{Popular Algorithms}\\
+%		\hspace*{3ex}\mdseries{Tuning \& Diagnosing}\\
+%		\hspace*{3ex}\mdseries{Alternatives}\\[3.0pt]
+%	\end{frame}
+%
 %	\subsection{Notation}
 %
 %	\begin{frame}
@@ -1267,26 +1470,51 @@
 %			\end{column}
 %		\end{columns}
 %	\end{frame}
+% 
+% 	\section{Monte Carlo}
+% 
+% 	\begin{frame}
+% 		\transparent{0.25}
+% 		\frametitle{Overview}
+% 		\bfseries{Probability Refresher}\\[1.5pt]
+% 		\hspace*{3ex}\mdseries{Definitions \& Notation}\\
+% 		\hspace*{3ex}\mdseries{Random Numbers}\\[3.0pt]
+% 		\bfseries{Optimisation}\\[1.5pt]
+% 		\hspace*{3ex}\mdseries{Common Methods}\\
+% 		\hspace*{3ex}\mdseries{Problems}\\[3.0pt]
+% 		\transparent{1}
+% 		\bfseries{Markov Chain Monte Carlo}\\[1.5pt]
+% 		\transparent{0.25}
+% 		\hspace*{3ex}\mdseries{Popular Algorithms}\\
+% 		\hspace*{3ex}\mdseries{Tuning \& Diagnosing}\\
+% 		\transparent{1}
+% 		\hspace*{3ex}\mdseries{Alternatives}\\[3.0pt]
+% 	\end{frame}
 
-	\section{Monte Carlo}
+	\section{Practical Implementation}
 
 	\begin{frame}
-		\transparent{0.25}
 		\frametitle{Overview}
-		\bfseries{Probability Refresher}\\[1.5pt]
-		\hspace*{3ex}\mdseries{Definitions \& Notation}\\
-		\hspace*{3ex}\mdseries{Random Numbers}\\[3.0pt]
-		\bfseries{Optimisation}\\[1.5pt]
-		\hspace*{3ex}\mdseries{Common Methods}\\
-		\hspace*{3ex}\mdseries{Problems}\\[3.0pt]
-		\transparent{1}
-		\bfseries{Markov Chain Monte Carlo}\\[1.5pt]
 		\transparent{0.25}
-		\hspace*{3ex}\mdseries{Popular Algorithms}\\
-		\hspace*{3ex}\mdseries{Tuning \& Diagnosing}\\
+		\bfseries{Physical Background}\\[1.5pt]
+		\hspace*{3ex}\mdseries{Fundamental Definitions}\\
+		\hspace*{3ex}\mdseries{Basic Equations}\\
+		\hspace*{3ex}\mdseries{Examples}\\[3.0pt]
+		\bfseries{Numerical Approaches}\\[1.5pt]
+		\hspace*{3ex}\mdseries{Finite Difference Method}\\
+		\hspace*{3ex}\mdseries{Finite Volume Method}\\
+		\hspace*{3ex}\mdseries{Finite Element Method}\\[3.0pt]
 		\transparent{1}
-		\hspace*{3ex}\mdseries{Alternatives}\\[3.0pt]
+		\bfseries{Practical Implementation}\\[1.5pt]
+		\transparent{0.25}
+		\hspace*{3ex}\mdseries{Kelvin-Helmholtz Instability}\\
+		\transparent{1}
+		\hspace*{3ex}\mdseries{Rayleigh–Taylor Instability}\\
+		\transparent{0.25}
+		\hspace*{3ex}\mdseries{Outlook}\\[3.0pt]
 	\end{frame}
+
+	\subsection{Rayleigh-Taylor Instability}
 
 	\section{Practical Implementation}
 
@@ -1333,11 +1561,15 @@
 				\end{itemize}
 			\end{multicols}
 			\item<11-> \itshape{Applications:}
-			\begin{itemize}
-				\item<12-> Stellar Evolution
-				\item<13-> Accretion Disks
-				\item<14-> Cosmic Filaments
-			\end{itemize}
+			\setlength{\multicolsep}{1pt}
+			\setlength{\columnsep}{-20ex}
+			\begin{multicols}{3}
+				\begin{itemize}
+					\item<12-> Stellar Evolution
+					\item<13-> Accretion Disks
+					\item<14-> Cosmic Filaments
+				\end{itemize}
+			\end{multicols}
 		\end{itemize}
 	\end{frame}
 
