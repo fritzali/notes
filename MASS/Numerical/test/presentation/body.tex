@@ -307,6 +307,40 @@
 
 	\subsection{Finite Difference Method}
 
+	\begin{frame}
+		\frametitle{Conceptual Overview}
+		\begin{itemize}
+			\item<2-> \mdseries{Idea:} pointwise derivative estimation with series expansion via differences between adjacent nodes
+			\item<3-> \mdseries{Advantages:}
+				\begin{itemize}
+					\item<4-> easy implementation
+					\item<5-> computationally efficient
+					\item<6-> highly accurate for simple problems
+				\end{itemize}
+			\item<7-> \mdseries{Drawbacks:} 
+				\begin{itemize}
+					\item<8-> struggles with complex geometries
+					\item<9-> strong numerical diffusion at low orders
+					\item<10-> inflexible rectilinear grid with fixed resolution
+					\item<11-> mass and energy can leak due to numerical errors
+				\end{itemize}
+		\end{itemize}
+	\end{frame}
+
+	\begin{frame}
+		\frametitle{Integration Schemes}
+		\begin{itemize}
+			\item<2-> a
+		\end{itemize}
+	\end{frame}
+
+	\begin{frame}
+		\frametitle{Discretization}
+		\begin{itemize}
+			\item<2-> a
+		\end{itemize}
+	\end{frame}
+
 	\section{Numerical Approaches}
 
 	\begin{frame}
@@ -332,6 +366,23 @@
 
 	\subsection{Finite Volume Method}
 
+	\begin{frame}
+		\frametitle{Conceptual Overview}
+		\begin{itemize}
+			\item<2-> \mdseries{Idea:} calculate flux through faces of control volumes that divide the domain in integral form
+					  \visible<3->{$$\frac{\partial}{\partial t} \int_V Q \: dV + \oint_S (F \cdot n) \: dS = \int_V \Sigma \: dV$$\\[-1ex]}
+			\item<4-> \mdseries{Advantages:}
+				\begin{itemize}
+					\item<5-> inherently strictly conservative for total mass and energy
+					\item<6-> unstructured grid handles complex geometries well
+				\end{itemize}
+			\item<7-> \mdseries{Drawbacks:} 
+				\begin{itemize}
+					\item<8-> mathematically complex at higher order accuracy
+				\end{itemize}
+		\end{itemize}
+	\end{frame}
+
 	\section{Numerical Approaches}
 
 	\begin{frame}
@@ -356,6 +407,15 @@
 	\end{frame}
 
 	\subsection{Finite Element Method}
+
+	\begin{frame}
+		\frametitle{Conceptual Overview}
+		\begin{itemize}
+			\item<2-> \mdseries{Idea:} 
+			\item<3-> \mdseries{Advantages:} 
+			\item<4-> \mdseries{Drawbacks:} 
+		\end{itemize}
+	\end{frame}
 
 	\section{Practical Implementation}
 
