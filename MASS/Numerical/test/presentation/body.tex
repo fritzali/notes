@@ -90,23 +90,37 @@
 		\frametitle{Continuous Variables}
 		\begin{itemize}
 			\item<2-> \itshape{Primitive Fields:}
-			\begin{itemize}
-				\item<3-> velocity $u$ \itshape{(vector)}
-				\item<4-> pressure $p$ \itshape{(scalar)}
-				\item<5-> density $\rho$ \itshape{(scalar)}
-				\item<6-> temperature $T$ \itshape{(scalar)}
-			\end{itemize}
+			\setlength{\multicolsep}{1pt}
+			\setlength{\columnsep}{-25ex}
+			\begin{multicols}{2}
+				\begin{itemize}
+					\item<3-> velocity $u$ \itshape{(vector)}
+					\item<5-> density $\rho$ \itshape{(scalar)}
+					\item<4-> pressure $p$ \itshape{(scalar)}
+					\item<6-> temperature $T$ \itshape{(scalar)}
+				\end{itemize}
+			\end{multicols}
+			\vspace{1ex}
 			\item<7-> \itshape{Conserved Quantities:}
-			\begin{itemize}
-				\item<8-> mass $M$ \itshape{(scalar)}
-				\item<9-> momentum $P$ \itshape{(vector)}
-				\item<10-> energy $E$ \itshape{(scalar)}
-			\end{itemize}
+			\setlength{\multicolsep}{1pt}
+			\setlength{\columnsep}{-25ex}
+			\begin{multicols}{2}
+				\begin{itemize}
+					\item<8-> mass $M$ \itshape{(scalar)}
+					\item<10-> energy $E$ \itshape{(scalar)}
+					\item<9-> momentum $P$ \itshape{(vector)}
+				\end{itemize}
+			\end{multicols}
+			\vspace{1ex}
 			\item<11-> \itshape{Derived Values:}
-			\begin{itemize}
-				\item<12-> viscosity $\nu$ \itshape{(scalar)}
-				\item<13-> vorticity $\omega$ \itshape{(vector)}
-			\end{itemize}
+			\setlength{\multicolsep}{1pt}
+			\setlength{\columnsep}{-25ex}
+			\begin{multicols}{2}
+				\begin{itemize}
+					\item<12-> viscosity $\nu$ \itshape{(scalar)}
+					\item<13-> vorticity $\omega$ \itshape{(vector)}
+				\end{itemize}
+			\end{multicols}
 		\end{itemize}
 	\end{frame}
 
@@ -1276,7 +1290,27 @@
 
 	\section{Practical Implementation}
 
-	\subsection{}
+	\begin{frame}
+		\frametitle{Overview}
+		\transparent{0.25}
+		\bfseries{Physical Background}\\[1.5pt]
+		\hspace*{3ex}\mdseries{Fundamental Definitions}\\
+		\hspace*{3ex}\mdseries{Basic Equations}\\
+		\hspace*{3ex}\mdseries{Examples}\\[3.0pt]
+		\bfseries{Numerical Approaches}\\[1.5pt]
+		\hspace*{3ex}\mdseries{Finite Difference Method}\\
+		\hspace*{3ex}\mdseries{Finite Volume Method}\\
+		\hspace*{3ex}\mdseries{Finite Element Method}\\[3.0pt]
+		\transparent{1}
+		\bfseries{Practical Implementation}\\[1.5pt]
+		\transparent{0.25}
+		\hspace*{3ex}\mdseries{Kelvin-Helmholtz Instability}\\
+		\hspace*{3ex}\mdseries{Rayleigh–Taylor Instability}\\
+		\transparent{1}
+		\hspace*{3ex}\mdseries{Outlook}\\[3.0pt]
+	\end{frame}
+
+	\subsection{Outlook}
 
 	\begin{frame}
 		\frametitle{Outlook}
@@ -1288,16 +1322,21 @@
 				\item<5-> Adaptive Mesh Refinement (AMR)
 			\end{itemize}
 			\item<6-> \itshape{Regimes:}
+			\setlength{\multicolsep}{1pt}
+			\setlength{\columnsep}{1ex}
+			\begin{multicols}{2}
+				\begin{itemize}
+					\item<7-> \itshape{Plasma:} Magnetohydrodynamics (MHD)
+					\item<8-> \itshape{Relativity:} Relativistic Hydrodynamics (RHD)
+					\item<9-> \itshape{Degeneracy:} Quantum Effects
+					\item<10-> \itshape{Collisionless:} Initial Distributions
+				\end{itemize}
+			\end{multicols}
+			\item<11-> \itshape{Applications:}
 			\begin{itemize}
-				\item<7-> \itshape{Plasma:} Magnetohydrodynamics (MHD)
-				\item<8-> \itshape{Degeneracy:} Quantum Effects
-				\item<9-> \itshape{Collisionless:} Initial Distributions
-			\end{itemize}
-			\item<10-> \itshape{Applications:}
-			\begin{itemize}
-				\item<11-> Stellar Evolution
-				\item<12-> Accretion Disks
-				\item<13-> Cosmic Filaments
+				\item<12-> Stellar Evolution
+				\item<13-> Accretion Disks
+				\item<14-> Cosmic Filaments
 			\end{itemize}
 		\end{itemize}
 	\end{frame}
