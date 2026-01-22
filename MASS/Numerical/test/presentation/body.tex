@@ -194,6 +194,14 @@
 	\end{frame}
 
 	\begin{frame}
+		\frametitle{Linear Advection}
+	\end{frame}
+
+	\begin{frame}
+		\frametitle{Nonlinear Advection}
+	\end{frame}
+
+	\begin{frame}
 		\frametitle{Stochastic Transport}
 		\begin{itemize}
 			\item<2-> \itshape{Diffusion:} kinematic viscosity $\nu$ describes spread due to random motion
@@ -201,6 +209,14 @@
 			\item<4-> \itshape{Bateman-Burgers Equation:} combines shock generation with counteracting diffusive term
 					  \visible<5->{$$\frac{\partial u}{\partial t} + (u \cdot \nabla) u = \nu \nabla^2 u$$\\[-1ex]}
 		\end{itemize}
+	\end{frame}
+
+	\begin{frame}
+		\frametitle{Diffusion}
+	\end{frame}
+
+	\begin{frame}
+		\frametitle{Bateman-Burgers Equation}
 	\end{frame}
 
 	\begin{frame}
@@ -216,6 +232,14 @@
 				\item<8-> \itshape{Pressure:} $\nabla^2 p = \rho\nabla\cdot\bigl((u\cdot\nabla) u\bigr)$
 			\end{itemize}
 		\end{itemize}
+	\end{frame}
+
+	\begin{frame}
+		\frametitle{Laplace Equation}
+	\end{frame}
+
+	\begin{frame}
+		\frametitle{Poisson Equation}
 	\end{frame}
 
 	\section{Physical Background}
@@ -240,6 +264,18 @@
 	\end{frame}
 
 	\subsection{Examples}
+
+	\begin{frame}
+		\frametitle{Lid Driven Cavity Flow}
+	\end{frame}
+
+	\begin{frame}
+		\frametitle{Pressure Driven Channel Flow}
+	\end{frame}
+
+	\begin{frame}
+		\frametitle{Nonuniform Periodic Flow}
+	\end{frame}
 
 	\section{Numerical Approaches}
 
@@ -349,6 +385,111 @@
 	\end{frame}
 
 	\subsection{Kelvin-Helmholtz Instability}
+
+	\begin{frame}
+		\frametitle{Setup}
+	\end{frame}
+
+	\section{Practical Implementation}
+
+	\begin{frame}
+		\frametitle{Overview}
+		\transparent{0.25}
+		\bfseries{Physical Background}\\[1.5pt]
+		\hspace*{3ex}\mdseries{Fundamental Definitions}\\
+		\hspace*{3ex}\mdseries{Basic Equations}\\
+		\hspace*{3ex}\mdseries{Examples}\\[3.0pt]
+		\bfseries{Numerical Approaches}\\[1.5pt]
+		\hspace*{3ex}\mdseries{Finite Difference Method}\\
+		\hspace*{3ex}\mdseries{Finite Volume Method}\\
+		\hspace*{3ex}\mdseries{Finite Element Method}\\[3.0pt]
+		\transparent{1}
+		\bfseries{Practical Implementation}\\[1.5pt]
+		\transparent{0.25}
+		\hspace*{3ex}\mdseries{Kelvin-Helmholtz Instability}\\
+		\transparent{1}
+		\hspace*{3ex}\mdseries{Rayleigh–Taylor Instability}\\
+		\transparent{0.25}
+		\hspace*{3ex}\mdseries{Outlook}\\[3.0pt]
+	\end{frame}
+
+	\subsection{Rayleigh-Taylor Instability}
+
+	\begin{frame}
+		\frametitle{Setup}
+	\end{frame}
+
+	\section{Practical Implementation}
+
+	\begin{frame}
+		\frametitle{Overview}
+		\transparent{0.25}
+		\bfseries{Physical Background}\\[1.5pt]
+		\hspace*{3ex}\mdseries{Fundamental Definitions}\\
+		\hspace*{3ex}\mdseries{Basic Equations}\\
+		\hspace*{3ex}\mdseries{Examples}\\[3.0pt]
+		\bfseries{Numerical Approaches}\\[1.5pt]
+		\hspace*{3ex}\mdseries{Finite Difference Method}\\
+		\hspace*{3ex}\mdseries{Finite Volume Method}\\
+		\hspace*{3ex}\mdseries{Finite Element Method}\\[3.0pt]
+		\transparent{1}
+		\bfseries{Practical Implementation}\\[1.5pt]
+		\transparent{0.25}
+		\hspace*{3ex}\mdseries{Kelvin-Helmholtz Instability}\\
+		\hspace*{3ex}\mdseries{Rayleigh–Taylor Instability}\\
+		\transparent{1}
+		\hspace*{3ex}\mdseries{Outlook}\\[3.0pt]
+	\end{frame}
+
+	\subsection{Outlook}
+
+	\begin{frame}
+		\frametitle{Outlook}
+		\begin{itemize}
+			\item<2-> \itshape{Frameworks:}
+			\begin{itemize}
+				\item<3-> Smoothed Particle Hydrodynamics (SPH)
+				\item<4-> Lattice Boltzmann Method (LBM)
+				\item<5-> Adaptive Mesh Refinement (AMR)
+			\end{itemize}
+			\item<6-> \itshape{Regimes:}
+			\setlength{\multicolsep}{1pt}
+			\setlength{\columnsep}{1ex}
+			\begin{multicols}{2}
+				\begin{itemize}
+					\item<7-> \itshape{Plasma:} Magnetohydrodynamics (MHD)
+					\item<8-> \itshape{Relativity:} Relativistic Hydrodynamics (RHD)
+					\item<9-> \itshape{Degeneracy:} Quantum Effects
+					\item<10-> \itshape{Collisionless:} Initial Distributions
+				\end{itemize}
+			\end{multicols}
+			\item<11-> \itshape{Applications:}
+			\setlength{\multicolsep}{1pt}
+			\setlength{\columnsep}{-20ex}
+			\begin{multicols}{3}
+				\begin{itemize}
+					\item<12-> Stellar Evolution
+					\item<13-> Accretion Disks
+					\item<14-> Cosmic Filaments
+				\end{itemize}
+			\end{multicols}
+		\end{itemize}
+	\end{frame}
+
+	\section{Bibliography}
+
+	\begin{frame}
+		\begin{center}\usebeamerfont{title}\textcolor{MASS}{\resizebox{0.25\linewidth}{!}{Thank You!}}\end{center}\vspace{2ex}
+		\begin{itemize}
+			\item C. Clarke \& B. Carswell, {\itshape{Principles of Astrophysical Fluid Dynamics}} (Cambridge University Press) 2007
+			\item L. A. Barba, {\itshape{CFD Python: 12 Steps to Navier-Stokes}}$
+				  ^{\href{https://lorenabarba.com/blog/cfd-python-12-steps-to-navier-stokes/}{1}}$ 2022
+			\item P. Mocz, {\itshape{Medium}}$^{\href{https://philip-mocz.medium.com/}{2}}$ 2020-2025
+		\end{itemize}
+		\vspace{2ex}
+		Resources on GitHub: \href{https://github.com/fritzali/notes/tree/main/MASS/Numerical/test}{here}
+	\end{frame}
+\end{document}
 
 %	\section{Probability}
 %
@@ -1490,100 +1631,3 @@
 % 		\transparent{1}
 % 		\hspace*{3ex}\mdseries{Alternatives}\\[3.0pt]
 % 	\end{frame}
-
-	\section{Practical Implementation}
-
-	\begin{frame}
-		\frametitle{Overview}
-		\transparent{0.25}
-		\bfseries{Physical Background}\\[1.5pt]
-		\hspace*{3ex}\mdseries{Fundamental Definitions}\\
-		\hspace*{3ex}\mdseries{Basic Equations}\\
-		\hspace*{3ex}\mdseries{Examples}\\[3.0pt]
-		\bfseries{Numerical Approaches}\\[1.5pt]
-		\hspace*{3ex}\mdseries{Finite Difference Method}\\
-		\hspace*{3ex}\mdseries{Finite Volume Method}\\
-		\hspace*{3ex}\mdseries{Finite Element Method}\\[3.0pt]
-		\transparent{1}
-		\bfseries{Practical Implementation}\\[1.5pt]
-		\transparent{0.25}
-		\hspace*{3ex}\mdseries{Kelvin-Helmholtz Instability}\\
-		\transparent{1}
-		\hspace*{3ex}\mdseries{Rayleigh–Taylor Instability}\\
-		\transparent{0.25}
-		\hspace*{3ex}\mdseries{Outlook}\\[3.0pt]
-	\end{frame}
-
-	\subsection{Rayleigh-Taylor Instability}
-
-	\section{Practical Implementation}
-
-	\begin{frame}
-		\frametitle{Overview}
-		\transparent{0.25}
-		\bfseries{Physical Background}\\[1.5pt]
-		\hspace*{3ex}\mdseries{Fundamental Definitions}\\
-		\hspace*{3ex}\mdseries{Basic Equations}\\
-		\hspace*{3ex}\mdseries{Examples}\\[3.0pt]
-		\bfseries{Numerical Approaches}\\[1.5pt]
-		\hspace*{3ex}\mdseries{Finite Difference Method}\\
-		\hspace*{3ex}\mdseries{Finite Volume Method}\\
-		\hspace*{3ex}\mdseries{Finite Element Method}\\[3.0pt]
-		\transparent{1}
-		\bfseries{Practical Implementation}\\[1.5pt]
-		\transparent{0.25}
-		\hspace*{3ex}\mdseries{Kelvin-Helmholtz Instability}\\
-		\hspace*{3ex}\mdseries{Rayleigh–Taylor Instability}\\
-		\transparent{1}
-		\hspace*{3ex}\mdseries{Outlook}\\[3.0pt]
-	\end{frame}
-
-	\subsection{Outlook}
-
-	\begin{frame}
-		\frametitle{Outlook}
-		\begin{itemize}
-			\item<2-> \itshape{Frameworks:}
-			\begin{itemize}
-				\item<3-> Smoothed Particle Hydrodynamics (SPH)
-				\item<4-> Lattice Boltzmann Method (LBM)
-				\item<5-> Adaptive Mesh Refinement (AMR)
-			\end{itemize}
-			\item<6-> \itshape{Regimes:}
-			\setlength{\multicolsep}{1pt}
-			\setlength{\columnsep}{1ex}
-			\begin{multicols}{2}
-				\begin{itemize}
-					\item<7-> \itshape{Plasma:} Magnetohydrodynamics (MHD)
-					\item<8-> \itshape{Relativity:} Relativistic Hydrodynamics (RHD)
-					\item<9-> \itshape{Degeneracy:} Quantum Effects
-					\item<10-> \itshape{Collisionless:} Initial Distributions
-				\end{itemize}
-			\end{multicols}
-			\item<11-> \itshape{Applications:}
-			\setlength{\multicolsep}{1pt}
-			\setlength{\columnsep}{-20ex}
-			\begin{multicols}{3}
-				\begin{itemize}
-					\item<12-> Stellar Evolution
-					\item<13-> Accretion Disks
-					\item<14-> Cosmic Filaments
-				\end{itemize}
-			\end{multicols}
-		\end{itemize}
-	\end{frame}
-
-	\section{Bibliography}
-
-	\begin{frame}
-		\begin{center}\usebeamerfont{title}\textcolor{MASS}{\resizebox{0.25\linewidth}{!}{Thank You!}}\end{center}\vspace{2ex}
-		\begin{itemize}
-			\item C. Clarke \& B. Carswell, {\itshape{Principles of Astrophysical Fluid Dynamics}} (Cambridge University Press) 2007
-			\item L. A. Barba, {\itshape{CFD Python: 12 Steps to Navier-Stokes}}$
-				  ^{\href{https://lorenabarba.com/blog/cfd-python-12-steps-to-navier-stokes/}{1}}$ 2022
-			\item P. Mocz, {\itshape{Medium}}$^{\href{https://philip-mocz.medium.com/}{2}}$ 2020-2025
-		\end{itemize}
-		\vspace{2ex}
-		Resources on GitHub: \href{https://github.com/fritzali/notes/tree/main/MASS/Numerical/test}{here}
-	\end{frame}
-\end{document}
