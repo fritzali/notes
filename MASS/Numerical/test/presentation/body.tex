@@ -195,10 +195,66 @@
 
 	\begin{frame}
 		\frametitle{Linear Advection}
+		\begin{columns}[c]
+			\begin{column}{0.35\textwidth}
+				\begin{itemize}
+					\item<2-> \itshape{Initialization:}
+					\begin{itemize}
+						\item<3-> square wave
+					\end{itemize}
+					\item<4-> \itshape{Boundaries:}
+					\begin{itemize}
+						\item<5-> \itshape{Lower:} constant value
+						\item<6-> \itshape{Upper:} unconstrained
+					\end{itemize}
+					\item<7-> \itshape{Observation:}
+					\begin{itemize}
+						\item<8-> fixed profile
+						\item<9-> linear translation
+					\end{itemize}
+				\end{itemize}
+			\end{column}
+			\begin{column}{0.65\textwidth}
+				\begin{overprint}
+					\onslide<2-6|handout:0>\centering\includegraphics[height=0.8\textheight]{../source/plots/1d_lin_conv_adv_start.jpg}
+					\onslide<7-9|handout:0>\centering\includegraphics[height=0.8\textheight]{../source/plots/1d_lin_conv_adv_stop.jpg}
+					\onslide<10|handout:0>\centering\includegraphics[height=0.8\textheight]{../source/plots/2d_lin_conv_adv_start.jpg}
+					\onslide<11>\centering\includegraphics[height=0.8\textheight]{../source/plots/2d_lin_conv_adv_stop.jpg}
+    			\end{overprint}
+			\end{column}
+		\end{columns}
 	\end{frame}
 
 	\begin{frame}
 		\frametitle{Nonlinear Advection}
+		\begin{columns}[c]
+			\begin{column}{0.35\textwidth}
+				\begin{itemize}
+					\item<2-> \itshape{Initialization:}
+					\begin{itemize}
+						\item<3-> square wave
+					\end{itemize}
+					\item<4-> \itshape{Boundaries:}
+					\begin{itemize}
+						\item<5-> \itshape{Lower:} constant value
+						\item<6-> \itshape{Upper:} unconstrained
+					\end{itemize}
+					\item<7-> \itshape{Observation:}
+					\begin{itemize}
+						\item<8-> shock formation
+						\item<9-> rarefaction tail
+					\end{itemize}
+				\end{itemize}
+			\end{column}
+			\begin{column}{0.65\textwidth}
+				\begin{overprint}
+					\onslide<2-6|handout:0>\centering\includegraphics[height=0.8\textheight]{../source/plots/1d_nonlin_conv_adv_start.jpg}
+					\onslide<7-9|handout:0>\centering\includegraphics[height=0.8\textheight]{../source/plots/1d_nonlin_conv_adv_stop.jpg}
+					\onslide<10|handout:0>\centering\includegraphics[height=0.8\textheight]{../source/plots/2d_nonlin_conv_adv_start.jpg}
+					\onslide<11>\centering\includegraphics[height=0.8\textheight]{../source/plots/2d_nonlin_conv_adv_stop.jpg}
+    			\end{overprint}
+			\end{column}
+		\end{columns}
 	\end{frame}
 
 	\begin{frame}
@@ -213,10 +269,66 @@
 
 	\begin{frame}
 		\frametitle{Diffusion}
+		\begin{columns}[c]
+			\begin{column}{0.35\textwidth}
+				\begin{itemize}
+					\item<2-> \itshape{Initialization:}
+					\begin{itemize}
+						\item<3-> square wave
+					\end{itemize}
+					\item<4-> \itshape{Boundaries:}
+					\begin{itemize}
+						\item<5-> \itshape{Both:} constant value
+					\end{itemize}
+					\item<6-> \itshape{Observation:}
+					\begin{itemize}
+						\item<7-> stationary decay
+						\item<8-> edge smoothing
+						\item<9-> spreading out
+					\end{itemize}
+				\end{itemize}
+			\end{column}
+			\begin{column}{0.65\textwidth}
+				\begin{overprint}
+					\onslide<2-5|handout:0>\centering\includegraphics[height=0.8\textheight]{../source/plots/1d_diffus_start.jpg}
+					\onslide<6-9|handout:0>\centering\includegraphics[height=0.8\textheight]{../source/plots/1d_diffus_stop.jpg}
+					\onslide<10|handout:0>\centering\includegraphics[height=0.8\textheight]{../source/plots/2d_diffus_start.jpg}
+					\onslide<11>\centering\includegraphics[height=0.8\textheight]{../source/plots/2d_diffus_stop.jpg}
+    			\end{overprint}
+			\end{column}
+		\end{columns}
 	\end{frame}
 
 	\begin{frame}
 		\frametitle{Bateman-Burgers Equation}
+		\begin{columns}[c]
+			\begin{column}{0.35\textwidth}
+				\begin{itemize}
+					\item<2-> \itshape{Initialization:}
+					\begin{itemize}
+						\item<3-> \alt<3-9>{sawtooth wave}{square wave}
+					\end{itemize}
+					\item<4-> \itshape{Boundaries:}
+					\begin{itemize}
+						\item<5-> \itshape{Both:} \alt<5-9>{periodic}{constant value}
+					\end{itemize}
+					\item<6-> \itshape{Observation:}
+					\begin{itemize}
+						\item<7-> nonlinear steepening
+						\item<8-> viscous smoothing
+						\item<9-> dissipating translation
+					\end{itemize}
+				\end{itemize}
+			\end{column}
+			\begin{column}{0.65\textwidth}
+				\begin{overprint}
+					\onslide<2-5|handout:0>\centering\includegraphics[height=0.8\textheight]{../source/plots/1d_bate_burg_eq_start.jpg}
+					\onslide<6-9|handout:0>\centering\includegraphics[height=0.8\textheight]{../source/plots/1d_bate_burg_eq_stop.jpg}
+					\onslide<10|handout:0>\centering\includegraphics[height=0.8\textheight]{../source/plots/2d_bate_burg_eq_start.jpg}
+					\onslide<11>\centering\includegraphics[height=0.8\textheight]{../source/plots/2d_bate_burg_eq_stop.jpg}
+    			\end{overprint}
+			\end{column}
+		\end{columns}
 	\end{frame}
 
 	\begin{frame}
@@ -244,6 +356,13 @@
 
 	\begin{frame}
 		\frametitle{Navier-Stokes Equations}
+		\begin{itemize}
+			\item<2-> \itshape{Momentum Equation:} ensure $\nabla \cdot u = 0$ by including $\nabla p$ to instantaneously cancel out any divergence
+					  \visible<3->{$$\frac{\partial u}{\partial t} + (u \cdot \nabla) u = -\frac{1}{\rho} \nabla p + \nu \nabla^2 u$$\\[-1ex]}
+			\item<4-> \itshape{Pressure Poisson:} require $p$ to have relaxed to its equilibrium for all $t$ before projecting
+					  \visible<5->{$$\nabla^2 p = \rho\nabla\cdot\bigl((u\cdot\nabla) u\bigr)$$\\[-0.5ex]}
+			\item<6-> fulfill at each step to accurately evolve initial configuration under given boundary conditions
+		\end{itemize}
 	\end{frame}
 
 	\section{Physical Background}
@@ -359,7 +478,7 @@
 	\begin{frame}[noframenumbering]
 		\frametitle{Integration Techniques}
 		\begin{itemize}
-			\item<1-> \itshape{Precision Methods:}
+			\item<1-> \itshape{Advanced:}
 			\begin{itemize}
 				\item<2-> \itshape{Lax-Wendroff:} take intermediate step, equivalent to series expansion to second order
 				\item<3-> \itshape{Runge-Kutta:} take trial steps to estimate curvature, then make informed jump
@@ -574,19 +693,19 @@
 		\begin{itemize}
 			\item<2-> \itshape{Frameworks:}
 			\begin{itemize}
-				\item<3-> Smoothed Particle Hydrodynamics (SPH)
-				\item<4-> Lattice Boltzmann Method (LBM)
-				\item<5-> Adaptive Mesh Refinement (AMR)
+				\item<3-> \itshape{Smoothed Particle Hydrodynamics:} mesh free interactions based on kernel weighting
+				\item<4-> \itshape{Lattice Boltzmann Method:} cells simulate statistical particle collisions and streaming
+				\item<5-> \itshape{Adaptive Mesh Refinement:} grid resolution increases where higher precision is required
 			\end{itemize}
 			\item<6-> \itshape{Regimes:}
 			\setlength{\multicolsep}{1pt}
 			\setlength{\columnsep}{1ex}
 			\begin{multicols}{2}
 				\begin{itemize}
-					\item<7-> \itshape{Plasma:} Magnetohydrodynamics (MHD)
-					\item<8-> \itshape{Relativity:} Relativistic Hydrodynamics (RHD)
-					\item<9-> \itshape{Degeneracy:} Quantum Effects
-					\item<10-> \itshape{Collisionless:} Initial Distributions
+					\item<7-> \itshape{Plasma:} use magnetohydrodynamics
+					\item<8-> \itshape{Relativity:} use relativistic hydrodynamics
+					\item<9-> \itshape{Degeneracy:} need quantum effects
+					\item<10-> \itshape{Collisionless:} need initial distributions
 				\end{itemize}
 			\end{multicols}
 			\item<11-> \itshape{Applications:}
@@ -594,9 +713,9 @@
 			\setlength{\columnsep}{-20ex}
 			\begin{multicols}{3}
 				\begin{itemize}
-					\item<12-> Stellar Evolution
-					\item<13-> Accretion Disks
-					\item<14-> Cosmic Filaments
+					\item<12-> stellar evolution
+					\item<13-> accretion disks
+					\item<14-> cosmic filaments
 				\end{itemize}
 			\end{multicols}
 		\end{itemize}
