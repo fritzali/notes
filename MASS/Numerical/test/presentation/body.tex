@@ -348,10 +348,64 @@
 
 	\begin{frame}
 		\frametitle{Laplace Equation}
+		\begin{columns}[c]
+			\begin{column}{0.35\textwidth}
+				\begin{itemize}
+					\item<2-> \itshape{Initialization:}
+					\begin{itemize}
+						\item<3-> empty field
+					\end{itemize}
+					\item<4-> \itshape{Boundaries:}
+					\begin{itemize}
+						\item<5-> \itshape{Left:} fixed zero
+						\item<6-> \itshape{Right:} linear slope
+						\item<7-> \makebox[0pt][l]{\itshape{Top \& Bottom:} no gradient}
+					\end{itemize}
+					\item<8-> \itshape{Observation:}
+					\begin{itemize}
+						\item<9-> iterative diffusion
+						\item<10-> smooth relaxation
+					\end{itemize}
+				\end{itemize}
+			\end{column}
+			\begin{column}{0.65\textwidth}
+				\begin{overprint}
+					\onslide<2-7|handout:0>\centering\includegraphics[height=0.8\textheight]{../source/plots/2d_lapla_eq_start.jpg}
+					\onslide<8->\centering\includegraphics[height=0.8\textheight]{../source/plots/2d_lapla_eq_stop.jpg}
+    			\end{overprint}
+			\end{column}
+		\end{columns}
 	\end{frame}
 
 	\begin{frame}
 		\frametitle{Poisson Equation}
+		\begin{columns}[c]
+			\begin{column}{0.35\textwidth}
+				\begin{itemize}
+					\item<2-> \itshape{Initialization:}
+					\begin{itemize}
+						\item<3-> empty field
+						\item<4-> positive source
+						\item<5-> negative sink
+					\end{itemize}
+					\item<6-> \itshape{Boundaries:}
+					\begin{itemize}
+						\item<7-> \itshape{All:} fixed zero
+					\end{itemize}
+					\item<8-> \itshape{Observation:}
+					\begin{itemize}
+						\item<9-> dipole field potential
+						\item<10-> converging relaxation
+					\end{itemize}
+				\end{itemize}
+			\end{column}
+			\begin{column}{0.65\textwidth}
+				\begin{overprint}
+					\onslide<2-7|handout:0>\centering\includegraphics[height=0.8\textheight]{../source/plots/2d_poisso_eq_start.jpg}
+					\onslide<8->\centering\includegraphics[height=0.8\textheight]{../source/plots/2d_poisso_eq_stop.jpg}
+    			\end{overprint}
+			\end{column}
+		\end{columns}
 	\end{frame}
 
 	\begin{frame}
@@ -390,14 +444,98 @@
 
 	\begin{frame}
 		\frametitle{Lid Driven Cavity Flow}
+		\begin{columns}[c]
+			\begin{column}{0.35\textwidth}
+				\begin{itemize}
+					\item<2-> \itshape{Initialization:}
+					\begin{itemize}
+						\item<3-> vanishing velocity
+						\item<4-> zero pressure
+					\end{itemize}
+					\item<5-> \itshape{Boundaries:}
+					\begin{itemize}
+						\item<6-> \itshape{Top:} $u = 1$ \& $\nabla p = 0$
+						\item<7-> \itshape{Bottom:} $u = 0$ \& $p = 0$
+						\item<8-> \makebox[0pt][l]{\itshape{Left \& Right:} $u = 0$ \& $\nabla p = 0$}
+					\end{itemize}
+					\item<9-> \itshape{Observation:}
+					\begin{itemize}
+						\item<10-> vortex formation
+						\item<11-> pressure gradient
+					\end{itemize}
+				\end{itemize}
+			\end{column}
+			\begin{column}{0.65\textwidth}
+				\begin{overprint}
+					\onslide<2-8|handout:0>\centering\includegraphics[height=0.8\textheight]{../source/plots/2d_nav_stok_cavit_start.jpg}
+					\onslide<9->\centering\includegraphics[height=0.8\textheight]{../source/plots/2d_nav_stok_cavit_stop.jpg}
+    			\end{overprint}
+			\end{column}
+		\end{columns}
 	\end{frame}
 
 	\begin{frame}
 		\frametitle{Pressure Driven Channel Flow}
+		\begin{columns}[c]
+			\begin{column}{0.35\textwidth}
+				\begin{itemize}
+					\item<2-> \itshape{Initialization:}
+					\begin{itemize}
+						\item<3-> vanishing velocity
+						\item<4-> unity pressure
+						\item<5-> constant source
+					\end{itemize}
+					\item<6-> \itshape{Boundaries:}
+					\begin{itemize}
+						\item<7-> \makebox[0pt][l]{\itshape{Top \& Bottom:} $u = 0$ \& $\nabla p = 0$}
+						\item<8-> \itshape{Left \& Right:} periodic
+					\end{itemize}
+					\item<9-> \itshape{Observation:}
+					\begin{itemize}
+						\item<10-> curved velocity profile
+						\item<11-> boundary layer formation
+					\end{itemize}
+				\end{itemize}
+			\end{column}
+			\begin{column}{0.65\textwidth}
+				\begin{overprint}
+					\onslide<2-8|handout:0>\centering\includegraphics[height=0.8\textheight]{../source/plots/2d_nav_stok_channe_start.jpg}
+					\onslide<9->\centering\includegraphics[height=0.8\textheight]{../source/plots/2d_nav_stok_channe_stop.jpg}
+    			\end{overprint}
+			\end{column}
+		\end{columns}
 	\end{frame}
 
 	\begin{frame}
-		\frametitle{Nonuniform Periodic Flow}
+		\frametitle{Locally Forced Channel Flow}
+		\begin{columns}[c]
+			\begin{column}{0.35\textwidth}
+				\begin{itemize}
+					\item<2-> \itshape{Initialization:}
+					\begin{itemize}
+						\item<3-> vanishing velocity
+						\item<4-> unity pressure
+						\item<5-> rectangular source
+					\end{itemize}
+					\item<6-> \itshape{Boundaries:}
+					\begin{itemize}
+						\item<7-> \makebox[0pt][l]{\itshape{Top \& Bottom:} $u = 0$ \& $\nabla p = 0$}
+						\item<8-> \itshape{Left \& Right:} periodic
+					\end{itemize}
+					\item<9-> \itshape{Observation:}
+					\begin{itemize}
+						\item<10-> central jet formation
+						\item<11-> recirculation eddies
+					\end{itemize}
+				\end{itemize}
+			\end{column}
+			\begin{column}{0.65\textwidth}
+				\begin{overprint}
+					\onslide<2-8|handout:0>\centering\includegraphics[height=0.8\textheight]{../source/plots/2d_nav_stok_channe_mod_start.jpg}
+					\onslide<9->\centering\includegraphics[height=0.8\textheight]{../source/plots/2d_nav_stok_channe_mod_stop.jpg}
+    			\end{overprint}
+			\end{column}
+		\end{columns}
 	\end{frame}
 
 	\section{Numerical Approaches}
