@@ -12,5 +12,7 @@ dependencies:
  - pandas
  - python
  - scipy
+ - scikit-learn
  - sympy
+ - pytorch
  - uncertainties
