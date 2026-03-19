@@ -57,6 +57,10 @@ The following describes how to install an all purpose `conda` environment.
 
    <pre>mamba update -n notes --all</pre>
 
+10. Add new packages by editing the environment file and running:
+
+	<pre>mamba env update -f environment.yml --prune</pre>
+
 *Adapted from the [Toolbox Workshop](https://toolbox.pep-dortmund.org/install/linux/).*
 
 > Mamba is a drop in replacement for Conda that is significantly faster at resolving dependencies

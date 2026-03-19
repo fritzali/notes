@@ -3,6 +3,7 @@ channels:
  - conda-forge
 dependencies:
  - astropy
+ - astroML
  - emcee
  - ipython
  - jupyter
