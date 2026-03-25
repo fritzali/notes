@@ -2,3 +2,4 @@
 **/build/*
 !**/build/main.pdf
 !**/build/flat.pdf
+__pycache__
