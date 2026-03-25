@@ -1,0 +1,15 @@
+include Makefile
+include psls.yaml
+include examples/0009882316.yaml
+include examples/0012069449.yaml
+include examples/external_example.txt
+include models/0012069449.gsm
+include models/modeprop.txt
+include doc/PSLS_v1.3_release_note.pdf
+include doc/PSLS_v1.2_release_note.pdf
+include systematics/PLATO_systematics_BOL_FixedMask_V2.npy
+include systematics/PLATO_systematics_BOL_P1_V2.npy
+include systematics/PLATO_systematics_BOL_V2.npy
+include systematics/PLATO_systematics_EOL_FixedMask_V2.npy
+include systematics/PLATO_systematics_EOL_P1_V2.npy
+include systematics/PLATO_systematics_EOL_V2.npy
