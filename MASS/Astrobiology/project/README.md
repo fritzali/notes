@@ -2,9 +2,13 @@
 
 ## Tools
 
-### PLSL – PLATO Solar-Like Light-Curve Simulator
+### PLSL
 
-### PlatoSim – PLATO Simulator
+The [PLATO Solarlike Lightcurve Simulator](https://sites.lesia.obspm.fr/psls/) is intended for the creation of synthetic stellar lightcurves which model those that will be produced by the PLATO mission once it is operating. It uses mathematical parametrizations for the impacts of different noise sources to enable the fast computation of integrated flux signals at low cost, thereby allowing researchers the creation of large datasets for statistical testing. 
+
+### PlatoSim
+
+The [PLATO Simulator](https://ivs-kuleuven.github.io/PlatoSim3/) implements a more granular approach, simulating pixel level data and therefore represents a realistic framework to study the detector itself. Access is public only within the PLATO consortium and requires credentials to gain access to the software.
 
 ### Project Type
 
