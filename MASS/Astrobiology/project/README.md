@@ -1,5 +1,10 @@
 ## Project Outline — Habitable-Zone Target Selection Using the PLATO Mission Simulator
 
+## Tools
+
+### PLSL – PLATO Solar-Like Light-Curve Simulator
+
+### PlatoSim – PLATO Simulator
 
 ### Project Type
 
