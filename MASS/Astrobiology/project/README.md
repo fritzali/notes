@@ -20,6 +20,8 @@ After some fixes that are already included in this repository, test the installa
 
 <pre>./psls.py -P -V psls.yaml</pre>
 
+#### Usage
+
 ### PlatoSim
 
 The [PLATO Simulator](https://ivs-kuleuven.github.io/PlatoSim3/) implements a more granular approach, simulating pixel level data and therefore represents a realistic framework to study the detector itself. Access is public only within the PLATO consortium and requires credentials to gain access to the software.
