@@ -1,7 +1,0 @@
-numpy
-scipy
-pyyaml
-h5py
-packaging
-astropy
-matplotlib
