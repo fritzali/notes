@@ -1,5 +1,7 @@
 ## PSLS - PLATO Solarlike Lightcurve Simulator
 
+### Capabilities & Modeling
+
 ### Command Flags
 
 - `-v` prints the program version.
