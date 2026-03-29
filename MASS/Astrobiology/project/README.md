@@ -2,13 +2,13 @@
 
 ## Tools
 
-### PLSL
+### PSLS
 
 The [PLATO Solarlike Lightcurve Simulator](https://sites.lesia.obspm.fr/psls/) is intended for the creation of synthetic stellar lightcurves which model those that will be produced by the PLATO mission once it is operating. It uses mathematical parametrizations for the impacts of different noise sources to enable the fast computation of integrated flux signals at low cost, thereby allowing researchers the creation of large datasets for statistical testing. 
 
 #### Setup
 
-Download the source distribution archive from [PyPI](https://pypi.org/project/psls/#files) and unpack it inside its designated `PSLS` repository:
+Download the source distribution archive from [PyPI](https://pypi.org/project/psls/#files) and unpack it inside its designated [PSLS](PSLS) directory:
 
 <pre>tar -xvzf psls-<i>version</i>.tar.gz --strip-components=1</pre>
 
@@ -21,6 +21,8 @@ After some fixes that are already included in this repository, test the installa
 <pre>./psls.py -P -V psls.yaml</pre>
 
 #### Usage
+
+A more comprehensive list of user flags and configuration variables is included with the [PSLS](PSLS) directory. The following is an overview of the most important cases:
 
 ### PlatoSim
 
