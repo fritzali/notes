@@ -2,7 +2,7 @@
 
 ### Capabilities & Modeling
 
-PSLS simulates solarlike oscillators, defined as stars with outer convective zones that through turbulence excite acoustic oscillations, representative of PLATO mission targets. Stars fulfilling these characteristics make up most of the lower main sequence including dwarfs, as well as subgiants and red giants, and also some pre main sequence candidates, while classic high amplitude pulsators such as cepheids, hot massive stars with radiative envelopes, or remnants like white dwarfs are excluded.
+PSLS simulates solarlike oscillators, defined as stars with outer convective zones that through turbulence excite acoustic oscillations, representative of PLATO mission targets. Stars fulfilling these characteristics make up most of the lower main sequence including dwarfs, as well as subgiants and red giant stars, and also some pre main sequence candidates, while classic high amplitude pulsators such as cepheids, hot massive stars with radiative envelopes, or remnants like white dwarfs are excluded.
 
 This tool models such stochastic oscillations, includes planetary transits, spot modulation, flares and granulation, as well as instrumental errors and random noises expected from the detector. These are implemented as follows:
 - **Oscillation Spectra:**
