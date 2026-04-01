@@ -28,6 +28,24 @@ A more comprehensive list of user flags and configuration variables is included 
 
 The [PLATO Simulator](https://ivs-kuleuven.github.io/PlatoSim3/) implements a more granular approach, simulating pixel level data and therefore represents a realistic framework to study the detector itself. Access is public only within the PLATO consortium and requires credentials to gain access to the software.
 
+### Git LFS
+
+The [Git Large File Storage](https://git-lfs.com/) utility replaces specified files with a text pointer to their remote location and manages their versioning like standard Git. Install its package:
+
+<pre>sudo pacman -S git-lfs</pre>
+
+Once installed, initialize it for each user account:
+
+<pre>git lfs install</pre>
+
+Track a specific file or use a wildcard string for a file type:
+
+<pre>git lfs track "<i>file</i>"</pre>
+
+This will add a line in `.gitattributes` which needs to be tracked by Git. Other useful commands:
+
+<pre>git lfs status</pre><pre>git lfs track</pre><pre>git lfs pull</pre><pre>git lfs prune</pre><pre>git lfs migrate info</pre>
+
 ### Project Type
 
 Master course project in Computational Astrobiology
