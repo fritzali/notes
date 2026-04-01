@@ -40,7 +40,7 @@ Once installed, initialize it for each user account:
 
 Track a specific file or use a wildcard string for a file type:
 
-<pre>git lfs track "<i>file</i>"</pre>
+<pre>git lfs track "<i>file</i>"</pre><pre>git lfs track "*.<i>type</i>"</pre>
 
 This will add a line in `.gitattributes` which needs to be tracked by Git. Other useful commands:
 
