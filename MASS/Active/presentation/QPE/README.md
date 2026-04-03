@@ -1,4 +1,4 @@
-## Quasi Periodic Eruptions – Extreme Variability in Active Galactic Nuclei
+## Quasi Periodic Eruptions – Extreme Variability in Galactic Nuclei
 
 
 
