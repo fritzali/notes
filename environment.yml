@@ -14,6 +14,7 @@ dependencies:
  - python
  - scipy
  - scikit-learn
+ - svgpathtools
  - sympy
  - pytorch
  - uncertainties
