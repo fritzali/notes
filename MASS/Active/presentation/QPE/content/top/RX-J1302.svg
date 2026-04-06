@@ -22,12 +22,12 @@
          id="path26"
          style="stroke-width:2.11673" /></clipPath></defs><path
      d="M 0,0 H 720 V 648 H 0 Z"
-     style="fill:#ffffff;fill-opacity:1;fill-rule:nonzero;stroke:none"
+     style="fill:#ffffff;fill-opacity:1;fill-rule:nonzero;stroke:#000000;stroke-opacity:1"
      transform="matrix(0.12499622,0,0,-0.12499623,-3.0666795,77.756106)"
      clip-path="url(#clipPath9)"
      id="path4612" /><path
      d="M 12.23285,32.471111 H 82.43072 V 4.8583091 H 12.23285 Z"
-     style="fill:#ffffff;fill-opacity:1;fill-rule:nonzero;stroke:none;stroke-width:0.124996"
+     style="fill:#ffffff;fill-opacity:1;fill-rule:nonzero;stroke:#000000;stroke-width:0.124996;stroke-opacity:1"
      id="path4613" /><path
      d="m 12.232865,32.471106 v 0.749978"
      style="fill:#000000;fill-opacity:1;fill-rule:nonzero;stroke:#000000;stroke-width:0.124996;stroke-linecap:butt;stroke-linejoin:round;stroke-miterlimit:10;stroke-dasharray:none;stroke-opacity:1"
