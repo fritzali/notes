@@ -1,12 +1,13 @@
-## PSLS - PLATO Solarlike Lightcurve Simulator
+## PLATO Solarlike Lightcurve Simulator
 
 ### Capabilities & Modeling
 
-PSLS simulates solarlike oscillators, defined as stars with outer convective zones that through turbulence excite acoustic oscillations, representative of PLATO mission targets. Stars fulfilling these characteristics make up most of the lower main sequence including dwarfs, as well as subgiants and red giant stars, and also some pre main sequence candidates, while classic high amplitude pulsators such as cepheids, hot massive stars with radiative envelopes, or remnants like white dwarfs are excluded.
+PSLS simulates solarlike oscillators, defined as stars with outer convective zones that through turbulence excite acoustic oscillations, representative of PLATO mission targets. Stars fulfilling these characteristics make up most of the lower main sequence including dwarfs, as well as subgiants and red giant stars, and also some pre main sequence candidates, while classic high amplitude pulsators such as cepheids, hot massive stars with radiative envelopes, or remnants like white dwarfs are excluded. Due to uncertainty in the pulsation mechanism, the simulator is not suited for the modeling main sequence dwarf stars.
 
 This tool models such stochastic oscillations, includes planetary transits, spot modulation, flares and granulation, as well as instrumental errors and random noises expected from the detector. These are implemented as follows:
 - **Oscillation Spectra:**
-  - **hi:** `universal_pattern.py`
+  - **MS & SGB:** 
+  - **RGB:** [Mosser (2011)](https://www.aanda.org/articles/aa/abs/2011/01/aa15440-10/aa15440-10.html) in `universal_pattern.py`
 - **Planetary Transits:** [Mandel & Agol (2002)](https://ui.adsabs.harvard.edu/abs/2002ApJ...580L.171M/abstract) in `transit.py` 
 - **Spot Modulation:** [Dorren (1987)](https://ui.adsabs.harvard.edu/abs/1987ApJ...320..756D/abstract) in `spotintime.py`
 - **Flares:** in `flares.py`
