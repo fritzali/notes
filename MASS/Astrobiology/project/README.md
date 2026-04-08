@@ -1,4 +1,4 @@
-## Project Outline — Habitable-Zone Target Selection Using the PLATO Mission Simulator
+<!-- ## Project Outline — Habitable-Zone Target Selection Using the PLATO Mission Simulator -->
 
 ## Tools
 
@@ -46,7 +46,7 @@ This will add a line in `.gitattributes` which needs to be tracked by Git. Other
 
 <pre>git lfs status</pre><pre>git lfs track</pre><pre>git lfs pull</pre><pre>git lfs prune</pre><pre>git lfs migrate info</pre>
 
-### Project Type
+<!-- ### Project Type
 
 Master course project in Computational Astrobiology
 
@@ -209,3 +209,4 @@ The final submission should contain:
 - **Final results table**
 - **Scientific report** of approximately 8–12 pages
 - **Presentation** of approximately 20 minutes
+-->
