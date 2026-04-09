@@ -2,17 +2,17 @@
 
 ### Capabilities & Modeling
 
-PSLS simulates solarlike oscillators, defined as stars with outer convective zones that through turbulence excite acoustic oscillations, representative of PLATO mission targets. Stars fulfilling these characteristics make up most of the lower main sequence including dwarfs, as well as subgiants and red giant stars, and also some pre main sequence candidates, while classic high amplitude pulsators such as cepheids, hot massive stars with radiative envelopes, or remnants like white dwarfs are excluded. Due to uncertainty in the pulsation mechanism, the simulator is not suited for the modeling main sequence dwarf stars.
+PSLS simulates solarlike oscillators, defined as stars with outer convective zones that through turbulence excite acoustic oscillations, representative of PLATO mission targets. Stars fulfilling these characteristics make up most of the lower main sequence including dwarfs, as well as subgiants and red giant stars, and also some pre main sequence candidates, while classic high amplitude pulsators such as cepheids, hot massive stars with radiative envelopes, or remnants like white dwarfs are excluded. Due to uncertainty in the pulsation mechanism, the simulator is not suited for the modeling of main sequence dwarf stars.
 
 This tool models such stochastic oscillations, includes planetary transits, spot modulation, flares and granulation, as well as instrumental errors and random noises expected from the detector. These are implemented as follows:
-- **Oscillation Spectra:**
-  - **MS & SGB:** [Kjeldsen & Bedding](https://arxiv.org/abs/astro-ph/9403015) in ` ` 
+- **Oscillation Spectra:** [Samadi (2019)](https://www.aanda.org/articles/aa/full_html/2019/04/aa34822-18/aa34822-18.html) in `sls.py`
+  - **MS & SGB:** [Kjeldsen & Bedding (1995)](https://arxiv.org/abs/astro-ph/9403015) in `sls.py` 
   - **RGB:** [Mosser (2011)](https://www.aanda.org/articles/aa/abs/2011/01/aa15440-10/aa15440-10.html) in `universal_pattern.py`
 - **Planetary Transits:** [Mandel & Agol (2002)](https://ui.adsabs.harvard.edu/abs/2002ApJ...580L.171M/abstract) in `transit.py` 
 - **Spot Modulation:** [Dorren (1987)](https://ui.adsabs.harvard.edu/abs/1987ApJ...320..756D/abstract) in `spotintime.py`
-- **Flares:** in `flares.py`
-- **Granulation:** in `sls.py`
-- **Systematic Influences:**
+- **Flares:** [Baudin (2025)](https://github.com/fritzali/notes/blob/main/MASS/Astrobiology/project/PSLS/PKG-INFO) in `flares.py`
+- **Granulation:** [Kallinger (2014)](https://www.aanda.org/articles/aa/full_html/2014/10/aa24313-14/aa24313-14.html) in `sls.py`
+- **Systematic Influences:** [Marchiori (2019)](https://www.aanda.org/articles/aa/abs/2019/07/aa35269-19/aa35269-19.html) in `systematics/`
 
 ### Command Flags
 
