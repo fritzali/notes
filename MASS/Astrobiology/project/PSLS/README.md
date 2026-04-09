@@ -6,7 +6,7 @@ PSLS simulates solarlike oscillators, defined as stars with outer convective zon
 
 This tool models such stochastic oscillations, includes planetary transits, spot modulation, flares and granulation, as well as instrumental errors and random noises expected from the detector. These are implemented as follows:
 - **Oscillation Spectra:**
-  - **MS & SGB:** 
+  - **MS & SGB:** [Kjeldsen & Bedding](https://arxiv.org/abs/astro-ph/9403015) in ` ` 
   - **RGB:** [Mosser (2011)](https://www.aanda.org/articles/aa/abs/2011/01/aa15440-10/aa15440-10.html) in `universal_pattern.py`
 - **Planetary Transits:** [Mandel & Agol (2002)](https://ui.adsabs.harvard.edu/abs/2002ApJ...580L.171M/abstract) in `transit.py` 
 - **Spot Modulation:** [Dorren (1987)](https://ui.adsabs.harvard.edu/abs/1987ApJ...320..756D/abstract) in `spotintime.py`
