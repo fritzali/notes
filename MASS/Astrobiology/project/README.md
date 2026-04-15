@@ -16,9 +16,9 @@ Make the `psls.py` script executable:
 
 <pre>chmod +x psls.py</pre>
 
-After some fixes that are already included in this repository, test the installation via the `psls.yaml` main sequence basic example by running it in an active environment that includes all required packages:
+After some fixes that are already included in this repository, test the installation via the `psls.yaml` main sequence basic example by running it in an active environment that includes all required packages from its root directory:
 
-<pre>./psls.py -P -V psls.yaml</pre>
+<pre>./psls.py -o data --extended-plots -V examples/psls.yaml</pre>
 
 #### Usage
 
