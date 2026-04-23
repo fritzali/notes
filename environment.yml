@@ -2,8 +2,9 @@ name: notes
 channels:
  - conda-forge
 dependencies:
- - astropy
  - astroML
+ - astropy
+ - astroquery
  - emcee
  - ipython
  - jupyter
@@ -14,6 +15,8 @@ dependencies:
  - python
  - scipy
  - scikit-learn
+ - seaborn
+ - speclite
  - svgpathtools
  - sympy
  - tqdm
