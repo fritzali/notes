@@ -1,0 +1,15 @@
+name: agn
+channels:
+  - conda-forge
+dependencies:
+  - python=3.10
+  - pip
+  - ipython
+  - jupyter
+  - matplotlib
+  - numpy
+  - scipy
+  - sherpa
+  - pandas
+  - pip:
+    - fantasy_agn
