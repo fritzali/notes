@@ -30,10 +30,12 @@ Use the following to verify basic functionality:
 
 #### <i>Hazy</i>
 
-Build the `LaTeX` manual and clean auxiliary files:
+Build the `LaTeX` manual, check errors and warnings, clean auxiliary files:
 
 <pre>cd ../docs/latex</pre>
 
 <pre>perl CompileAll.pl</pre>
+
+<pre>grep undefined */*.log</pre>
 
 <pre>perl cleanAll.pl</pre>
