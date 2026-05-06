@@ -1,0 +1,8 @@
+table power law
+phi(H) 18.5
+hden 10
+stop column density 22
+iterate to convergence
+print last iteration
+save overview "blr.ovr" last
+save continuum "blr.con" units microns last
