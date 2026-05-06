@@ -1,4 +1,4 @@
-## Cloudy – Spectral Synthesis Code for Astrophysical Plasmas<sup></sup>
+## Cloudy<sup>[1](https://gitlab.nublado.org/cloudy/cloudy)</sup> – Spectral Synthesis Code for Astrophysical Plasmas
 
 ### Installation
 
