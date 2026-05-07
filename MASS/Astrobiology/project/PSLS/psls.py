@@ -257,6 +257,8 @@ def search_model_hdf5(ModelFile, ES, logg, teff, dlogg=0.01, dteff=15., verbose=
     loggG = -100.*np.ones((nt,nm))
     massG = -100.*np.ones((nt,nm))
     radiusG = -100.*np.ones((nt,nm))
+    lumG = -100.*np.ones((nt,nm))
+    ageG = -100.*np.ones((nt,nm))
     Xc = -100.*np.ones((nt,nm))
     tracknames  = np.zeros(nt,dtype='U20')
     i = 0
@@ -268,6 +270,8 @@ def search_model_hdf5(ModelFile, ES, logg, teff, dlogg=0.01, dteff=15., verbose=
             loggG[i,:ns] = np.array(glob['logg'])
             massG[i,:ns] = np.array(glob['mass'])
             radiusG[i,:ns] = np.array(glob['radius'])
+            lumG[i,:ns] = np.array(glob['lum'])
+            ageG[i,:ns] = np.array(glob['age'])
             Xc[i,:ns] = np.array(glob['Xc'])
             tracknames[i] = key
         i += 1
@@ -295,11 +299,13 @@ def search_model_hdf5(ModelFile, ES, logg, teff, dlogg=0.01, dteff=15., verbose=
     loggb = loggG[j,k]
     massb = massG[j,k]/sls.msun
     radiusb = radiusG[j,k]/sls.rsun
+    lumb = lumG[j,k]/sls.lumsun
+    ageb = ageG[j,k]
     name =  ('%s/osc/%i' % (tracknames[j],k))
     modes = pack[name]
 
     if (verbose):
-        print(('Best matching, teff = %f ,logg = %f, M = %f, R = %f, Chi2 = %f') % (teffb, loggb,massb,radiusb,Chi2[j,k]))
+        print(('Best matching, teff = %f ,logg = %f, M = %f, R = %f, L = %f, age = %f, Chi2 = %f') % (teffb, loggb,massb,radiusb,lumb,ageb,Chi2[j,k]))
         print(('Star model name: %s') % (name))
 
 
@@ -316,7 +322,7 @@ def search_model_hdf5(ModelFile, ES, logg, teff, dlogg=0.01, dteff=15., verbose=
         plt.xlabel(r'$T_{\rm eff}$ [K]')
         plt.draw()
 
-    return modes, teffb, loggb,massb,radiusb
+    return modes, teffb, loggb,massb,radiusb,lumb,ageb
 
 def search_model(ModelDir,ES,logg,teff,dlogg=0.01,dteff=15.,verbose=False,plot=False):
 
@@ -736,7 +742,7 @@ else:
         if(Verbose):
             print ('requested values:')
             print (('teff = %f ,log g = %f') % (StarTeff, StarLogg))
-        StarFreqFile,StarTeff,StarLogg,StarMass,StarRadius = search_model_hdf5(StarModelFile,StarES,StarLogg,StarTeff,verbose=Verbose,plot=Plot)
+        StarFreqFile,StarTeff,StarLogg,StarMass,StarRadius,StarLum,StarAge = search_model_hdf5(StarModelFile,StarES,StarLogg,StarTeff,verbose=Verbose,plot=Plot)
         if(Verbose):
             print ('closest values found:')
             print (('teff = %f ,log g = %f') % (StarTeff, StarLogg))
@@ -883,7 +889,7 @@ if (UP):
 else:
     # Simulated stellar signal, noise free (nf)
     time,ts,f,_,_,mps_nf_osc,mps_nf_granulation,mps_nf_activity,opar,_ = sls.gen_osc_spectrum(StarID,StarFreqFile,
-                                StarTeff,StarMass, StarRadius,Sampling,Duration,StarVMag,verbose=Verbose,seed=seeds[0],
+                                StarTeff,StarMass, StarRadius,StarLum,StarAge,Sampling,Duration,StarVMag,verbose=Verbose,seed=seeds[0],
                                 mag_ref=StarVMag,pn_ref= 0.,wn_ref= 0., a=a,b=b,plot=0, rot_period_sur =  Star['SurfaceRotationPeriod'] ,
                                                                                               rot_core_f = Star['CoreRotationFreq'],
                                             incl = Star['Inclination'] , path = OutDir , oscillation = True,

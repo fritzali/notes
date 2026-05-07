@@ -58,6 +58,7 @@ deltanusun = 135.
 teffsun = 5777.
 msun = 1.98919e33           # solar mass
 rsun = 6.9599e10            # solar radius
+lumsun = 3.828e33           # solar luminosity
 gmsun = 1.32712438e26       # G Msun
 logg_sun = math.log10(gmsun) - 2.*math.log10(rsun)
 ggrav = gmsun/msun          # grav. constant G
@@ -810,7 +811,7 @@ def osc_spectrum_model_adipls(starID, f,modes,numax,deltanu,teff,verbose=False,a
         ## s=raw_input('Type ENTER to continue')
     return spec,(Amax,Hmax,Gamma,width),(N,L,LM,NU,G,H,I,DNU)
 
-def gen_osc_spectrum(starID, filename, teff,mass,radius,dt,T, mag , seed = None, pn_ref = 7.7, wn_ref = 0. ,
+def gen_osc_spectrum(starID, filename, teff,mass,radius,lum,age,dt,T, mag , seed = None, pn_ref = 7.7, wn_ref = 0. ,
                      mag_ref = 6.,verbose = False, GST = 1 , a=0 , b=1.  ,  plot=False, rot_period_sur = 0.,
                      incl = 0., activity = None, granulation = True , path= './' , oscillation=True,
                      type = 1, numax = -1., deltanu = -1., rot_core_f = 0.) :
@@ -911,7 +912,7 @@ def gen_osc_spectrum(starID, filename, teff,mass,radius,dt,T, mag , seed = None,
         modes[:,2] = filename['freq']
         modes[:,6] = 10010 # icase
         modes[:,7] = filename['inertia']
-        star_par = {'mass': mass, 'teff' : teff, 'radius' : radius, 'logg': math.log10(mass/radius**2) +logg_sun}
+        star_par = {'mass': mass, 'teff' : teff, 'radius' : radius, 'logg': math.log10(mass/radius**2) +logg_sun, 'lum': lum, 'age': age}
         numax =  numaxref * (mass/radius**2) * math.sqrt(teffsun/teff)
     ##    deltanu = deltanusun * (mass/radius**3)
         deltanu = deltanusun * math.sqrt(mass/radius**3)
