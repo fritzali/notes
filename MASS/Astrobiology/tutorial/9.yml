@@ -1,0 +1,30 @@
+name: galaxy
+channels:
+ - conda-forge
+dependencies:
+ - astroML
+ - astropy
+ - astroquery
+ - emcee
+ - h5py
+ - ipython
+ - jupyter
+ - matplotlib
+ - numba
+ - numpy
+ - pandas
+ - pip
+ - python=3.12
+ - scipy
+ - scikit-learn
+ - seaborn
+ - setuptools<70.0.0
+ - speclite
+ - svgpathtools
+ - sympy
+ - tqdm
+ - pytorch
+ - uncertainties
+ - pip:
+   - astroNN
+   - tensorflow
