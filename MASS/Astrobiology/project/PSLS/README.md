@@ -57,7 +57,7 @@ The parameters used in the configuration file are explained below:
   - **NCamera:** number of cameras per group, between one and six, nominal value *6*
   - **TimeShift:** time shift between camera groups in seconds, nominal value *6.25*
   - **RandomNoise:**
-    - **Enable:** enable *1* or disable *0*  the random noise
+    - **Enable:** enable *1* or disable *0* the random noise
     - **Type:** type of random noise, either ***User*** or ***PLATO_SCALING*** or ***PLATO_SIMU***
       - **User:** the **NSR** value is specified by the user
       - **PLATO_SCALING:** the **NSR** value is obtained by interpolating at a given magnitude the **NSR** scaling relation expected for PLATO
@@ -101,7 +101,7 @@ The parameters used in the configuration file are explained below:
   - **numax:** frequency at maximum power in micro hertz, used only when **ModelType** is *UP*
   - **delta_nu:** mean large separation in micro hertz, used only when **ModelType** is *UP*, set *-1* if you want this parameter to be derived from a scaling relation
   - **DPI:** asymptotic values of the gravity mode period spacing in seconds, used only when **ModelType** is *UP*, set *-1* if you do not want mixed modes to be included
-  - **q:** mixed mode coupling factor, used only when **ModelType** is UP*
+  - **q:** mixed mode coupling factor, used only when **ModelType** is *UP*
   - **SurfaceEffects:** set *1* to include near surface effects in mode frequencies, not implemented when **ModelType** is *UP*
   - **Seed:** seed of the pseudorandom number generator used to simulate the oscillations component, negative value if controlled by **MasterSeed**
 - **Activity:**
