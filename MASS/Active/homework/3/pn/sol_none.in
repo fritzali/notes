@@ -1,0 +1,10 @@
+blackbody, T=1e5 K
+luminosity total 38
+radius 18
+hden 5
+sphere
+abundances "sol_none.abn"
+iterate
+print last iteration
+save overview "sol_none.ovr" last
+save continuum "sol_none.con" units microns last
