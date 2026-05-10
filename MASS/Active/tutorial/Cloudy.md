@@ -14,6 +14,8 @@ Use an appropriate number of cores:
 
 <pre>cd Cloudy/source</pre>
 
+<pre>make clean</pre>
+
 <pre>make -j <i>N</i></pre>
 
 #### <i>Smoke</i> Test

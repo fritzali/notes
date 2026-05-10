@@ -1,0 +1,10 @@
+table power law
+phi(H) 18.5 vary
+grid 18 24 0.5 ncpus 7
+hden 10 vary
+grid 8 14 0.5 ncpus 7
+stop column density 22
+iterate to convergence
+print last iteration
+save grid "blr.grd" last
+save line list "blr.lin" "lines.dat" last
