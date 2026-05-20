@@ -1,0 +1,26 @@
+% --- Core Layout & Typography ---
+\usepackage[utf8]{inputenc} % Standard input encoding
+\usepackage{geometry}
+\geometry{a4paper, margin=2cm, columnsep=0.6cm} % Clean, tight margins for two columns
+
+% --- LuaLaTeX Native Fonts ---
+\usepackage{fontspec}
+\usepackage{unicode-math}
+\setmainfont{TeX Gyre Termes} % Clean Times New Roman alternative
+\setmathfont{TeX Gyre Termes Math}
+
+% --- Graphics & Styling ---
+\usepackage{graphicx}
+\usepackage{booktabs} % For professional tables
+\usepackage{microtype} % Better text justification
+
+% --- Abstract Formatting ---
+\usepackage{abstract}
+\renewcommand{\abstracttextfont}{\small\itshape}
+\setlength{\absleftindent}{0pt}
+\setlength{\absrightindent}{0pt}
+
+% --- Custom Section Headers (Optional but looks professional) ---
+\usepackage{titlesec}
+\titleformat{\section}{\normalfont\large\bfseries}{\thesection}{1em}{}
+

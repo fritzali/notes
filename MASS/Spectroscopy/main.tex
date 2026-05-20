@@ -1,0 +1,30 @@
+\documentclass[twocolumn, 10pt]{article}
+
+\input{header} % Loads all your settings
+
+\title{\textbf{A Clean Two-Column Article Template}}
+\author{Your Name \\ \small \textit{Your Department, University}}
+\date{\small \today}
+
+\begin{document}
+
+% Pass the title and abstract as an argument to \twocolumn
+\twocolumn[{
+  \maketitle
+  \begin{abstract}
+  This is your abstract section. It spans across both columns at the top 
+  of the page, giving it a professional journal appearance. Keep it brief 
+  and to the point.
+  \end{abstract}
+  \vspace{0.5cm}
+}]
+
+\section{Introduction}
+Your two-column text starts directly here. LuaLaTeX will automatically handle 
+hyphenation and spacing perfectly.
+
+\section{Methodology}
+You can use standard math formulas like $E=mc^2$ cleanly.
+
+\end{document}
+
