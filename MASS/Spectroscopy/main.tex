@@ -1,10 +1,26 @@
-\documentclass[twocolumn, 10pt]{article}
+\input{header}
 
-\input{header} % Loads all your settings
+\title{\textbf{X{\hspace{0.05em}\rule[0.52ex]{0.36em}{0.10em}\hspace{0.10em}}Ray Emitting Plasma in Galaxies and Galaxy Clusters}}%
 
-\title{\textbf{A Clean Two-Column Article Template}}
-\author{Your Name \\ \small \textit{Your Department, University}}
+\author{Fritz Ali Agildere%
+		\vspace{-0.5ex}\\\small\hyperlink{mailto:fritz.agildere@udo.edu}{fritz.agildere@udo.edu}%
+		\\\small\textit{Department of Astronomy, Faculty of Mathematics, University of Belgrade}%
+		\vspace{-1ex}\\\small\textit{Astronomical Observatory of Belgrade}}%
+
 \date{\small \today}
+
+% --- Header Configurations ---
+\fancyhead[C]{\textit{X{\hspace{0.05em}\rule[0.52ex]{0.35em}{0.06em}\hspace{0.10em}}Ray Emitting Plasma in Galaxies and Galaxy Clusters}} % Puts page number on the Right side of the header
+\fancyfoot[L]{\textit{\textls[6]{Spectroscopy{\kern+4pt}of{\kern+4pt}Astrophysical{\kern+4pt}Plasmas}}}
+\fancyfoot[R]{\textit{\textls[-6]{Master{\kern+2pt}in{\kern+2pt}Astrophysics{\kern+2pt}and{\kern+2pt}Space{\kern+2pt}Science}}}
+
+\fancypagestyle{plain}{
+	\fancyhead[C]{} % Puts page number on the Right side of the header
+	\fancyfoot[L]{\textit{\textls[6]{Spectroscopy{\kern+4pt}of{\kern+4pt}Astrophysical{\kern+4pt}Plasmas}}}
+	\fancyfoot[R]{\textit{\textls[-6]{Master{\kern+2pt}in{\kern+2pt}Astrophysics{\kern+2pt}and{\kern+2pt}Space{\kern+2pt}Science}}}
+}
+
+\newcommand{\xray}{X\hspace{0.04em}\rule[0.49ex]{0.35em}{0.06em}\hspace{0.11em}ray\space}
 
 \begin{document}
 
@@ -14,17 +30,26 @@
   \begin{abstract}
   This is your abstract section. It spans across both columns at the top 
   of the page, giving it a professional journal appearance. Keep it brief 
-  and to the point.
+  and to the point. \lipsum[1]
   \end{abstract}
-  \vspace{0.5cm}
 }]
 
 \section{Introduction}
-Your two-column text starts directly here. LuaLaTeX will automatically handle 
+\xray two-column text starts directly here. LuaLaTeX will automatically handle 
 hyphenation and spacing perfectly.
 
 \section{Methodology}
 You can use standard math formulas like $E=mc^2$ cleanly.
+
+\lipsum
+
+\lipsum
+Das ist ein Zitat aus einem Buch von Einstein \cite{einstein1920}. 
+Und hier zitieren wir einen Fachartikel über Schwarze Löcher \cite{panda2023, help2026}.
+
+%\newpage
+% Hier wird das Literaturverzeichnis gedruckt
+\printbibliography
 
 \end{document}
 
