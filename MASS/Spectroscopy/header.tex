@@ -1,7 +1,9 @@
 \documentclass[twocolumn, 10pt]{article}
 
-% --- Core Layout & Typography ---
-\usepackage[utf8]{inputenc} % Standard input encoding
+
+% --- Page Layout --- %
+
+\usepackage[utf8]{inputenc}
 \usepackage{geometry}
 \geometry{
 	a4paper,
@@ -12,20 +14,26 @@
 	columnsep=5.0mm,
 	headsep=6.5mm,
 	footskip=12.5mm
-} % Clean, tight margins for two columns
+}
 
-% --- LuaLaTeX Native Fonts ---
+
+% --- Modern Font Setup --- %
+
 \usepackage{fontspec}
 \usepackage{unicode-math}
-\setmainfont{TeX Gyre Termes} % Clean Times New Roman alternative
+\setmainfont{TeX Gyre Termes}
 \setmathfont{TeX Gyre Termes Math}
 
-% --- Graphics & Styling ---
-\usepackage{graphicx}
-\usepackage{booktabs} % For professional tables
-\usepackage{microtype} % Better text justification
 
-% --- Abstract Formatting ---
+% --- Aesthetic Improvements --- %
+
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{microtype}
+
+
+% --- Abstract Adjustments --- %
+
 \usepackage{abstract}
 \renewcommand{\abstracttextfont}{\small}
 \setlength{\absleftindent}{0pt}
@@ -33,124 +41,118 @@
 \setlength{\abstitleskip}{0.25\baselineskip}
 \AfterEndEnvironment{abstract}{\vspace{1.5\baselineskip}}
 
-% --- Custom Section Headers (Optional but looks professional) ---
+
+% --- Section Styling --- %
+
 \usepackage{titlesec}
 \titleformat{\section}{\normalfont\large\bfseries}{\thesection}{1ex}{}
 \titleformat{\subsection}{\normalfont\normalsize\bfseries}{\thesubsection}{1ex}{}
 
-% blindtext
-\usepackage{lipsum}
+
+% --- Header & Footer --- %
 
 \usepackage{fancyhdr}
-\pagestyle{fancy} % Activates custom headers/footers
+\pagestyle{fancy}
 
-\fancyhf{} % Clears default header and footer settings
-\renewcommand{\headrulewidth}{0pt} % Adds a thin decorative line under the header
+\fancyhf{}
+\renewcommand{\headrulewidth}{0pt}
 \fancyfoot[C]{\itshape\thepage}
 
 \fancypagestyle{plain}{
-  \fancyhf{} % Clear any default first-page layouts
-  \fancyhead{} % No header on the first page
-  \fancyfoot[C]{\itshape\thepage} % Center and italicize page number in footer
-  \renewcommand{\headrulewidth}{0pt} % Ensure no rule at the top
+  \fancyhf{}
+  \fancyfoot[C]{\itshape\thepage}
+  \renewcommand{\headrulewidth}{0pt}
 }
 
-% citing
+
+% --- Citation Setup --- %
+
 \usepackage[american]{babel}
 
-% 1. Hyperref für Links laden (Farben auf schwarz für unsichtbare Links)
 \usepackage[
-    colorlinks=true, 
-    linkcolor=black,      
-    citecolor=black,      
-    urlcolor=black        
+	colorlinks=true, 
+	linkcolor=black,      
+	citecolor=black,      
+	urlcolor=black        
 ]{hyperref}
 
-% 2. Biblatex laden (Stil ohne Nummern-Präfix im Verzeichnis)
 \usepackage[
-    backend=biber,
-    style=authoryear,     % Verhindert die [1] Nummern im Literaturverzeichnis
-    giveninits=true,   
-    maxnames=2,        
-    minnames=1,
-    uniquename=false,     % Verhindert ungewollte Vorinitialen im Fließtext
-    uniquelist=false
+	backend=biber,
+	style=authoryear,
+	giveninits=true,   
+	maxnames=2,        
+	minnames=1,
+	uniquename=false,
+	uniquelist=false
 ]{biblatex}
 
-% 3. Namensreihenfolge und Trennzeichen (et al. aufrecht)
 \DeclareNameAlias{author}{family-given} 
 \DeclareDelimFormat{multinamedelim}{\addspace\&\addspace}
 \DeclareDelimFormat{finalnamedelim}{\addspace\&\addspace}
 \DefineBibliographyStrings{english}{andothers={et al.}} 
 
-% Standard-Jahr-Platzierung nach dem Autor im Verzeichnis löschen,
-% da wir es manuell nach dem Journal platzieren.
-%\AtEveryBibitem{\clearfield{labelyear}}
 \DeclareFieldFormat{labeldate:extrayear}{}
 
-% 4. Formatierung im Text: Gesamte Zitierung (Name + Jahr) in runden Klammern verlinken
 \DeclareCiteCommand{\cite}[\mkbibparens]
-  {\usebibmacro{prenote}}
-  {\usebibmacro{citeindex}%
-   \printtext[bibhyperref]{% Verlinkt den gesamten folgenden Block zur Bibliographie
-     \printnames{labelname}%
-     \setunit{\addspace}% Leerzeichen zwischen Name und Jahr
-     \printfield{labelyear}% Gibt das Jahr aus
-     \printfield{extrayear}% Gibt ggf. den Buchstaben aus (z.B. 2026a)
-   }}
-  {\multicitedelim}
-  {\usebibmacro{postnote}}
+	{\usebibmacro{prenote}}%
+	{\usebibmacro{citeindex}%
+	 \printtext[bibhyperref]{%
+	 	\printnames{labelname}%
+	 	\setunit{\addspace}%
+	 	\printfield{labelyear}%
+	 	\printfield{extrayear}%
+	 }%
+	}%
+	{\multicitedelim}%
+	{\usebibmacro{postnote}}%
 
-% Trennzeichen für mehrere Zitate innerhalb eines \cite-Befehls (Komma + Leerzeichen)
 \DeclareDelimFormat{multicitedelim}{\addcomma\addspace}
 
-% 5. Journal-Titel kursiv setzen
 \DeclareFieldFormat[article,periodical]{journaltitle}{\textit{#1}}
 
-% Titel und Zahlenfelder global unterdrücken
 \DeclareFieldFormat[article]{title}{}
 \DeclareFieldFormat[book]{title}{}
 
 \AtEveryBibitem{%
-  \clearfield{volume}%
-  \clearfield{number}%
-  \clearfield{pages}%
-  \clearfield{note}%
-  \clearfield{location}%
-  \clearfield{address}%
+	\clearfield{volume}%
+	\clearfield{number}%
+	\clearfield{pages}%
+	\clearfield{note}%
+	\clearfield{location}%
+	\clearfield{address}%
 }
 
-% Kein Punkt am Ende des Bibliographie-Eintrags
 \renewcommand{\finentrypunct}{}
 
-% 6. Bibliographie-Treiber: Name, Journal, Jahr (in Klammern) + URL-Verlinkung
 \DeclareBibliographyDriver{article}{%
-  \usebibmacro{bibindex}%
-  \usebibmacro{begentry}%
-  \iffieldundef{doi}
-    {\iffieldundef{url}
-       {\printnames{author}\setunit{\addspace}% Nur Leerzeichen zwischen Autor und Journal
-        \usebibmacro{journal}\setunit{\addspace}%
-        \printtext{\mkbibparens{\printfield{labelyear}\printfield{extrayear}}}}% Jahr in Klammern, ohne Punkt am Ende
-       {\href{\thefield{url}}{%
-          \printnames{author}\setunit{\addspace}%
-          \usebibmacro{journal}\setunit{\addspace}%
-          \printtext{\mkbibparens{\printfield{labelyear}\printfield{extrayear}}}}}}
-    {\href{https://doi.org/\thefield{doi}}{%
-       \printnames{author}\setunit{\addspace}%
-       \usebibmacro{journal}\setunit{\addspace}%
-       \printtext{\mkbibparens{\printfield{labelyear}\printfield{extrayear}}}}}%
-  \usebibmacro{finentry}%
+	\usebibmacro{bibindex}%
+	\usebibmacro{begentry}%
+	\iffieldundef{doi}
+		{\iffieldundef{url}
+			{\printnames{author}\setunit{\addspace}%
+			 \usebibmacro{journal}\setunit{\addspace}%
+			 \printtext{\mkbibparens{\printfield{labelyear}\printfield{extrayear}}}}%
+			{\href{\thefield{url}}{%
+				\printnames{author}\setunit{\addspace}%
+				\usebibmacro{journal}\setunit{\addspace}%
+				\printtext{\mkbibparens{\printfield{labelyear}\printfield{extrayear}}}}}}
+		{\href{https://doi.org/\thefield{doi}}{%
+			\printnames{author}\setunit{\addspace}%
+			\usebibmacro{journal}\setunit{\addspace}%
+			\printtext{\mkbibparens{\printfield{labelyear}\printfield{extrayear}}}}}%
+	\usebibmacro{finentry}%
 }
 
-% Pfad zur .bib-Datei angeben
 \addbibresource{source.bib}
 
-% Absätze nicht einrücken, sondern halben Zeilenabstand als Trennung nutzen
+
+% --- Paragraph Skip --- %
+
 \usepackage{parskip}
-
-% 1. Einrückung komplett auf Null setzen
 \setlength{\parindent}{0pt}
-
-% 2. Absatzabstand exakt einstellen (z. B. auf 0.5 \baselineskip für einen halben Zeilenabstand)
 \setlength{\parskip}{0.4\baselineskip plus 2pt minus 2pt}
+
+
+% --- Dummy Text --- %
+
+\usepackage{lipsum}
