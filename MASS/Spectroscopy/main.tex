@@ -9,13 +9,12 @@
 
 \date{\small \today}
 
-% --- Header Configurations ---
-\fancyhead[C]{\textit{X{\hspace{0.05em}\rule[0.52ex]{0.35em}{0.06em}\hspace{0.10em}}Ray Emitting Plasma in Galaxies and Galaxy Clusters}} % Puts page number on the Right side of the header
+\fancyhead[C]{\textit{X{\hspace{0.05em}\rule[0.52ex]{0.35em}{0.06em}\hspace{0.10em}}Ray Emitting Plasma in Galaxies and Galaxy Clusters}}
 \fancyfoot[L]{\textit{\textls[6]{Spectroscopy{\kern+4pt}of{\kern+4pt}Astrophysical{\kern+4pt}Plasmas}}}
 \fancyfoot[R]{\textit{\textls[-6]{Master{\kern+2pt}in{\kern+2pt}Astrophysics{\kern+2pt}and{\kern+2pt}Space{\kern+2pt}Science}}}
 
 \fancypagestyle{plain}{
-	\fancyhead[C]{} % Puts page number on the Right side of the header
+	\fancyhead[C]{}
 	\fancyfoot[L]{\textit{\textls[6]{Spectroscopy{\kern+4pt}of{\kern+4pt}Astrophysical{\kern+4pt}Plasmas}}}
 	\fancyfoot[R]{\textit{\textls[-6]{Master{\kern+2pt}in{\kern+2pt}Astrophysics{\kern+2pt}and{\kern+2pt}Space{\kern+2pt}Science}}}
 }
@@ -24,32 +23,26 @@
 
 \begin{document}
 
-% Pass the title and abstract as an argument to \twocolumn
-\twocolumn[{
-  \maketitle
-  \begin{abstract}
-  This is your abstract section. It spans across both columns at the top 
-  of the page, giving it a professional journal appearance. Keep it brief 
-  and to the point. \lipsum[1]
-  \end{abstract}
-}]
-
-\section{Introduction}
-\xray \cite{wern2010} two-column text starts directly here. LuaLaTeX will automatically handle 
-hyphenation and spacing perfectly.
-
-\section{Methodology}
-You can use standard math formulas like $E=mc^2$ cleanly.
-
-\lipsum
-
-\lipsum
-Das ist ein Zitat aus einem Buch von Einstein \cite{einstein1920}. 
-Und hier zitieren wir einen Fachartikel über Schwarze Löcher \cite{panda2023, help2026}.
-
-%\newpage
-% Hier wird das Literaturverzeichnis gedruckt
-\printbibliography
-
+	\twocolumn[{
+		\maketitle
+		\begin{abstract}
+			\lipsum[1]
+		\end{abstract}
+	}]
+	
+	\input{chapter/1_introduction.tex}
+	
+	\input{chapter/2_mechanism.tex}
+	
+	\input{chapter/3_instrumentation.tex}
+	
+	\input{chapter/4_characteristic.tex}
+	
+	\input{chapter/5_diagnostic.tex}
+	
+	\input{chapter/6_conclusion.tex}
+	
+	\printbibliography
+	
 \end{document}
 
