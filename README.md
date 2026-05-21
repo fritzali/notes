@@ -66,7 +66,7 @@ The following describes how to install an all purpose `conda` environment.
 > Mamba is a drop in replacement for Conda that is significantly faster at resolving dependencies
 > and installing packages due to utilizing `C++` and parallel processing.
 
-To compile `LaTeX` documents, a current `TeX Live` installation is required. For the case at hand, a full setup is used.
+To compile `LaTeX` documents, a current `TeX Live` installation is required. For this case, a full setup is used.
 
 1. Change directories into the default installation location:
 
