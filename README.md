@@ -65,3 +65,29 @@ The following describes how to install an all purpose `conda` environment.
 
 > Mamba is a drop in replacement for Conda that is significantly faster at resolving dependencies
 > and installing packages due to utilizing `C++` and parallel processing.
+
+To compile `LaTeX` documents, a current `TeX Live` installation is required. For this case, a full setup is used.
+
+1. Change directories into the default installation location:
+
+   <pre>cd ~/.local</pre>
+
+2. Download the installer into the directory and unpack it:
+
+	<pre>curl -L http://mirror.ctan.org/systems/texlive/tlnet/install-tl-unx.tar.gz | tar xz</pre>
+
+3. Run the latest install script and enter `I` to proceed:
+
+   <pre>TEXLIVE_INSTALL_PREFIX=~/.local/texlive ./install-tl-<i>version</i>/install-tl</pre>
+
+4. Append to the path in `.bashrc` or `.zshrc` shell configuration files:
+
+   <pre>echo 'export PATH="$HOME/.local/texlive/<i>year</i>/bin/x86_64-linux:$PATH"' >> <i>~/.shellrc</i></pre>
+
+5. Adjust the new environment manager to keep previous packages, use dynamic mirror for updates, and reinitialize fonts:
+
+   <pre>tlmgr option autobackup -- -1</pre>
+   <pre>tlmgr option repository https://mirror.ctan.org/systems/texlive/tlnet</pre>
+   <pre>luaotfload-tool --update --force</pre>
+
+*Adapted from the [Toolbox Workshop](https://toolbox.pep-dortmund.org/install/linux/).*
