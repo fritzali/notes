@@ -1,9 +1,9 @@
 all: plot report count spell
 
 plot: plot.py matplotlibrc matplotlib.tex
-	TEXINPUTS=$$(pwd) MATPLOTLIBRC=matplotlibrc python plot.py
+	TEXINPUTS=$$(pwd)/.: MATPLOTLIBRC=./matplotlibrc python plot.py
 
-report: FORCE | build plot
+report: FORCE | build
 	TEXINPUTS=.: \
 	BIBINPUTS=.: \
 	max_print_line=1048576 \

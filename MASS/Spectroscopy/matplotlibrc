@@ -2,21 +2,25 @@ axes.prop_cycle : cycler('color', ['olivedrab', 'steelblue', 'firebrick', 'golde
 
 backend : pgf
 
-figure.figsize : 5.78, 3.57
+figure.figsize : 3.27, 2.45
 
 figure.constrained_layout.use : True
-figure.constrained_layout.w_pad : 0.11 
-figure.constrained_layout.h_pad : 0.11
 
 font.family : serif
+
+axes.labelsize : small
 
 font.size : 10
 legend.fontsize : small
 legend.frameon : False
-xtick.labelsize : 9
+xtick.labelsize : small
 xtick.minor.visible : True
-ytick.labelsize : 9
+xtick.direction: in
+xtick.top : True
+ytick.labelsize : small
 ytick.minor.visible : True
+ytick.direction: in
+ytick.right : True
 
 pgf.rcfonts : False
 

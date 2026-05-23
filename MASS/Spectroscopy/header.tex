@@ -15,6 +15,7 @@
 	headsep=6.5mm,
 	footskip=12.5mm
 }
+\usepackage[aux]{rerunfilecheck}
 
 
 % --- Modern Font Setup --- %
@@ -25,11 +26,37 @@
 \setmathfont{TeX Gyre Termes Math}
 
 
+% --- Math Symbols --- %
+
+\usepackage{amsmath}
+\usepackage{mathtools}
+
+
+% --- Units --- %
+
+\usepackage[
+	locale=US
+]{siunitx}
+
+
 % --- Aesthetic Improvements --- %
 
 \usepackage{graphicx}
 \usepackage{booktabs}
 \usepackage{microtype}
+\usepackage[autostyle]{csquotes}
+
+
+% --- Float Improvements --- %
+
+\usepackage{float}
+\floatplacement{figure}{htbp}
+\floatplacement{table}{htbp}
+
+\usepackage[
+	section,
+	below,
+]{placeins}
 
 
 % --- Abstract Adjustments --- %
@@ -47,6 +74,15 @@
 \usepackage{titlesec}
 \titleformat{\section}{\normalfont\large\bfseries}{\thesection}{1ex}{}
 \titleformat{\subsection}{\normalfont\normalsize\bfseries}{\thesubsection}{1ex}{}
+
+
+% --- Caption Styling --- %
+\usepackage[
+	labelfont=bf,
+	font=small,
+	width=0.9\textwidth
+]{caption}
+\usepackage{subcaption}
 
 
 % --- Header & Footer --- %
