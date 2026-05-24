@@ -11,8 +11,13 @@ font.family : serif
 axes.labelsize : small
 
 font.size : 10
+
 legend.fontsize : small
 legend.frameon : False
+legend.handlelength : 1.5
+legend.columnspacing : 1.5
+legend.handletextpad : 0.6
+
 xtick.labelsize : small
 xtick.minor.visible : True
 xtick.direction: in
