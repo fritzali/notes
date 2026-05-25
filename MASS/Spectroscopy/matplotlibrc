@@ -1,4 +1,4 @@
-axes.prop_cycle : cycler('color', ['olivedrab', 'steelblue', 'firebrick', 'goldenrod'])
+axes.prop_cycle : cycler('color', ['firebrick', 'goldenrod', 'olivedrab', 'steelblue'])
 
 backend : pgf
 
