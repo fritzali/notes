@@ -69,6 +69,81 @@ plt.savefig('content/theo_halo.pdf')
 
 plt.close()
 
+def ncc_dens(r, rc = 300, b = 0.7, n = 1e-3):
+	return n * (1 + (r / rc)**2)**(- 3 * b / 2)
+
+def cc_dens(r, rc1 = 30, b1 = 0.5, n1 = 5e-2, rc2 = 200, b2 = 0.7, n2 = 1e-3):
+	return n1 * (1 + (r / rc1)**2)**(- 3 * b1 / 2) + n2 * (1 + (r / rc2)**2)**(- 3 * b2 / 2)
+
+def ncc_temp(r, kT = 6, kTm = 6, acool = 2.0, rcool = 70, rt = 1000, a = 0.05, b = 2.2, c = 0.6):
+	return kT * ((r/rcool)**acool + kTm/kT) / ((r/rcool)**acool + 1) * ((r/rt)**(-a)) / ((1 + (r/rt)**(b))**(c/b))
+
+def cc_temp(r, kT = 7.5, kTm = 2.5, acool = 2.0, rcool = 70, rt = 1000, a = 0.05, b = 2.2, c = 0.6):
+	return kT * ((r/rcool)**acool + kTm/kT) / ((r/rcool)**acool + 1) * ((r/rt)**(-a)) / ((1 + (r/rt)**(b))**(c/b))
+
+def ncc_pres(r, P = 3.2e-10, r500 = 1000, c500 = 1.0, a = 1.1, b = 5.5, c = 0.1):
+	return P / ((c500 * r / r500)**c * (1 + (c500 * r / r500)**a)**((b - c) / a))
+
+def cc_pres(r, P = 6.4e-10, r500 = 1000, c500 = 1.4, a = 1.1, b = 5.5, c = 0.4):
+	return P / ((c500 * r / r500)**c * (1 + (c500 * r / r500)**a)**((b - c) / a))
+
+def ncc_entr(r, K = 70, K100 = 100, a = 1.2):
+	return K + K100 * (r / 100)**a
+
+def cc_entr(r, K = 15, K100 = 150, a = 1.2):
+	return K + K100 * (r / 100)**a
+
+r = np.logspace(1.0, 3.5, 333)
+
+fig, axs = plt.subplots(2, 2, figsize=[7.81, 5.85])
+
+axs[0, 0].plot(r, cc_dens(r), label='Cool Core', ls='-', c='k', lw=0.8)
+axs[0, 0].plot(r, ncc_dens(r), label='Noncool Core', ls=(0, (8, 2)), c='k', lw=0.8)
+
+axs[0, 0].set_xlabel(r'$r \mathbin{/} \unit{\kilo\parsec}$')
+axs[0, 0].set_ylabel(r'$n \mathbin{/} \unit{\per\centi\meter\cubed}$')
+
+axs[0, 0].set_xscale('log')
+axs[0, 0].set_yscale('log')
+
+axs[0, 0].legend()
+
+axs[0, 1].plot(r, cc_pres(r), label='Cool Core', ls='-', c='k', lw=0.8)
+axs[0, 1].plot(r, ncc_pres(r), label='Noncool Core', ls=(0, (8, 2)), c='k', lw=0.8)
+
+axs[0, 1].set_xlabel(r'$r \mathbin{/} \unit{\kilo\parsec}$')
+axs[0, 1].set_ylabel(r'$P \mathbin{/} \unit{\erg\per\centi\meter\cubed}$')
+
+axs[0, 1].set_xscale('log')
+axs[0, 1].set_yscale('log')
+
+axs[0, 1].legend()
+
+axs[1, 0].plot(r, cc_temp(r), label='Cool Core', ls='-', c='k', lw=0.8)
+axs[1, 0].plot(r, ncc_temp(r), label='Noncool Core', ls=(0, (8, 2)), c='k', lw=0.8)
+
+axs[1, 0].set_xlabel(r'$r \mathbin{/} \unit{\kilo\parsec}$')
+axs[1, 0].set_ylabel(r'$kT \mathbin{/} \unit{\kilo\electronvolt}$')
+
+axs[1, 0].set_xscale('log')
+
+axs[1, 0].legend()
+
+axs[1, 1].plot(r, cc_entr(r), label='Cool Core', ls='-', c='k', lw=0.8)
+axs[1, 1].plot(r, ncc_entr(r), label='Noncool Core', ls=(0, (8, 2)), c='k', lw=0.8)
+
+axs[1, 1].set_xlabel(r'$r \mathbin{/} \unit{\kilo\parsec}$')
+axs[1, 1].set_ylabel(r'$K \mathbin{/} \unit{\kilo\electronvolt\centi\meter\squared}$')
+
+axs[1, 1].set_xscale('log')
+axs[1, 1].set_yscale('log')
+
+axs[1, 1].legend()
+
+plt.savefig('content/theo_profiles.pdf')
+
+plt.close()
+
 ### spectra ###
 
 E85, F85, Ferr85 = np.genfromtxt('catalog/Chandra/acisf15173N003_evt2-A85.txt', unpack=True)
@@ -254,7 +329,7 @@ plt.plot(R85, Z85, label='A85', lw=0.9, alpha=0.75, c='olivedrab', zorder=3)
 plt.plot(R3158, Z3158, label='A3158', lw=0.9, alpha=0.75, c='steelblue', zorder=2)
 plt.plot(R1644, Z1644, label='A1644', lw=0.9, alpha=0.75, c='rebeccapurple', zorder=1)
 
-plt.xlabel(r'$R \mathbin{/} R_{500}$')
+plt.xlabel(r'$R \mathbin{/} \unit{\kilo\parsec}$')
 plt.ylabel(r'$Z$')
 
 plt.xscale('log')
@@ -386,7 +461,7 @@ axs[1, 0].plot(R85, Z85, label='A85', lw=0.9, alpha=0.75, c='olivedrab', zorder=
 axs[1, 0].plot(R3158, Z3158, label='A3158', lw=0.9, alpha=0.75, c='steelblue', zorder=2)
 axs[1, 0].plot(R1644, Z1644, label='A1644', lw=0.9, alpha=0.75, c='rebeccapurple', zorder=1)
 
-axs[1, 0].set_xlabel(r'$R \mathbin{/} R_{500}$')
+axs[1, 0].set_xlabel(r'$R \mathbin{/} \unit{\kilo\parsec}$')
 axs[1, 0].set_ylabel(r'$Z$')
 
 axs[1, 0].set_xscale('log')
