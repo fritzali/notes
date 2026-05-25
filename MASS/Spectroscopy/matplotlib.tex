@@ -10,7 +10,11 @@
 \usepackage{microtype}
 
 \usepackage[
-	locale=DE
+	locale = US,
+	print-zero-exponent = true,
+	print-unity-mantissa = false
 ]{siunitx}
 
-\DeclareSIUnit\parsec{pc}
+\DeclareSIUnit\erg{erg}
+\DeclareSIUnit{\parsec}{pc}
+\DeclareSIUnit{\solarmass}{\ensuremath{M_\odot}}
