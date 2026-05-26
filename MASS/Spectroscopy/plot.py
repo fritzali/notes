@@ -144,6 +144,48 @@ plt.savefig('content/theo_profiles.pdf')
 
 plt.close()
 
+def cmb(nu, T = 2.7255):
+    h = 6.62607015e-34
+    c = 2.99792458e8
+    k = 1.380649e-23
+    x = (h * nu) / (k * T)
+    return (2 * h * nu**3) / (c**2 * (np.exp(x) - 1))
+
+def sz(nu, T = 2.7255, y = 0.175):
+    h = 6.62607015e-34
+    c = 2.99792458e8
+    k = 1.380649e-23
+    x = (h * nu) / (k * T)
+    fx = (x * np.exp(x) / (np.exp(x) - 1)**2) * (x * (np.exp(x) + 1) / (np.exp(x) - 1) - 4)
+    Inu = cmb(nu, T)
+    dInu = y * (2 * h * nu**3 / c**2) * fx
+    return Inu + dInu
+
+nu = np.logspace(np.log10(4e8), np.log10(4e12), 999)
+
+Icmb = cmb(nu)
+Isz = sz(nu)
+
+nucmb = nu[Icmb > 6e-21]
+Icmb = Icmb[Icmb > 6e-21] * 1e3
+nusz = nu[Isz > 6e-21]
+Isz = Isz[Isz > 6e-21] * 1e3
+
+plt.plot(nucmb / 1e9, Icmb, label='Undisturbed CMB Blackbody', ls='-', c='k', lw=0.8)
+plt.plot(nusz / 1e9, Isz, label='Thermal SZ Distortion', ls=(0, (8, 2)), c='k', lw=0.8)
+
+plt.xlabel(r'$\nu \mathbin{/} \unit{\giga\hertz}$')
+plt.ylabel(r'$I_\nu \mathbin{/} \unit{\erg\per\second\per\centi\meter\squared\per\hertz\per\steradian}$')
+
+plt.xscale('log')
+plt.yscale('log')
+
+plt.legend()
+
+plt.savefig('content/theo_sz.pdf')
+
+plt.close()
+
 ### spectra ###
 
 E85, F85, Ferr85 = np.genfromtxt('catalog/Chandra/acisf15173N003_evt2-A85.txt', unpack=True)
