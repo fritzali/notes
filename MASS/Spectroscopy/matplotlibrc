@@ -2,7 +2,7 @@ axes.prop_cycle : cycler('color', ['firebrick', 'goldenrod', 'olivedrab', 'steel
 
 backend : pgf
 
-figure.figsize : 3.27, 2.45
+figure.figsize : 3.25, 2.44
 
 figure.constrained_layout.use : True
 

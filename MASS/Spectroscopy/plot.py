@@ -95,7 +95,7 @@ def cc_entr(r, K = 15, K100 = 150, a = 1.2):
 
 r = np.logspace(1.0, 3.5, 333)
 
-fig, axs = plt.subplots(2, 2, figsize=[7.81, 5.85])
+fig, axs = plt.subplots(2, 2, figsize=[6.69, 5.02])
 
 axs[0, 0].plot(r, cc_dens(r), label='Cool Core', ls='-', c='k', lw=0.8)
 axs[0, 0].plot(r, ncc_dens(r), label='Noncool Core', ls=(0, (8, 2)), c='k', lw=0.8)
@@ -298,7 +298,7 @@ plt.savefig('content/chan_pressure.pdf')
 
 plt.close()
 
-fig, axs = plt.subplots(2, 2, figsize=[7.81, 5.85])
+fig, axs = plt.subplots(2, 2, figsize=[6.69, 5.02])
 
 axs[0, 0].plot(R426[1:], ne426[1:], label='A426', lw=0.9, alpha=0.75, c='firebrick', zorder=5)
 axs[0, 0].plot(R2029[1:], ne2029[1:], label='A2029', lw=0.9, alpha=0.75, c='goldenrod', zorder=4)
@@ -491,7 +491,14 @@ plt.savefig('content/xmmn_temperature.pdf')
 
 plt.close()
 
-fig, axs = plt.subplots(2, 3, figsize=[7.81, 3.90])
+mpl.rcParams.update({
+	"axes.labelsize": "x-small",
+	"xtick.labelsize": "x-small",
+	"ytick.labelsize": "x-small",
+	"legend.fontsize": "x-small"
+})
+
+fig, axs = plt.subplots(2, 3, figsize=[6.69, 3.35])
 
 R85, Z85, Zerr85 = np.genfromtxt('catalog/XMM-Newton/X-COP-A85-abun.txt', unpack=True)
 R1644, Z1644, Zerr1644 = np.genfromtxt('catalog/XMM-Newton/X-COP-A1644-abun.txt', unpack=True)

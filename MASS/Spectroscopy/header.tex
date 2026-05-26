@@ -192,3 +192,26 @@
 % --- Dummy Text --- %
 
 \usepackage{lipsum}
+
+
+% --- Writing Lengths --- %
+
+\AtEndDocument{
+	\directlua{
+		local factor = 65536 * 72.27
+		
+		local tw = math.floor((tex.getdimen("textwidth") / factor) * 100 + 0.5) / 100
+		local cw = math.floor((tex.getdimen("columnwidth") / factor) * 100 + 0.5) / 100
+		local cs = math.floor((tex.getdimen("columnsep") / factor) * 100 + 0.5) / 100
+		local lw = math.floor((tex.getdimen("linewidth") / factor) * 100 + 0.5) / 100
+		
+		texio.write_nl("===================================================")
+		texio.write_nl("CURRENT LAYOUT:")
+		texio.write_nl("Textwidth:  " .. tw .. " in")
+		texio.write_nl("Columnwidth: " .. cw .. " in")
+		texio.write_nl("Columnsep:   " .. cs .. " in")
+		texio.write_nl("Linewidth:   " .. lw .. " in")
+		texio.write_nl("===================================================")
+		io.flush()
+	}
+}
