@@ -1,4 +1,10 @@
-\documentclass[draft, twocolumn, 10pt]{article}
+\documentclass[twocolumn, 10pt]{article}
+
+
+\usepackage[
+	filename=false, 
+	allfiguresdraft=true
+]{draftfigure}
 
 
 % --- Page Layout --- %
@@ -80,10 +86,11 @@
 \usepackage[
 	labelfont=bf,
 	font=small,
-	width=0.9\textwidth
 ]{caption}
 \usepackage{subcaption}
 
+\captionsetup[figure]{width=0.9\columnwidth}
+\captionsetup[figure*]{width=0.9\textwidth}
 
 % --- Header & Footer --- %
 
