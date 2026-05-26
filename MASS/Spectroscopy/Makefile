@@ -12,7 +12,7 @@ report: FORCE | build
 		--output-directory=build \
 		--interaction=batchmode \
 		--halt-on-error \
-	main.tex; mv build/main.pdf report.pdf
+	main.tex; cp build/main.pdf report.pdf
 
 count:
 	texcount main.tex
@@ -38,7 +38,7 @@ diagnose: FORCE | build
 		--output-directory=build \
 		--interaction=batchmode \
 		--halt-on-error \
-	main.tex; mv build/main.pdf report.pdf
+	main.tex; cp build/main.pdf report.pdf
 
 FORCE:
 
