@@ -25,7 +25,7 @@ a similar shape to the overall matter distribution in the outer parts where it u
 of roughly $f_g \!\sim\! 15\kern1pt\%$ depending on redshift, but flattens towards the central region due
 to counteracting pressures. Containing this material requires a sufficiently deep gravitational potential
 well that is provided by the high dark matter concentration, which strongly peaks in the center as
-collisional effects are negligible. Shown in \bCref{fig:theo_halo} are exemplary radial density profiles 
+collisional effects are negligible. Shown in \Cref{fig:theo_halo} are exemplary radial density profiles 
 with realistic parameter choices for the observed galaxy cluster categories as explained in the
 following subsections \cite{prat2019}.
 
@@ -84,7 +84,7 @@ following subsections \cite{prat2019}.
 			 images and contours for \textit{ROSAT All Sky Survey (RASS)} broad band count rates
 			 \cite{true1982, lask1994}. Both optical and \xray data are stretched using a simple
 			 $0.8$ exponent power law. Each frame has a radius of \ang{;15} for its field of view.
-			 Refer to \bCref{fig:obs_raw} for raw \textit{ROSAT} counts underlying the contours.}
+			 Refer to \Cref{fig:obs_raw} for raw \textit{ROSAT} counts underlying the contours.}
 	\label{fig:obs_overlay}
 \end{figure*}
 
@@ -103,15 +103,59 @@ isotropization of highly directional jets as well as stabilization and dissipati
 
 \subsection{Classes}
 
-According to the spherical dark matter halo assumption, gas properties should follow self similar
-laws along the radial distance to the cluster center and only scale with the total mass and redshift. Comparing to
-observations such as those presented in \bCref{fig:chan_profiles} and \bCref{fig:xmmn_profiles} show that this
-holds quite well for large radii but breaks down closer to the central regions. It turns out that based on these
-differences, galaxy clusters can be classified into two categories.
+According to the spherical dark matter halo assumption, gas properties should follow selfsimilar laws along the
+radial distance to the cluster center and only scale with the total mass and redshift. Comparing to observations
+such as those presented in \Cref{fig:chan_profiles,fig:xmmn_profiles} shows that this holds quite well for large
+radii but breaks down closer to the central regions. It turns out that based on these differences, galaxy clusters
+can be sorted into two categories. In order to do so, it is useful to introduce the cooling time. It derives from the
+total thermal energy $E_t \!\propto\! nT$ and volumetric cooling rate $\dot{E}_c \propto n^2 \Lambda_c(T)$ where
+the cooling function for bremsstrahlung scales as $\Lambda_c(T) \propto T^{1{\kern-1pt}/2}$ to define a proportionality
+\begin{equation*}
+	t_c = \frac{E_t}{\dot{E}_c} \propto T^{1{\kern-1pt}/2} n^{-1}
+\end{equation*}
+for the ICM properties. If this timescale is small $t_c < \qty{1}{\giga\year}$ in its center, we call it a Cooling Core
+(CC) cluster. These systems radiate away heat efficiently, leading to a rapid drop in gas temperature and a corresponding
+peak in density. With these characteristics, they also have an almost critically low entropy floor, close to the
+catastrophic cooling flow collapse scenario and only barely stabilized by galactic winds from star formation and AGN
+feedback. Generally, the population of CC clusters comprises dynamically relaxed systems with a high degree of order.
+In the opposite case, cooling is highly inefficient with $t_c > \qty{10}{\giga\year}$ and frequently exceeding the Hubble
+time. Such clusters are labeled Noncool Core (NCC) and tend to possess isothermal or monotonically increasing temperatures
+and flat density profiles towards their centers. Their inner entropy floors are large and likely originate from
+merging of subclusters. Heating occurs through supersonic shocks, turbulence, contact discontinuities and sloshing of the
+central material.
 
-\cite{boeh2010, prat2019}
+From this follows that analysis of the thermal structure in principle allows us to infer the recent dynamical history of
+clusters. Additionally, measuring the total mass $M$ inside some characteristic radius $r$ makes it possible to map the
+distribution of large scale density inhomogeneities and their evolution throughout cosmological time. After determining
+plasma properties and by assuming hydrostatic equilibrium, we can rearrange the well known formula
+\begin{equation*}
+	dP/dr = g\rho = GM\rho / r^2
+\end{equation*}
+to solve for mass. A common choice for a universal distance normalization is the overdensity radius $R_\ell$ which contrains
+the sphere around the cluster center inside which the average mass density is a factor $\ell$ larger than the surrounding
+critical density of the universe at that redshift. This way, contained masses are labeled $M_\ell$ and average quantities
+$T_\ell$ or $P_\ell$ as well as astrophysical entropy $K_\ell$ with $K \kern-2pt\propto\kern-1pt T n^{-2/3}$ can be defined
+for comparison between systems of vastly different sizes. Typical values are $\ell = 200$ since $R_{200}$ is close to the
+theoretical virialization radius, as well as $\ell = 500$ and $R_{500}$ as the boundary up to which current \xray telescopes
+can produce reliable measurements \cite{boeh2010, prat2019}.
 
 
 \subsection{Examples}
 
-
+\begin{table}
+	\centering
+	\caption{Parameters for our galaxy cluster sample. Values given are those determined for the \textit{X{\hspace{0.04em}\dash\hspace{0.11em}}COP}
+			 systems \cite{ecke2017}.}
+	\begin{tabular}{c c S[table-format=1.4] S[table-format=4.0] S[table-format=1.1e2]}
+		\toprule
+		Name & Class & $z$ & $R_{500} \mathbin{/} \unit{\kilo\parsec}$ & $M_{500} \mathbin{/} \unit{\solarmass}$ \\
+		\midrule
+		A85   & CC  & 0.0555 & 1200 & 5.6e14 \\
+		A426  & CC  & 0.0179 & 1300 & 5.9e14 \\
+		A1644 & NCC & 0.0473 & 2100 & 3.5e14 \\
+		A1656 & NCC & 0.0231 & 1300 & 6.0e14 \\
+		A2029 & CC  & 0.0766 & 1400 & 8.6e14 \\
+		A3158 & NCC & 0.0590 & 1100 & 4.3e14 \\
+		\bottomrule
+	\end{tabular}
+\end{table}

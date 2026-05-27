@@ -44,10 +44,15 @@
 \usepackage[
 	locale=US,
 	per-mode = power,
-	print-zero-exponent = true,
+	exponent-mode = input,
 	print-unity-mantissa = false,
 	range-units = single
 ]{siunitx}
+
+\DeclareSIUnit{\year}{yr}
+\DeclareSIUnit{\erg}{erg}
+\DeclareSIUnit{\parsec}{pc}
+\DeclareSIUnit{\solarmass}{\ensuremath{M_\odot}}
 
 
 % --- Aesthetic Improvements --- %

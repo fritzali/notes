@@ -18,7 +18,7 @@ count:
 	texcount main.tex
 
 spell:
-	cat main.tex | \
+	cat chapter/*.tex *.tex | \
 	aspell list --mode=tex --master=en_US | \
 	aspell list --mode=tex --master=de_DE | sort | uniq
 
