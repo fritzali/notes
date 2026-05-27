@@ -43,19 +43,19 @@ plt.close()
 def nfw(r, rs = 250.0, rhos = 1e6):
 	return rhos / ((r / rs) * (1 + r / rs)**2)
 
-def cc(r, rc = 150.0, rhog = 6.5e4, b = 0.65):
+def ncc(r, rc = 150.0, rhog = 6.5e4, b = 0.65):
 	return rhog * (1 + (r / rc)**2)**(-1.5 * b)
 
-def ncc(r, rc1 = 25.0, rhog1 = 5.0e5, b1 = 0.50, rc2 = 200.0, rhog2 = 3.0e4, b2 = 0.65):
+def cc(r, rc1 = 25.0, rhog1 = 6.5e5, b1 = 0.55, rc2 = 200.0, rhog2 = 4.0e4, b2 = 0.65):
 	inner = rhog1 * (1 + (r / rc1)**2)**(-1.5 * b1)
 	outer = rhog2 * (1 + (r / rc2)**2)**(-1.5 * b2)
-	return inner + outer
+	return (inner**2 + outer**2)**0.5
 
 r = np.logspace(1.0, 3.3, 333)
 
 plt.plot(r, nfw(r), label=r'Total Density', ls='-', c='k', lw=0.8)
-plt.plot(r, ncc(r), label=r'Noncooling Core', ls=(0, (8, 2)), c='k', lw=0.8)
-plt.plot(r, cc(r), label=r'Cooling Core', ls=(0, (3, 1)), c='k', lw=0.8)
+plt.plot(r, cc(r), label=r'Cooling Core', ls=(0, (8, 2)), c='k', lw=0.8)
+plt.plot(r, ncc(r), label=r'Noncool Core', ls=(0, (3, 1)), c='k', lw=0.8)
 
 plt.xlabel(r'$r \mathbin{/} \unit{\kilo\parsec}$')
 plt.ylabel(r'$\rho \mathbin{/} \unit{\solarmass\per\kilo\parsec\cubed}$')
@@ -73,7 +73,7 @@ def ncc_dens(r, rc = 300, b = 0.7, n = 1e-3):
 	return n * (1 + (r / rc)**2)**(- 3 * b / 2)
 
 def cc_dens(r, rc1 = 30, b1 = 0.5, n1 = 5e-2, rc2 = 200, b2 = 0.7, n2 = 1e-3):
-	return n1 * (1 + (r / rc1)**2)**(- 3 * b1 / 2) + n2 * (1 + (r / rc2)**2)**(- 3 * b2 / 2)
+	return (n1**2 * (1 + (r / rc1)**2)**(- 3 * b1) + n2**2 * (1 + (r / rc2)**2)**(- 3 * b2))**(1/2)
 
 def ncc_temp(r, kT = 6, kTm = 6, acool = 2.0, rcool = 70, rt = 1000, a = 0.05, b = 2.2, c = 0.6):
 	return kT * ((r/rcool)**acool + kTm/kT) / ((r/rcool)**acool + 1) * ((r/rt)**(-a)) / ((1 + (r/rt)**(b))**(c/b))
@@ -98,7 +98,7 @@ r = np.logspace(1.0, 3.5, 333)
 fig, axs = plt.subplots(2, 2, figsize=[6.69, 5.02])
 
 axs[0, 0].plot(r, cc_dens(r), label='Cooling Core', ls='-', c='k', lw=0.8)
-axs[0, 0].plot(r, ncc_dens(r), label='Noncooling Core', ls=(0, (8, 2)), c='k', lw=0.8)
+axs[0, 0].plot(r, ncc_dens(r), label='Noncool Core', ls=(0, (8, 2)), c='k', lw=0.8)
 
 axs[0, 0].set_xlabel(r'$r \mathbin{/} \unit{\kilo\parsec}$')
 axs[0, 0].set_ylabel(r'$n \mathbin{/} \unit{\per\centi\meter\cubed}$')
@@ -109,7 +109,7 @@ axs[0, 0].set_yscale('log')
 axs[0, 0].legend()
 
 axs[0, 1].plot(r, cc_pres(r), label='Cooling Core', ls='-', c='k', lw=0.8)
-axs[0, 1].plot(r, ncc_pres(r), label='Noncooling Core', ls=(0, (8, 2)), c='k', lw=0.8)
+axs[0, 1].plot(r, ncc_pres(r), label='Noncool Core', ls=(0, (8, 2)), c='k', lw=0.8)
 
 axs[0, 1].set_xlabel(r'$r \mathbin{/} \unit{\kilo\parsec}$')
 axs[0, 1].set_ylabel(r'$P \mathbin{/} \unit{\erg\per\centi\meter\cubed}$')
@@ -120,7 +120,7 @@ axs[0, 1].set_yscale('log')
 axs[0, 1].legend()
 
 axs[1, 0].plot(r, cc_temp(r), label='Cooling Core', ls='-', c='k', lw=0.8)
-axs[1, 0].plot(r, ncc_temp(r), label='Noncooling Core', ls=(0, (8, 2)), c='k', lw=0.8)
+axs[1, 0].plot(r, ncc_temp(r), label='Noncool Core', ls=(0, (8, 2)), c='k', lw=0.8)
 
 axs[1, 0].set_xlabel(r'$r \mathbin{/} \unit{\kilo\parsec}$')
 axs[1, 0].set_ylabel(r'$kT \mathbin{/} \unit{\kilo\electronvolt}$')
@@ -130,7 +130,7 @@ axs[1, 0].set_xscale('log')
 axs[1, 0].legend()
 
 axs[1, 1].plot(r, cc_entr(r), label='Cooling Core', ls='-', c='k', lw=0.8)
-axs[1, 1].plot(r, ncc_entr(r), label='Noncooling Core', ls=(0, (8, 2)), c='k', lw=0.8)
+axs[1, 1].plot(r, ncc_entr(r), label='Noncool Core', ls=(0, (8, 2)), c='k', lw=0.8)
 
 axs[1, 1].set_xlabel(r'$r \mathbin{/} \unit{\kilo\parsec}$')
 axs[1, 1].set_ylabel(r'$K \mathbin{/} \unit{\kilo\electronvolt\centi\meter\squared}$')
