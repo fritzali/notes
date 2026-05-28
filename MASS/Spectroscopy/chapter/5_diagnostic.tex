@@ -38,15 +38,15 @@ best a rough approximation and at worst completely inaccurate. Thanks to advance
 to resolved ICM halo datasets from which we can extract radial distributions, although there are still large uncertainties about
 nonthermal support from turbulent eddies or bulk movement indicated by hydrodynamical simulations plaguing the field that bias our
 results towards lower total masses. Due to the revolution of microcalorimeter spectrographs on board newer missions, it is however
-expected that these unknowns will now be solved with higher precision measurements.
+expected that these unknowns will be solved with higher precision measurements \cite{zhan2026}.
 
 To translate our two dimensional images to radial profiles, we need to correct for the projection from three dimensions along the
 line of sight to the detector. The basic algorithm do this decomposes our cluster into multiple annuli around the central core.
 Starting from the outermost annulus, we fit our spectrum and since there is little pollution from foreground or background layers,
 we assume that it represents a uniform shell around the whole system, taken as radially symmetric. Using this, we compute the
 corrections which have to be subtracted from the adjacent inner annulus and fit our plasma model to its now cleaned spectrum. By
-iteratively peeling layer by layer from the cluster, we deproject our image onto the radius of the system. For CC clusters, this
-is usually sufficient, but for some highly disrupted NCC cases, more sophisticated methods are required.
+iteratively peeling layer by layer from the cluster, we deproject our image onto the radius of the system. For CC clusters this
+is enough, but for highly disrupted NCC cases more sophisticated methods are needed \cite{boeh2010}.
 
 From the employed plasma model, we know the best fitting density $n$ and temperature $T$ parameters. With these, we can simply apply
 the ideal gas law
@@ -69,28 +69,31 @@ events with other galaxy clusters \cite{boeh2010, sara1986, rosa2002}.
 We can reproduce qualitatively and even to a certain extent quantitatively the shapes of radial profiles using fairly simple equations.
 For a typical NCC cluster, number density is sufficiently well described by a single beta model
 \begin{equation*}
-	n = n_0 \!\left(1 \kern-0.5pt + r^2 \kern-1pt/ r_c^2 \right)^{-3\kern-1pt\beta\kern-0.5pt/\kern+0.5pt 2}
+	n(r) = n_0 \!\left(1 \kern-0.5pt + r^2 \kern-1pt/ r_c^2 \right)^{-3\kern-1pt\beta\kern-0.5pt/\kern+0.5pt 2}
 \end{equation*}
 in the entire system. For the CC case, we superimpose the brightness $B \propto n^2$ from an inner cool and dense core with the
 extended sparse halo. We use a double beta model
 \begin{equation*}
-	n = \sqrt{n_1^2 + n_2^2}
+	n(r) = \sqrt{n_1^2 + n_2^2}
 \end{equation*}
 where $n_1$ and $n_2$ correspond to their respective substructure. When modeling the temperature profile, a broken power law is a decent fit
 for NCC systems. To incorporate the decline towards the CC central regions, we include a cooling factor. We then write the combined formula
 \begin{equation*}
-	\vphantom{\int}T = T_0 \,\frac{x_\text{cool} + T_\text{min} / T_0 \vphantom{^{\int}}}{x_\text{cool} + 1}
+	T(r) = T_0 \,\frac{x_\text{cool} + T_\text{min} / T_0 \vphantom{^{\int}}}{x_\text{cool} + 1}
 	\,\frac{(r / r_t)^{-a}}{\bigl(1 + (r / r_t)^b \bigr)^{c/b}}
 \end{equation*}
 with $x_\text{cool} = (r / r_\text{cool})^{a_\text{cool}}$ and where the cooling term is only significant in CC clusters that have
 $T_\text{min} < T_0$ since for NCC we set $T_\text{min} \approx T_0$ so that it is unity \cite{vikh2006}. As defined before,
 pressure $P$ and entropy $K$ can be derived directly from the $n$ and $T$ profiles, or we can introduce their own scaling relations.
-First, with an averaged overdensity concentration, we use
+First, with an averaged overdensity concentration $C_\ell$ and $x_\ell = r / R_\ell$ we use
 \begin{equation*}
-	P = P_0 
+	P(r) = P_0 \!\left( \kern-1pt(C_\ell \,x_\ell)^c \bigl( 1 + (C_\ell \,x_\ell)^a \bigr) \kern-1pt \right)^{-(b - c) / a}
 \end{equation*}
-\cite{arna2010}
-
-\cite{cava2009}
-
-\cite{zhan2026}
+as a universal pressure profile \cite{arna2010}. Second, we get a simple power law with constant floor
+\begin{equation*}
+	K(r) = K_0 + K_\ell \, x_\ell^\gamma
+\end{equation*}
+to describe entropy \cite{cava2009}. This function agrees with both empirical and theoretical models. Selecting parameter values
+motivated by realistic ranges and readable graphical appearances, \Cref{fig:theo_profiles} depicts radial profiles for the
+introduced quantities. Accounting for their simplicity, they match the observed distributions in \Cref{fig:chan_profiles,fig:xmmn_profiles}
+remarkably well, with most of the deviation stemming from the inconsistent normalizations and radial distance ranges.
