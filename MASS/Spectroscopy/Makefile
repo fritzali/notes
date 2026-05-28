@@ -15,7 +15,7 @@ report: FORCE | build
 	main.tex; cp build/main.pdf report.pdf
 
 count:
-	texcount main.tex
+	texcount chapter/*.tex *.tex
 
 spell:
 	cat chapter/*.tex *.tex | \

@@ -1,7 +1,21 @@
+\vspace{-0.6\baselineskip}
 \section{Spectral Characteristics}
 \label{sec:characteristic}
+\vspace{-0.5\baselineskip}
 
-\lipsum[8]
+The appearance of \xray spectra measured as the emission from galaxy clusters is governed by the physics
+at their origin in a high temperature, diffuse plasma. When working with data that have not been
+fully cleaned, such as those shown in \Cref{fig:chan_spectra} from the \textit{Chandra}
+observatory, we are additionally including instrument noise that has to be disentangled from real
+physical effects before the analysis. In our case, peaks that look like emission lines are in fact
+fluorescence artifacts from cosmic ray particles hitting the spacecraft materials. A telltale sign
+for their contaminating nature is the perfect alignment in frequency where we would expect displacement
+caused by the different $z$ values of sources at varying cosmic redshifts. Practically, this means that
+the spiking relative count rates at \qty{2.0}{\kilo\electronvolt} and \qty{7.4}{\kilo\electronvolt} as
+well as near \qty{9.7}{\kilo\electronvolt} should be subtracted from the continuum. Furthermore, the
+flattening or even slight increase of the smooth component beyond about \qty{6.6}{\kilo\electronvolt}
+is likewise a result of the gentle power law slope of the cosmic ray spectrum overshooting the signal
+\cite{boeh2010, weis2000}.
 
 \begin{figure}
 	\centering
@@ -14,9 +28,40 @@
 
 \subsection{Continuum}
 
-\lipsum[9]
+For galaxy clusters, the baseline continuum is virtually fully dominated by ICM thermal bremsstrahlung.
+This prediction is supported by \Cref{fig:chan_spectra} and allows the reconstruction of an average
+temperature from its slope by assuming a roughly isothermal system. Some observations also hint at
+possible excesses, both in the soft and hard \xray regimes. Provided these signals are not some kind of
+calibration error, possible causes are the coexistence of multiphase plasma components, a type
+of phenomenon that seems especially likely in the case of stratified CC systems, weak emission
+from WHIM bremsstrahlung, or upscattering of background photons in shocks such as those in NCC
+clusters, all of which could be introducing nonthermal signatures in a single temperature model \cite{boeh2010}.
 
 
 \subsection{Line Emission}
 
-\lipsum[10]
+Superimposed on the continuous bremsstrahlung spectrum are narrow emission lines from highly ionized
+ICM elements. The only prominent physical feature in \Cref{fig:chan_spectra} is the Fe~K complex
+spread between 6 and \qty{7}{\kilo\electronvolt} depending on redshift. In it, the most important lines
+stem from the hydrogen like Fe~XXVI and helium like Fe~XXV ions with {6\kern+0.5pt.\kern-0.5pt}\qty{70}{\kilo\electronvolt} and
+\qty{6.97}{\kilo\electronvolt} restframe energies, respectively. Since the potential of \qty{8.83}{\kilo\electronvolt}
+required to remove the last electron from the Fe nucleus is extremely high, there are very few electrons in the Maxwell
+distribution tail with velocities energetic enough at typical CC central temperatures, whereas massive NCC clusters
+routinely exceed the required thermal energy. Due to this fact, the line ratio of both dominant Fe~K lines is an
+excellent thermometer since it can be well fitted under CIE assumptions. Analogously, we can use the relative overall
+abundances of the high temperature Fe~K to low energy Fe~L line forests to infer ICM thermal properties. 
+
+Another kind of analysis is enabled by taking an accounting of the O and Ne abundances through their H and He like lines
+in the coldest regions of cluster cores. Their ratio to the iron peak elements like Fe and Ni traces the occurrence rate
+between thermonuclear SN{\kern+1pt}Ia and core collapse SN{\kern+1pt}II supernovae throughout all evolutionary history
+of the system. Where the first type produces only negligible traces of O and Ne but massive amounts of Fe and Ni elements,
+the second kind does release large quantities of these lighter alpha process elements, which therefore represent a unique fingerprint.
+Correlating the relationship between supernova types with redshift, we can reveal the Initial Mass Function (IMF) of stellar populations
+throughout cosmic time. Studies that make use of this approach usually identify little to no deviation from the Salpeter IMF
+\begin{equation*}
+	\xi(M_*) \kern-1pt = dN\kern-1pt/dM_* \propto M_*^{-\alpha}
+\end{equation*}
+with $\alpha = 2.3$ which holds for the local universe. Lastly, by instead analyzing ratios such as Ni to Fe within the iron peak
+elements themselves, it is possible to distinguish between different SN{\kern+1pt}Ia models. From this, slow deflagration models assuming
+a subsonic flame can be ruled out, leaving delayed detonations with a supersonic shock burning through the near Chandrasekhar mass limit
+white dwarf as the probable main drivers for pollution of the ICM with iron peak elements \cite{boeh2010}.
