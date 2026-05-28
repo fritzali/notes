@@ -53,15 +53,44 @@ the ideal gas law
 \begin{equation*}
 	P = nkT
 \end{equation*}
-to calculate the pressure. We get
+to calculate the pressure. Similarly, we get
 \begin{equation*}
-	K = kT / n^{2/3}
+	K \kern-1pt= kT n^{-2/3}
 \end{equation*}
-for the astrophysical entropy. This quantity tracks 
+for the astrophysical entropy. This quantity is related to its thermodynamic counterpart as $S \propto \ln(K)$ and tracks parcels
+under adiabatic evolution. To prove this statement, we can take the relation $P \propto V^{-5/3} \propto n^{5/3}$ for a blob expanding
+without the exchange of heat to its environment and find the proportionality $kT \kern-1pt\propto n^{2/3}$ by plugging in the ideal gas
+law, meaning that $K$ indeed remains constant. This makes it an incredibly useful indicator of the dynamical state of a cluster and
+allows us to draw conclusions on its recent past. While the purely gravitational baseline assumption produces smoothly falling entropy
+profiles towards the core, lower values are typically a result of radiative cooling in a relaxed configuration, whereas a flat or elevated
+profile indicates an injection of energy from central engines like SMBH driven feedback and galactic winds from star formation, or merger
+events with other galaxy clusters \cite{boeh2010, sara1986, rosa2002}.
 
-adiabatic... smth
+We can reproduce qualitatively and even to a certain extent quantitatively the shapes of radial profiles using fairly simple equations.
+For a typical NCC cluster, number density is sufficiently well described by a single beta model
+\begin{equation*}
+	n = n_0 \!\left(1 \kern-0.5pt + r^2 \kern-1pt/ r_c^2 \right)^{-3\kern-1pt\beta\kern-0.5pt/\kern+0.5pt 2}
+\end{equation*}
+in the entire system. For the CC case, we superimpose the brightness $B \propto n^2$ from an inner cool and dense core with the
+extended sparse halo. We use a double beta model
+\begin{equation*}
+	n = \sqrt{n_1^2 + n_2^2}
+\end{equation*}
+where $n_1$ and $n_2$ correspond to their respective substructure. When modeling the temperature profile, a broken power law is a decent fit
+for NCC systems. To incorporate the decline towards the CC central regions, we include a cooling factor. We then write the combined formula
+\begin{equation*}
+	\vphantom{\int}T = T_0 \,\frac{x_\text{cool} + T_\text{min} / T_0 \vphantom{^{\int}}}{x_\text{cool} + 1}
+	\,\frac{(r / r_t)^{-a}}{\bigl(1 + (r / r_t)^b \bigr)^{c/b}}
+\end{equation*}
+with $x_\text{cool} = (r / r_\text{cool})^{a_\text{cool}}$ and where the cooling term is only significant in CC clusters that have
+$T_\text{min} < T_0$ since for NCC we set $T_\text{min} \approx T_0$ so that it is unity \cite{vikh2006}. As defined before,
+pressure $P$ and entropy $K$ can be derived directly from the $n$ and $T$ profiles, or we can introduce their own scaling relations.
+First, with an averaged overdensity concentration, we use
+\begin{equation*}
+	P = P_0 
+\end{equation*}
+\cite{arna2010}
 
-
-\lipsum[12-20]
+\cite{cava2009}
 
 \cite{zhan2026}
