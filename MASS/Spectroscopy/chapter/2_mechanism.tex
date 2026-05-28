@@ -1,7 +1,29 @@
 \section{Radiation Mechanisms}
 \label{sec:mechanism}
 
-\lipsum[3-5]
+While we can assume Local Thermodynamic Equilibrium (LTE) for thick plasmas such as those inside stars,
+where excitation obeys the Boltzmann distribution and ionization the Saha equation with radiation
+following a Planck law, the ICM is thin except for some resonant scattering effects. This means that
+photons escape easily, leaving the balance of ionization and recombination to be regulated entirely
+through the plasma particles themselves, in which electrons retain their Maxwellian velocity distribution.
+We refer to such systems as being in Collisional Ionization Equilibrium (CIE) which have certain
+characteristic radiation properties \cite{kaas2008, rybi1979}.
+
+
+\subsection{Free{\hspace{0.08em}\dash}Free Emission}
+
+When free electrons get deflected by the Coulomb field of an ion, they lose kinetic energy via the emission
+of photons. Since the amplitude and occurrence rate are dependent on the state of the thermalized plasma
+population, we call this mechanism thermal braking radiation or bremsstrahlung. Its emissivity is given by
+the equation
+\begin{equation*}
+	\epsilon \propto n_e n_i Z^2 T^{\kern+1pt-1\kern-1pt/2} g_{ff}(T,E) e^{-E/kT}
+\end{equation*}
+where the Gaunt factor $g_{ff}(T,E)$ is an averaged quantum mechanical correction of order unity. The spectra
+produced by bremsstrahlung present a characteristic broad continuum with an exponential rolloff once photon
+energies exceed the order of the thermal electron energy. This cutoff from the Gaunt factor dominated flat slope
+can therefore be used to determine the local temperature of an emitting region, as is shown in \Cref{fig:theo_brems}
+for different cases.
 
 \begin{figure}
 	\centering
@@ -11,11 +33,51 @@
 	\label{fig:theo_brems}
 \end{figure}
 
+Since the ICM is very hot with thermal energies of the order \qty{10}{\kilo\electronvolt} it is almost entirely
+dominated by the bremsstrahlung spectrum. However, systems with shallower gravitational potentials and lower
+temperatures than clusters are often still in CIE and exhibit a less prominent continuum, leading to other radiation
+components being more relevant. Examples for this are galaxy groups as well as giant elliptical galaxies \cite{boeh2010}.
+
+
+\subsection{Bound{\hspace{0.03em}\dash}Free Component}
+
+If a free electron gets captured into a bound state by an ion, it emits photons with a frequency corresponding to the sum of
+its previous kinetic energy and the ionization potential of the specific atomic shell. This results in a spectrum
+defined by a sharp recombination edge at the minimum required energy for ionization of the excitation level and a
+smooth tail toward higher energies. Since lighter elements like hydrogen and helium are fully stripped of electrons,
+their contributions to the ICM radiation are negligible, although heavier metals like iron can show up as subtle steps in the
+bremsstrahlung continuum. At lower temperatures, this mechanism becomes more visible as ions retain more bound electrons.
+
+
+\subsection{Bound{\hspace{0.03em}\dash}Bound Features}
+
+Emission lines result from collisional or radiative excitation and the subsequent decay of an electron between two bound energy
+states. Due to the quantization of atomic shells, the emitted photons have a very narrow energy range. Realistic line shapes are
+not perfectly discrete because of the intrinsic Heisenberg uncertainty and can be further broadened by the thermal Doppler effect
+or deformation from collisions. From convolving Lorentzian and Gaussian curves, they obtain a Voigt profile depending on the plasma
+motion. Since in the ICM most atomic nuclei are stripped bare with no bound electrons left, few if any spectral lines are present
+in their bremsstrahlung continua. For the analysis of galaxy clusters through \xray spectroscopy, the most important ones are the
+Fe K complex centered at \qty{6.6}{\kilo\electronvolt} and the Fe L complex around \qty{1.1}{\kilo\electronvolt} as well as O lines
+near \qty{0.6}{\kilo\electronvolt} for reasons discussed in the following sections \cite{rybi1979, kaas2008, boeh2010}.
+
+
+\subsection{Sunyaev{\hspace{0.02em}\dash}Zeldovich Effect}
+
+Although it is observed in the microwave and submillimeter bands of the electromagnetic spectrum instead of at \xray
+energies, the thermal Sunyaev{\hspace{0.02em}\dash}Zeldovich (SZ) effect offers a highly relevant complimentary approach
+for mapping ICM properties. It describes how Cosmic Microwave Background (CMB) photons are boosted towards higher energies
+through inverse Compton scattering with energetic ICM electrons. This produces a shadow below and an enhancement
+above a specific frequency versus the nearly homogenous CMB blackbody spectrum. Since the energy
+density at larger $z$ is higher by a factor exactly equal to the dimming magnitude during travel of the
+signal, the SZ effect does not depend on redshift. As it involves one body, its surface brightness scales linearly
+with $P \propto nT$ as opposed to the square dependence in $S \propto n^2T^{1\kern-1pt/2}$ for bremsstrahlung from
+the interaction of two charges \cite{birk1999, boeh2010, rybi1979}. Combining measurements of the ICM emission
+itself in \xrays and SZ cluster maps from \textit{Planck} data allows us to build high quality models of their gas
+structure \cite{agha2020}. Visualized in \Cref{fig:theo_sz} is a comparison to the CMB spectrum.
+
 \begin{figure}
-	\centering
-	\includegraphics[width=\columnwidth, draft=false]{content/theo_sz.pdf}
-	\caption{Schematic view of the thermal Sunyaev{\hspace{0.02em}\dash}Zeldovich effect on
-			 the Cosmic Microwave Background (CMB) Planck spectrum with exaggerated $Y \!\sim 0.2$
-			 Compton parameter in the nonrelativistic limit.}
+	\centering\vspace{-0.1\baselineskip}
+	\includegraphics[width=\columnwidth, draft=false]{content/theo_sz.pdf}\vspace{-0.2\baselineskip}
+	\caption{Schematic view of the thermal SZ effect on the CMB with exaggerated Compton $Y \!\sim 0.2$ parameter.}
 	\label{fig:theo_sz}
 \end{figure}
