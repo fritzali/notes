@@ -1,4 +1,3 @@
-\clearpage
 \pagenumbering{roman}
 \setcounter{page}{1}
 
@@ -8,12 +7,20 @@
 \setcounter{subsection}{0}
 \renewcommand{\thesubsection}{\Alph{subsection}}
 
-\subsection{Methodology}
-
-\cite{arna2010,prat2010,arna2005,vikh2006,cava2009}
-
-
 \subsection{Cluster Profiles}
+
+Many more quantities and modifications could be added to the previously defined radial profiles.
+Noting an interesting consequence of the self similarity between galaxy clusters, different
+characteristic overdensity averages are determined by $R_\ell$ and $M_\ell$ alone. Accordinly,
+combining values listed in \Cref{tab:obs_param} allows us to estimate averages for $T_\ell$ as
+well as $P_\ell$ and $K_\ell$ where in addition we must only account for the simplified
+cosmological evolution parameter
+\begin{equation*}
+	h(z) = \frac{H(z)}{H_0} = \sqrt{\Omega_M(1 \kern-1pt+\kern-0.5pt z)^3 + \Omega_{\kern-1pt\Lambda}}
+\end{equation*}
+under the condition $\Omega_M + \Omega_\Lambda = 1$ for a flat universe. Exact equations based on the
+REXCESS sample among others are given in the literature \cite{arna2005, arna2010, prat2010}.
+
 
 \begin{figure*}
 	\centering
@@ -28,6 +35,10 @@
 \end{figure*}
 
 \subsection{Reference Images}
+
+To supplement the composites in \Cref{fig:obs_overlay} with intermediate pipeline data, \Cref{fig:obs_raw} displays the
+raw count rates after an initial smoothing.
+
 
 \begin{figure*}
 	\centering
@@ -76,3 +87,13 @@
 			 catalogs \cite{cava2009, ecke2017}.}
 	\label{fig:obs_raw}
 \end{figure*}
+
+
+\subsection{Methodology}
+
+All figures included in this text are generated using a semi automated Python pipeline that
+matches and pulls from the NASA High Energy Astrophysics Science Archive Research Center
+(HEASARC) or SkyView databases, and extracts locally saved archival data files saved manually
+directly from the different collaborations cited in this work. The relevant components
+are then cleaned and processed to be ingested by the plotting script itself. To reproduce and modify the
+implementation, consult this \href{https://github.com/fritzali/notes/tree/main/MASS/Spectroscopy}{repository}.
