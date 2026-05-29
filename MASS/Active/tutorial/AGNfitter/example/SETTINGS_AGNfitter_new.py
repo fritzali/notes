@@ -28,7 +28,7 @@ def CATALOG_settings():
 
 
     ##GENERAL
-    cat['path'] = '/home/laura-pc/PCLaura/Materias/Astrofisica_extragalactica/Proyecto-Gabriela/AGNfitter_2.0/AGNfitter/' #'/Users/gcalistr/Documents/AGNfitter/'  #path to the AGNfitter code
+    cat['path'] = './AGNfitter/' #'/Users/gcalistr/Documents/AGNfitter/'  #path to the AGNfitter code
     cat['filename'] = cat['path']+'data/brown2018_test.txt' 
     cat['filetype'] = 'ASCII' ## catalog file type: 'ASCII' or 'FITS'. 
     cat['name'] = 0                 ## If ASCII: Column index (int) of source IDs

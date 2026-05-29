@@ -22,4 +22,4 @@ dependencies:
   - pip:
     - corner==2.2.3
     - fantasy_agn==1.0.0
-    - pyagn==0.2.0
+    - qsosed==0.0.1.dev60
