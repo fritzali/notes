@@ -274,8 +274,9 @@
 	\section{Physical Properties}
 
 	Other than classifying objects, we can also extract estimates of their physical properties from spectral data.
-	The following subsections will outline this process for gas density and velocity, as well as derive the
-	central Black Hole (BH) mass for our binned dataset. 
+	The following subsections will outline this process for electron density and gas velocity, as well as derive the
+	central Black Hole (BH) mass for our dataset. Graphics in this section use hexagonal bins instead of
+	scatter plots to retain the distribution shape while making possible trends in the data more visible.
 
 	\subsection{Gas Density}
 
@@ -284,73 +285,36 @@
 	is independent of gas temperature. Instead, at low densities the ratio is fixed by their degeneracies as statistical
 	weights, whereas at high densities, collisional deexcitation becomes relevant, which does not emit photons. Due to the
 	lower wavelength state having a longer lifetime, it gets affected more strongly by this mechanism, dropping the ratio and
-	allowing us to reconstruct the local electron density as a proxy for the gas \cite{sand2016, joh2021}.
+	allowing us to reconstruct the local electron density as a proxy for the gas \cite{sand2016, joh2021}. The resulting
+	values are depicted in \Cref{fig:BPT_density} and show a soft but clearly recognizable trend towards higher densities
+	in the AGN classified region. This makes sense if we imagine that the harsh radiation field as well as shocks originating
+	from the central SMBH compress the surrounding Narrow Line Region (NLR) gas from which our lines are emitting.
 
 	\begin{figure}[t]
 		\centering
 		\includegraphics[width=\columnwidth, draft=false]{assets/plots/BPT_density.pdf}
-		\caption{Binned BPT data showing electron density.}
+		\caption{Binned BPT data showing electron density. \\ Refer to \Cref{fig:WHAN_density,fig:WISE_density} for WHAN and WISE plots.}
 		\label{fig:BPT_density}
-	\end{figure}
-
-	\begin{figure}
-		\centering
-		\includegraphics[width=\columnwidth, draft=false]{assets/plots/BPT_dispersion.pdf}
-		\caption{}
-		\label{fig:BPT_dispersion}
-	\end{figure}
-
-	\begin{figure}
-		\centering
-		\includegraphics[width=\columnwidth, draft=false]{assets/plots/BPT_mass.pdf}
-		\caption{}
-		\label{fig:BPT_mass}
 	\end{figure}
 
 	\subsection{Gas Velocity}
 
-	\begin{figure}
-		\centering
-		\includegraphics[width=\columnwidth, draft=false]{assets/plots/WHAN_density.pdf}
-		\caption{}
-		\label{fig:WHAN_density}
-	\end{figure}
+	
 
 	\begin{figure}
 		\centering
-		\includegraphics[width=\columnwidth, draft=false]{assets/plots/WHAN_dispersion.pdf}
-		\caption{}
-		\label{fig:WHAN_dispersion}
-	\end{figure}
-
-	\begin{figure}
-		\centering
-		\includegraphics[width=\columnwidth, draft=false]{assets/plots/WHAN_mass.pdf}
-		\caption{}
-		\label{fig:WHAN_mass}
+		\includegraphics[width=\columnwidth, draft=false]{assets/plots/BPT_dispersion.pdf}
+		\caption{Binned BPT data showing gas velocity. \\ Refer to \Cref{fig:WHAN_dispersion,fig:WISE_dispersion} for WHAN and WISE plots.}
+		\label{fig:BPT_dispersion}
 	\end{figure}
 
 	\subsection{Black Hole Mass}
 
 	\begin{figure}
 		\centering
-		\includegraphics[width=\columnwidth, draft=false]{assets/plots/WISE_density.pdf}
-		\caption{}
-		\label{fig:WISE_density}
-	\end{figure}
-
-	\begin{figure}
-		\centering
-		\includegraphics[width=\columnwidth, draft=false]{assets/plots/WISE_dispersion.pdf}
-		\caption{}
-		\label{fig:WISE_dispersion}
-	\end{figure}
-
-	\begin{figure}
-		\centering
-		\includegraphics[width=\columnwidth, draft=false]{assets/plots/WISE_mass.pdf}
-		\caption{}
-		\label{fig:WISE_mass}
+		\includegraphics[width=\columnwidth, draft=false]{assets/plots/BPT_mass.pdf}
+		\caption{Binned BPT data showing black hole mass. \\ Refer to \Cref{fig:WHAN_mass,fig:WISE_mass} for WHAN and WISE plots.}
+		\label{fig:BPT_mass}
 	\end{figure}
 
 	\subsection{Data Analysis}
@@ -371,23 +335,100 @@
 
 	\begin{figure*}[t]
 		\centering
-		\includegraphics[width=\textwidth, draft=false]{assets/plots/SDSS_bar.pdf}
+		\includegraphics[width=\textwidth, draft=false]{assets/plots/BPT_multipanel.pdf}
 		\caption{}
-		\label{fig:SDSS_bar}
+		\label{fig:BPT_multipanel}
 	\end{figure*}
+
+	\section{Conclusion}
+
+	\newpage
+	\renewcommand{\thesubsection}{\Alph{subsection}}
+	\label{sec:appendix}
+	\twocolumn[{
+		\printbibliography
+
+		\vspace{\baselineskip}
+		\section*{Appendix}
+
+		\pagenumbering{roman}
+		\setcounter{page}{1}
+
+		This section contains supplementary graphics as well as the SQL query in \Cref{fig:query} used to obtain our
+		crossmatched dataset from this \href{https://skyserver.sdss.org/dr19/SearchTools/sql}{site}. The full
+		implementation with numerical values and equations via raw Python code is found in this
+		\href{https://github.com/fritzali/notes/tree/main/MASS/Active/project}{repository}.
+
+		\vspace{\baselineskip}
+		\subsection{Gas Density}
+
+		\begin{minipage}{0.475\textwidth}
+			\centering
+			\includegraphics[width=\textwidth, draft=false]{assets/plots/WHAN_density.pdf}
+			\captionof{figure}{Binned WHAN data showing electron density.}
+			\label{fig:WHAN_density}
+		\end{minipage}%
+		\hfill
+		\begin{minipage}{0.475\textwidth}
+			\centering
+			\includegraphics[width=\textwidth, draft=false]{assets/plots/WISE_density.pdf}
+			\captionof{figure}{Binned WISE data showing electron density.}
+			\label{fig:WISE_density}
+		\end{minipage}%
+
+		\vspace{\baselineskip}
+		\subsection{Gas Velocity}
+
+		\begin{minipage}{0.475\textwidth}
+			\centering
+			\includegraphics[width=\textwidth, draft=false]{assets/plots/WHAN_dispersion.pdf}
+			\captionof{figure}{Binned WHAN data showing gas velocity.}
+			\label{fig:WHAN_dispersion}
+		\end{minipage}%
+		\hfill
+		\begin{minipage}{0.475\textwidth}
+			\centering
+			\includegraphics[width=\textwidth, draft=false]{assets/plots/WISE_dispersion.pdf}
+			\captionof{figure}{Binned WISE data showing gas velocity.}
+			\label{fig:WISE_dispersion}
+		\end{minipage}%
+	}]
+
+	\twocolumn[{
+
+		\subsection{Black Hole Mass}
+
+		\begin{minipage}{0.475\textwidth}
+			\centering
+			\includegraphics[width=\columnwidth, draft=false]{assets/plots/WHAN_mass.pdf}
+			\captionof{figure}{Binned WHAN data showing black hole mass.}
+			\label{fig:WHAN_mass}
+		\end{minipage}%
+		\hfill
+		\begin{minipage}{0.475\textwidth}
+			\centering
+			\includegraphics[width=\columnwidth, draft=false]{assets/plots/WISE_mass.pdf}
+			\captionof{figure}{Binned WISE data showing black hole mass.}
+			\label{fig:WISE_mass}
+		\end{minipage}%
+
+		\vspace{\baselineskip}
+		\subsection{Data Analysis}
+
+		\begin{minipage}{\textwidth}
+			\centering
+			\includegraphics[width=\textwidth, draft=false]{assets/plots/SDSS_bar.pdf}
+			\captionof{figure}{}
+			\label{fig:SDSS_bar}
+		\end{minipage}%
+	}]
+
 
 	\begin{figure*}[t]
 		\centering
 		\includegraphics[width=\textwidth, draft=false]{assets/plots/WHAN_bar.pdf}
 		\caption{}
 		\label{fig:WHAN_bar}
-	\end{figure*}
-
-	\begin{figure*}[t]
-		\centering
-		\includegraphics[width=\textwidth, draft=false]{assets/plots/BPT_multipanel.pdf}
-		\caption{}
-		\label{fig:BPT_multipanel}
 	\end{figure*}
 
 	\begin{figure*}[t]
@@ -404,24 +445,15 @@
 		\label{fig:WHAN_multipanel}
 	\end{figure*}
 
-	\section{Conclusion}
-
-	\twocolumn[{\printbibliography\vspace{15\baselineskip}}]
-
-	\pagenumbering{roman}
-	\setcounter{page}{1}
-
-	\section*{Appendix}
-	\label{sec:appendix}
-
-	\setcounter{subsection}{0}
-	\renewcommand{\thesubsection}{\Alph{subsection}}
-
 	\begin{figure*}[t]
-	\centering
-		\begin{center}
-			\begin{varwidth}{0.875\textwidth}
-\begin{lstlisting}
+
+	\vspace{\baselineskip}
+	\subsection{Database Query}
+	\vspace{0.25\baselineskip}
+
+	\begin{center}
+		\begin{varwidth}{0.875\textwidth}
+			\begin{lstlisting}
 SELECT TOP 10000
     g.sii_6717_flux, g.sii_6731_flux, g.nii_6584_flux, g.oi_6300_flux, g.oiii_5007_flux,
     g.h_alpha_flux, g.h_beta_flux,
@@ -463,6 +495,8 @@ WHERE s.class = 'GALAXY'
 ORDER BY s.specobjid ASC\end{lstlisting}
 			\end{varwidth}
 		\end{center}
+		\caption{}
+		\label{fig:query}
 	\end{figure*}
 
 \end{document}
