@@ -46,6 +46,14 @@
 }
 
 
+% --- Float Setup --- %
+
+\renewcommand{\topfraction}{0.9}   
+\renewcommand{\bottomfraction}{0.8}
+\renewcommand{\textfraction}{0.1}  
+\renewcommand{\floatpagefraction}{0.7}
+
+
 % --- Begin Document --- %
 
 \begin{document}
@@ -57,27 +65,71 @@
 		\end{abstract}
 	}]
 	
-	\begin{figure}
+	\section{Introduction}
+
+	With ongoing and upcoming surveys providing ever larger amounts of data, the task of object classification is
+	becoming increasingly relevant. In this work, we will summarize and compare select methods for characterizing
+	narrow emission line galaxies and the extraction of their physical properties. For all steps in the following
+	sections, we use data from the latest SDSS data release and match those to spectra obtained by WISE for the
+	same objects \cite{wrig2010, koll2026}. Information to reproduce these results are included in the \hyperref[sec:appendix]{appendix}.
+
+	\section{Optical \& Infrared Classification}
+
+	Generally, the broad labeling of galaxies as Active Galactic Nuclei (AGN) or Star Formation (SF) dominated types
+	relies on reconstructing the excitation and ionization mechanisms from emission lines, and determining whether
+	these match the thermal continuum of stellar populations or the strongly nonthermal radiation produced in AGN
+	powered by Super Massive Black Holes (SMBH) in their centers. Approaches analyzing the continuum emission provide
+	complementary insights, and by probing different wavelengths we can peer through obscuring dust and gas to unveil
+	the true underlying physics. Now, we will explore some famous examples.
+
+	\begin{figure}[t]
 		\centering
-		\includegraphics[width=\columnwidth, draft=false]{assets/plots/BPT_scatter.pdf}
-		\caption{}
+		\includegraphics[width=\columnwidth, draft=false]{assets/plots/BPT_scatter.pdf}\vspace{-0.5\baselineskip}
+		\caption{Standard BPT diagram and class separation curves \cite{kewl2001, kauf2003}.}
 		\label{fig:BPT_scatter}
+		\vspace{-0.5\baselineskip}
 	\end{figure}
 	
-	\begin{figure}
+	\subsection{BPT Diagram}
+
+	By plotting the ratio of emission line fluxes for $\mathrm{\raisebox{0.75pt}{[\raisebox{-0.75pt}{OIII}]}}$
+	at \qty{5007}{\angstrom} to $\mathrm{H}\beta$ at \qty{4863}{\angstrom} versus $\mathrm{\raisebox{0.75pt}{[\raisebox{-0.75pt}{NII}]}}$
+	at \qty{6583}{\angstrom} to $\mathrm{H}\alpha$ at \qty{6565}{\angstrom} in their work, Baldwin,
+	Phillips, and Terlevich draw a diagram that sorts galaxies into a distinctive winged shape \cite{bald1981}.
+	Due to lacking the energies to ionize heavier atoms, SF types tend towards the lower left of the image, while
+	powerful AGN fall into the upper right tip. By choosing emission lines close to one another, this framework
+	automatically cancels out reddening differences as well as calibration errors. Depicted in \Cref{fig:BPT_scatter}
+	is our entire dataset as a scatter plot that has been shaded based on the density of nearby points. This convention
+	is adopted for all such diagrams in this work for better interpretability of the data. Together with this, standard
+	theoretical \cite{kewl2001} and empirical \cite{kauf2003} curves to discriminate between AGN and SF classes
+	are shown.
+
+	\begin{figure}[H]
 		\centering
-		\includegraphics[width=\columnwidth, draft=false]{assets/plots/BPT_class.pdf}
-		\caption{}
+		\includegraphics[width=\columnwidth, draft=false]{assets/plots/BPT_class.pdf}\vspace{-0.5\baselineskip}
+		\caption{Colored BPT diagram with derived class labels.}
 		\label{fig:BPT_class}
 	\end{figure}
+
+	We label points between the lines as COMP for composite types and display the classes in \Cref{fig:BPT_class} encoded by color.
+	Additionally, we have access to the already processed SDSS labels which we can similarly plot in the BPT diagram. This is done
+	in \Cref{fig:BPT_SDSS_class} for the AGN and SF as well as starburst SB subclasses. Comparing to the previous plot gives a
+	first visual impression of their cross method agreement, which for the AGN wing seems acceptable, but will be evaluated more
+	rigorously in the coming paragraphs.
 	
-	\begin{figure}
+	\begin{figure}[H]
 		\centering
 		\includegraphics[width=\columnwidth, draft=false]{assets/plots/BPT_SDSS_class.pdf}
 		\caption{}
 		\label{fig:BPT_SDSS_class}
 	\end{figure}
-	
+
+	\subsection{WHAN Diagram}
+
+	Next up is the WHAN diagram, which plots the equivalent width $W_{\mathrm{H}\alpha}$ of the $\mathrm{H}\alpha$ line against
+	the ratio of $\mathrm{\raisebox{0.75pt}{[\raisebox{-0.75pt}{NII}]}}$ to $\mathrm{H}\alpha$ fluxes. Since equivalent width
+	measures line strength in terms of the underlying continuum, it is also independent of measurement effects.
+
 	\begin{figure}
 		\centering
 		\includegraphics[width=\columnwidth, draft=false]{assets/plots/WHAN_scatter.pdf}
@@ -99,6 +151,8 @@
 		\label{fig:WHAN_SDSS_class}
 	\end{figure}
 
+	\subsection{Category Mixing}
+
 	\begin{figure}
 		\centering
 		\includegraphics[width=\columnwidth, draft=false]{assets/plots/BPT_WHAN_class.pdf}
@@ -113,12 +167,16 @@
 		\label{fig:WHAN_BPT_class}
 	\end{figure}
 
+	\subsection{WISE Colors}
+
 	\begin{figure*}[t]
 		\centering
 		\includegraphics[width=\textwidth, draft=false]{assets/plots/WISE_overlay.pdf}
 		\caption{}
 		\label{fig:WISE_overlay}
 	\end{figure*}
+
+	\subsection{Evaluating Diagnostics}
 
 	\begin{figure}
 		\centering
@@ -133,6 +191,10 @@
 		\caption{}
 		\label{fig:MCC_relaxed}
 	\end{figure}
+
+	\section{Physical Properties}
+
+	\subsection{Gas Density}
 
 	\begin{figure}
 		\centering
@@ -155,6 +217,8 @@
 		\label{fig:BPT_mass}
 	\end{figure}
 
+	\subsection{Gas Velocity}
+
 	\begin{figure}
 		\centering
 		\includegraphics[width=\columnwidth, draft=false]{assets/plots/WHAN_density.pdf}
@@ -176,6 +240,8 @@
 		\label{fig:WHAN_mass}
 	\end{figure}
 
+	\subsection{Black Hole Mass}
+
 	\begin{figure}
 		\centering
 		\includegraphics[width=\columnwidth, draft=false]{assets/plots/WISE_density.pdf}
@@ -196,6 +262,8 @@
 		\caption{}
 		\label{fig:WISE_mass}
 	\end{figure}
+
+	\subsection{Data Analysis}
 
 	\begin{figure*}[t]
 		\centering
@@ -246,7 +314,7 @@
 		\label{fig:WHAN_multipanel}
 	\end{figure*}
 
-	
+	\subsection{Conclusion}
 
 	\twocolumn[{\printbibliography\vspace{15\baselineskip}}]
 

@@ -263,13 +263,13 @@ print(f'Ratios of BPT Classes:   SF = {100 * len(df[df['bpt_class'] == 'SF']) / 
 df.loc[(df['nii_h_alpha_ratio'] < 10**(-0.4)) & (-df['h_alpha_eqw'] > 3.0), 'whan_class'] = 'Pure SF'
 df.loc[(df['nii_h_alpha_ratio'] > 10**(-0.4)) & (-df['h_alpha_eqw'] > 6.0), 'whan_class'] = 'Strong AGN'
 df.loc[(df['nii_h_alpha_ratio'] > 10**(-0.4)) & (-df['h_alpha_eqw'] < 6.0) & (-df['h_alpha_eqw'] > 3.0), 'whan_class'] = 'Weak AGN'
-df.loc[-df['h_alpha_eqw'] < 3.0, 'whan_class'] = 'Radio G'
+df.loc[-df['h_alpha_eqw'] < 3.0, 'whan_class'] = 'Retired G'
 df.loc[(-df['h_alpha_eqw'] < 0.5) & (-df['nii_6584_eqw'] < 0.5), 'whan_class'] = 'Passive G'
 
 print(f'Ratios of WHAN Classes:  Pure SF = {100 * len(df[df['whan_class'] == 'Pure SF']) / len(df):.0f}%  ',
       f'Strong AGN = {100 * len(df[df['whan_class'] == 'Strong AGN']) / len(df):.0f}%  ',
       f'Weak AGN = {100 * len(df[df['whan_class'] == 'Weak AGN']) / len(df):.0f}%  ',
-      f'Radio G = {100 * len(df[df['whan_class'] == 'Radio G']) / len(df):.0f}%  ',
+      f'Retired G = {100 * len(df[df['whan_class'] == 'Retired G']) / len(df):.0f}%  ',
       f'Passive G = {100 * len(df[df['bpt_class'] == 'Passive G']) / len(df):.0f}%\n')
 
 def wedge_up(x, a = 0.315, b = 0.796):
@@ -436,8 +436,8 @@ figures['BPT_class']
 x1 = df_bpt['nii_h_alpha_ratio'][df_bpt['whan_class'] == 'Pure SF']
 y1 = df_bpt['oiii_h_beta_ratio'][df_bpt['whan_class'] == 'Pure SF']
 
-x2 = df_bpt['nii_h_alpha_ratio'][df_bpt['whan_class'] == 'Radio G']
-y2 = df_bpt['oiii_h_beta_ratio'][df_bpt['whan_class'] == 'Radio G']
+x2 = df_bpt['nii_h_alpha_ratio'][df_bpt['whan_class'] == 'Retired G']
+y2 = df_bpt['oiii_h_beta_ratio'][df_bpt['whan_class'] == 'Retired G']
 
 x3 = df_bpt['nii_h_alpha_ratio'][df_bpt['whan_class'] == 'Weak AGN']
 y3 = df_bpt['oiii_h_beta_ratio'][df_bpt['whan_class'] == 'Weak AGN']
@@ -648,8 +648,8 @@ figures['WHAN_scatter']
 x1 = df_whan['nii_h_alpha_ratio'][df_whan['whan_class'] == 'Pure SF']
 y1 = -df_whan['h_alpha_eqw'][df_whan['whan_class'] == 'Pure SF']
 
-x2 = df_whan['nii_h_alpha_ratio'][df_whan['whan_class'] == 'Radio G']
-y2 = -df_whan['h_alpha_eqw'][df_whan['whan_class'] == 'Radio G']
+x2 = df_whan['nii_h_alpha_ratio'][df_whan['whan_class'] == 'Retired G']
+y2 = -df_whan['h_alpha_eqw'][df_whan['whan_class'] == 'Retired G']
 
 x3 = df_whan['nii_h_alpha_ratio'][df_whan['whan_class'] == 'Weak AGN']
 y3 = -df_whan['h_alpha_eqw'][df_whan['whan_class'] == 'Weak AGN']
@@ -1013,7 +1013,7 @@ agn_labels = {
 non_agn_labels = {
     'subclass': ['STARFORMING', 'STARBURST', np.nan], 
     'bpt_class': ['SF', 'COMP', None], 
-    'whan_class': ['Pure SF', 'Radio G', None], 
+    'whan_class': ['Pure SF', 'Retired G', None], 
     'color_class': ['GAL', None] 
 }
 
@@ -1109,7 +1109,7 @@ agn_labels = {
 non_agn_labels = {
     'subclass': ['STARFORMING', 'STARBURST', np.nan], 
     'bpt_class': ['SF', None], 
-    'whan_class': ['Pure SF', 'Radio G', None], 
+    'whan_class': ['Pure SF', 'Retired G', None], 
     'color_class': ['GAL', None] 
 }
 
@@ -1945,7 +1945,7 @@ figures['SDSS_bar']
 bin_edges = np.arange(4.5, 9.5, 0.5)  
 num_bins = len(bin_edges) - 1
 
-whan_types = ['Pure SF', 'Strong AGN', 'Weak AGN', 'Radio G']
+whan_types = ['Pure SF', 'Strong AGN', 'Weak AGN', 'Retired G']
 type_colors = ['firebrick', 'goldenrod', 'olivedrab', 'steelblue']
 
 fig, ax = plt.subplots(figsize=[6.69, 4.51])
@@ -2283,7 +2283,7 @@ figures['SDSS_multipanel']
 # In[30]:
 
 
-whan_classes = ['Pure SF', 'Strong AGN', 'Weak AGN', 'Radio G']
+whan_classes = ['Pure SF', 'Strong AGN', 'Weak AGN', 'Retired G']
 legend_labels = ['WHAN pSF', 'WHAN sAGN', 'WHAN wAGN', 'WHAN rGAL']
 type_colors = ['firebrick', 'goldenrod', 'olivedrab', 'steelblue']
 
