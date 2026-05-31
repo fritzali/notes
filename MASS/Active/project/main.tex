@@ -1,0 +1,121 @@
+\input{header}
+
+
+% --- Title --- %
+
+\title{\textbf{Characterization of Galaxies via Optical and Infrared Surveys}}%
+
+
+% --- Author --- %
+
+\author{Fritz Ali Agildere%
+		\vspace{-0.5ex}\\\small\href{mailto:fritz.agildere@udo.edu}{fritz.agildere@udo.edu}%
+		\\\small\textit{Department of Astronomy, Faculty of Mathematics, University of Belgrade}}%
+
+
+% --- Compilation Date --- %
+
+\date{\small \today}
+
+
+% --- Header & Footer --- %
+
+\fancyhead[C]{\textit{Characterization of Galaxies via Optical and Infrared Surveys}}
+\fancyfoot[L]{\textit{\textls[9]{Introduction{\kern+4pt}to{\kern+4pt}Active{\kern+4pt}Galactic{\kern+4pt}Nuclei}}}
+\fancyfoot[R]{\textit{\textls[-6]{Master{\kern+2pt}in{\kern+2pt}Astrophysics{\kern+2pt}and{\kern+2pt}Space{\kern+2pt}Science}}}
+
+\fancypagestyle{plain}{
+	\fancyhead[C]{}
+	\fancyfoot[L]{\textit{\textls[9]{Introduction{\kern+4pt}to{\kern+4pt}Active{\kern+4pt}Galactic{\kern+4pt}Nuclei}}}
+	\fancyfoot[R]{\textit{\textls[-6]{Master{\kern+2pt}in{\kern+2pt}Astrophysics{\kern+2pt}and{\kern+2pt}Space{\kern+2pt}Science}}}
+}
+
+
+% --- Custom Macros --- %
+
+\newcommand{\dash}{\rule[0.49ex]{0.35em}{0.06em}}
+\newcommand{\xray}{X\hspace{0.04em}\dash\hspace{0.11em}ray\space}
+\newcommand{\xrays}{X\hspace{0.04em}\dash\hspace{0.11em}rays\space}
+
+
+% --- Metadata --- %
+
+\hypersetup{
+	pdfauthor={Fritz Ali Agildere},
+	pdftitle={Course Report – Fritz Agildere}
+}
+
+
+% --- Begin Document --- %
+
+\begin{document}
+
+	\twocolumn[{
+		\maketitle
+		\begin{abstract}
+			\lipsum[1]
+		\end{abstract}
+	}]
+	
+
+	\twocolumn[{\printbibliography\vspace{15\baselineskip}}]
+
+	\pagenumbering{roman}
+	\setcounter{page}{1}
+
+	\section*{Appendix}
+	\label{sec:appendix}
+
+	\setcounter{subsection}{0}
+	\renewcommand{\thesubsection}{\Alph{subsection}}
+
+	\begin{figure*}[t]
+	\centering
+		\begin{center}
+			\begin{varwidth}{0.875\textwidth}
+\begin{lstlisting}
+SELECT TOP 10000
+    g.sii_6717_flux, g.sii_6731_flux, g.nii_6584_flux, g.oi_6300_flux, g.oiii_5007_flux,
+    g.h_alpha_flux, g.h_beta_flux,
+    g.h_alpha_eqw, g.nii_6584_eqw, g.oiii_sigma,
+    w.w1mpro, w.w2mpro, w.w3mpro,
+    s.z, s.class, s.subclass, s.bestobjid
+FROM SpecObj AS s
+    JOIN galSpecLine AS g ON s.specobjid = g.specobjid
+    JOIN PhotoTag AS p ON s.bestobjid = p.objid
+    OUTER APPLY (   SELECT TOP 1 x.wise_cntr
+                    FROM wise_xmatch AS x
+                    WHERE p.objid = x.sdss_objid AND x.match_dist < 3 
+                    ORDER BY x.match_dist ASC
+                ) AS y
+    LEFT JOIN wise_allsky AS w ON y.wise_cntr = w.cntr
+WHERE s.class = 'GALAXY'
+    AND s.subclass != 'BROADLINE'
+    AND s.subclass != 'AGN BROADLINE'
+    AND s.subclass != 'STARFORMING BROADLINE'
+    AND s.subclass != 'STARBURST BROADLINE'
+    AND s.snmedian_r > 5.0
+    AND s.z < 0.35
+    AND g.sii_6717_eqw < 0.0
+    AND g.sii_6731_eqw < 0.0
+    AND g.nii_6584_eqw < 0.0
+    AND g.oi_6300_eqw < 0.0
+    AND g.oiii_5007_eqw < 0.0 
+    AND g.h_alpha_eqw < 0.0
+    AND g.h_beta_eqw < 0.0
+    AND (2.355 * g.sigma_forbidden) < 500 
+    AND (2.355 * g.sigma_balmer) < 500 
+    AND g.sii_6717_flux > 3 * g.sii_6717_flux_err
+    AND g.sii_6731_flux > 3 * g.sii_6731_flux_err
+    AND g.nii_6584_flux > 3 * g.nii_6584_flux_err
+    AND g.oi_6300_flux > 3 * g.oi_6300_flux_err
+    AND g.oiii_5007_flux > 3 * g.oiii_5007_flux_err
+    AND g.h_alpha_flux > 3 * g.h_alpha_flux_err
+    AND g.h_beta_flux > 3 * g.h_beta_flux_err
+ORDER BY s.specobjid ASC\end{lstlisting}
+			\end{varwidth}
+		\end{center}
+	\end{figure*}
+
+\end{document}
+
