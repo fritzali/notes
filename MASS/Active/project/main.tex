@@ -120,86 +120,176 @@
 	\begin{figure}[H]
 		\centering
 		\includegraphics[width=\columnwidth, draft=false]{assets/plots/BPT_SDSS_class.pdf}
-		\caption{}
+		\caption{Colored BPT diagram based on SDSS labels.}
 		\label{fig:BPT_SDSS_class}
 	\end{figure}
 
 	\subsection{WHAN Diagram}
 
 	Next up is the WHAN diagram, which plots the equivalent width $W_{\mathrm{H}\alpha}$ of the $\mathrm{H}\alpha$ line against
-	the ratio of $\mathrm{\raisebox{0.75pt}{[\raisebox{-0.75pt}{NII}]}}$ to $\mathrm{H}\alpha$ fluxes. Since equivalent width
-	measures line strength in terms of the underlying continuum, it is also independent of measurement effects.
+	the ratio of $\mathrm{\raisebox{0.75pt}{[\raisebox{-0.75pt}{NII}]}}$ to $\mathrm{H}\alpha$ fluxes \cite{cidf2011}. This width
+	quantifies line strengths in terms of the underlying continuum and is thereby independent of measurement effects. The concept
+	behind a classification using the measure is that based on the prominence of lines above the background radiation, we
+	can estimate the relative photon budget of the exciting or ionizing radiation field. In true AGN and SF galaxies, this value
+	is high, whereas retired galaxies with old stellar populations have less pronounced emission lines. This is a distinction
+	which the BPT classifier fails to take into account and can therefore improve our label confidence.
 
-	\begin{figure}
+	\begin{figure}[H]
 		\centering
 		\includegraphics[width=\columnwidth, draft=false]{assets/plots/WHAN_scatter.pdf}
-		\caption{}
+		\caption{Raw data in WHAN diagram with separators.}
 		\label{fig:WHAN_scatter}
 	\end{figure}
 	
-	\begin{figure}
+	\begin{figure}[H]
 		\centering
 		\includegraphics[width=\columnwidth, draft=false]{assets/plots/WHAN_class.pdf}
-		\caption{}
+		\caption{Colored WHAN diagram with derived labels.}
 		\label{fig:WHAN_class}
 	\end{figure}
-	
+
+	With the raw scattered data, \Cref{fig:WHAN_scatter} includes discrimination lines. According to these, any galaxy
+	with $W_{\mathrm{H}\alpha} < \qty{3.0}{\angstrom}$ is classified as rGAL or retired. Points above this value with
+	$\log_{10}(\mathrm{\raisebox{0.75pt}{[\raisebox{-0.75pt}{NII}]}} \mathbin{/} \mathrm{H}\alpha) > -0.4$ are labeled
+	AGN or else pSF for pure star formation. Within the active class, we also include the distinction for strong
+	sAGN if $W_{\mathrm{H}\alpha} > \qty{6.0}{\angstrom}$ and weak wAGN otherwise. There is further a category defined via
+	$W_{\mathrm{H}\alpha} < \qty{0.5}{\angstrom}$ and
+	$W_{\mathrm{\raisebox{0.5pt}{\footnotesize[\raisebox{-0.5pt}{\footnotesize{NII}}]}}} < \qty{0.5}{\angstrom}$
+	for passive, actually lineless galaxies, but based on our selection, none fall into this class. \Cref{fig:WHAN_class}
+	shows the resulting categories, while \Cref{fig:WHAN_SDSS_class} presents the more restrictive SDSS classes, which
+	show a smaller AGN region than what WHAN includes.
+
 	\begin{figure}
 		\centering
 		\includegraphics[width=\columnwidth, draft=false]{assets/plots/WHAN_SDSS_class.pdf}
-		\caption{}
+		\caption{Colored WHAN diagram based on SDSS labels.}
 		\label{fig:WHAN_SDSS_class}
 	\end{figure}
 
 	\subsection{Category Mixing}
 
-	\begin{figure}
+	In addition to the predefined SDSS label, we can check the mixing between BPT and WHAN classes. For this,
+	\Cref{fig:BPT_WHAN_class} displays WHAN colors in the BPT diagram, and \Cref{fig:WHAN_BPT_class} the
+	opposite. Here we can see how BPT conditions do not acccount for weak equivalent widths, making WHAN a more
+	nuanced model in this regard. On the other hand, WHAN labels many objects AGN that sit far down in the
+	BPT scale, indicating that information on the ionization potential of the source gets lost.
+
+	\begin{figure}[H]
 		\centering
 		\includegraphics[width=\columnwidth, draft=false]{assets/plots/BPT_WHAN_class.pdf}
-		\caption{}
+		\caption{Colored BPT diagram based on WHAN labels.}
 		\label{fig:BPT_WHAN_class}
 	\end{figure}
 
-	\begin{figure}
+	\begin{figure}[H]
 		\centering
 		\includegraphics[width=\columnwidth, draft=false]{assets/plots/WHAN_BPT_class.pdf}
-		\caption{}
+		\caption{Colored WHAN diagram based on BPT labels.}
 		\label{fig:WHAN_BPT_class}
 	\end{figure}
 
 	\subsection{WISE Colors}
 
+	For sources shrouded by dust, optical classifier such as BPT and WHAN can fail. Instead, infrared data from
+	missions such as WISE with filters labeled W1 at \qty{3.4}{\micro\meter} and W2 at \qty{4.6}{\micro\meter} as well
+	as W3 at \qty{12}{\micro\meter} center wavelengths can be used. In these scenarios, galaxies dominated by their stars
+	appear in the more energetic bands corresponding to stellar atmospheres, while an AGN torus absorbs shorter wavelengths,
+	leading to smaller frequencies characterizing their spectrum. In the typical WISE colors plot, we draw the differences
+	of the respective magnitudes, equivalent to the logarithm of the flux ratio and therefore independent of true luminosity.
+	In this diagram, we can define a region where most AGN fall, referred to as the wedge from here on \cite{mate2012}. Our
+	data is visualized and classified according to this wedge in \Cref{fig:WISE_overlay} with schematic classes from
+	\cite{wrig2010} taken as a backdrop. Notably, there are only few objects being labeled as AGN by this method. For the actual
+	statistics and a more robust comparison of the classifiers, the following subsection calculates the pairwise binary
+	cross correlation and gives the raw numbers for our matched dataset.
+
 	\begin{figure*}[t]
 		\centering
 		\includegraphics[width=\textwidth, draft=false]{assets/plots/WISE_overlay.pdf}
-		\caption{}
+		\caption{Shaded scatter plot of data in WISE color diagram. Included is the wedge discriminator \cite{mate2012}
+				 as well as the background adapted from \cite{wrig2010} with shortened object type labels.}
 		\label{fig:WISE_overlay}
 	\end{figure*}
 
 	\subsection{Evaluating Diagnostics}
 
-	\begin{figure}
+	Listed in \Cref{tab:classes} are the numbers for our processed dataset. To better compare the performance between the
+	different classifiers, we compute the so called Matthews Correlation Coefficient (MCC) for each pair. This metric measures how
+	the matching quality compares to a pure chance baseline. A value of 1 means perfect agreement, while 0 implies no
+	advantage over randomly assigning an answer, and negative values signify worse than random anticorrelation between
+	methods. It also corrects for unbalanced population sizes, as is the case for our sample in which AGN are far fewer than
+	other types of galaxies. \Cref{fig:MCC_strict,fig:MCC_relaxed} show our results for two cases of BPT classifier, one
+	strict which restricts positives to AGN objects only, and one relaxed that also includes COMP labels.
+
+	\begin{table}[H]
+		\centering
+		\caption{List of overall and relative positive AGN labels by method. In total, \num{10000} unique SDSS objects were
+				 used, of which \num{9799} had matches in the WISE database with a \ang{;;3} tolerance.}
+		\begin{tabular}{l S[table-format=4.0] r}
+			\toprule
+			Method & Total & Fraction \\
+			\midrule
+			SDSS                  &  585 & \qty{5.9}{\percent} \\
+			BPT (strict)          &  920 & \qty{9.2}{\percent} \\
+			BPT (relaxed)         & 2491 & \qty{24.9}{\percent} \\
+			WHAN                  & 3464 & \qty{34.6}{\percent} \\
+			WISE                  &   88 & \qty{0.9}{\percent} \\
+			SDSS \& WISE          &   37 & \qty{0.4}{\percent} \\
+			BPT (strict) \& WISE  &   47 & \qty{0.5}{\percent} \\
+			BPT (relaxed) \& WISE &   64 & \qty{0.6}{\percent} \\
+			WHAN \& WISE          &   58 & \qty{0.6}{\percent} \\
+			\bottomrule
+		\end{tabular}
+		\label{tab:classes}
+	\end{table}
+
+	We recognize that generally, optical methods agree with amongst each other to a higher degree
+	than with infrared based results. On the other hand, agreement between WISE labels is barely
+	better than random, especially for the WHAN results. For the strict BPT case, it matches best
+	with SDSS classes, while the relaxed version shows better agreement with WHAN labels.
+
+	\begin{figure}[H]
+		\vspace{-\baselineskip}
 		\centering
 		\includegraphics[width=\columnwidth, draft=false]{assets/plots/MCC_strict.pdf}
-		\caption{}
+		\caption{Matrix of MCC results with strict BPT method.}
 		\label{fig:MCC_strict}
 	\end{figure}
 
-	\begin{figure}
+	Based on this, we will proceed in the BPT framework for the following section and deliver
+	SDSS and WHAN as well as WISE results for comparision in the \hyperref[sec:appendix]{appendix}.
+	There are more powerful statistical diagnostics that enable a detailed view of method performance,
+	but these are omitted in this work due to its limited scope. Furthermore, sophisticated classifiers
+	are likely able to achieve physically more sound results, though this comes at the cost of higher complexity.
+
+	\begin{figure}[H]
+		\vspace{-\baselineskip}
 		\centering
-		\includegraphics[width=\columnwidth, draft=false]{assets/plots/MCC_relaxed.pdf}
-		\caption{}
+		\includegraphics[width=\columnwidth, draft=false]{assets/plots/MCC_relaxed.pdf}\vspace{-0.5\baselineskip}
+		\captionsetup{width=\linewidth}
+		\caption{Matrix of MCC results with relaxed BPT method.}
+		\vspace{-0.5\baselineskip}
 		\label{fig:MCC_relaxed}
 	\end{figure}
 
 	\section{Physical Properties}
 
+	Other than classifying objects, we can also extract estimates of their physical properties from spectral data.
+	The following subsections will outline this process for gas density and velocity, as well as derive the
+	central Black Hole (BH) mass for our binned dataset. 
+
 	\subsection{Gas Density}
 
-	\begin{figure}
+	First, we use the ratio of the two $\mathrm{\raisebox{0.75pt}{[\raisebox{-0.75pt}{NII}]}}$ lines at	\qty{6716}{\angstrom}
+	and \qty{6731}{\angstrom} in our data. Since these both originate from a closely spaced doublet, their relative occurence
+	is independent of gas temperature. Instead, at low densities the ratio is fixed by their degeneracies as statistical
+	weights, whereas at high densities, collisional deexcitation becomes relevant, which does not emit photons. Due to the
+	lower wavelength state having a longer lifetime, it gets affected more strongly by this mechanism, dropping the ratio and
+	allowing us to reconstruct the local electron density as a proxy for the gas \cite{sand2016, joh2021}.
+
+	\begin{figure}[t]
 		\centering
 		\includegraphics[width=\columnwidth, draft=false]{assets/plots/BPT_density.pdf}
-		\caption{}
+		\caption{Binned BPT data showing electron density.}
 		\label{fig:BPT_density}
 	\end{figure}
 
@@ -314,7 +404,7 @@
 		\label{fig:WHAN_multipanel}
 	\end{figure*}
 
-	\subsection{Conclusion}
+	\section{Conclusion}
 
 	\twocolumn[{\printbibliography\vspace{15\baselineskip}}]
 

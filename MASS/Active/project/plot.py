@@ -1284,7 +1284,7 @@ ax.set_ylabel(r'$\mathrm{\raisebox{0.75pt}{[\raisebox{-0.75pt}{OIII}]}} \mathbin
 ax.set_aspect('auto')
 
 cbar = fig.colorbar(hb, ax=ax, pad=0.05, shrink=1)
-cbar.set_label(r'$\sigma_{\mathrm{\raisebox{0.5pt}{[\raisebox{-0.5pt}{OIII}]}}} \mathbin{/} \mathrm{km}\kern+1pt\mathrm{s}^{-1}$', rotation=270, labelpad=14.5)
+cbar.set_label(r'$\sigma_{\mathrm{\raisebox{0.5pt}{\footnotesize [\raisebox{-0.5pt}{\footnotesize OIII}]}}} \mathbin{/} \mathrm{km}\kern+1pt\mathrm{s}^{-1}$', rotation=270, labelpad=14.5)
 
 figures['BPT_dispersion'] = fig
 plt.close()
@@ -1437,7 +1437,7 @@ ax.set_ylabel(r'$W_{\mathrm{H}\alpha} \mathbin{/} \mathrm{\AA}$')
 ax.set_aspect('auto')
 
 cbar = fig.colorbar(hb, ax=ax, pad=0.05, shrink=1)
-cbar.set_label(r'$\sigma_{\mathrm{\raisebox{0.5pt}{[\raisebox{-0.5pt}{OIII}]}}} \mathbin{/} \mathrm{km}\kern+1pt\mathrm{s}^{-1}$', rotation=270, labelpad=14.5)
+cbar.set_label(r'$\sigma_{\mathrm{\raisebox{0.5pt}{\footnotesize [\raisebox{-0.5pt}{\footnotesize OIII}]}}} \mathbin{/} \mathrm{km}\kern+1pt\mathrm{s}^{-1}$', rotation=270, labelpad=14.5)
 
 figures['WHAN_dispersion'] = fig
 plt.close()
@@ -1577,7 +1577,7 @@ ax.set_xlim(np.array(ax.set_xlim()) - 0.2)
 ax.set_aspect('auto')
 
 cbar = fig.colorbar(hb, ax=ax, pad=0.05, shrink=1, ticks=[60, 120, 180, 240])
-cbar.set_label(r'$\sigma_{\mathrm{\raisebox{0.5pt}{[\raisebox{-0.5pt}{OIII}]}}} \mathbin{/} \mathrm{km}\kern+1pt\mathrm{s}^{-1}$', rotation=270, labelpad=16.5)
+cbar.set_label(r'$\sigma_{\mathrm{\raisebox{0.5pt}{\footnotesize [\raisebox{-0.5pt}{\footnotesize OIII}]}}} \mathbin{/} \mathrm{km}\kern+1pt\mathrm{s}^{-1}$', rotation=270, labelpad=16.5)
 
 figures['WISE_dispersion'] = fig
 plt.close()
@@ -1709,7 +1709,7 @@ cbar.ax.set_yticklabels(['1e2'])
 # Hide text labels for minor ticks while keeping the tick ticks visible
 cbar.ax.yaxis.set_minor_formatter(mticker.NullFormatter())
 
-cbar.set_label(r'$\sigma_{\mathrm{\raisebox{0.5pt}{[\raisebox{-0.5pt}{OIII}]}}} \mathbin{/} \mathrm{km}\kern+1pt\mathrm{s}^{-1}$', rotation=270, labelpad=14.5)
+cbar.set_label(r'$\sigma_{\mathrm{\raisebox{0.5pt}{\footnotesize [\raisebox{-0.5pt}{\footnotesize OIII}]}}} \mathbin{/} \mathrm{km}\kern+1pt\mathrm{s}^{-1}$', rotation=270, labelpad=14.5)
 
 figures['BPT_bins'] = fig
 plt.close()
@@ -1815,7 +1815,7 @@ ax.set_xticklabels(['4.5', '5.0', '5.5', '6.0', '6.5', '7.0', '7.5', '8.0', '8.5
 ax.minorticks_off()
 
 ax.set_xlabel(r'$\log_{10}(M_{\mathrm{BH}} \mathbin{/} \mathrm{M}_\odot)$')
-ax.set_ylabel(r'$\sigma_{\mathrm{\raisebox{0.75pt}{[\raisebox{-0.75pt}{OIII}]}}} \mathbin{/} \mathrm{km}\kern+1pt\mathrm{s}^{-1}$', labelpad=-0.75)
+ax.set_ylabel(r'$\sigma_{\mathrm{\raisebox{0.75pt}{\footnotesize [\raisebox{-0.75pt}{\footnotesize OIII}]}}} \mathbin{/} \mathrm{km}\kern+1pt\mathrm{s}^{-1}$', labelpad=-0.75)
 ax.set_ylim(7e0, 4e2) 
 
 legend_handles = [plt.Rectangle((0,0),1,1, color=c, ec='white', lw=0.5) for c in type_colors]
@@ -1926,7 +1926,7 @@ ax.set_xticklabels(['4.5', '5.0', '5.5', '6.0', '6.5', '7.0', '7.5', '8.0', '8.5
 ax.minorticks_off()
 
 ax.set_xlabel(r'$\log_{10}(M_{\mathrm{BH}} \mathbin{/} \mathrm{M}_\odot)$')
-ax.set_ylabel(r'$\sigma_{\mathrm{\raisebox{0.75pt}{[\raisebox{-0.75pt}{OIII}]}}} \mathbin{/} \mathrm{km}\kern+1pt\mathrm{s}^{-1}$', labelpad=-0.75)
+ax.set_ylabel(r'$\sigma_{\mathrm{\raisebox{0.75pt}{\footnotesize [\raisebox{-0.75pt}{\footnotesize OIII}]}}} \mathbin{/} \mathrm{km}\kern+1pt\mathrm{s}^{-1}$', labelpad=-0.75)
 ax.set_ylim(7e0, 4e2) 
 
 legend_handles = [plt.Rectangle((0,0),1,1, color=c, ec='white', lw=0.5) for c in type_colors]
@@ -2037,7 +2037,7 @@ ax.set_xticklabels(['4.5', '5.0', '5.5', '6.0', '6.5', '7.0', '7.5', '8.0', '8.5
 ax.minorticks_off()
 
 ax.set_xlabel(r'$\log_{10}(M_{\mathrm{BH}} \mathbin{/} \mathrm{M}_\odot)$')
-ax.set_ylabel(r'$\sigma_{\mathrm{\raisebox{0.75pt}{[\raisebox{-0.75pt}{OIII}]}}} \mathbin{/} \mathrm{km}\kern+1pt\mathrm{s}^{-1}$', labelpad=-0.75)
+ax.set_ylabel(r'$\sigma_{\mathrm{\raisebox{0.75pt}{\footnotesize [\raisebox{-0.75pt}{\footnotesize OIII}]}}} \mathbin{/} \mathrm{km}\kern+1pt\mathrm{s}^{-1}$', labelpad=-0.75)
 ax.set_ylim(7e0, 4e2) 
 
 legend_handles = [plt.Rectangle((0,0),1,1, color=c, ec='white', lw=0.5) for c in type_colors]
@@ -2148,7 +2148,7 @@ if all_m_raw:
 ax1.set_xscale('log')
 ax1.set_yscale('log')
 ax1.set_xlabel(r'$n_e \mathbin{/} \mathrm{cm}^{-3}$')
-ax1.set_ylabel(r'$\sigma_{\mathrm{\raisebox{0.5pt}{[\raisebox{-0.5pt}{OIII}]}}} \mathbin{/} \mathrm{km}\kern+1pt\mathrm{s}^{-1}$')
+ax1.set_ylabel(r'$\sigma_{\mathrm{\raisebox{0.5pt}{\footnotesize [\raisebox{-0.5pt}{\footnotesize OIII}]}}} \mathbin{/} \mathrm{km}\kern+1pt\mathrm{s}^{-1}$')
 ax1.set_xlim(3e0, 9e2)
 ax1.set_ylim(1.8e1, 3e2)
 
@@ -2263,7 +2263,7 @@ if all_m_raw:
 ax1.set_xscale('log')
 ax1.set_yscale('log')
 ax1.set_xlabel(r'$n_e \mathbin{/} \mathrm{cm}^{-3}$')
-ax1.set_ylabel(r'$\sigma_{\mathrm{\raisebox{0.5pt}{[\raisebox{-0.5pt}{OIII}]}}} \mathbin{/} \mathrm{km}\kern+1pt\mathrm{s}^{-1}$')
+ax1.set_ylabel(r'$\sigma_{\mathrm{\raisebox{0.5pt}{\footnotesize [\raisebox{-0.5pt}{\footnotesize OIII}]}}} \mathbin{/} \mathrm{km}\kern+1pt\mathrm{s}^{-1}$')
 ax1.set_xlim(3e0, 1.1e3)
 ax1.set_ylim(1.8e1, 3e2)
 
@@ -2378,7 +2378,7 @@ if all_m_raw:
 ax1.set_xscale('log')
 ax1.set_yscale('log')
 ax1.set_xlabel(r'$n_e \mathbin{/} \mathrm{cm}^{-3}$')
-ax1.set_ylabel(r'$\sigma_{\mathrm{\raisebox{0.5pt}{[\raisebox{-0.5pt}{OIII}]}}} \mathbin{/} \mathrm{km}\kern+1pt\mathrm{s}^{-1}$')
+ax1.set_ylabel(r'$\sigma_{\mathrm{\raisebox{0.5pt}{\footnotesize [\raisebox{-0.5pt}{\footnotesize OIII}]}}} \mathbin{/} \mathrm{km}\kern+1pt\mathrm{s}^{-1}$')
 ax1.set_xlim(4e-1, 3e3)
 ax1.set_ylim(1e1, 5e2)
 
