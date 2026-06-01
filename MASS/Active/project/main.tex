@@ -299,37 +299,90 @@
 
 	\subsection{Gas Velocity}
 
-	
+	Finding the gas kinematics is comparatively easy. We simply take the $\mathrm{\raisebox{0.75pt}{[\raisebox{-0.75pt}{OIII}]}}$
+	line dispersion $\sigma_{\mathrm{\raisebox{0.5pt}{\footnotesize[\raisebox{-0.5pt}{\footnotesize{OIII}}]}}}$ which we assume
+	is caused by Doppler broadening from the random movement of individual gas clouds as the local velocity of turbulence and kinetic
+	energy. We expect this value to be lower for SF type galaxies, in which the gas motions are relatively orderly, following
+	mostly the gravitational rotation of the disk with some stellar feedback present. In AGN on the other hand, the gas is strongly
+	affected by the presence of a deep gravity well and energized through outflows, radio jets, or shocks coming from the central engine.
+	Looking at our data, this is broadly what we observe. \Cref{fig:BPT_dispersion} shows a clear increase of velocity width towards
+	the upper right AGN wing, while lower ionization states in the left SF tip tend to have the smallest values. Here, it would be
+	interesting to evaluate whether the increased velocities towards the AGN branch are purely a result of the correlation with
+	a more massive central BH and the faster rotation required to match the higher mass, or if AGN feedback itself gives NLR gas
+	an additional boost. To probe this, provided we know the SMBH mass, we can for tight bins of masses plot the BPT dispersion
+	again. If no AGN feedback is present, it should be almost uniform in velocity. If there is feedback, the AGN branch should
+	show increased velocities despite having similar BH masses.
 
-	\begin{figure}
+	\begin{figure}[t]
 		\centering
 		\includegraphics[width=\columnwidth, draft=false]{assets/plots/BPT_dispersion.pdf}
 		\caption{Binned BPT data showing gas velocity. \\ Refer to \Cref{fig:WHAN_dispersion,fig:WISE_dispersion} for WHAN and WISE plots.}
 		\label{fig:BPT_dispersion}
 	\end{figure}
 
-	\subsection{Black Hole Mass}
-
-	\begin{figure}
+	\begin{figure}[t]
 		\centering
 		\includegraphics[width=\columnwidth, draft=false]{assets/plots/BPT_mass.pdf}
 		\caption{Binned BPT data showing black hole mass. \\ Refer to \Cref{fig:WHAN_mass,fig:WISE_mass} for WHAN and WISE plots.}
 		\label{fig:BPT_mass}
 	\end{figure}
 
-	\subsection{Data Analysis}
-
 	\begin{figure*}[t]
 		\centering
-		\includegraphics[width=\textwidth, draft=false]{assets/plots/BPT_bins.pdf}
-		\caption{}
+		\vspace{-1.5\baselineskip}
+		\includegraphics[width=\textwidth, draft=false]{assets/plots/BPT_bins.pdf}\vspace{-1.5\baselineskip}
+		\caption{Binned BPT data of gas velocity for magnitude ranges of SMBH mass across subplots.}
 		\label{fig:BPT_bins}
 	\end{figure*}
+
+	\subsection{Black Hole Mass}
+
+	To find the SMBH mass, we can use well known relations mapping stellar dispersion $\sigma_{\kern-1pt *}$ to central engine properties,
+	provided that their velocities are predominantly determined by its gravitation \cite{trem2002, gebh2000, wu2009}. Since we do not have
+	access to star velocities in the galactic cores of our sample, we instead rely on
+	$\sigma_{\mathrm{\raisebox{0.5pt}{\footnotesize[\raisebox{-0.5pt}{\footnotesize{OIII}}]}}}$ as a proxy. As shown in
+	\Cref{fig:BPT_mass} this method reproduces our expectations from the velocity trend, but brings with it some serious flaws as well. For one,
+	making use of such an approximation prevents us from determining the previously mentioned AGN feedback effects. Since 
+	$\sigma_{\mathrm{\raisebox{0.5pt}{\footnotesize[\raisebox{-0.5pt}{\footnotesize{OIII}}]}}}$ determines the mass, we cannot bin $M_\mathrm{BH}$
+	and expect to see increased kinematics above the gravitational baseline when we start from the fundamental assumption that the BH gravity itself
+	is the sole culprit for the dispersion in the first place. Other than this circularity, there is also the issue of our galactic sources
+	not meeting the underlying assumption. For SF galaxies, $\mathrm{\raisebox{0.75pt}{[\raisebox{-0.75pt}{OIII}]}}$ emission occurs primarily
+	inside the thin disk and not the bulge, meaning that velocities and theresulting BH mass will tend to be underestimated. The opposite case
+	is true for AGN objects. Since gas is likely to be strongly broadened by effects other than gravity, we are biased towards assign unrealistically
+	large SMBH masses. To compensate these shortcomings, we require another robust and independent way to determine velocities governed by gravity
+	near the galactic core. Despite lacking such a quantity, for the next subsection, we will proceed as if our data already had been corrected in such
+	a way, so that once we can access it, we will be able to easily repeat and extend these analysis steps with the new values. \Cref{fig:BPT_bins}
+	shows the BPT dispersion in four BH mass bins as indicated in the graphic. The change between subplots matches what we expect for gravitational
+	rotation but shows no feedback signature.
+
+	\subsection{Data Analysis}
+
+	Expanding on the preceding paragraph, binning in BH mass shows some gradient within bins, notably the \qtyrange{e6}{e7}{\solarmass}
+	and \qtyrange{e7}{e8}{\solarmass} ranges. If we were selecting our mass steps more restrictively and had independent dispersion
+	data, this would be an indicator for AGN feedback driven excess velocities that distringuish active cores from quiescent ones, but
+	in our case it is simply an artifact of global scaling within broad mass bins. Another way we can isolate this effect is by plotting
+	median dispersions based on our discrete BPT classes. \Cref{fig:BPT_bar} does just that, and as expected we have an overall increase
+	in velocities with BH mass but no significant stepwise increase towards faster motion in AGN vs SF types within individual bins.
+
+	Looking at \cref{fig:BPT_multipanel} for a general population analysis, we can see that density and velocity show some positive
+	correlation between each other. From the previous discussion on AGN driven compression and acceleration, this is physically sound.
+	Contours for SF counts have a wider spread than COMP and AGN categories, and are centered at lower values for density as well as
+	dispersion. As one might expect, COMP and AGN labels overlap more significantly, although AGN continue the trend of higher values on
+	both axes with their distribution center. For BH masses, the same general observations hold as for electron density, which makes sense since
+	the former derives directly from the latter. Especially for SF galaxies, we find very low masses from \qtyrange{e3}{e4}{\solarmass}
+	which are telltale signs of systematic bias towards underestimation in objects dominated by emission lines from their stellar disks.
+
+	\section{Conclusion}
 
 	\begin{figure*}[t]
 		\centering
 		\includegraphics[width=\textwidth, draft=false]{assets/plots/BPT_bar.pdf}
-		\caption{}
+		\caption{Bar chart of median gas dispersion by BPT class per BH mass bin. Numbers for members in bins of each class are given in the
+				 plot. Based on this, colors have increased saturation to represent higher statistical significance of the sample. The nearly
+				 perfect linear slope of the data is a consequence of how we generate BH masses from dispersion. In absence of statistical
+				 scatter, this would fit our starting function perfectly, meaning that we gain no real insight from this. Had we calculated
+				 BH mass in another independent way, this would however possibly reveal at which cutoff feedback plays an important role, if
+				 any, to determine the gas kinematics. Refer to \Cref{fig:SDSS_bar,fig:WHAN_bar} for SDSS and WHAN classes.}
 		\label{fig:BPT_bar}
 	\end{figure*}
 
@@ -340,7 +393,7 @@
 		\label{fig:BPT_multipanel}
 	\end{figure*}
 
-	\section{Conclusion}
+	\lipsum[2]
 
 	\newpage
 	\renewcommand{\thesubsection}{\Alph{subsection}}
@@ -348,7 +401,6 @@
 	\twocolumn[{
 		\printbibliography
 
-		\vspace{\baselineskip}
 		\section*{Appendix}
 
 		\pagenumbering{roman}
@@ -359,7 +411,6 @@
 		implementation with numerical values and equations via raw Python code is found in this
 		\href{https://github.com/fritzali/notes/tree/main/MASS/Active/project}{repository}.
 
-		\vspace{\baselineskip}
 		\subsection{Gas Density}
 
 		\begin{minipage}{0.475\textwidth}
@@ -376,7 +427,6 @@
 			\label{fig:WISE_density}
 		\end{minipage}%
 
-		\vspace{\baselineskip}
 		\subsection{Gas Velocity}
 
 		\begin{minipage}{0.475\textwidth}
@@ -418,7 +468,12 @@
 		\begin{minipage}{\textwidth}
 			\centering
 			\includegraphics[width=\textwidth, draft=false]{assets/plots/SDSS_bar.pdf}
-			\captionof{figure}{}
+			\captionof{figure}{Bar chart of median gas dispersion by SDSS class per BH mass bin. Numbers for members in bins of each class are given in the
+							   plot. Based on this, colors have increased saturation to represent higher statistical significance of the sample. The nearly
+							   perfect linear slope of the data is a consequence of how we generate BH masses from dispersion. In absence of statistical
+							   scatter, this would fit our starting function perfectly, meaning that we gain no real insight from this. Had we calculated
+							   BH mass in another independent way, this would however possibly reveal at which cutoff feedback plays an important role, if
+							   any, to determine the gas kinematics.}
 			\label{fig:SDSS_bar}
 		\end{minipage}%
 	}]
@@ -427,7 +482,12 @@
 	\begin{figure*}[t]
 		\centering
 		\includegraphics[width=\textwidth, draft=false]{assets/plots/WHAN_bar.pdf}
-		\caption{}
+		\caption{Bar chart of median gas dispersion by WHAN class per BH mass bin. Numbers for members in bins of each class are given in the
+				 plot. Based on this, colors have increased saturation to represent higher statistical significance of the sample. The nearly
+				 perfect linear slope of the data is a consequence of how we generate BH masses from dispersion. In absence of statistical
+				 scatter, this would fit our starting function perfectly, meaning that we gain no real insight from this. Had we calculated
+				 BH mass in another independent way, this would however possibly reveal at which cutoff feedback plays an important role, if
+				 any, to determine the gas kinematics.}
 		\label{fig:WHAN_bar}
 	\end{figure*}
 
