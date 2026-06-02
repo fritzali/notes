@@ -198,17 +198,18 @@
 		\begin{columns}[c]
 			\begin{column}{0.5\textwidth}
 				\begin{itemize}
-					\item<2-> Purely Gravitational Baseline Assumption
-					\item<3-> Dark Matter Halo Dominated Systems
-					\item<5-> Selfsimilar Radial Scaling
-					\item<6-> Deviation Defines Categories
+					\item<2-> Sparse \& Hot Plasma Systems
+					\item<3-> Collisional Ionization Equilibrium (CIE)
+					\item<4-> Purely Gravitational Baseline Assumption
+					\item<5-> Dark Matter Halo Dominated Objects
+					\item<6-> Selfsimilar Radial Scaling
+					\item<7-> Deviation Defines Categories
 					\begin{itemize}
-						\item<7-> Cooling Cores (CC)
-						\item<8-> Noncool Cores (NCC)
+						\item<8-> Cooling Cores (CC)
+						\item<9-> Noncool Cores (NCC)
 					\end{itemize}
-					\item<9-> Mergers Inject Energetic Shocks \& Sloshing
-					\item<10-> Central Active Galactic Nuclei (AGN) Feedback
-							   Effects Prevent Total Collapse
+					\item<10-> Mergers Inject Energetic Shocks \& Sloshing
+					\item<11-> Central Active Galactic Nuclei (AGN) Feedback
 				\end{itemize}
 			\end{column}
 			\begin{column}{0.5\textwidth}
@@ -230,20 +231,20 @@
 		\begin{columns}[c]
 			\begin{column}{0.5\textwidth}
 				\begin{itemize}
-					\item<2-> Bremsstrahlung (free-free)
+					\item<2-> Bremsstrahlung \textit{(free-free)}
 					\begin{itemize}
 						\item<4-> Broad Continuous Spectrum
 					\end{itemize}
-					\item<5-> Recombination (bound-free)
+					\item<5-> Recombination \textit{(bound-free)}
 					\begin{itemize}
 						\item<6-> Soft Continuum
 						\item<7-> Hard Ionization Edge
 					\end{itemize}
-					\item<8-> Atomic Transitions (bound-bound)
+					\item<8-> Atomic Transitions \textit{(bound-bound)}
 					\begin{itemize}
 						\item<9-> Discrete Lines
 					\end{itemize}
-					\item<10-> Sunyaev-Zeldovich Effect (Inverse Compton)
+					\item<10-> Sunyaev-Zeldovich Effect \textit{(Inverse Compton)}
 					\begin{itemize}
 						\item<12-> Cosmic Microwave Background Photons
 					\end{itemize}
@@ -359,32 +360,32 @@
 	\begin{frame}
 		\frametitle{Selected Missions}
 		\begin{columns}[c]
-			\begin{column}{0.5\textwidth}
+			\begin{column}{0.45\textwidth}
 				\begin{itemize}
 					\item<2-> Large Survey
 					\begin{itemize}
-						\item<3-> ROSAT (retired)
-						\item<4-> Planck (retired)
-						\item<5-> eROSITA (active)
+						\item<3-> ROSAT \textit{(retired)}
+						\item<4-> Planck \textit{(retired)}
+						\item<5-> eROSITA \textit{(active)}
 					\end{itemize}
-					\item<6-> Spectroscopic Precision
+					\item<6-> Spatial Resolution
 					\begin{itemize}
-						\item<7-> ASCA (retired)
-						\item<8-> XMM-Newton (active)
-						\item<9-> XRISM (active)
+						\item<7-> Chandra \textit{(active)}
+						\item<8-> NewAthena \textit{(planned)}
 					\end{itemize}
-					\item<10-> Spatial Resolution
+					\item<9-> Spectroscopic Precision
 					\begin{itemize}
-						\item<11-> Chandra (active)
-						\item<12-> NewAthena (planned)
+						\item<10-> ASCA \textit{(retired)}
+						\item<11-> XMM-Newton \textit{(active)}
+						\item<12-> XRISM \textit{(active)}
 					\end{itemize}
 				\end{itemize}
 			\end{column}
-			\begin{column}{0.5\textwidth}
-				\begin{overprint}[\linewidth]
-					\only<5-7>{\includegraphics[width=0.85\linewidth, draft=false]{brand/erosita.pdf}}%
-					\only<8-11>{\includegraphics[width=0.85\linewidth, draft=false]{brand/xmmn.pdf}}%
-					\only<12->{\includegraphics[width=0.85\linewidth, draft=false]{brand/athena.pdf}}%
+			\begin{column}{0.55\textwidth}
+				\begin{overprint}
+					\only<5-7>{\includegraphics[height=0.85\textheight, draft=false]{brand/erosita.pdf}}%
+					\only<8-10>{\includegraphics[height=0.85\textheight, draft=false]{brand/athena.pdf}}%
+					\only<11->{\includegraphics[height=0.85\textheight, draft=false]{brand/xmmn.pdf}}%
 				\end{overprint}
 			\end{column}
 		\end{columns}
@@ -397,7 +398,34 @@
 	\subsection{Spectral Characteristics}
 
 	\begin{frame}
-		\frametitle{Spectrum}
+		\frametitle{Spectrum Analysis}
+		\begin{columns}[c]
+			\begin{column}{0.5\textwidth}
+				\begin{itemize}
+					\item<3-> Continuum
+					\begin{itemize}
+						\item<4-> Bremsstrahlung Baseline
+						\item<5-> Possible Soft \& Hard Excesses
+						\begin{itemize}
+							\item<6-> Multiphase Intracluster Gas
+							\item<7-> Warm-Hot Intergalactic Medium
+							\item<8-> Background Upscattering
+						\end{itemize}
+					\end{itemize}
+					\item<9-> Line Emission
+					\begin{itemize}
+						\item<10-> Powerful Flux Ratio Analyses
+						\item<11-> Fe K \& L Complexes – Thermometers
+						\item<12-> O \& Ne Lines – Supernova Tracers
+					\end{itemize}
+				\end{itemize}
+			\end{column}
+			\begin{column}{0.5\textwidth}
+				\begin{overprint}
+					\only<2->{\includegraphics[width=\linewidth, draft=false]{build/chan_spectra.pdf}}%
+				\end{overprint}
+			\end{column}
+		\end{columns}
 	\end{frame}
 
 	\section{Observations}
@@ -408,6 +436,14 @@
 
 	\begin{frame}
 		\frametitle{Discussion}
+		\begin{itemize}
+			\item<2-> X-Ray Spectroscopy Enables Cosmic Structure Evolution Inference
+			\item<3-> CC \& NCC Classification Framework Traces Cluster Thermodynamical History
+			\item<4-> Starforming Galactic Wind \& AGN Feedback Stabilize Cluster Cores Against Collapse
+			\item<5-> Highly Resolved Simulations Promise Improved Dynamics Understanding
+			\item<6-> Future Missions Probe ICM Microproperties \& WHIM Filaments
+			\item<7-> New Simulation \& Data Turbulence Comparison
+		\end{itemize}
 	\end{frame}
 
 	\section{Bibliography}
@@ -425,6 +461,8 @@
 	\end{frame}
 
 	\appendix
+
+	\section{Appendix}
 
 	\begin{frame}
 		\frametitle{Appendix}
