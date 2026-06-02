@@ -34,9 +34,9 @@
 	 	leftskip=15pt,
 	 	rightskip=1em,
 	]{headline}
-		\hspace{-2.75ex}\includegraphics[height=2.5\headerheight]{brand/mass.pdf}\vspace{-1.25\headerheight}
+		\hspace{-2.75ex}\includegraphics[height=2.5\headerheight, draft=false]{brand/mass.pdf}\vspace{-1.25\headerheight}
 		\hfill
-		\raisebox{0.55\headerheight}{\includegraphics[height=1.5\headerheight]{brand/unibg.pdf}}\hspace{3.75ex}
+		\raisebox{0.55\headerheight}{\includegraphics[height=1.5\headerheight, draft=false]{brand/unibg.pdf}}\hspace{3.75ex}
 	\end{beamercolorbox}
 	\ifnum\insertframenumber=0
 	\else
@@ -263,6 +263,11 @@
 \setbeamerfont{block title}{series=\itshape}
 
 \usepackage{multicol}
+
+\usepackage[
+	filename=false, 
+	allfiguresdraft=true
+]{draftfigure}
 
 \AtEndDocument{
 	\directlua{

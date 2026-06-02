@@ -13,10 +13,179 @@
 
 \institute[UBG]{}
 
+% =============================================== %
+%          Dynamic Overview Frame System          %
+% =============================================== %
+
+% --- Define Internal State Variables --- %
+\newcommand{\activesec}{0}
+\newcommand{\activesubsec}{0}
+
+% --- Custom Menu Section Command --- %
+% #1 : Section Identifier %
+% #2 : Section Title %
+\newcommand{\ovsection}[2]{%
+    \ifnum\activesec=0\relax
+        \transparent{1.0}%
+    \else
+        \ifnum\activesec=#1\relax
+            \transparent{1.0}%
+        \else
+            \transparent{0.25}%
+        \fi
+    \fi
+    \bfseries{#2}\\[1.5pt]%
+}
+
+% --- Custom Menu Subsection Command --- %
+% #1 : Optional Vertical Spacing %
+% #2 : Section Identifier %
+% #3 : Subsection Identifier %
+% #4 : Subsection Title %
+\newcommand{\ovsubsection}[4][]{
+    \ifnum\activesec=0\relax
+        \transparent{1.0}%
+    \else
+        \ifnum\activesec=#2\relax
+            \ifnum\activesubsec=0\relax
+                \transparent{1.0}
+            \else
+                \ifnum\activesubsec=#3\relax
+                    \transparent{1.0}
+                \else
+                    \transparent{0.25}
+                \fi
+            \fi
+        \else
+            \transparent{0.25}
+        \fi
+    \fi
+    \hspace*{3ex}\mdseries{#4}%
+    \if\relax\detokenize{#1}\relax\\\else\\[#1]\fi%
+}
+
+% --- Define Content Structure --- %
+\newcommand{\overviewstructure}{%
+    \ovsection{1}{Probability Refresher}
+    \ovsubsection{1}{1}{Definitions \& Notation}
+    \ovsubsection[3.0pt]{1}{2}{Random Numbers}
+    
+    \ovsection{2}{Optimisation}
+    \ovsubsection{2}{1}{Common Methods}
+    \ovsubsection[3.0pt]{2}{2}{Problems}
+    
+    \ovsection{3}{Markov Chain Monte Carlo}
+    \ovsubsection{3}{1}{Popular Algorithms}
+    \ovsubsection{3}{2}{Tuning \& Diagnosing}
+    \ovsubsection[3.0pt]{3}{3}{Alternatives}
+}
+
+% --- Master Overview Frame Generation Macro --- %
+% #1 : Highlighted Section %
+% #2 : Highlighted Subsection %
+\newcommand{\makeoverview}[2]{%
+    \renewcommand{\activesec}{#1}%
+    \renewcommand{\activesubsec}{#2}%
+    \begin{frame}
+        \frametitle{Overview}
+        \overviewstructure
+    \end{frame}
+}
+
+% =============================================== %
+
 \begin{document}
 	\begin{frame}[noframenumbering]
 		\titlepage
 	\end{frame}
+
+	\begin{frame}
+		\begin{figure}
+			\centering
+			\begin{subfigure}[b]{0.2\textwidth}
+				\centering
+				\includegraphics[width=\textwidth]{../catalog/ROSAT/RASS-DSS2-A85-raw.png}
+			\end{subfigure}
+			\hspace{0.2ex}
+			\begin{subfigure}[b]{0.2\textwidth}
+				\centering
+				\includegraphics[width=\textwidth]{../catalog/ROSAT/RASS-DSS2-A426-raw.png}
+			\end{subfigure}
+			\hspace{0.2ex}
+			\begin{subfigure}[b]{0.2\textwidth}
+				\centering
+				\includegraphics[width=\textwidth]{../catalog/ROSAT/RASS-DSS2-A1644-raw.png}
+			\end{subfigure}
+		
+			\vspace{1ex}
+		
+			\begin{subfigure}[b]{0.2\textwidth}
+				\centering
+				\includegraphics[width=\textwidth]{../catalog/ROSAT/RASS-DSS2-A1656-raw.png}
+			\end{subfigure}
+			\hspace{0.2ex}
+			\begin{subfigure}[b]{0.2\textwidth}
+				\centering
+				\includegraphics[width=\textwidth]{../catalog/ROSAT/RASS-DSS2-A2029-raw.png}
+			\end{subfigure}
+			\hspace{0.2ex}
+			\begin{subfigure}[b]{0.2\textwidth}
+				\centering
+				\includegraphics[width=\textwidth]{../catalog/ROSAT/RASS-DSS2-A3158-raw.png}
+			\end{subfigure}
+
+			\footnotesize\textit{Left to Right, Top to Bottom:} Abell 85, Abell 426 (Perseus), Abell 1644,
+			Abell 1656 (Coma), Abell 2029, and Abell 3158.
+		\end{figure}
+	\end{frame}
+
+	\addtocounter{framenumber}{-1}
+
+	\begin{frame}
+		\begin{figure}
+			\centering
+			\begin{subfigure}[b]{0.2\textwidth}
+				\centering
+				\includegraphics[width=\textwidth]{../catalog/ROSAT/RASS-DSS2-A85-overlay.png}
+			\end{subfigure}
+			\hspace{0.2ex}
+			\begin{subfigure}[b]{0.2\textwidth}
+				\centering
+				\includegraphics[width=\textwidth]{../catalog/ROSAT/RASS-DSS2-A426-overlay.png}
+			\end{subfigure}
+			\hspace{0.2ex}
+			\begin{subfigure}[b]{0.2\textwidth}
+				\centering
+				\includegraphics[width=\textwidth]{../catalog/ROSAT/RASS-DSS2-A1644-overlay.png}
+			\end{subfigure}
+		
+			\vspace{1ex}
+		
+			\begin{subfigure}[b]{0.2\textwidth}
+				\centering
+				\includegraphics[width=\textwidth]{../catalog/ROSAT/RASS-DSS2-A1656-overlay.png}
+			\end{subfigure}
+			\hspace{0.2ex}
+			\begin{subfigure}[b]{0.2\textwidth}
+				\centering
+				\includegraphics[width=\textwidth]{../catalog/ROSAT/RASS-DSS2-A2029-overlay.png}
+			\end{subfigure}
+			\hspace{0.2ex}
+			\begin{subfigure}[b]{0.2\textwidth}
+				\centering
+				\includegraphics[width=\textwidth]{../catalog/ROSAT/RASS-DSS2-A3158-overlay.png}
+			\end{subfigure}
+
+			\footnotesize\textit{Left to Right, Top to Bottom:} Abell 85, Abell 426 (Perseus), Abell 1644,
+			Abell 1656 (Coma), Abell 2029, and Abell 3158.
+		\end{figure}
+	\end{frame}
+
+	\makeoverview{0}{0}
+
+	\makeoverview{1}{1}
+
+	\makeoverview{1}{2}
 
 	\section{Concept}
 
@@ -61,9 +230,9 @@
 			\end{column}
 			\begin{column}{0.5\textwidth}
 				\begin{overprint}
-					\only<2>{\includegraphics[width=\linewidth]{build/theo_density.pdf}}%
-					\only<3>{\includegraphics[width=\linewidth]{build/chan_density.pdf}}%
-					\only<4->{\includegraphics[width=\linewidth]{build/xmmn_density.pdf}}%
+					\only<2>{\includegraphics[width=\linewidth, draft=false]{build/theo_density.pdf}}%
+					\only<3>{\includegraphics[width=\linewidth, draft=false]{build/chan_density.pdf}}%
+					\only<4->{\includegraphics[width=\linewidth, draft=false]{build/xmmn_density.pdf}}%
 				\end{overprint}
 			\end{column}
 		\end{columns}
