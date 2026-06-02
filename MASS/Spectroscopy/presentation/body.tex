@@ -66,18 +66,18 @@
 
 % --- Define Content Structure --- %
 \newcommand{\overviewstructure}{%
-    \ovsection{1}{Probability Refresher}
-    \ovsubsection{1}{1}{Definitions \& Notation}
-    \ovsubsection[3.0pt]{1}{2}{Random Numbers}
+    \ovsection{1}{Physical Properties}
+    \ovsubsection{1}{1}{Galaxy Clusters}
+    \ovsubsection[3.0pt]{1}{2}{Radiation Mechanisms}
     
-    \ovsection{2}{Optimisation}
-    \ovsubsection{2}{1}{Common Methods}
-    \ovsubsection[3.0pt]{2}{2}{Problems}
+    \ovsection{2}{Radial Profiles}
+    \ovsubsection{2}{1}{Data Processing}
+    \ovsubsection[3.0pt]{2}{2}{Theory \& Results}
     
-    \ovsection{3}{Markov Chain Monte Carlo}
-    \ovsubsection{3}{1}{Popular Algorithms}
-    \ovsubsection{3}{2}{Tuning \& Diagnosing}
-    \ovsubsection[3.0pt]{3}{3}{Alternatives}
+    \ovsection{3}{Observations}
+    \ovsubsection{3}{1}{Detectors \& Telescopes}
+    \ovsubsection{3}{2}{Spectral Characteristics}
+    \ovsubsection{3}{3}{Conclusion \& Outlook}
 }
 
 % --- Master Overview Frame Generation Macro --- %
@@ -183,55 +183,110 @@
 
 	\makeoverview{0}{0}
 
+	\section{Physical Properties}
+
+	\addtocounter{framenumber}{-1}
+	\makeoverview{1}{0}
+
+	\addtocounter{framenumber}{-1}
 	\makeoverview{1}{1}
 
-	\makeoverview{1}{2}
-
-	\section{Concept}
+	\subsection{Galaxy Clusters}
 
 	\begin{frame}
-		\frametitle{Motivation}
-		\begin{itemize}
-			\item<2-> Natural Central SMBH Rapid Feeding Consequence
-			\item<3-> Potentially Galaxy Merger Triggered
-			\item<4-> Vertical Gas \& Dust Expansion Intercepts Sightlines
-			\item<5-> Fuel Region / Galactic Disk Kinematic Decoupling
-			\item<6-> Spatial SF \& AGN Luminosity Correlation
-			\begin{itemize}
-				\item<7-> Galactic Scales $R \sim 10\,\symup{kpc}$ Weak
-				\item<8-> Compact Nucleus $R \sim 100\,\symup{pc}$ Strong
-			\end{itemize}
-			\item<9-> Dynamically Evolving Oscuring Starforming Structure
-		\end{itemize}
-	\end{frame}
-
-	\section{Modeling}
-
-	\begin{frame}
-		\frametitle{Structure}
-		\begin{itemize}
-			\item<2-> Radiatively Supported Large Scale Heights (Star Formation)
-			\begin{itemize}
-				\item<3-> Intense Stellar Radiation Pressure
-				\item<4-> Supernovae Kinetic Feedback
-			\end{itemize}
-		\item<5-> Distinct Peripheral $R > 10\,\symup{pc}$ Regions (Compton Thin)
-		\item<6-> Highly Localized $R < 1\,\symup{pc}$ Obscuration (Compton Thick)
-		\item<7-> Embedded Stellar Remnant Thermal Effects
-		\item<8-> Statistically Consistent Viewing Angle Sampled Distributions
-		\end{itemize}
-	\end{frame}
-
-	\begin{frame}
-		\frametitle{Density}
+		\frametitle{Cluster Models \& Classes}
 		\begin{columns}[c]
 			\begin{column}{0.5\textwidth}
+				\begin{itemize}
+					\item<2-> Purely Gravitational Baseline Assumption
+					\item<3-> Dark Matter Halo Dominated Systems
+					\item<5-> Selfsimilar Radial Scaling
+					\item<6-> Deviation Defines Categories
+					\begin{itemize}
+						\item<7-> Cooling Cores (CC)
+						\item<8-> Noncool Cores (NCC)
+					\end{itemize}
+					\item<9-> Mergers Inject Energetic Shocks \& Sloshing
+					\item<10-> Central Active Galactic Nuclei (AGN) Feedback
+							   Effects Prevent Total Collapse
+				\end{itemize}
 			\end{column}
 			\begin{column}{0.5\textwidth}
 				\begin{overprint}
-					\only<2>{\includegraphics[width=\linewidth, draft=false]{build/theo_density.pdf}}%
-					\only<3>{\includegraphics[width=\linewidth, draft=false]{build/chan_density.pdf}}%
-					\only<4->{\includegraphics[width=\linewidth, draft=false]{build/xmmn_density.pdf}}%
+					\visible<4->{\includegraphics[width=\linewidth, draft=false]{build/theo_halo.pdf}}%	
+				\end{overprint}
+			\end{column}
+		\end{columns}
+	\end{frame}
+
+	\section{Physical Properties}
+
+	\makeoverview{1}{2}
+
+	\subsection{Radiation Mechanisms}
+
+	\begin{frame}
+		\frametitle{Characteristic Emission}
+		\begin{columns}[c]
+			\begin{column}{0.5\textwidth}
+				\begin{itemize}
+					\item<2-> Bremsstrahlung (free-free)
+					\begin{itemize}
+						\item<4-> Broad Continuous Spectrum
+					\end{itemize}
+					\item<5-> Recombination (bound-free)
+					\begin{itemize}
+						\item<6-> Soft Continuum
+						\item<7-> Hard Ionization Edge
+					\end{itemize}
+					\item<8-> Atomic Transitions (bound-bound)
+					\begin{itemize}
+						\item<9-> Discrete Lines
+					\end{itemize}
+					\item<10-> Sunyaev-Zeldovich Effect (Inverse Compton)
+					\begin{itemize}
+						\item<12-> Cosmic Microwave Background Photons
+					\end{itemize}
+				\end{itemize}
+			\end{column}
+			\begin{column}{0.5\textwidth}
+				\begin{overprint}
+					\only<3-10>{\includegraphics[width=\linewidth, draft=false]{build/theo_bremsstrahlung.pdf}}%
+					\visible<11->{\includegraphics[width=\linewidth, draft=false]{build/theo_sz.pdf}}%
+				\end{overprint}
+			\end{column}
+		\end{columns}
+	\end{frame}
+
+	\section{Radial Profiles}
+
+	\makeoverview{2}{0}
+
+	\addtocounter{framenumber}{-1}
+	\makeoverview{2}{1}
+
+	\subsection{Data Processing}
+
+	\begin{frame}
+		\frametitle{Extracting Information}
+		\begin{columns}[c]
+			\begin{column}{0.5\textwidth}
+				\begin{itemize}
+					\item<2-> Annulus Decomposition
+					\item<4-> Projection Unfolding
+					\item<5-> Spectral Fitting
+					\begin{itemize}
+						\item<6-> Obtain Temperature, Density, Abundances, Redshift
+						\item<7-> Derive Pressure, Entropy, Mass
+					\end{itemize}
+					\item<8-> Spherically Symmetric Averaging
+					\item<9-> Disturbed Systems Breakdown Possible
+				\end{itemize}
+			\end{column}
+			\begin{column}{0.5\textwidth}
+				\begin{overprint}
+					\only<3-9>{\hspace*{2em}\includegraphics[width=0.75\textwidth]{../catalog/ROSAT/RASS-DSS2-A2029-overlay.png}}%
+					\visible<10->{\hspace*{2em}\includegraphics[width=0.75\textwidth]{../catalog/ROSAT/RASS-DSS2-A1644-overlay.png}}%
 				\end{overprint}
 			\end{column}
 		\end{columns}
@@ -246,17 +301,113 @@
 		\end{overprint}
 	\end{frame}
 
-	\section{Prospects}
+	\section{Radial Profiles}
+
+	\makeoverview{2}{2}
+
+	\subsection{Theory \& Results}
 
 	\begin{frame}
-		\frametitle{Outlook}
-		\begin{itemize}
-			\item<2-> Observational Static Torus / Puffy Compact Starburst Disk Separation
-			\item<3-> Evolutionary Stage / Static Mechanism Distinction
-			\item<4-> Refined Simulation Feedback Interactions (FIRE \& STARFORGE)
-			\item<5-> CO SLED Molecular Gas Tracers (ALMA)
-			\item<6-> IR Starforming \& Disk Signatures (JWST)
-		\end{itemize}
+		\frametitle{Density \& Pressure}
+		\begin{columns}[c]
+			\begin{column}{0.5\textwidth}
+				\begin{overprint}
+					\only<2>{\includegraphics[width=\linewidth, draft=false]{build/theo_density.pdf}}%
+					\only<3>{\includegraphics[width=\linewidth, draft=false]{build/chan_density.pdf}}%
+					\only<4->{\includegraphics[width=\linewidth, draft=false]{build/xmmn_density.pdf}}%
+				\end{overprint}
+			\end{column}
+			\begin{column}{0.5\textwidth}
+				\begin{overprint}
+					\only<5>{\includegraphics[width=\linewidth, draft=false]{build/theo_pressure.pdf}}%
+					\only<6>{\includegraphics[width=\linewidth, draft=false]{build/chan_pressure.pdf}}%
+					\only<7->{\includegraphics[width=\linewidth, draft=false]{build/xmmn_pressure.pdf}}%
+				\end{overprint}
+			\end{column}
+		\end{columns}
+	\end{frame}
+
+	\begin{frame}
+		\frametitle{Temperature \& Entropy}
+		\begin{columns}[c]
+			\begin{column}{0.5\textwidth}
+				\begin{overprint}
+					\only<2>{\includegraphics[width=\linewidth, draft=false]{build/theo_temperature.pdf}}%
+					\only<3>{\includegraphics[width=\linewidth, draft=false]{build/chan_temperature.pdf}}%
+					\only<4->{\includegraphics[width=\linewidth, draft=false]{build/xmmn_temperature.pdf}}%
+				\end{overprint}
+			\end{column}
+			\begin{column}{0.5\textwidth}
+				\begin{overprint}
+					\only<5>{\includegraphics[width=\linewidth, draft=false]{build/theo_entropy.pdf}}%
+					\only<6>{\includegraphics[width=\linewidth, draft=false]{build/chan_entropy.pdf}}%
+					\only<7->{\includegraphics[width=\linewidth, draft=false]{build/xmmn_entropy.pdf}}%
+				\end{overprint}
+			\end{column}
+		\end{columns}
+	\end{frame}
+
+	\section{Observations}
+
+	\makeoverview{3}{0}
+
+	\addtocounter{framenumber}{-1}
+	\makeoverview{3}{1}
+
+	\subsection{Detectors \& Telescopes}
+
+	\begin{frame}
+		\frametitle{Selected Missions}
+		\begin{columns}[c]
+			\begin{column}{0.5\textwidth}
+				\begin{itemize}
+					\item<2-> Large Survey
+					\begin{itemize}
+						\item<3-> ROSAT (retired)
+						\item<4-> Planck (retired)
+						\item<5-> eROSITA (active)
+					\end{itemize}
+					\item<6-> Spectroscopic Precision
+					\begin{itemize}
+						\item<7-> ASCA (retired)
+						\item<8-> XMM-Newton (active)
+						\item<9-> XRISM (active)
+					\end{itemize}
+					\item<10-> Spatial Resolution
+					\begin{itemize}
+						\item<11-> Chandra (active)
+						\item<12-> NewAthena (planned)
+					\end{itemize}
+				\end{itemize}
+			\end{column}
+			\begin{column}{0.5\textwidth}
+				\begin{overprint}[\linewidth]
+					\only<5-7>{\includegraphics[width=0.85\linewidth, draft=false]{brand/erosita.pdf}}%
+					\only<8-11>{\includegraphics[width=0.85\linewidth, draft=false]{brand/xmmn.pdf}}%
+					\only<12->{\includegraphics[width=0.85\linewidth, draft=false]{brand/athena.pdf}}%
+				\end{overprint}
+			\end{column}
+		\end{columns}
+	\end{frame}
+
+	\section{Observations}
+
+	\makeoverview{3}{2}
+
+	\subsection{Spectral Characteristics}
+
+	\begin{frame}
+		\frametitle{Spectrum}
+	\end{frame}
+
+	\section{Observations}
+
+	\makeoverview{3}{3}
+
+	\subsection{Conclusion \& Outlook}
+
+	\begin{frame}
+		\frametitle{Discussion}
 	\end{frame}
 
 	\section{Bibliography}
@@ -270,6 +421,12 @@
 				  \href{https://academic.oup.com/mnras/article/458/1/816/2622540}{MNRAS Volume 458 Issue 1}
 		\end{itemize}
 		\vspace{2ex}
-		Resources on GitHub: \href{https://github.com/fritzali/notes/tree/main/MASS/Active/presentation/NSD}{here}
+		Resources on GitHub: \href{https://github.com/fritzali/notes/tree/main/MASS/Spectroscopy}{here}
+	\end{frame}
+
+	\appendix
+
+	\begin{frame}
+		\frametitle{Appendix}
 	\end{frame}
 \end{document}
