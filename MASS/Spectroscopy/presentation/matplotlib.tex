@@ -1,0 +1,35 @@
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{mathtools}
+
+\usepackage{fontspec}
+\usepackage{unicode-math}
+
+\setsansfont{Fira Sans Light}[
+	Scale=MatchLowercase,
+	BoldFont=Fira Sans Medium,
+	ItalicFont=Fira Sans Light Italic,
+	BoldItalicFont=Fira Sans Medium Italic,
+]
+\setmainfont{Fira Sans Light}[
+	Scale=MatchLowercase,
+	BoldFont=Fira Sans Medium,
+	ItalicFont=Fira Sans Light Italic,
+	BoldItalicFont=Fira Sans Medium Italic,
+]
+\setmonofont{Fira Mono}[Scale=MatchLowercase]
+\setmathfont{Fira Math}[Scale=MatchLowercase]
+
+\usepackage{microtype}
+
+\usepackage[
+	locale = US,
+	per-mode = power,
+	print-zero-exponent = true,
+	print-unity-mantissa = false
+]{siunitx}
+
+\DeclareSIUnit{\year}{yr}
+\DeclareSIUnit{\erg}{erg}
+\DeclareSIUnit{\parsec}{pc}
+\DeclareSIUnit{\solarmass}{\ensuremath{M_\odot}}

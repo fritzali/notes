@@ -34,9 +34,9 @@
 	 	leftskip=15pt,
 	 	rightskip=1em,
 	]{headline}
-		\hspace{-2.75ex}\includegraphics[height=2.5\headerheight]{../brand/mass.pdf}\vspace{-1.25\headerheight}
+		\hspace{-2.75ex}\includegraphics[height=2.5\headerheight]{brand/mass.pdf}\vspace{-1.25\headerheight}
 		\hfill
-		\raisebox{0.55\headerheight}{\includegraphics[height=1.5\headerheight]{../brand/unibg.pdf}}\hspace{3.75ex}
+		\raisebox{0.55\headerheight}{\includegraphics[height=1.5\headerheight]{brand/unibg.pdf}}\hspace{3.75ex}
 	\end{beamercolorbox}
 	\ifnum\insertframenumber=0
 	\else
@@ -263,3 +263,19 @@
 \setbeamerfont{block title}{series=\itshape}
 
 \usepackage{multicol}
+
+\AtEndDocument{
+	\directlua{
+		local factor = 65536 * 72.27
+		
+		local tw = math.floor((tex.getdimen("textwidth") / factor) * 100 + 0.5) / 100
+		local th = math.floor((tex.getdimen("textheight") / factor) * 100 + 0.5) / 100
+		
+		texio.write_nl("===================================================")
+		texio.write_nl("CURRENT LAYOUT:")
+		texio.write_nl("Textwidth:  " .. tw .. " in")
+		texio.write_nl("Textheight:  " .. th .. " in")
+		texio.write_nl("===================================================")
+		io.flush()
+	}
+}
