@@ -7,16 +7,13 @@ radiation and inverse Compton scattering within relativistic collisionless shock
 and ground based Cherenkov telescope arrays used to probe these high energy phenomena. A notable connection to my own research
 on galaxy clusters appears when considering AGN acting as primary drivers of kinetic feedback altering the thermodynamic profiles
 of the surrounding intracluster medium. While my work details thermal plasma in collisional equilibrium, this paper provides a
-valuable counterpoint by exploring relativistic nonthermal particle acceleration.
+counterpoint by exploring relativistic nonthermal particle acceleration.
 
 ### Noteworthy Aspects
-The document features a well organized layout that maintains a clean and logical flow throughout the entire review. The inclusion
-of clear conceptual diagrams effectively helps to visualize the complex particle acceleration mechanisms occurring within relativistic
-shocks. Furthermore, the bibliography demonstrates a rigorous collection of academic literature spanning both foundational theory and
+The document adopts a clean layout that closely follows the structure of a scientific paper. It accurately tackles complexities of
+particle acceleration mechanisms occurring within relativistic shocks. The author successfully connects traditional spectroscopy and
 modern multimessenger observational campaigns.
 
 ### Possible Improvements
-Several sections contain long paragraphs with dense blocks of text that could be divided into smaller units to improve readability.
-There are occasional complex sentence structures that obscure the clarity of some physical definitions and would benefit from
-simplified phrasing. Additionally, ensuring that all section headers align with the standard course curriculum titles would
-further refine the formal presentation.
+The text consists of very dense blocks and includes no figures which could help break up the visual appearance. Its contents tend to
+assume prerequisite knowledge on the subject and skip over detailed definitions.
