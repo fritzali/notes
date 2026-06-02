@@ -11,8 +11,7 @@ diagnostics to understand densities and analyse multi component spectra.
 ### Noteworthy Aspects
 The document adopts a clean layout that closely follows the structure of a scientific paper. Including diagrams from theory and observation
 helps clarify the complex relationships between different physical components. The author provides a thorough literature review that connects
-the discussion to both classical and current studies. It features an impressively extensive description of a multitude of radiative processes
-and is of high relevance due to focusing on modern JWST applications.
+the discussion to both classical and current studies. It features an impressively extensive description of a multitude of radiative processes.
 
 ### Possible Improvements
 Some paragraphs are fairly long and would benefit from being broken down to improve the overall readability and narrative flow.
