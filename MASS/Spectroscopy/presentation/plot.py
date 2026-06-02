@@ -276,6 +276,50 @@ plt.savefig('build/chan_spectra.pdf')
 
 plt.close()
 
+### diagram ###
+
+r1, r2, r3 = 0.8, 1.8, 2.8
+radii = [r1, r2, r3]
+center_xy = (r3, r3) 
+plot_dim = r3 * 2
+
+c_true1, c_true2, c_true3 = '#b22222', '#daa520', '#6b8e23'
+c_obs_core, c_dep_core, c_mix_23 = '#a87222', '#c66421', '#a49a22'
+
+states = [
+    ((c_true3, c_mix_23, c_obs_core), np.array([4.0, 2.5, 1.0])),
+    ((c_true3, c_true2, c_dep_core),  np.array([3.2, 1.7, 1.0])),
+    ((c_true3, c_true2, c_true1),     np.array([2.0, 1.7, 1.0]))
+]
+
+patch_kw = {'edgecolor': 'none', 'linewidth': 0}
+line_kw = {'linestyle': '-', 'linewidth': 1.8, 'color': '#303030', 'zorder': 1}
+scatter_kw = {'s': 45, 'zorder': 10, 'edgecolor': 'white', 'linewidth': 1.2}
+
+order = ['first', 'second', 'third']
+
+i = 0
+for colors_2d, values_1d in states:
+    fig, axes = plt.subplots(1, 2, figsize=(5.88, 2.33), layout="constrained")
+    ax_2d, ax_1d = axes
+
+    for radius, color in zip([r3, r2, r1], colors_2d):
+        ax_2d.add_patch(mpl.patches.Circle(center_xy, radius, facecolor=color, **patch_kw))
+    
+    ax_2d.set(xlim=(0, plot_dim), ylim=(0, plot_dim), aspect='equal')
+    ax_2d.axis('off')
+
+    ax_1d.plot(radii, values_1d, **line_kw)
+    ax_1d.scatter(radii, values_1d, c=colors_2d[::-1], **scatter_kw)
+
+    ax_1d.set(xticklabels=[], yticklabels=[], ylim=(0.5, 4.5))
+    
+    plt.savefig(f'build/deproj_{order[i]}.pdf')
+
+    plt.close()
+
+    i += 1
+
 ### profiles ###
 
 R85, ne85, neerr85, K85, Kerr85, P85, Perr85, T85, Terr85 = np.genfromtxt('../catalog/Chandra/acisf15173N003_evt2-ABELL_0085.dat', unpack=True)

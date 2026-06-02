@@ -224,7 +224,6 @@
 
 	\begin{frame}
 		\frametitle{Density}
-%		\visible<2->{\vspace{-1.75em}\raggedleft{\includegraphics[height=1.025\textheight]{content/hist.pdf}\hspace{1.5em}}}
 		\begin{columns}[c]
 			\begin{column}{0.5\textwidth}
 			\end{column}
@@ -238,10 +237,14 @@
 		\end{columns}
 	\end{frame}
 
-%	\begin{frame}
-%		\frametitle{Angular Obscuring}
-%		\visible<2->{\vspace{-1.75em}\raggedleft{\includegraphics[height=1.025\textheight]{content/dens.pdf}\hspace{1.5em}}}
-%	\end{frame}
+	\begin{frame}
+		\frametitle{Deprojection}
+		\begin{overprint}
+			\only<2>{\includegraphics[width=\linewidth, draft=false]{build/deproj_first.pdf}}%
+			\only<3>{\includegraphics[width=\linewidth, draft=false]{build/deproj_second.pdf}}%
+			\only<4->{\includegraphics[width=\linewidth, draft=false]{build/deproj_third.pdf}}%
+		\end{overprint}
+	\end{frame}
 
 	\section{Prospects}
 
