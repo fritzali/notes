@@ -6,6 +6,14 @@ build:
 clean:
 	rm -rf build
 
+count:
+	texcount *.tex
+
+spell:
+	cat *.tex | \
+	aspell list --mode=tex --master=en_US | \
+	aspell list --mode=tex --master=de_DE | sort | uniq
+
 FORCE:
 
 .PHONY: all clean

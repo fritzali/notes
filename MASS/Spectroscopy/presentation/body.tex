@@ -449,14 +449,17 @@
 	\section{Bibliography}
 
 	\begin{frame}
-		\begin{center}\usebeamerfont{title}\textcolor{MASS}{\resizebox{0.25\linewidth}{!}{Thank You!}}\end{center}\vspace{2ex}
+		\begin{center}\usebeamerfont{title}\textcolor{MASS}{\resizebox{0.25\linewidth}{!}{Thank You!}}\end{center}\vspace{3.5ex}
 		\begin{itemize}
-			\item R. C. Hickox \& D. M. Alexander, {\itshape{Obscured Active Galactic Nuclei}} (2018)
-				  \href{https://www.annualreviews.org/content/journals/10.1146/annurev-astro-081817-051803}{ARA\&A Volume 56}
-			\item P. F. Hopkins et. al., {\itshape{Stellar and Quasar Feedback in Concert: Effects on AGN Accretion, Obscuration and Outflows}} (2016)
-				  \href{https://academic.oup.com/mnras/article/458/1/816/2622540}{MNRAS Volume 458 Issue 1}
+			\item H. Böhringer \& N. Werner, {\itshape{X-Ray Spectroscopy of Galaxy Clusters: Studying Astrophysical Processes
+				  in the Largest Celestial Laboratories}} (2010)
+				  \href{https://link.springer.com/article/10.1007/s00159-009-0023-3}{The Astronomy \& Astrophysics Review}
+			\item K. W. Cavagnolo et al., {\itshape{Intracluster Medium Entropy Profiles for a Chandra Archival Sample of Galaxy Clusters}}
+				  (2009) \href{https://iopscience.iop.org/article/10.1088/0067-0049/182/1/12}{The Astrophysical Journal Supplement}
+			\item D. Eckert et al., {\itshape{The XMM Cluster Outskirts Project}} (2017)
+				  \href{https://onlinelibrary.wiley.com/doi/10.1002/asna.201713345}{Astronomische Nachrichten}
 		\end{itemize}
-		\vspace{2ex}
+		\vspace{2.5ex}
 		Resources on GitHub: \href{https://github.com/fritzali/notes/tree/main/MASS/Spectroscopy}{here}
 	\end{frame}
 
@@ -466,5 +469,34 @@
 
 	\begin{frame}
 		\frametitle{Appendix}
+		\begin{itemize}
+			\item Total Contained Thermal Energy $$E_t \propto nT$$
+			\item Radiative Cooling Rate $$\dot{E}_c \propto n^2 \Lambda_c(T) \propto n^2 T^{-1\kern-0.5pt/2}$$
+			\item Characteristic Cooling Time $$t_c \equiv \frac{E_t}{\dot{E}_c} \propto T^{1\kern-0.5pt/2} n^{-1}$$
+			\item Hydrostatic Equilibrium Condition $$\nabla P = g\rho = -\frac{GM\rho}{r^2}$$
+		\end{itemize}
 	\end{frame}
+
+	\begin{frame}
+		\frametitle{Appendix}
+		\begin{itemize}
+			\item Bremsstrahlung Emissivity $$\epsilon \propto n_e n_i Z^2 T^{-1\kern-0.5pt/2} g_{f\kern-0.5ptf}(T, E) \, e^{-E/kT}$$
+			\item Salpeter Initial Mass Function $$\xi(M_*) = \frac{dN_*}{dM_*} \propto M_*^{-\alpha}$$
+			\item Pressure Relation $$P = nkT$$
+			\item Entropy Relation $$K = \frac{kT}{n^{2/3}}$$
+		\end{itemize}
+	\end{frame}
+
+	\begin{frame}
+		\frametitle{Appendix}
+		\begin{itemize}
+			\item Density Profile \begin{align*} &&&& n_{NCC} = n_0 \left( 1 + \frac{r^2}{r_c^2} \right)^{-3\beta / 2}
+				  && n_{CC} = \sqrt{n_1^2 + n_2^2} &&&& \end{align*}
+			\item Temperature Profile \begin{align*} && T = T_0 \frac{x_\text{cool} + T_\text{min} / T_0}{x_\text{cool} + 1}
+				  \frac{(r / r_t)^{-a}}{\bigl( 1 + (r / r_t)^{b} \bigr)^{c/b}} && x_\text{cool} = (r / r_\text{cool})^{a_\text{cool}} && \end{align*}
+			\item Pressure Profile $$P = P_0 \left( (C_\ell \, x_\ell)^c (1 + \bigl(C_\ell \, x_\ell)^a \bigr) \right)^{-(b-c)/a}$$
+			\item Entropy Profile \begin{align*} &&&&&& K = K_0 + K_\ell \, x_\ell^\gamma && x_\ell = r / R_\ell &&&&&& \end{align*}
+		\end{itemize}
+	\end{frame}
+
 \end{document}
