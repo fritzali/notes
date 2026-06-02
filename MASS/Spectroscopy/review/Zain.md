@@ -8,11 +8,10 @@ bremsstrahlung emissivity and spectral line broadening. However, while my work i
 ionization equilibrium, this review offers a broader perspective encompassing cooler interstellar media and stellar atmospheres.
 
 ### Noteworthy Aspects
-The document features a highly professional structural layout that ensures excellent readability throughout the review. The inclusion of
-foundational mathematical equations provides strong theoretical context for the various cosmic environments discussed. Furthermore, the
-text maintains a logical narrative flow and is supported by a robust, well organized bibliography.
+The manuscript features a clean layout that ensures readability throughout the review. By including foundational mathematical equations,
+it provides strong theoretical context for the various environments discussed. Furthermore, the text maintains a logical narrative flow
+and transparent structure, as well as providing a clear summary table for diagnostic abilities across instruments.
 
 ### Possible Improvements
-Some sections contain excessively long paragraphs with dense blocks of text that would benefit from being divided into smaller segments.
-Occasional complex sentence structures and passive phrasing slightly obscure the immediate clarity of certain physical definitions.
-A brief proofreading pass would help eliminate minor typographical errors and ensure complete stylistic consistency across all headers.
+Some paragraphs are fairly long and would benefit from being broken down to improve the overall readability and narrative flow. Adding more
+figures might help to break up the text and make the core physics more accessible for the reader.
