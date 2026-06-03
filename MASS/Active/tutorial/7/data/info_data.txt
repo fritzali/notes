@@ -1,0 +1,189 @@
+    name     dtype      unit      format                                                    description                                                   n_bad 
+----------- ------- ------------ -------- --------------------------------------------------------------------------------------------------------------- ------
+      recno   int32                                                     Record number assigned by the VizieR team. Should Not be used for identification.      0
+       SDSS   str18                                                                                             SDSS-DR7 name (HHMMSS.ss+DDMMSS.s; J2000)      0
+    RAJ2000 float64          deg  {:9.5f}                                                                      Right ascension in decimal degrees (J2000)      0
+    DEJ2000 float64          deg  {:9.5f}                                                                          Declination in decimal degrees (J2000)      0
+          z float64               {:9.6f}                                                                                SDSS-DR7 redshift (Cat. VII/260)      0
+      Plate   int16                                                                                                            Spectroscopic plate number      0
+      Fiber   int16                                                                                                            Spectroscopic fiber number      0
+        MJD   int32                                                                                     Modified Julian Date of spectroscopic observation      0
+       Flag   int32                                                                                                Target selection flag (PRIMTARGET) (1)      0
+          N   uint8                                                                                            [1/9] Number of spectroscopic observations      0
+        Uni   uint8                                                                               [0/2] Uniform selection flag (0=non-uniformly selected)      0
+       iMAG float32          mag  {:6.2f} Absolute i-band magnitude (normalized at z=2), K-corrected following Richards et al. (2006, Cat. J/AJ/131/2766)      0
+    logLbol float32  log(1e-07W)  {:6.3f}                                                                                     ? Bolometric luminosity (2)    103
+  e_logLbol float32  log(1e-07W)  {:6.3f}                                                                                  ? Measurement error in logLbol    103
+        BAL   uint8                                                                                                                    [0/3] BAL flag (3)      0
+      FIRST   int16                                                                                            [-1/2] FIRST (Cat. VIII/90) radio flag (4)      0
+          F    str1                                                               Display the FIRST catalog (Becker et al. 2003, Cat. VIII/71), within 2'      0
+       F6cm float32          mJy {:10.3g}                                                                 ? Observed radio flux density at rest-frame 6cm  96384
+     logFnu float32      log(Jy)  {:7.3f}                                     ? Observed optical flux density at restframe 2500{AA} (log(erg/s/cm^2^/Hz))    102
+         RL float32              {:10.3g}                                                                                ? Radio loudness (R=F6cm/F2500A)  96390
+   logL5100 float32  log(1e-07W)  {:6.3f}                                                                          ? Monochromatic luminosity at 5100{AA}  82690
+ e_logL5100 float32  log(1e-07W)  {:6.3f}                                                                                 ? Measurement error in logL5100  82690
+   logL3000 float32  log(1e-07W)  {:6.3f}                                                                          ? Monochromatic luminosity at 3000{AA}  19981
+ e_logL3000 float32  log(1e-07W)  {:6.3f}                                                                                 ? Measurement error in logL3000  19981
+   logL1350 float32  log(1e-07W)  {:6.3f}                                                                          ? Monochromatic luminosity at 1350{AA}  53356
+ e_logL1350 float32  log(1e-07W)  {:6.3f}                                                                                 ? Measurement error in logL1350  53356
+    logLBHa float32  log(1e-07W)  {:6.3f}                                                                        ? Broad H{alpha} line luminosity (erg/s) 100966
+  e_logLBHa float32  log(1e-07W)  {:6.3f}                                                                                  ? Measurement error in logLBHa 100966
+     W_BHa_ float32       km / s  {:7.1f}                                                                                   ? FWHM of broad H{alpha} line 100966
+   e_W_BHa_ float32       km / s  {:7.1f}                                                                                    ? Measurement error in W(Ha) 100966
+      EWBHa float32       0.1 nm  {:6.1f}                                                                        ? Restframe equivalent width of broad Ha 100966
+    e_EWBHa float32       0.1 nm  {:8.1g}                                                                                    ? Measurement error in EWBHa 100966
+    logLNHa float32  log(1e-07W)  {:5.2f}                                                                       ? Narrow H{alpha} line luminosity (erg/s) 101147
+  e_logLNHa float32  log(1e-07W)  {:5.2f}                                                                                  ? Measurement error in logLNHa 101147
+     W_NHa_ float32       km / s  {:7.2f}                                                                                       ? FWHM of narrow H{alpha} 101111
+   e_W_NHa_ float32       km / s  {:6.2f}                                                                                   ? Measurement error in W(NHa) 101111
+      EWNHa float32       0.1 nm  {:5.1f}                                                                       ? Restframe equivalent width of narrow Ha 101155
+    e_EWNHa float32       0.1 nm  {:5.1f}                                                                                    ? Measurement error in EWNHa 101147
+    logLNII float32  log(1e-07W)  {:5.2f}                                                                          ? Luminosity of [NII]6585 line (erg/s) 101245
+  e_logLNII float32  log(1e-07W)  {:5.2f}                                                                                  ? Measurement error in logLNII 101245
+      EWNII float32       0.1 nm  {:5.1f}                                                                       ? Restframe equivalent width of [NII]6585 101249
+    e_EWNII float32       0.1 nm  {:8.1g}                                                                                    ? Measurement error in EWNII 101245
+   logLSII1 float32  log(1e-07W)  {:5.2f}                                                                          ? Luminosity of [SII]6718 line (erg/s) 101781
+ e_logLSII1 float32  log(1e-07W)  {:5.2f}                                                                                 ? Measurement error in logLSII1 101781
+     EWSII1 float32       0.1 nm  {:5.1f}                                                                       ? Restframe equivalent width of [SII]6718 101796
+   e_EWSII1 float32       0.1 nm  {:6.1f}                                                                                   ? Measurement error in EWSII1 101781
+   logLSII3 float32  log(1e-07W)  {:5.2f}                                                                          ? Luminosity of [SII]6732 line (erg/s) 101818
+ e_logLSII3 float32  log(1e-07W)  {:5.2f}                                                                                 ? Measurement error in logLSII3 101818
+     EWSII3 float32       0.1 nm  {:5.1f}                                                                       ? Restframe equivalent width of [SII]6732 101835
+   e_EWSII3 float32       0.1 nm  {:8.1g}                                                                                   ? Measurement error in EWSII3 101818
+     EWFeHa float32       0.1 nm  {:5.1f}                                                  ? Restframe equivalent width of Fe within 6000-6500{AA} ({AA}) 103205
+   e_EWFeHa float32       0.1 nm  {:5.1f}                                                                                   ? Measurement error in EWFeHa 103171
+      alpHa float32               {:6.1f}                                              [-5/3]? Power-law slope {alpha} for the continuum fit for H{alpha} 100954
+    e_alpHa float32               {:4.1f}                                                                                    ? Measurement error in alpHa 100954
+       NpHa   int16                                                                  [0,241] Number of good pixels for the restframe 6400-6765{AA} region      0
+     SN_Ha_ float32               {:5.2f}                                                   ? Median S/N per pixel for the restframe 6400-6765{AA} region  99332
+     chi2Ha float32               {:5.2f}                                                                                   ? Reduced chi2 for the Ha fit 100954
+    logLBHb float32  log(1e-07W)  {:5.2f}                                                                         ? Broad H{beta} line luminosity (erg/s)  83067
+  e_logLBHb float32  log(1e-07W)  {:5.2f}                                                                                  ? Measurement error in logLBHb  83067
+     W_BHb_ float32       km / s  {:7.1f}                                                                                         ? FWHM of broad H{beta}  83068
+   e_W_BHb_ float32       km / s  {:7.1f}                                                                                   ? Measurement error in W(BHb)  83068
+      EWBHb float32       0.1 nm  {:7.1f}                                                                        ? Restframe equivalent width of broad Hb  83139
+    e_EWBHb float32       0.1 nm  {:8.1g}                                                                                    ? Measurement error in EWBHb  83158
+    logLNHb float32  log(1e-07W)  {:5.2f}                                                                        ? Narrow H{beta} line luminosity (erg/s)  85679
+  e_logLNHb float32  log(1e-07W)  {:5.2f}                                                                                  ? Measurement error in logLNHb  85679
+     W_NHb_ float32       km / s  {:6.1f}                                                                                             ? FWHM of narrow Hb  85206
+   e_W_NHb_ float32       km / s  {:5.1f}                                                                                   ? Measurement error in W(NHb)  85206
+      EWNHb float32       0.1 nm  {:5.1f}                                                                       ? Restframe equivalent width of narrow Hb  85828
+    e_EWNHb float32       0.1 nm  {:8.1g}                                                                                    ? Measurement error in EWNHb  85760
+    W_NHb_g float32       km / s  {:7.1f}                                                             ? FWHM of broad H{beta} using a single Gaussian fit  83095
+  logLOIII4 float32  log(1e-07W)  {:4.1f}                                                                         ? Luminosity of [OIII]4959 line (erg/s)  84948
+e_logLOIII4 float32  log(1e-07W)  {:4.1f}                                                                                 ? Measurement error in logLOIII  84948
+    EWOIII4 float32       0.1 nm  {:5.1f}                                                                      ? Restframe equivalent width of [OIII]4959  85117
+  e_EWOIII4 float32       0.1 nm  {:8.1g}                                                                                   ? Measurement error in EWOIII  85089
+  logLOIII5 float32  log(1e-07W)  {:4.1f}                                                                         ? Luminosity of [OIII]5007 line (erg/s)  84957
+e_logLOIII5 float32  log(1e-07W)  {:4.1f}                                                                                ? Measurement error in logLOIII5  84957
+    EWOIII5 float32       0.1 nm  {:5.1f}                                                                      ? Restframe equivalent width of [OIII]5007  85124
+  e_EWOIII5 float32       0.1 nm  {:8.1g}                                                                                  ? Measurement error in EWOIII5  85126
+     EWFeHb float32       0.1 nm  {:7.1f}                                                  ? Restframe equivalent width of Fe within 4435-4685{AA} ({AA})  84973
+   e_EWFeHb float32       0.1 nm  {:8.1g}                                                                                   ? Measurement error in EWFeHb  84992
+      alpHb float32               {:6.1f}                                                     ? Power-law slope {alpha} for the continuum fit for H{beta}  82613
+    e_alpHb float32               {:4.1f}                                                                                    ? Measurement error in alpHb  82613
+       NpHb   int16                                                                          Number of good pixels for the restframe 4750-4950{AA} region      0
+     SN_Hb_ float32               {:5.2f}                                                   ? Median S/N per pixel for the restframe 4750-4950{AA} region  80784
+     chi2Hb float32               {:7.2f}                                                                              ? Reduced chi2 for the H{beta} fit  82613
+   logLMgII float32  log(1e-07W)  {:5.2f}                                                                             ? Luminosity of the whole MgII line  20154
+ e_logLMgII float32  log(1e-07W)  {:5.2f}                                                                                 ? Measurement error in logLMgII  20154
+    W_MgII_ float32       km / s  {:7.1f}                                                                                        ? FWHM of the whole MgII  21598
+  e_W_MgII_ float32       km / s  {:7.1f}                                                                                  ? Measurement error in W(MgII)  21598
+     EWMgII float32       0.1 nm  {:7.1f}                                                           ? Restframe equivalent width of the whole MgII ({AA})  20156
+   e_EWMgII float32       0.1 nm  {:8.1g}                                                                                   ? Measurement error in EWMgII  20156
+  logLBMgII float32  log(1e-07W)  {:5.2f}                                                                             ? Luminosity of the broad MgII line  20268
+e_logLBMgII float32  log(1e-07W)  {:5.2f}                                                                                ? Measurement error in logLBMgII  20268
+   W_BMgII_ float32       km / s  {:7.1f}                                                                                        ? FWHM of the broad MgII  20275
+ e_W_BMgII_ float32       km / s  {:7.1f}                                                                                 ? Measurement error in W(BMgII)  20275
+    EWBMgII float32       0.1 nm  {:7.1f}                                                           ? Restframe equivalent width of the broad MgII ({AA})  20269
+  e_EWBMgII float32       0.1 nm  {:8.1g}                                                                                  ? Measurement error in EWBMgII  20269
+  W_BMgII_g float32       km / s  {:7.1f}                                                            ? FWHM of the broad MgII using a single Gaussian fit  20517
+     FeMgII float32       0.1 nm  {:6.1f}                                                         ? Restframe equivalent width of Fe within 2200-3090{AA}  20770
+   e_FeMgII float32       0.1 nm  {:6.1f}                                                                                   ? Measurement error in FeMgII  20770
+   alphMgII float32               {:6.1f}                                                 ? Power-law slope {alpha} for the continuum fit for MgII [-5,3]  19978
+ e_alphMgII float32               {:4.1f}                                                                                 ? Measurement error in alphMgII  19978
+     NpMgII   int16                                                                        i Number of good pixels for the restframe 2700-2900{AA} region      0
+   SN_MgII_ float32               {:5.2f}                                                   ? Median S/N per pixel for the restframe 2700-2900{AA} region  16030
+   chi2MgII float32               {:7.2f}                                                                                 ? Reduced chi2 for the MgII fit  19978
+    logLCIV float32  log(1e-07W)  {:5.2f}                                                                              ? Luminosity of the whole CIV line  53586
+  e_logLCIV float32  log(1e-07W)  {:5.2f}                                                                                  ? Measurement error in logLCIV  53586
+     W_CIV_ float32       km / s  {:7.1f}                                                                                         ? FWHM of the whole CIV  54253
+   e_W_CIV_ float32       km / s  {:7.1f}                                                                                   ? Measurement error in W(CIV)  54253
+      EWCIV float32       0.1 nm  {:7.2f}                                                              ? Restframe equivalent width of the whole CIV {AA}  53626
+    e_EWCIV float32       0.1 nm  {:8.1g}                                                                                    ? Measurement error in EWCIV  53626
+     alpCIV float32               {:6.1f}                                                         ? Power-law slope {alpha} for the continuum fit for CIV  53314
+   e_alpCIV float32               {:4.1f}                                                                                   ? Measurement error in alpCIV  53314
+      NpCIV   int16                                                                          Number of good pixels for the restframe 1500-1600{AA} region      0
+    SN_CIV_ float32               {:5.2f}                                                   ? Median S/N per pixel for the restframe 1500-1600{AA} region  47085
+    chi2CIV float32               {:6.2f}                                                                                  ? Reduced chi2 for the CIV fit  53314
+     V_BHa_ float64       km / s  {:8.1f}                                                                              ? Velocity shift of broad H{alpha} 100966
+   e_V_BHa_ float32       km / s  {:7.1f}                                                                                   ? Measurement error in V(BHa) 100966
+     V_NHa_ float64       km / s  {:8.1f}                                                                            ? Velocity shift of narrrow H{alpha} 100993
+   e_V_NHa_ float32       km / s  {:5.1f}                                                                                   ? Measurement error in V(NHa) 100993
+     V_BHb_ float64       km / s  {:8.1f}                                                                               ? Velocity shift of broad H{beta}  83067
+   e_V_BHb_ float32       km / s  {:8.1g}                                                                                   ? Measurement error in V(BHb)  83067
+     V_NHb_ float64       km / s  {:8.1f}                                                                              ? Velocity shift of narrow H{beta}  82680
+   e_V_NHb_ float32       km / s  {:6.1f}                                                                                   ? Measurement error in V(NHb)  82680
+   V_BMgII_ float64       km / s  {:8.1f}                                                                                  ? Velocity shift of broad MgII  20806
+ e_V_BMgII_ float32       km / s  {:6.1f}                                                                                 ? Measurement error in V(BMgII)  20806
+    V_CIVp_ float64       km / s  {:8.1f}                                                                                ? Velocity shift of the CIV peak  53586
+  e_V_CIVp_ float32       km / s  {:6.1f}                                                                                  ? Measurement error in V(CIVp)  53586
+    logBHHM float32 log(solMass)  {:5.2f}                                       ? Virial BH mass based on H{beta} (McLure and Dunlop 2004MNRAS.352.1390M)  83202
+  e_logBHHM float32 log(solMass)  {:5.2f}                                                                                  ? Measurement error in logBHHM  83202
+    logBHHV float32 log(solMass)  {:5.2f}                                  ? Virial BH mass based on H{beta} (Vestergaard + Peterson 2006ApJ...641..689V)  83351
+  e_logBHHV float32 log(solMass)  {:5.2f}                                                                                  ? Measurement error in logBHHV  83351
+    logBHMM float32 log(solMass)  {:5.2f}                                         ? Virial BH mass based on MgII (McLure and Dunlop, 2004MNRAS.352.1390M)  20519
+  e_logBHMM float32 log(solMass)  {:5.2f}                                                                                  ? Measurement error in logBHMM  20519
+    logBHMV float32 log(solMass)  {:5.2f}                                       ? Virial BH mass based on MgII (Vestergaard + Osmer, 2009, J/ApJ/699/800)  22409
+  e_logBHMV float32 log(solMass)  {:5.2f}                                                                                  ? Measurement error in logBHMV  22409
+    logBHMS float32 log(solMass)  {:5.2f}                                                                     ? Virial BH mass based on MgII (this paper)  20684
+  e_logBHMS float32 log(solMass)  {:5.2f}                                                                                  ? Measurement error in logBHMS  20684
+    logBHCV float32 log(solMass)  {:5.2f}                                      ? Virial BH mass based on CIV (Vestergaard + Peterson 2006ApJ...641..689V)  55146
+  e_logBHCV float32 log(solMass)  {:5.2f}                                                                                  ? Measurement error in logBHCV  55146
+      logBH float32 log(solMass)  {:5.2f}                                                                           ? The adopted fiducial virial BH mass   1037
+    e_logBH float32 log(solMass)  {:5.2f}                                                                                    ? Measurement error in logBH   1037
+     logEdd float32               {:7.2f}                                                  [-5/1.3]? Eddington ratio based on the fiducial virial BH mass   1037
+        SpF   uint8                                                                                                       [0/6] Special interest flag (5)      0
+        zHW float64               {:9.6f}                                                   Improved redshifts from Hewett & Wild 2010 (J/MNRAS/405/2302)      0
+      e_zHW float64               {:9.6f}                                                                                        Error of the HW redshift      0
+       umag float32          mag  {:6.3f}                                                                        ? SDSS u-band PSF magnitude; (nearly) AB      0
+     e_umag float32          mag  {:6.3f}                                                                                    ? SDSS u PSF magnitude error     23
+       gmag float32          mag  {:6.3f}                                                                        ? SDSS g-band PSF magnitude; (nearly) AB      1
+     e_gmag float32          mag  {:6.3f}                                                                                    ? SDSS g PSF magnitude error     22
+       rmag float32          mag  {:6.3f}                                                                        ? SDSS r-band PSF magnitude; (nearly) AB      0
+     e_rmag float32          mag  {:6.3f}                                                                                    ? SDSS r PSF magnitude error     20
+       imag float32          mag  {:6.3f}                                                                        ? SDSS i-band PSF magnitude; (nearly) AB      0
+     e_imag float32          mag  {:6.3f}                                                                                    ? SDSS i PSF magnitude error     20
+       zmag float32          mag  {:6.3f}                                                                        ? SDSS z-band PSF magnitude; (nearly) AB      1
+     e_zmag float32          mag  {:6.3f}                                                                                    ? SDSS z PSF magnitude error     22
+      umag0 float32          mag  {:6.3f}                                     ? SDSS u PSF magnitudes corrected for Galactic extinction using the SFD map      0
+      gmag0 float32          mag  {:6.3f}                                     ? SDSS g PSF magnitudes corrected for Galactic extinction using the SFD map      1
+      rmag0 float32          mag  {:6.3f}                                     ? SDSS r PSF magnitudes corrected for Galactic extinction using the SFD map      0
+      imag0 float32          mag  {:6.3f}                                     ? SDSS i PSF magnitudes corrected for Galactic extinction using the SFD map      0
+      zmag0 float32          mag  {:6.3f}                                     ? SDSS z PSF magnitudes corrected for Galactic extinction using the SFD map      1
+     Delg-i float32          mag  {:8.3f}      ? Deviation from the mean g-i color at each redshift (see Richards et al. 2002AJ....124....1R for details)      1
+      logNH float32  log(cm**-2)  {:6.3f}                                                                         logarithm of Galactic HI column density      0
+         CR float32       ct / s  {:6.3f}                                                            ? log RASS full band count rate; 30" matching radius 100406
+      oRASS float32       arcsec  {:6.3f}                                                                                    [0/30]? SDSS/RASS separation 100406
+       Jmag float32          mag  {:7.3f}                                                                    ? 2MASS J-band magnitude; 2" matching radius  65269
+     e_Jmag float32          mag  {:7.3f}                                                                                              ? 2MASS Jmag error  65269
+       Hmag float32          mag  {:7.3f}                                                                    ? 2MASS H-band magnitude; 2" matching radius  77495
+     e_Hmag float32          mag  {:7.3f}                                                                                              ? 2MASS Hmag error  77495
+      Ksmag float32          mag  {:7.3f}                                                                   ? 2MASS Ks-band magnitude; 2" matching radius  76247
+    e_Ksmag float32          mag  {:7.3f}                                                                                             ? 2MASS Ksmag error  76247
+        o2M float32       arcsec  {:6.3f}                                                                                    [0/2]? SDSS/2MASS separation  52219
+      W1mag float32          mag  {:6.3f}                                                                                      ? WISE 3.4um magnitude (6)  67933
+    e_W1mag float32          mag  {:6.3f}                                                                                                   ? W1mag error  67933
+      W2mag float32          mag  {:6.3f}                                                                                      ? WISE 4.6um magnitude (6)  67933
+    e_W2mag float32          mag  {:6.3f}                                                                          ? W2mag error (0 when upper limit) (7)  67933
+      W3mag float32          mag  {:6.3f}                                                                                       ? WISE 12um magnitude (6)  67957
+    e_W3mag float32          mag  {:6.3f}                                                                          ? W3mag error (0 when upper limit) (7)  67957
+      W4mag float32          mag  {:6.3f}                                                                                       ? WISE 22um magnitude (6)  67960
+    e_W4mag float32          mag  {:6.3f}                                                                          ? W4mag error (0 when upper limit) (7)  67960
+      oWISE float32       arcsec  {:6.3f}                                                                                     [0/6]? SDSS/WISE separation  67933
+       WISE    str4                                                         Display the WISE preliminary data (Cutri et al. 2011, Cat. II/307), within 6"      0
+     DR7qso    str6                                                            Display the SDSS-DR7 quasar catalog (Schneider et al., 2010, Cat. VII/260)      0
+      Sloan    str5                                                                                                 Display the SDSS data for this quasar      0
+     Simbad    str6                                                                                                        Simbad column added by the CDS      0
+        NED    str3                                                                                                        Simbad column added by the CDS      0
+
