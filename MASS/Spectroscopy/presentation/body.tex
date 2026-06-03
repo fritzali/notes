@@ -94,12 +94,26 @@
 
 % =============================================== %
 
+% =============================================== %
+%            Only Beamer / Not Handout            %
+% =============================================== %
+
+\makeatletter
+\@ifclasswith{beamer}{handout}{
+	\NewEnviron{onlybeamer}{}
+}{
+    \NewEnviron{onlybeamer}{\BODY}
+}
+\makeatother
+
+% =============================================== %
+
 \begin{document}
 	\begin{frame}[noframenumbering]
 		\titlepage
 	\end{frame}
 
-	\begin{frame}
+	\begin{frame}<beamer>
 		\begin{figure}
 			\centering
 			\begin{subfigure}[b]{0.2\textwidth}
@@ -185,10 +199,11 @@
 
 	\section{Physical Properties}
 
-	\addtocounter{framenumber}{-1}
-	\makeoverview{1}{0}
+	\begin{onlybeamer}
+		\makeoverview{1}{0}
+		\addtocounter{framenumber}{-1}
+	\end{onlybeamer}
 
-	\addtocounter{framenumber}{-1}
 	\makeoverview{1}{1}
 
 	\subsection{Galaxy Clusters}
@@ -253,7 +268,7 @@
 			\begin{column}{0.5\textwidth}
 				\begin{overprint}
 					\only<3-10>{\includegraphics[width=\linewidth, draft=false]{build/theo_bremsstrahlung.pdf}}%
-					\visible<11->{\includegraphics[width=\linewidth, draft=false]{build/theo_sz.pdf}}%
+					\visible<11-|handout:0>{\includegraphics[width=\linewidth, draft=false]{build/theo_sz.pdf}}%
 				\end{overprint}
 			\end{column}
 		\end{columns}
@@ -261,9 +276,11 @@
 
 	\section{Radial Profiles}
 
-	\makeoverview{2}{0}
+	\begin{onlybeamer}
+		\makeoverview{2}{0}
+		\addtocounter{framenumber}{-1}
+	\end{onlybeamer}
 
-	\addtocounter{framenumber}{-1}
 	\makeoverview{2}{1}
 
 	\subsection{Data Processing}
@@ -286,7 +303,7 @@
 			\end{column}
 			\begin{column}{0.5\textwidth}
 				\begin{overprint}
-					\only<3-9>{\hspace*{2em}\includegraphics[width=0.75\textwidth]{../catalog/ROSAT/RASS-DSS2-A2029-overlay.png}}%
+					\only<3-9|handout:0>{\hspace*{2em}\includegraphics[width=0.75\textwidth]{../catalog/ROSAT/RASS-DSS2-A2029-overlay.png}}%
 					\visible<10->{\hspace*{2em}\includegraphics[width=0.75\textwidth]{../catalog/ROSAT/RASS-DSS2-A1644-overlay.png}}%
 				\end{overprint}
 			\end{column}
@@ -296,9 +313,9 @@
 	\begin{frame}
 		\frametitle{Deprojection}
 		\begin{overprint}
-			\only<2>{\includegraphics[width=\linewidth, draft=false]{build/deproj_first.pdf}}%
-			\only<3>{\includegraphics[width=\linewidth, draft=false]{build/deproj_second.pdf}}%
-			\only<4->{\includegraphics[width=\linewidth, draft=false]{build/deproj_third.pdf}}%
+			\only<2|handout:1>{\includegraphics[width=\linewidth, draft=false]{build/deproj_first.pdf}}%
+			\only<3|handout:2>{\includegraphics[width=\linewidth, draft=false]{build/deproj_second.pdf}}%
+			\only<4-|handout:3>{\includegraphics[width=\linewidth, draft=false]{build/deproj_third.pdf}}%
 		\end{overprint}
 	\end{frame}
 
@@ -313,16 +330,16 @@
 		\begin{columns}[c]
 			\begin{column}{0.5\textwidth}
 				\begin{overprint}
-					\only<2>{\includegraphics[width=\linewidth, draft=false]{build/theo_density.pdf}}%
-					\only<3>{\includegraphics[width=\linewidth, draft=false]{build/chan_density.pdf}}%
-					\only<4->{\includegraphics[width=\linewidth, draft=false]{build/xmmn_density.pdf}}%
+					\only<2|handout:1>{\includegraphics[width=\linewidth, draft=false]{build/theo_density.pdf}}%
+					\only<3|handout:2>{\includegraphics[width=\linewidth, draft=false]{build/chan_density.pdf}}%
+					\only<4-|handout:3>{\includegraphics[width=\linewidth, draft=false]{build/xmmn_density.pdf}}%
 				\end{overprint}
 			\end{column}
 			\begin{column}{0.5\textwidth}
 				\begin{overprint}
-					\only<5>{\includegraphics[width=\linewidth, draft=false]{build/theo_pressure.pdf}}%
-					\only<6>{\includegraphics[width=\linewidth, draft=false]{build/chan_pressure.pdf}}%
-					\only<7->{\includegraphics[width=\linewidth, draft=false]{build/xmmn_pressure.pdf}}%
+					\only<5|handout:1>{\includegraphics[width=\linewidth, draft=false]{build/theo_pressure.pdf}}%
+					\only<6|handout:2>{\includegraphics[width=\linewidth, draft=false]{build/chan_pressure.pdf}}%
+					\only<7-|handout:3>{\includegraphics[width=\linewidth, draft=false]{build/xmmn_pressure.pdf}}%
 				\end{overprint}
 			\end{column}
 		\end{columns}
@@ -333,16 +350,16 @@
 		\begin{columns}[c]
 			\begin{column}{0.5\textwidth}
 				\begin{overprint}
-					\only<2>{\includegraphics[width=\linewidth, draft=false]{build/theo_temperature.pdf}}%
-					\only<3>{\includegraphics[width=\linewidth, draft=false]{build/chan_temperature.pdf}}%
-					\only<4->{\includegraphics[width=\linewidth, draft=false]{build/xmmn_temperature.pdf}}%
+					\only<2|handout:1>{\includegraphics[width=\linewidth, draft=false]{build/theo_temperature.pdf}}%
+					\only<3|handout:2>{\includegraphics[width=\linewidth, draft=false]{build/chan_temperature.pdf}}%
+					\only<4-|handout:3>{\includegraphics[width=\linewidth, draft=false]{build/xmmn_temperature.pdf}}%
 				\end{overprint}
 			\end{column}
 			\begin{column}{0.5\textwidth}
 				\begin{overprint}
-					\only<5>{\includegraphics[width=\linewidth, draft=false]{build/theo_entropy.pdf}}%
-					\only<6>{\includegraphics[width=\linewidth, draft=false]{build/chan_entropy.pdf}}%
-					\only<7->{\includegraphics[width=\linewidth, draft=false]{build/xmmn_entropy.pdf}}%
+					\only<5|handout:1>{\includegraphics[width=\linewidth, draft=false]{build/theo_entropy.pdf}}%
+					\only<6|handout:2>{\includegraphics[width=\linewidth, draft=false]{build/chan_entropy.pdf}}%
+					\only<7-|handout:3>{\includegraphics[width=\linewidth, draft=false]{build/xmmn_entropy.pdf}}%
 				\end{overprint}
 			\end{column}
 		\end{columns}
@@ -350,9 +367,11 @@
 
 	\section{Observations}
 
-	\makeoverview{3}{0}
+	\begin{onlybeamer}
+		\makeoverview{3}{0}
+		\addtocounter{framenumber}{-1}
+	\end{onlybeamer}
 
-	\addtocounter{framenumber}{-1}
 	\makeoverview{3}{1}
 
 	\subsection{Detectors \& Telescopes}
@@ -383,9 +402,9 @@
 			\end{column}
 			\begin{column}{0.55\textwidth}
 				\begin{overprint}
-					\only<5-7>{\includegraphics[height=0.85\textheight, draft=false]{brand/erosita.pdf}}%
+					\only<5-7|handout:0>{\includegraphics[height=0.85\textheight, draft=false]{brand/erosita.pdf}}%
 					\only<8-10>{\includegraphics[height=0.85\textheight, draft=false]{brand/athena.pdf}}%
-					\only<11->{\includegraphics[height=0.85\textheight, draft=false]{brand/xmmn.pdf}}%
+					\only<11-|handout:0>{\includegraphics[height=0.85\textheight, draft=false]{brand/xmmn.pdf}}%
 				\end{overprint}
 			\end{column}
 		\end{columns}
@@ -473,15 +492,15 @@
 			\item Total Contained Thermal Energy $$E_t \propto nT$$
 			\item Radiative Cooling Rate $$\dot{E}_c \propto n^2 \Lambda_c(T) \propto n^2 T^{-1\kern-0.5pt/2}$$
 			\item Characteristic Cooling Time $$t_c \equiv \frac{E_t}{\dot{E}_c} \propto T^{1\kern-0.5pt/2} n^{-1}$$
-			\item Hydrostatic Equilibrium Condition $$\nabla P = g\rho = -\frac{GM\rho}{r^2}$$
+			\item Bremsstrahlung Emissivity $$\epsilon \propto n_e n_i Z^2 T^{-1\kern-0.5pt/2} g_{f\kern-0.5ptf}(T, E) \, e^{-E/kT}$$
 		\end{itemize}
 	\end{frame}
 
 	\begin{frame}
 		\frametitle{Appendix}
 		\begin{itemize}
-			\item Bremsstrahlung Emissivity $$\epsilon \propto n_e n_i Z^2 T^{-1\kern-0.5pt/2} g_{f\kern-0.5ptf}(T, E) \, e^{-E/kT}$$
-			\item Salpeter Initial Mass Function $$\xi(M_*) = \frac{dN_*}{dM_*} \propto M_*^{-\alpha}$$
+			\item Salpeter Initial Stellar Mass Function $$\xi(M_*) = \frac{dN_*}{dM_*} \propto M_*^{-\alpha}$$
+			\item Hydrostatic Equilibrium Condition $$\nabla P = g\rho = -\frac{GM\rho}{r^2}$$
 			\item Pressure Relation $$P = nkT$$
 			\item Entropy Relation $$K = \frac{kT}{n^{2/3}}$$
 		\end{itemize}
