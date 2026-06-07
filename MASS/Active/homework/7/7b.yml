@@ -1,0 +1,15 @@
+name: 7b
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - python=3.10
+  - scipy<1.14.0
+  - numpy
+  - matplotlib
+  - pandas
+  - jupyter
+  - git
+  - pip
+  - pip:
+    - git+https://github.com/arnauqb/qsosed.git
