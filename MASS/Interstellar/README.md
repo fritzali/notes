@@ -1,8 +1,8 @@
-# MASTER STUDY GUIDE: PHYSICS OF INTERSTELLAR MATTER
+# STUDY GUIDE: PHYSICS OF INTERSTELLAR MATTER
 
 **Lecturer:** Prof. Dejan Urošević
 
-**Core Textbook Referencing:** *The Interstellar Medium* (Lequeux)
+**Core Textbook Reference:** *The Interstellar Medium* (Lequeux)
 
 ## SECTION 1: Our Galaxy and the Architectural Framework of the ISM
 
