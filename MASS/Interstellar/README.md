@@ -50,7 +50,7 @@ The ISM is broadly categorized into two structural frameworks:
 1. **Radiation Field:** Dominated locally by stellar flux, cosmic microwave background (CMB), and diffuse emission from the ISM gas and dust itself.
 2. **Magnetic Field ($B$-field):** Permeates all phases of the ISM. It influences cosmic ray propagation, drives magnetohydrodynamic (MHD) shocks, and regulates cloud collapse during star formation.
 3. **Gravitational Field:** Dictated by the large-scale potential of the Galactic disk, dark matter halo, and local stellar concentrations. It establishes vertical hydrostatic equilibrium in the disk.
-4. **Cosmic Rays (CRs):** High-energy, relativistic charged particles (predominantly protons $\sim 99\%$, alpha particles, and $\sim 1\%$ electrons) that act as a primary non-thermal ionization and heating source for cold, shielded environments.
+4. **Cosmic Rays (CRs):** High-energy, relativistic charged particles (predominantly protons $\sim 99$%, alpha particles, and $\sim 1$% electrons) that act as a primary non-thermal ionization and heating source for cold, shielded environments.
 
 ### 3. Kinematics, Differential Rotation, and Distance Determinations
 
@@ -782,7 +782,7 @@ To prepare for a difficult multiple-choice exam, review these highly specific de
 ### 1. Key Constants & Diagnostic Value Matrix
 
 * **Galactic Mass Distribution:** The ISM holds roughly **5%** of the total Galactic mass.
-* **Dust-to-Gas Mass Ratio:** Dust accounts for approximately **1/100 ($1\%$)** of the total mass of the ISM.
+* **Dust-to-Gas Mass Ratio:** Dust accounts for approximately **1/100 ($1$)%** of the total mass of the ISM.
 * **Maximum Classical Adiabatic Shock Compression:** For an unmodified strong shock, $\rho_2/\rho_1 = \mathbf{4}$.
 * **Maximum Cosmic Ray-Modified Shock Compression:** For a cosmic ray-modified shock, $\rho_2/\rho_1 = \mathbf{7}$.
 * **The 21-cm Spontaneous Emission Rate:** $A_{ul} = \mathbf{2.87 \times 10^{-15}\text{ s}^{-1}}$.
