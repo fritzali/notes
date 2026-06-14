@@ -1,0 +1,10 @@
+[MESSAGES CONTROL]
+disable=
+    f-string-without-interpolation,
+    line-too-long,
+    reimported,
+    trailing-whitespace,
+    ungrouped-imports,
+    unused-import,
+    wrong-import-order,
+    wrong-import-position,
