@@ -1,0 +1,40 @@
+## ========================================= ##
+## ========================================= ##
+##                                           ##
+##    python -m venv .venv                   ##
+##    source .venv/bin/activate              ##
+##    python -m pip install --upgrade pip    ##
+##    pip install -r requirements.txt        ##
+##                                           ## 
+## ========================================= ##
+## ========================================= ##
+
+# --- Core Science & Astronomy Tools --- #
+astropy==7.2.0        # core toolset for astronomy (coordinates, fits files, and cosmology)
+wotan==1.10           # timeseries detrending tool (commonly used to find exoplanet transits)
+ldtk==1.8.5           # limb darkening toolkit for calculating stellar intensity profiles
+
+# --- Data Handling & Storage --- #
+numpy==2.3.5          # fundamental package for fast numerical operations and matrix math
+pandas==3.0.1         # powerful data analysis tool for handling tabular data (dataframes)
+h5py==3.15.1          # interface to manage and read large, complex hdf5 data files
+pyyaml==6.0.3         # parses and emits yaml configuration files
+
+# --- Math, Machine Learning & Performance --- #
+scipy==1.17.1         # advanced scientific computing (optimization, integration, stats)
+scikit-learn==1.8.0   # machine learning library for classification, regression, and clustering
+joblib==1.5.3         # lightweight pipelining and easy parallel processing to speed up code
+
+# --- Data Visualization --- #
+matplotlib==3.10.8    # standard library for creating static, animated, and interactive plots
+seaborn==0.13.2       # high level statistical data visualization built on matplotlib
+
+# --- Interactive Development --- #
+jupyter==1.1.1        # enables interactive notebooks for step by step coding and analysis
+ipython==9.10.0       # enhanced interactive python shell that powers the jupyter backend
+
+# --- Testing & Code Quality Tools --- #
+pytest==9.1.0         # framework for writing and running simple, scalable unit tests
+nbmake==1.5.5         # tests jupyter notebooks to ensure all cells run without errors
+nbqa==1.9.1           # runs code linters and formatters directly on notebooks
+pylint==4.0.6         # static code analyzer that catches bugs and enforces coding standards
