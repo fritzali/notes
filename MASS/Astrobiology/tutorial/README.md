@@ -1,4 +1,4 @@
-# Computational Astrobiology: Complete Course Lecture & Laboratory Notes
+# Computational Astrobiology: Lecture & Tutorial Notes
 
 ## Tutorial 1: Mapping the Cosmos — Gaia Data Extraction and Color-Magnitude Diagrams
 
