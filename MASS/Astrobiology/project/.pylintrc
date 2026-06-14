@@ -1,10 +1,2 @@
-[MESSAGES CONTROL]
-disable=
-    f-string-without-interpolation,
-    line-too-long,
-    reimported,
-    trailing-whitespace,
-    ungrouped-imports,
-    unused-import,
-    wrong-import-order,
-    wrong-import-position,
+[REPORTS]
+evaluation=10.0 - ((12.0 * fatal + 6.0 * error + 1.2 * warning + 0.8 * refactor + 0.4 * convention) / statement) * 5.0
