@@ -1,11 +1,5 @@
 # Computational Astrobiology: Complete Course Lecture & Laboratory Notes
 
-## Part 1: Tutorials 1 through 6 (8 Laboratory Modules)
-
-This document contains detailed, comprehensive study and laboratory notes for the first half of the Computational Astrobiology course, compiled directly from the course curriculum syllabus guidelines and the programmatic execution of tutorials 1 through 6.
-
----
-
 ## Tutorial 1: Mapping the Cosmos — Gaia Data Extraction and Color-Magnitude Diagrams
 
 ### 1. Physical and Astronomical Background
@@ -711,9 +705,7 @@ This module shows how supervised machine learning can significantly accelerate t
 
 ---
 
-*This concludes the analytical study records for Modules 1 through 6. The remaining modules (7a through 9b) will follow the exact same structural template to maintain a consistent style for future integration.*
-
-## Laboratory Module 7a: Artificial Neural Networks (ANN) from Scratch & Manual Gradient Descent
+## Tutorial 7a: Artificial Neural Networks (ANN) from Scratch & Manual Gradient Descent
 
 ### 1. Theoretical Foundations
 
@@ -913,7 +905,7 @@ print("Training Complete.")
 
 ---
 
-## Laboratory Module 7b: Scikit-Learn Neural Networks & Principal Component Analysis (PCA) for Feature Extraction
+## Tutorial 7b: Scikit-Learn Neural Networks & Principal Component Analysis (PCA) for Feature Extraction
 
 ### 1. Theoretical Foundations
 
@@ -1032,7 +1024,7 @@ print(confusion_matrix(y_test, y_pred))
 
 ---
 
-## Laboratory Module 8a: Convolutional Neural Networks (CNN) Foundations & Momentum Gradient Descent
+## Tutorial 8a: Convolutional Neural Networks (CNN) Foundations & Momentum Gradient Descent
 
 ### 1. Theoretical Foundations
 
@@ -1155,7 +1147,7 @@ print(f"\nFinal Evaluation Results -> Test Loss: {test_loss:.4f} | Test Accuracy
 
 ---
 
-## Laboratory Module 8b: Advanced CNNs & Deep Learning for Galaxy Morphology (LSST Context)
+## Tutorial 8b: Advanced CNNs & Deep Learning for Galaxy Morphology (LSST Context)
 
 ### 1. Theoretical Foundations
 
@@ -1295,7 +1287,7 @@ print(classification_report(y_test, predictions, target_names=['Spiral', 'Ellipt
 
 ---
 
-## Laboratory Module 9a: Recurrent Neural Networks (RNN) & Sequence Modeling for Time-Series Analysis
+## Tutorial 9a: Recurrent Neural Networks (RNN) & Sequence Modeling for Time-Series Analysis
 
 ### 1. Theoretical Foundations
 
@@ -1450,7 +1442,7 @@ for epoch in range(epochs):
 
 ---
 
-## Laboratory Module 9b: Transformers, Vision Transformers (ViT), & Parallel Processing for Large Surveys
+## Tutorial 9b: Transformers, Vision Transformers (ViT), & Parallel Processing for Large Surveys
 
 ### 1. Theoretical Foundations
 
