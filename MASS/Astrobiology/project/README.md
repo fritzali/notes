@@ -153,3 +153,15 @@ ADS Link: [https://ui.adsabs.harvard.edu/abs/2019A%26A...624A.117S](https://www.
 ADS Link: [https://ui.adsabs.harvard.edu/abs/2019AJ....158..143H](https://www.google.com/search?q=https://ui.adsabs.harvard.edu/abs/2019AJ....158..143H)
 4. **Kovács, G., Zucker, S., & Mazeh, T.** "A box-fitting algorithm in the search for periodic transits", *Astronomy & Astrophysics*, Vol. 391, pp. 369-377 (2002).
 ADS Link: [https://ui.adsabs.harvard.edu/abs/2002A%26A...391..369K](https://www.google.com/search?q=https://ui.adsabs.harvard.edu/abs/2002A%2526A...391..369K)
+
+---
+
+### 5. Testing & Grading
+
+```sh
+# 1. verify working Jupyter notebooks
+pytest --nbmake *.ipynb
+
+# 2. score against best practice and code style convention
+nbqa pylint --msg-template="" --reports=y *.ipynb
+```
