@@ -141,6 +141,12 @@ The models assess habitability by evaluating three core physical constraints:
 * **Thermodynamic Environment:** Computes the semimajor axis to establish the incident stellar flux and the equilibrium temperature. This maps the planet position relative to its host star conservative and optimistic habitable zone boundaries.
 * **Radiation & Flare Exposure Profiles:** Quantifies the cumulative high energy impact of stellar flares against the background stellar irradiance. The models use this metric to determine if an otherwise thermally stable world is at high risk for atmospheric stripping, ozone depletion, or surface sterilization.
 
+##### Final Results
+
+* table ranking high confidence candidates
+* mediocre performance of planetary metrics due to high noise
+* extend in future for more advanced methods
+
 ---
 
 ### 4. References & Bibliography
