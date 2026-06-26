@@ -1,2 +1,2 @@
 [REPORTS]
-evaluation=10.0 - ((12.0 * fatal + 6.0 * error + 1.2 * warning + 0.8 * refactor + 0.4 * convention) / statement) * 5.0
+evaluation=10.0 - ((10.0 * fatal + 5.0 * error + 1.0 * warning + 0.5 * refactor + 0.25 * convention) / statement) * 5.0
