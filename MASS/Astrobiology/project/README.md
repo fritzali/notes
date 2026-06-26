@@ -1,3 +1,6 @@
+## Computational Astrobiology – Project: Exoplanet Habitability with PLATO using PSLS
+
+
 # Exoplanet Habitability with PLATO: An End-to-End Machine Learning Pipeline for Exoplanet Detection and Habitability Classification
 
 This project implements a fully integrated, modular data processing and machine learning pipeline engineered to simulate, clean, validate, and analyze planetary transit signatures from high-precision stellar time-series data. Designed around the instrument capabilities and scientific goals of the European Space Agency's (ESA) upcoming **PLATO** mission, this repository provides researchers with tools to transition from raw stellar parameters to robust exoplanet habitability classifications. By bridging the gap between forward-modeled astrophysics and modern ensemble/deep-learning classification techniques, the pipeline automates the identification of worlds capable of retaining atmospheres and supporting liquid surface water.
