@@ -38,7 +38,7 @@ pip install -r requirements.txt
 
 ```
 
-### 2.2. Tracking Large Data Configurations
+#### 2.2. Tracking Large Data Configurations
 
 Because this project interfaces with raw stellar model grids, synthetic lightcurve files, and compiled machine learning weights, **Git Large File Storage** must be initialized. This prevents local repository bloating and guarantees smooth version control histories.
 
@@ -52,14 +52,14 @@ git lfs status
 
 ```
 
-### 2.3. Data Provenance & Framework Adaptations
+#### 2.3. Data Provenance & Framework Adaptations
 
 * **Stellar Model Grid Acknowledgments:** The underlying physical stellar model grid utilized by this pipeline contains foundational parameters obtained directly via private communication with **Reza Samadi**.
 * **Customizations:** The default repository version of **PSLS** was debugged for modern package versions, exports for addiational metadata from the model grid was implemented, and notably, the function `AddFlare` in `psls.py` was updated to work with other parameters than the defaults.
 
 ---
 
-## 3. Technical Pipeline & Code Workflow
+### 3. Technical Pipeline & Code Workflow
 
 The project execution flows sequentially through five distinct Jupyter notebooks. Each module represents a core layer of the pipeline:
 
@@ -68,14 +68,14 @@ The project execution flows sequentially through five distinct Jupyter notebooks
 
 ```
 
-### 3.1. Explore (`foundation.ipynb`)
+#### 3.1. Explore (`foundation.ipynb`)
 
 The pipeline begins with data analysis of the underlying physical parameter distributions:
 
 * parses the custom stellar model grid files
 * maps continuous parameter correlations to build bounds for realistic synthetic systems
 
-### 3.2. Generate (`generate.ipynb`)
+#### 3.2. Generate (`generate.ipynb`)
 
 This module functions as our data synthesis engine:
 
@@ -84,21 +84,21 @@ This module functions as our data synthesis engine:
 * superimposes multi component stellar noise
 * injects random stellar flares drawn from power law distributions, providing a realistic radiation background crucial for habitability calculations
 
-### 3.3. Sanitize (`harvesting.ipynb`)
+#### 3.3. Sanitize (`harvesting.ipynb`)
 
 Raw stellar time series are dominated by low frequency stellar activity and systematic instrumental drift. This notebook isolates high frequency transit signals using a staged filter:
 
 * **Wotan Detrending:** Employs the `wotan` optimization framework to apply time windowed robust high pass filters using the biweight estimator. This effectively flattens long term stellar variability while preserving the sharp, steep boundaries of individual transit events.
 * **Box Least Squares:** Processes the detrended light curves through a periodic grid search using the BLS algorithm. This extracts key observational features like orbital period, transit depth, transit duration, and the transit epoch midpoint.
 
-### 3.4. Inspect (`inspect.ipynb`)
+#### 3.4. Inspect (`inspect.ipynb`)
 
 A structural validation layer designed to spot false positives and catch numerical processing issues:
 
 * Generates multi panel diagnostic plots for selectable planet candidates, displaying the raw light curve, the flattened detrended curve, the diagnostic periodogram power spectrum, and the phase folded transit profile.
 * Fits an idealized inverted top hat model back to the phase folded data to evaluate goodness of fit metrics, allowing the filtering out of numerical anomalies or severe stellar activity masquerading as planetary transits in the next step.
 
-### 3.5. Train (`jobs.ipynb`)
+#### 3.5. Train (`jobs.ipynb`)
 
 The final phase engineers a feature matrix from the physical properties discovered in the previous steps and feeds it into a machine learning pipeline.
 
@@ -126,14 +126,14 @@ The final phase engineers a feature matrix from the physical properties discover
 
 ```
 
-#### Model Architecture Comparisons
+##### Model Architecture Comparisons
 
 This module implements a benchmarking pipeline that evaluates separate machine learning frameworks:
 
 1. **Ensemble Random Forest Pipeline:** Evaluates nonlinear feature splits via a grid search optimized `RandomForestClassifier` and `RandomForestRegressor`. This provides feature importance rankings that help verify which physical traits impact the final classification decision the most.
 2. **Multi Layer Perceptron Neural Network:** Implements a dense, fully connected neural network. This maps previous models and underlying feature connections to give a confidence on each result.
 
-#### Multi Tiered Habitability Classification Criteria
+##### Multi Tiered Habitability Classification Criteria
 
 The models assess habitability by evaluating three core physical constraints:
 
@@ -143,7 +143,7 @@ The models assess habitability by evaluating three core physical constraints:
 
 ---
 
-## 4. References & Bibliography
+### 4. References & Bibliography
 
 1. **Rauer, H., Catala, C., et al.** "The PLATO mission", *Experimental Astronomy*, Vol. 38, Issue 1-2, pp. 249-330 (2014).
 ADS Link: [https://ui.adsabs.harvard.edu/abs/2014ExA....38..249R](https://www.google.com/search?q=https://ui.adsabs.harvard.edu/abs/2014ExA....38..249R)
