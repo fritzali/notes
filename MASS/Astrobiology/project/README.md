@@ -145,14 +145,10 @@ The models assess habitability by evaluating three core physical constraints:
 
 ### 4. References & Bibliography
 
-1. **Rauer, H., Catala, C., et al.** "The PLATO mission", *Experimental Astronomy*, Vol. 38, Issue 1-2, pp. 249-330 (2014).
-ADS Link: [https://ui.adsabs.harvard.edu/abs/2014ExA....38..249R](https://www.google.com/search?q=https://ui.adsabs.harvard.edu/abs/2014ExA....38..249R)
-2. **Samadi, R., Belkacem, K., et al.** "The PLATO Solar-like Light-curve Simulator — A tool to generate realistic stellar light-curves with instrumental effects representative of the PLATO mission", *Astronomy & Astrophysics*, Vol. 624, id.A117, 18 pp. (2019).
-ADS Link: [https://ui.adsabs.harvard.edu/abs/2019A%26A...624A.117S](https://www.google.com/search?q=https://ui.adsabs.harvard.edu/abs/2019A%2526A...624A.117S)
-3. **Hippke, M., David, T. J., et al.** "Wōtan: Comprehensive time-series detrending in Python", *The Astronomical Journal*, Vol. 158, Issue 4, id.143, 21 pp. (2019).
-ADS Link: [https://ui.adsabs.harvard.edu/abs/2019AJ....158..143H](https://www.google.com/search?q=https://ui.adsabs.harvard.edu/abs/2019AJ....158..143H)
-4. **Kovács, G., Zucker, S., & Mazeh, T.** "A box-fitting algorithm in the search for periodic transits", *Astronomy & Astrophysics*, Vol. 391, pp. 369-377 (2002).
-ADS Link: [https://ui.adsabs.harvard.edu/abs/2002A%26A...391..369K](https://www.google.com/search?q=https://ui.adsabs.harvard.edu/abs/2002A%2526A...391..369K)
+1. **Heras, A. M. and Rauer, H.** "The PLATO Mission", *COSPAR Scientific Assembly* (2022) [https://ui.adsabs.harvard.edu/abs/2022cosp...44..585H/abstract](https://ui.adsabs.harvard.edu/abs/2022cosp...44..585H/abstract)
+2. **Samadi, R. et al.** "The PLATO Solarlike Lightcurve Simulator", *Astronomy & Astrophysics* (2019) [https://ui.adsabs.harvard.edu/abs/2019A%26A...624A.117S%2F/abstract](https://ui.adsabs.harvard.edu/abs/2019A%26A...624A.117S%2F/abstract)
+3. **Hippke, M. et al.** "Wōtan: Comprehensive Timeseries Detrending in Python", *The Astronomical Journal* (2019) [https://ui.adsabs.harvard.edu/abs/2019AJ....158..143H/abstract](https://ui.adsabs.harvard.edu/abs/2019AJ....158..143H/abstract)
+4. **Kovács, G. et al.** "A Box Fitting Algorithm in the Search for Periodic Transits", *Astronomy & Astrophysics* (2002) [https://ui.adsabs.harvard.edu/abs/2002A%26A...391..369K/abstract](https://ui.adsabs.harvard.edu/abs/2002A%26A...391..369K/abstract)
 
 ---
 
