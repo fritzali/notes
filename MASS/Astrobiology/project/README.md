@@ -1,9 +1,6 @@
 ## Computational Astrobiology – Project: Exoplanet Habitability with PLATO using PSLS
 
-
-# Exoplanet Habitability with PLATO: An End-to-End Machine Learning Pipeline for Exoplanet Detection and Habitability Classification
-
-This project implements a fully integrated, modular data processing and machine learning pipeline engineered to simulate, clean, validate, and analyze planetary transit signatures from high-precision stellar time-series data. Designed around the instrument capabilities and scientific goals of the European Space Agency's (ESA) upcoming **PLATO** mission, this repository provides researchers with tools to transition from raw stellar parameters to robust exoplanet habitability classifications. By bridging the gap between forward-modeled astrophysics and modern ensemble/deep-learning classification techniques, the pipeline automates the identification of worlds capable of retaining atmospheres and supporting liquid surface water.
+This project implements a modular data processing and machine learning pipeline to simulate, clean, validate, and analyze planetary transit signatures from **PSLS** stellar timeseries data. Designed around the instrument capabilities and scientific goals of the upcoming **PLATO** mission, this repository aims to provide tools to transition from raw stellar parameters to sensible exoplanet habitability classifications. By bridging the gap from forward modeled astrophysics to modern ensemble classification and regression techniques, the pipeline automates the identification of worlds capable of retaining atmospheres and supporting liquid surface water.
 
 ---
 
@@ -11,10 +8,10 @@ This project implements a fully integrated, modular data processing and machine 
 
 To understand the architecture of this repository, it helps to break down the core astronomical concepts and mission architectures that form its foundation:
 
-* **Exoplanets and Planetary Transits:** Exoplanets are planets orbiting stars outside our solar system. The primary method used here to find them is *transit photometry*. When an exoplanet’s orbit aligns with our line of sight, it periodically passes in front of its host star, blocking a tiny fraction of starlight. This creates a characteristic dip in the observed brightness over time, known as a **light curve**.
-* **The PLATO Mission:** Scheduled for launch by ESA, the **PLATO** (PLAnetary Transits and Oscillations of stars) mission is designed to discover and characterize rocky exoplanets orbiting solar-type stars, specifically targeting those within the habitable zone. PLATO utilizes an innovative multi-camera array to achieve unprecedented photometric precision and long, uninterrupted observation baselines.
-* **PSLS (Plato Solar-like Light-curve Simulator):** To prepare data channels ahead of the mission launch, the astronomical community relies on high-fidelity synthetic data. PSLS generates ultra-realistic light curves that mimic not only the planetary transit signals but also instrumental noise, photon noise, and stochastic stellar phenomena (such as stellar oscillations and granulation).
-* **Exoplanet Habitability:** Determining habitability is a multi-dimensional problem. Beyond merely finding a planet of the right size, this project uses structural parameters and radiation metrics to assess whether an exoplanet can sustain life. We analyze the balance between stable thermal environments and volatile-stripping radiation events to assign a conclusive habitability categorization.
+* **Exoplanets and Planetary Transits:** Exoplanets are planets orbiting stars outside our solar system. The primary method used here to find them is transit photometry. When an exoplanet orbit aligns with our line of sight, it periodically passes in front of its host star, blocking a tiny fraction of starlight. This creates a characteristic dip in the observed brightness over time, known as a lightcurve.
+* **PLATO:** Studying planetary transits and oscillations of stars, this mission is designed to discover and characterize rocky exoplanets orbiting solar type stars, specifically targeting those within the habitable zone. It utilizes an innovative multi camera array to achieve unprecedented photometric precision and long, uninterrupted observation baselines.
+* **PSLS:** To prepare data channels ahead of the mission launch, the astronomical community relies on high fidelity synthetic data. This tool generates realistic light curves that mimic not only the planetary transit signals but also instrumental noise, photon noise, as well as stochastic stellar phenomena such as stellar oscillations and granulation.
+* **Exoplanet Habitability:** Determining habitability is a multi dimensional problem. Beyond merely finding a planet of the right size, this project uses structural parameters and radiation metrics to assess whether an exoplanet can sustain life, attempting to analyze the balance between stable thermal environments and volatile stripping radiation events to assign a conclusive habitability categorization.
 
 ---
 
