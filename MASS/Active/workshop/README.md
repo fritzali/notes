@@ -1,5 +1,3 @@
 ## Conference on Active Galactic Nuclei and Gravitational Lensing
 
-### July 20th - 24th, 2026
-
-#### Vrnjačka Banja, Serbia
+*July 20 to 24, 2026 in Vrnjačka Banja, Serbia*
