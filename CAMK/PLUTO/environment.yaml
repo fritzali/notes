@@ -1,0 +1,21 @@
+name: pluto
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - python>=3.11
+  - astropy
+  - contourpy
+  - h5py
+  - inifix
+  - jupyter
+  - jupyterlab
+  - ipykernel
+  - matplotlib
+  - numexpr
+  - numpy
+  - pandas
+  - scipy
+  - pip
+  - pip:
+      - py-pluto
