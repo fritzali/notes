@@ -25,3 +25,9 @@ This directory documents the installation and basic usage of the PLUTO code.
 > *I ran into a problem here, where `drand` could not be called and the compiler suggested `srand` instead. To fix this, I inserted `#define _XOPEN_SOURCE 700` into `$PLUTO_DIR/Src/Math_Tools/math_random.c*` at the very top before the `#include "pluto.h"` statement.*
 
 5. Finally, run the executable: `plutorun`
+
+### Environment
+
+1. Create: `mamba env create -f environment.yaml`
+2. Update: `mamba env update -f environment.yaml --prune`
+3. Activate: `mamba activate pluto`
