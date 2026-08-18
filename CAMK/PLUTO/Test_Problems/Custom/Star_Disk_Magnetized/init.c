@@ -98,6 +98,67 @@ void Analysis (const Data *d, Grid *grid)
 {}
 
 
+#if PHYSICS == MHD
+/* ************************************************************** */
+void BackgroundField (double x1, double x2, double x3, double *B0)
+/* 
+ *
+ * PURPOSE
+ *
+ *   Define the component of a static, curl-free background 
+ *   magnetic field.
+ *
+ *
+ * ARGUMENTS
+ *
+ *   x1, x2, x3  (IN)    coordinates
+ *
+ *   B0         (OUT)    vector component of the background field.
+ *
+ *
+ **************************************************************** */
+{
+/* BH case, Zhu&Stone (2018), Mishra et al.(2019) 
+   MC Aug 2019    */
+
+// double mu,rmin,mm;
+// 
+// mu=g_inputParam[MU];
+// rmin=1.*g_inputParam[RD];
+// 
+// mm=-5./4.;//5./4.;//BMishra -5/4, Zhu&Stone -9/4
+// 
+// if(x1<=rmin){
+// B0[0]=mu*cos(x2)*pow(rmin,mm)*(1.+sin(x2));
+// B0[1]=-mu*sin(x2)*pow(rmin,mm);
+// }else{
+// B0[0]=mu*pow(x1*sin(x2),mm)*cos(x2)*(1.+sin(x2));
+// B0[1]=-mu*pow(x1*sin(x2),mm)*sin(x2);
+// }
+// B0[2] = 0.0; 
+
+
+/* dipole */
+   B0[0] = 2.*g_inputParam[MU]*cos(x2)/(x1*x1*x1);
+   B0[1] = g_inputParam[MU]*sin(x2)/(x1*x1*x1);
+   B0[2] = 0.0;                             
+/* */
+
+/* quadrupole 
+  B0[0] = 3.0/2.0*g_inputParam[MU]*(3.0*cos(x2)*cos(x2)-1.0)/(x1*x1*x1*x1);
+  B0[1] = 3.0*g_inputParam[MU]*cos(x2)*sin(x2)/(x1*x1*x1*x1);
+  B0[2] = 0.0;
+*/       
+
+/* octupole 
+  B0[0] = 2.0*g_inputParam[MU]*(5.0*cos(x2)*cos(x2)*cos(x2)-3.0*cos(x2))/(x1*x1*x1*x1*x1);
+  B0[1] = 0.5*g_inputParam[MU]*(15.0*cos(x2)*cos(x2)*sin(x2)-3.0*sin(x2))/(x1*x1*x1*x1*x1);
+  B0[2] = 0.0;
+ */         
+}
+#endif
+
+
 /* ************************************************************** */
 void UserDefBoundary (const Data *d, RBox *box, int side, Grid *grid)
 /* 
@@ -431,8 +492,8 @@ d->Vc[VX2][k][j][i]=d->Vc[VX2][k][j][IBEG];
 #endif
 */
 //ccm--after the changes above, recompute the BX3:
-//  dvardr=(d->Vc[BX3][k][j][IBEG]-d->Vc[BX3][k][j][IBEG-1])/(r[IBEG]-r[IBEG-1]);
-//  d->Vc[BX3][k][j][i] = d->Vc[BX3][k][j][i+1] -dvardr*(r[i+1]-r[i]);
+  dvardr=(d->Vc[BX3][k][j][IBEG]-d->Vc[BX3][k][j][IBEG-1])/(r[IBEG]-r[IBEG-1]);
+  d->Vc[BX3][k][j][i] = d->Vc[BX3][k][j][i+1] -dvardr*(r[i+1]-r[i]);
   
 //ccmt--at the end, set the stellar rotation, including E_phi=0 condition.
 //Do not forget to set E_phi=0 in ct.c routine, too.
@@ -449,19 +510,19 @@ d->Vc[VX2][k][j][i]=d->Vc[VX2][k][j][IBEG];
 //ccmt--at the end, set the stellar rotation, including E_phi=0 condition
 #if BACKGROUND_FIELD == 1
    BackgroundField (x1[i],x2[j],x3[k],Bgji);
-//   d->Vc[VX3][k][j][i] = g_inputParam[OMG]*x1[i]*sin(x2[j])
-//   +(d->Vc[VX1][k][j][i]*(Bgji[0]+d->Vc[BX1][k][j][i]) 
-//   +d->Vc[VX2][k][j][i]*(Bgji[1]+d->Vc[BX2][k][j][i]))   
-//   *(d->Vc[BX3][k][j][i])/((Bgji[0]+d->Vc[BX1][k][j][i])
-//   *(Bgji[0]+d->Vc[BX1][k][j][i])
-//   +(Bgji[1]+d->Vc[BX2][k][j][i])*(Bgji[1]+d->Vc[BX2][k][j][i]));
+   d->Vc[VX3][k][j][i] = g_inputParam[OMG]*x1[i]*sin(x2[j])
+   +(d->Vc[VX1][k][j][i]*(Bgji[0]+d->Vc[BX1][k][j][i]) 
+   +d->Vc[VX2][k][j][i]*(Bgji[1]+d->Vc[BX2][k][j][i]))   
+   *(d->Vc[BX3][k][j][i])/((Bgji[0]+d->Vc[BX1][k][j][i])
+   *(Bgji[0]+d->Vc[BX1][k][j][i])
+   +(Bgji[1]+d->Vc[BX2][k][j][i])*(Bgji[1]+d->Vc[BX2][k][j][i]));
 #else
-//   d->Vc[VX3][k][j][i] = g_inputParam[OMG]*x1[i]*sin(x2[j])
-//   +(d->Vc[VX1][k][j][i]*(d->Vc[BX1][k][j][i]) 
-//   +d->Vc[VX2][k][j][i]*(d->Vc[BX2][k][j][i]))   
-//   *(d->Vc[BX3][k][j][i])/((d->Vc[BX1][k][j][i])
-//   *(d->Vc[BX1][k][j][i])
-//   +(d->Vc[BX2][k][j][i])*(d->Vc[BX2][k][j][i]));
+   d->Vc[VX3][k][j][i] = g_inputParam[OMG]*x1[i]*sin(x2[j])
+   +(d->Vc[VX1][k][j][i]*(d->Vc[BX1][k][j][i]) 
+   +d->Vc[VX2][k][j][i]*(d->Vc[BX2][k][j][i]))   
+   *(d->Vc[BX3][k][j][i])/((d->Vc[BX1][k][j][i])
+   *(d->Vc[BX1][k][j][i])
+   +(d->Vc[BX2][k][j][i])*(d->Vc[BX2][k][j][i]));
 #endif       
 
 #endif //end of if MHD loop 

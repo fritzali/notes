@@ -1,4 +1,4 @@
-#define  PHYSICS                        HD
+#define  PHYSICS                        MHD
 #define  DIMENSIONS                     2
 #define  GEOMETRY                       SPHERICAL
 #define  BODY_FORCE                     VECTOR
@@ -11,10 +11,13 @@
 
 /* -- physics dependent declarations -- */
 
-#define  DUST_FLUID                     NO
 #define  EOS                            IDEAL
 #define  ENTROPY_SWITCH                 NO
-#define  INCLUDE_LES                    NO
+#define  DIVB_CONTROL                   CONSTRAINED_TRANSPORT
+#define  BACKGROUND_FIELD               YES
+#define  AMBIPOLAR_DIFFUSION            NO
+#define  RESISTIVITY                    NO
+#define  HALL_MHD                       NO
 #define  THERMAL_CONDUCTION             NO
 #define  VISCOSITY                      EXPLICIT
 #define  RADIATION                      NO
