@@ -1,7 +1,7 @@
 #define  PHYSICS                        MHD
 #define  DIMENSIONS                     2
 #define  GEOMETRY                       SPHERICAL
-#define  BODY_FORCE                     VECTOR
+#define  BODY_FORCE                     POTENTIAL
 #define  COOLING                        NO
 #define  RECONSTRUCTION                 LINEAR
 #define  TIME_STEPPING                  RK2
