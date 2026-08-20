@@ -17,8 +17,8 @@
   Based on appendix of "Atlas" paper, Cemeljic, 2019, A&A, 624, A31
 */
 /* /////////////////////////////////////////////////////////////////////////// */
-#include "pluto.h"
 
+#include "pluto.h"
 /* ************************************************************** */
 void Init (double *v, double x1, double x2, double x3)
 /*
@@ -65,8 +65,31 @@ void Init (double *v, double x1, double x2, double x3)
        v[PRS]=2./5.*g_inputParam[RHOC]*pow(x1,-5./2.);
        v[TRC] = 0.0;     /* Track the corona */
       }
-}
 
+#if PHYSICS == MHD
+#if BACKGROUND_FIELD == YES
+   v[BX1] = 0.0;
+   v[BX2] = 0.0;
+   v[BX3] = 0.0;
+
+   v[AX1] = 0.0;  
+   v[AX2] = 0.0;
+   v[AX3] = 0.0;
+#else
+   /* Primary cell-centered field initialization (used by Div-Cleaning / Powell 8-Wave) */
+   v[BX1] = 2.0 * g_inputParam[MU] * cos(x2) / (x1 * x1 * x1);
+   v[BX2] = g_inputParam[MU] * sin(x2) / (x1 * x1 * x1);
+   v[BX3] = 0.0;
+
+   /* Vector potential components (set when CT uses cell-centered A in Init) */
+   #if MHD_FORMULATION == CONSTRAINED_TRANSPORT
+    v[AX1] = 0.0;
+    v[AX2] = 0.0;
+    v[AX3] = g_inputParam[MU] * sin(x2) / (x1 * x1);
+   #endif
+#endif
+#endif /* PHYSICS == MHD */
+}
 
 /* ********************************************************************* */
 void InitDomain (Data *d, Grid *grid)
