@@ -14,7 +14,7 @@
 #define  EOS                            IDEAL
 #define  ENTROPY_SWITCH                 NO
 #define  DIVB_CONTROL                   CONSTRAINED_TRANSPORT
-#define  BACKGROUND_FIELD               YES
+#define  BACKGROUND_FIELD               NO
 #define  AMBIPOLAR_DIFFUSION            NO
 #define  RESISTIVITY                    NO
 #define  HALL_MHD                       NO
