@@ -15,7 +15,7 @@
 #### Example Installation
 
 1. Setting up the terminal emulator, run <code>infocmp -a | ssh <i>username</i>@monster "tic -x -o ~/.terminfo -"</code> on your local machine.
-2. Since packages such as `gcc` and `python` should come preinstalled, you only need to get your tools, like `conda` by running <code>curl -L -O "htt<span>ps://</span>github.com/conda-forge/miniforge/releases/latest/download/Miniforge-<i>version</i>-Linux-x86_64.sh"</code> and executing <code>bash Miniforge-<i>version</i>-Linux-x86_64.sh</code>
+2. Since packages such as `gcc` and `python` should come preinstalled, you only need to get your tools, like `conda` by running <br><code>curl -L -O "htt<span>ps://</span>github.com/conda-forge/miniforge/releases/latest/download/Miniforge-<i>version</i>-Linux-x86_64.sh"</code> and executing <code>bash Miniforge-<i>version</i>-Linux-x86_64.sh</code> in your home directory. Follow the installation script, reload `bash` and paste `conda config --set auto_activate_base false` to prevent automatically starting in the base environment every time.
 
 #### Screen Tool
 
