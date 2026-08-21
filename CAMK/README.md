@@ -14,9 +14,12 @@
 
 #### Example Installation
 
+1. Setting up the terminal emulator, run <code>infocmp -a | ssh <i>username</i>@monster "tic -x -o ~/.terminfo -"</code> on your local machine.
+
 #### Screen Tool
 
 1. If trying to leave processes like simulations running in the background without being logged into remote, use the `screen` package.
 2. Type <code>screen -S <i>identifier</i></code> to open a session, use `CTRL + A` followed by `CTRL + D` to exit.
-3. Any process started in the session will continue to run even after logging out.
+3. Any process started in the session will continue to run even after logging out. Show active screens with the `screen -ls` flag.
 4. To rejoin the session, run <code>screen -r <i>identifier</i></code> with the same identity as specified before.
+5. And to terminate a detached session, <code>screen -X -S <i>identifier</i> quit</code> can be used.
