@@ -1,4 +1,4 @@
-## Centrum Astronomiczne imienia Mikołaja Kopernika Polskiej Akademii Nauk
+## Centrum Astronomiczne imienia Mikołaja Kopernika Polskiej Akademii Nauk<br>Nicolaus Copernicus Astronomical Center of the Polish Academy of Sciences
 
 ### Account
 
