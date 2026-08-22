@@ -1,0 +1,4343 @@
+
+   ___  __   __  ____________   
+  / _ \/ /  / / / /_  __/ __ \ 
+ / ___/ /__/ /_/ / / / / /_/ /  
+/_/  /____/\____/ /_/  \____/   
+=============================    v. 4.4-patch4 (Jun 2026)  
+
+> System:
+
+  USER:             fritz
+  SYSTEM_NAME:      Linux
+  NODE_NAME:        pluto
+  ARCH:             x86_64
+  BYTE_ORDER:       little
+
+  - Basic data type size (Bytes):
+    o sizeof (char)     = 1
+    o sizeof (uchar)    = 1
+    o sizeof (uint16_t) = 2
+    o sizeof (short)    = 2
+    o sizeof (ushort)   = 2
+    o sizeof (int)      = 4
+    o sizeof (long)     = 8
+    o sizeof (*int)     = 8
+    o sizeof (float)    = 4
+    o sizeof (double)   = 8
+    o sizeof (*double)  = 8
+
+  - Structure data type (Bytes):
+    o sizeof (cmdLine)    = 64
+    o sizeof (Data)       = 272
+    o sizeof (Grid)       = 1024
+    o sizeof (Float_Vect) = 12
+    o sizeof (Image)      = 856
+    o sizeof (Output)     = 1768
+    o sizeof (RGB)        = 3
+    o sizeof (Runtime)    = 47008
+    o sizeof (Restart)    = 128
+    o sizeof (timeStep)   = 144
+    o sizeof (RBox)       = 112
+    o sizeof (State)      = 128
+    o sizeof (Sweep)      = 568
+
+> Local time:       Sat Aug 22 17:17:51 2026
+
+> Cmd line args:    
+
+> Header configuration:
+
+  PHYSICS:          HD
+  DIMENSIONS:       2
+  GEOMETRY:         Spherical
+  BODY_FORCE:       EXPLICIT
+  RECONSTRUCTION:   Linear  (Primitive lim)
+  TIME STEPPING:    Runge-Kutta II
+  TRACERS:          1
+  VARIABLES:        6
+  ENTROPY_SWITCH:   NO
+  LOADED MODULES:
+
+  ROTATION:         NO
+  EOS:              Ideal
+  DIFFUSION TERMS:  Viscosity [EXPLICIT]
+
+> Runtime configuration (pluto.ini):
+
+  +----------------------------------------------------------
+  | [Grid]
+  | 
+  | X1-grid    1     2.1     90     l+    30.0
+  | X2-grid    1     0.0     45     u      1.570796327
+  | X3-grid    1     0.0      1     u      1.0
+  | 
+  | [Chombo Refinement]
+  | 
+  | Levels            4
+  | Ref_ratio         2 2 2 2 2
+  | Regrid_interval   2 2 2 2
+  | Refine_thresh     0.3
+  | Tag_buffer_size   3
+  | Block_factor      8
+  | Max_grid_size     64
+  | Fill_ratio        0.75
+  | 
+  | [Time]
+  | 
+  | CFL               0.4
+  | CFL_max_var       1.2
+  | tstop             1.0e3
+  | first_dt          1.0e-6
+  | 
+  | [Solver]
+  | 
+  | Solver         roe
+  | 
+  | [Boundary]
+  | 
+  | X1-beg         userdef
+  | X1-end         userdef
+  | X2-beg         axisymmetric
+  | X2-end         eqtsymmetric
+  | X3-beg         outflow
+  | X3-end         outflow
+  | 
+  | [Static Grid Output]
+  | 
+  | uservar       3 nu num Te
+  | dbl           5.0  -1   single_file
+  | flt          -1.0  -1   single_file
+  | vtk           5.0  -1   single_file
+  | tab          -1.0  -1
+  | dbl.h5       -5.0  -1
+  | ppm          -1.0  -1
+  | png          -1.0  -1
+  | log         100
+  | analysis     -1.0  -1
+  | 
+  | [Chombo HDF5 output]
+  | 
+  | Checkpoint_interval  -1
+  | Plot_interval       1.0
+  | 
+  | [Parameters]
+  | 
+  | ALPHAM                      0.4  
+  | MU                          0.1  
+  | TEMPF                       300.0  
+  | RHOC                        0.01  
+  | RD                          6.0  
+  | EPS                         0.1  
+  | OMG                         0.1  
+  | ALPHAV                      1.0  
+  | DFLOOR                      5.0e-7  
+  +---------------------------------------------------------
+
+> Generating grid...
+
+  Global grid:
+  X1: [   2.1000,  30.0000],     90 point(s), 3 ghosts
+  X2: [   0.0000,   1.5708],     45 point(s), 3 ghosts
+
+  Local grid:
+  X1: [   2.1000,   5.0955],     30 point(s); 3 ghosts; Active zones = [3, 32]
+  X2: [   0.0000,   0.8029],     23 point(s); 3 ghosts; Active zones = [3, 25]
+
+> Memory allocation
+> Assigning initial conditions (Startup) ...
+> Normalization Units:
+
+  [Density]:      8.500e-11 (gr/cm^3), 5.082e+13 (1/cm^3)
+  [Pressure]:     4.054e+04 (dyne/cm^2)
+  [Velocity]:     2.184e+07 (cm/s)
+  [Length]:       1.392e+11 (cm)
+  [Temperature]:  5.736e+06 X (p/rho*mu) (K)
+  [Time]:         6.374e+03 (sec), 2.021e-04 (yrs) 
+ 
+> Number of processors: 6
+> Proc size:            30 X 23
+> Parallel Directions:  X1/X2
+> Writing file #0 (dbl) to disk...
+  [ 0.00 sec ]
+> Writing file #0 (vtk) to disk...
+  [ 0.00 sec ]
+> Starting computation... 
+
+step:0; t = 0.0000e+00; dt = 1.0000e-06; 0.0 %
+        [Mach = 0.116936]
+step:100; t = 5.7245e-01; dt = 9.9840e-03; 0.1 %
+          [Mach = 7.663393]
+step:200; t = 1.5544e+00; dt = 9.7312e-03; 0.2 %
+          [Mach = 9.476713]
+step:300; t = 2.5239e+00; dt = 9.6663e-03; 0.3 %
+          [Mach = 10.205275]
+step:400; t = 3.4813e+00; dt = 9.1626e-03; 0.3 %
+          [Mach = 10.891181]
+step:500; t = 4.3965e+00; dt = 9.1414e-03; 0.4 %
+          [Mach = 11.266615]
+> Writing file #1 (dbl) to disk...
+  [ 0.00 sec ]
+> Writing file #1 (vtk) to disk...
+  [ 0.00 sec ]
+step:600; t = 5.3085e+00; dt = 9.0870e-03; 0.5 %
+          [Mach = 11.485866]
+step:700; t = 6.2146e+00; dt = 9.0418e-03; 0.6 %
+          [Mach = 11.683090]
+step:800; t = 7.1176e+00; dt = 9.0181e-03; 0.7 %
+          [Mach = 11.971459]
+step:900; t = 8.0179e+00; dt = 8.9842e-03; 0.8 %
+          [Mach = 12.483823]
+step:1000; t = 8.9129e+00; dt = 8.9016e-03; 0.9 %
+           [Mach = 13.122543]
+step:1100; t = 9.7904e+00; dt = 8.6076e-03; 1.0 %
+           [Mach = 13.192597]
+> Writing file #2 (dbl) to disk...
+  [ 0.00 sec ]
+> Writing file #2 (vtk) to disk...
+  [ 0.00 sec ]
+step:1200; t = 1.0644e+01; dt = 8.4832e-03; 1.1 %
+           [Mach = 1201.801567]
+step:1300; t = 1.1484e+01; dt = 8.3469e-03; 1.1 %
+           [Mach = 6601.669696]
+step:1400; t = 1.2318e+01; dt = 8.3222e-03; 1.2 %
+           [Mach = 52.377541]
+step:1500; t = 1.3149e+01; dt = 8.3059e-03; 1.3 %
+           [Mach = 51.067209]
+step:1600; t = 1.3979e+01; dt = 8.3002e-03; 1.4 %
+           [Mach = 50.539346]
+step:1700; t = 1.4809e+01; dt = 8.2991e-03; 1.5 %
+           [Mach = 54.826775]
+> Writing file #3 (dbl) to disk...
+  [ 0.00 sec ]
+> Writing file #3 (vtk) to disk...
+  [ 0.00 sec ]
+step:1800; t = 1.5639e+01; dt = 8.2963e-03; 1.6 %
+           [Mach = 56.522284]
+step:1900; t = 1.6468e+01; dt = 8.2924e-03; 1.6 %
+           [Mach = 60.547824]
+step:2000; t = 1.7298e+01; dt = 8.2939e-03; 1.7 %
+           [Mach = 61.891584]
+step:2100; t = 1.8127e+01; dt = 8.2959e-03; 1.8 %
+           [Mach = 62.665616]
+step:2200; t = 1.8957e+01; dt = 8.2978e-03; 1.9 %
+           [Mach = 63.629391]
+step:2300; t = 1.9787e+01; dt = 8.3025e-03; 2.0 %
+           [Mach = 64.742081]
+> Writing file #4 (dbl) to disk...
+  [ 0.00 sec ]
+> Writing file #4 (vtk) to disk...
+  [ 0.00 sec ]
+step:2400; t = 2.0617e+01; dt = 8.3072e-03; 2.1 %
+           [Mach = 3699.526122]
+step:2500; t = 2.1448e+01; dt = 8.3107e-03; 2.1 %
+           [Mach = 3467.539017]
+step:2600; t = 2.2280e+01; dt = 8.3147e-03; 2.2 %
+           [Mach = 3166.793022]
+step:2700; t = 2.3111e+01; dt = 8.3168e-03; 2.3 %
+           [Mach = 2846.628235]
+step:2800; t = 2.3943e+01; dt = 8.3177e-03; 2.4 %
+           [Mach = 2545.015033]
+step:2900; t = 2.4775e+01; dt = 8.3184e-03; 2.5 %
+           [Mach = 2242.583638]
+> Writing file #5 (dbl) to disk...
+  [ 0.00 sec ]
+> Writing file #5 (vtk) to disk...
+  [ 0.00 sec ]
+step:3000; t = 2.5606e+01; dt = 8.3188e-03; 2.6 %
+           [Mach = 1967.262123]
+step:3100; t = 2.6438e+01; dt = 8.3184e-03; 2.6 %
+           [Mach = 1714.488885]
+step:3200; t = 2.7270e+01; dt = 8.3175e-03; 2.7 %
+           [Mach = 1455.139872]
+step:3300; t = 2.8102e+01; dt = 8.3175e-03; 2.8 %
+           [Mach = 1305.836598]
+step:3400; t = 2.8934e+01; dt = 8.3180e-03; 2.9 %
+           [Mach = 1311.064183]
+step:3500; t = 2.9765e+01; dt = 8.3186e-03; 3.0 %
+           [Mach = 1317.005558]
+> Writing file #6 (dbl) to disk...
+  [ 0.00 sec ]
+> Writing file #6 (vtk) to disk...
+  [ 0.00 sec ]
+step:3600; t = 3.0597e+01; dt = 8.3190e-03; 3.1 %
+           [Mach = 1320.568571]
+step:3700; t = 3.1429e+01; dt = 8.3195e-03; 3.1 %
+           [Mach = 1330.972647]
+step:3800; t = 3.2261e+01; dt = 8.3200e-03; 3.2 %
+           [Mach = 1335.580171]
+step:3900; t = 3.3093e+01; dt = 8.3206e-03; 3.3 %
+           [Mach = 1347.671280]
+step:4000; t = 3.3925e+01; dt = 8.3212e-03; 3.4 %
+           [Mach = 1366.601278]
+step:4100; t = 3.4758e+01; dt = 8.3216e-03; 3.5 %
+           [Mach = 1379.091875]
+> Writing file #7 (dbl) to disk...
+  [ 0.00 sec ]
+> Writing file #7 (vtk) to disk...
+  [ 0.00 sec ]
+step:4200; t = 3.5590e+01; dt = 8.3218e-03; 3.6 %
+           [Mach = 1385.301333]
+step:4300; t = 3.6422e+01; dt = 8.3221e-03; 3.6 %
+           [Mach = 1395.018292]
+step:4400; t = 3.7254e+01; dt = 8.3224e-03; 3.7 %
+           [Mach = 3984.499837]
+step:4500; t = 3.8086e+01; dt = 8.3230e-03; 3.8 %
+           [Mach = 95685.663437]
+step:4600; t = 3.8919e+01; dt = 8.3237e-03; 3.9 %
+           [Mach = 93697.015070]
+step:4700; t = 3.9751e+01; dt = 8.3244e-03; 4.0 %
+           [Mach = 91626.773731]
+> Writing file #8 (dbl) to disk...
+  [ 0.00 sec ]
+> Writing file #8 (vtk) to disk...
+  [ 0.00 sec ]
+step:4800; t = 4.0584e+01; dt = 8.3252e-03; 4.1 %
+           [Mach = 89584.495365]
+step:4900; t = 4.1416e+01; dt = 8.3259e-03; 4.1 %
+           [Mach = 87594.371073]
+step:5000; t = 4.2249e+01; dt = 8.3267e-03; 4.2 %
+           [Mach = 85640.599081]
+step:5100; t = 4.3082e+01; dt = 8.3275e-03; 4.3 %
+           [Mach = 83666.004754]
+step:5200; t = 4.3914e+01; dt = 8.3283e-03; 4.4 %
+           [Mach = 81671.771878]
+step:5300; t = 4.4747e+01; dt = 8.3290e-03; 4.5 %
+           [Mach = 79730.222465]
+> Writing file #9 (dbl) to disk...
+  [ 0.00 sec ]
+> Writing file #9 (vtk) to disk...
+  [ 0.00 sec ]
+step:5400; t = 4.5580e+01; dt = 8.3297e-03; 4.6 %
+           [Mach = 77820.524061]
+step:5500; t = 4.6413e+01; dt = 8.3303e-03; 4.6 %
+           [Mach = 76029.239611]
+step:5600; t = 4.7246e+01; dt = 8.3310e-03; 4.7 %
+           [Mach = 51866.825412]
+step:5700; t = 4.8079e+01; dt = 8.3318e-03; 4.8 %
+           [Mach = 2871.354091]
+step:5800; t = 4.8913e+01; dt = 8.3327e-03; 4.9 %
+           [Mach = 1484.342300]
+step:5900; t = 4.9746e+01; dt = 8.3339e-03; 5.0 %
+           [Mach = 937.813287]
+> Writing file #10 (dbl) to disk...
+  [ 0.00 sec ]
+> Writing file #10 (vtk) to disk...
+  [ 0.00 sec ]
+step:6000; t = 5.0579e+01; dt = 8.3351e-03; 5.1 %
+           [Mach = 671.982847]
+step:6100; t = 5.1413e+01; dt = 8.3363e-03; 5.1 %
+           [Mach = 530.312554]
+step:6200; t = 5.2247e+01; dt = 8.3374e-03; 5.2 %
+           [Mach = 439.045133]
+step:6300; t = 5.3080e+01; dt = 8.3386e-03; 5.3 %
+           [Mach = 376.951152]
+step:6400; t = 5.3914e+01; dt = 8.3397e-03; 5.4 %
+           [Mach = 324.861374]
+step:6500; t = 5.4748e+01; dt = 8.3405e-03; 5.5 %
+           [Mach = 285.719086]
+> Writing file #11 (dbl) to disk...
+  [ 0.00 sec ]
+> Writing file #11 (vtk) to disk...
+  [ 0.00 sec ]
+step:6600; t = 5.5582e+01; dt = 8.3413e-03; 5.6 %
+           [Mach = 258.461030]
+step:6700; t = 5.6417e+01; dt = 8.3419e-03; 5.6 %
+           [Mach = 232.636589]
+step:6800; t = 5.7251e+01; dt = 8.3425e-03; 5.7 %
+           [Mach = 109.023673]
+step:6900; t = 5.8085e+01; dt = 8.3429e-03; 5.8 %
+           [Mach = 110.793087]
+step:7000; t = 5.8919e+01; dt = 8.3433e-03; 5.9 %
+           [Mach = 111.921923]
+step:7100; t = 5.9754e+01; dt = 8.3437e-03; 6.0 %
+           [Mach = 112.811697]
+> Writing file #12 (dbl) to disk...
+  [ 0.00 sec ]
+> Writing file #12 (vtk) to disk...
+  [ 0.00 sec ]
+step:7200; t = 6.0588e+01; dt = 8.3441e-03; 6.1 %
+           [Mach = 113.642406]
+step:7300; t = 6.1423e+01; dt = 8.3446e-03; 6.1 %
+           [Mach = 114.364194]
+step:7400; t = 6.2257e+01; dt = 8.3452e-03; 6.2 %
+           [Mach = 115.606050]
+step:7500; t = 6.3092e+01; dt = 8.3458e-03; 6.3 %
+           [Mach = 117.029228]
+step:7600; t = 6.3926e+01; dt = 8.3465e-03; 6.4 %
+           [Mach = 118.361617]
+step:7700; t = 6.4761e+01; dt = 8.3471e-03; 6.5 %
+           [Mach = 119.944438]
+> Writing file #13 (dbl) to disk...
+  [ 0.00 sec ]
+> Writing file #13 (vtk) to disk...
+  [ 0.00 sec ]
+step:7800; t = 6.5596e+01; dt = 8.3473e-03; 6.6 %
+           [Mach = 121.377545]
+step:7900; t = 6.6430e+01; dt = 8.3474e-03; 6.6 %
+           [Mach = 122.929175]
+step:8000; t = 6.7265e+01; dt = 8.3473e-03; 6.7 %
+           [Mach = 123.966083]
+step:8100; t = 6.8100e+01; dt = 8.3472e-03; 6.8 %
+           [Mach = 124.974118]
+step:8200; t = 6.8934e+01; dt = 8.3470e-03; 6.9 %
+           [Mach = 126.020161]
+step:8300; t = 6.9769e+01; dt = 8.3469e-03; 7.0 %
+           [Mach = 127.754795]
+> Writing file #14 (dbl) to disk...
+  [ 0.00 sec ]
+> Writing file #14 (vtk) to disk...
+  [ 0.00 sec ]
+step:8400; t = 7.0604e+01; dt = 8.3469e-03; 7.1 %
+           [Mach = 130.172425]
+step:8500; t = 7.1439e+01; dt = 8.3471e-03; 7.1 %
+           [Mach = 131.400319]
+step:8600; t = 7.2273e+01; dt = 8.3474e-03; 7.2 %
+           [Mach = 134.661732]
+step:8700; t = 7.3108e+01; dt = 8.3475e-03; 7.3 %
+           [Mach = 138.385741]
+step:8800; t = 7.3943e+01; dt = 8.3474e-03; 7.4 %
+           [Mach = 142.368407]
+step:8900; t = 7.4777e+01; dt = 8.3470e-03; 7.5 %
+           [Mach = 146.654147]
+> Writing file #15 (dbl) to disk...
+  [ 0.00 sec ]
+> Writing file #15 (vtk) to disk...
+  [ 0.00 sec ]
+step:9000; t = 7.5612e+01; dt = 8.3464e-03; 7.6 %
+           [Mach = 150.267057]
+step:9100; t = 7.6447e+01; dt = 8.3457e-03; 7.6 %
+           [Mach = 154.570793]
+step:9200; t = 7.7281e+01; dt = 8.3451e-03; 7.7 %
+           [Mach = 159.501925]
+step:9300; t = 7.8116e+01; dt = 8.3444e-03; 7.8 %
+           [Mach = 167.197701]
+step:9400; t = 7.8950e+01; dt = 8.3435e-03; 7.9 %
+           [Mach = 175.038608]
+step:9500; t = 7.9784e+01; dt = 8.3426e-03; 8.0 %
+           [Mach = 184.790352]
+> Writing file #16 (dbl) to disk...
+  [ 0.00 sec ]
+> Writing file #16 (vtk) to disk...
+  [ 0.00 sec ]
+step:9600; t = 8.0619e+01; dt = 8.3417e-03; 8.1 %
+           [Mach = 196.083516]
+step:9700; t = 8.1453e+01; dt = 8.3408e-03; 8.1 %
+           [Mach = 211.512432]
+step:9800; t = 8.2287e+01; dt = 8.3400e-03; 8.2 %
+           [Mach = 239.450538]
+step:9900; t = 8.3121e+01; dt = 8.3391e-03; 8.3 %
+           [Mach = 288.335166]
+step:10000; t = 8.3955e+01; dt = 8.3381e-03; 8.4 %
+            [Mach = 373.775949]
+step:10100; t = 8.4788e+01; dt = 8.3372e-03; 8.5 %
+            [Mach = 665.070522]
+> Writing file #17 (dbl) to disk...
+  [ 0.00 sec ]
+> Writing file #17 (vtk) to disk...
+  [ 0.00 sec ]
+step:10200; t = 8.5622e+01; dt = 8.3363e-03; 8.6 %
+            [Mach = 123501.674321]
+step:10300; t = 8.6456e+01; dt = 8.3354e-03; 8.6 %
+            [Mach = 122476.574819]
+step:10400; t = 8.7289e+01; dt = 8.3342e-03; 8.7 %
+            [Mach = 121445.628452]
+step:10500; t = 8.8123e+01; dt = 8.3328e-03; 8.8 %
+            [Mach = 120393.810110]
+step:10600; t = 8.8956e+01; dt = 8.3313e-03; 8.9 %
+            [Mach = 119174.692254]
+step:10700; t = 8.9789e+01; dt = 8.3298e-03; 9.0 %
+            [Mach = 118401.798492]
+> Writing file #18 (dbl) to disk...
+  [ 0.00 sec ]
+> Writing file #18 (vtk) to disk...
+  [ 0.00 sec ]
+step:10800; t = 9.0622e+01; dt = 8.3285e-03; 9.1 %
+            [Mach = 117026.349147]
+step:10900; t = 9.1454e+01; dt = 8.3272e-03; 9.1 %
+            [Mach = 115889.121906]
+step:11000; t = 9.2287e+01; dt = 8.3257e-03; 9.2 %
+            [Mach = 114716.222758]
+step:11100; t = 9.3120e+01; dt = 8.3242e-03; 9.3 %
+            [Mach = 113476.892817]
+step:11200; t = 9.3952e+01; dt = 8.3228e-03; 9.4 %
+            [Mach = 112199.233861]
+step:11300; t = 9.4784e+01; dt = 8.3212e-03; 9.5 %
+            [Mach = 110890.074172]
+> Writing file #19 (dbl) to disk...
+  [ 0.00 sec ]
+> Writing file #19 (vtk) to disk...
+  [ 0.00 sec ]
+step:11400; t = 9.5616e+01; dt = 8.3199e-03; 9.6 %
+            [Mach = 109570.991691]
+step:11500; t = 9.6448e+01; dt = 8.3187e-03; 9.6 %
+            [Mach = 108353.620644]
+step:11600; t = 9.7280e+01; dt = 8.3179e-03; 9.7 %
+            [Mach = 106985.503718]
+step:11700; t = 9.8112e+01; dt = 8.3174e-03; 9.8 %
+            [Mach = 105480.210576]
+step:11800; t = 9.8943e+01; dt = 8.3168e-03; 9.9 %
+            [Mach = 103865.377505]
+step:11900; t = 9.9775e+01; dt = 8.3162e-03; 10.0 %
+            [Mach = 102272.378700]
+> Writing file #20 (dbl) to disk...
+  [ 0.00 sec ]
+> Writing file #20 (vtk) to disk...
+  [ 0.00 sec ]
+step:12000; t = 1.0061e+02; dt = 8.3160e-03; 10.1 %
+            [Mach = 100653.944826]
+step:12100; t = 1.0144e+02; dt = 8.3160e-03; 10.1 %
+            [Mach = 98906.798974]
+step:12200; t = 1.0227e+02; dt = 8.3161e-03; 10.2 %
+            [Mach = 97127.281294]
+step:12300; t = 1.0310e+02; dt = 8.3165e-03; 10.3 %
+            [Mach = 96206.795818]
+step:12400; t = 1.0393e+02; dt = 8.3173e-03; 10.4 %
+            [Mach = 94592.955228]
+step:12500; t = 1.0477e+02; dt = 8.3182e-03; 10.5 %
+            [Mach = 92953.069186]
+> Writing file #21 (dbl) to disk...
+  [ 0.00 sec ]
+> Writing file #21 (vtk) to disk...
+  [ 0.00 sec ]
+step:12600; t = 1.0560e+02; dt = 8.3184e-03; 10.6 %
+            [Mach = 91262.352284]
+step:12700; t = 1.0643e+02; dt = 8.3191e-03; 10.6 %
+            [Mach = 89385.788885]
+step:12800; t = 1.0726e+02; dt = 8.3197e-03; 10.7 %
+            [Mach = 87386.005668]
+step:12900; t = 1.0809e+02; dt = 8.3197e-03; 10.8 %
+            [Mach = 85436.179789]
+step:13000; t = 1.0892e+02; dt = 8.3196e-03; 10.9 %
+            [Mach = 83760.762902]
+step:13100; t = 1.0976e+02; dt = 8.3193e-03; 11.0 %
+            [Mach = 81744.780884]
+> Writing file #22 (dbl) to disk...
+  [ 0.00 sec ]
+> Writing file #22 (vtk) to disk...
+  [ 0.00 sec ]
+step:13200; t = 1.1059e+02; dt = 8.3192e-03; 11.1 %
+            [Mach = 79934.219967]
+step:13300; t = 1.1142e+02; dt = 8.3192e-03; 11.1 %
+            [Mach = 78225.914426]
+step:13400; t = 1.1225e+02; dt = 8.3189e-03; 11.2 %
+            [Mach = 76483.124531]
+step:13500; t = 1.1308e+02; dt = 8.3187e-03; 11.3 %
+            [Mach = 74892.551723]
+step:13600; t = 1.1392e+02; dt = 8.3189e-03; 11.4 %
+            [Mach = 73457.839143]
+step:13700; t = 1.1475e+02; dt = 8.3191e-03; 11.5 %
+            [Mach = 71861.781222]
+> Writing file #23 (dbl) to disk...
+  [ 0.00 sec ]
+> Writing file #23 (vtk) to disk...
+  [ 0.00 sec ]
+step:13800; t = 1.1558e+02; dt = 8.3197e-03; 11.6 %
+            [Mach = 70205.494057]
+step:13900; t = 1.1641e+02; dt = 8.3201e-03; 11.6 %
+            [Mach = 68376.822694]
+step:14000; t = 1.1724e+02; dt = 8.3192e-03; 11.7 %
+            [Mach = 66852.682792]
+step:14100; t = 1.1808e+02; dt = 8.3178e-03; 11.8 %
+            [Mach = 65507.463270]
+step:14200; t = 1.1891e+02; dt = 8.3165e-03; 11.9 %
+            [Mach = 63973.321733]
+step:14300; t = 1.1974e+02; dt = 8.3149e-03; 12.0 %
+            [Mach = 62387.160187]
+> Writing file #24 (dbl) to disk...
+  [ 0.00 sec ]
+> Writing file #24 (vtk) to disk...
+  [ 0.00 sec ]
+step:14400; t = 1.2057e+02; dt = 8.3135e-03; 12.1 %
+            [Mach = 61258.363430]
+step:14500; t = 1.2140e+02; dt = 8.3121e-03; 12.1 %
+            [Mach = 59731.955615]
+step:14600; t = 1.2223e+02; dt = 8.3113e-03; 12.2 %
+            [Mach = 464.223452]
+step:14700; t = 1.2306e+02; dt = 8.3106e-03; 12.3 %
+            [Mach = 210.697720]
+step:14800; t = 1.2389e+02; dt = 8.3101e-03; 12.4 %
+            [Mach = 143.744160]
+step:14900; t = 1.2473e+02; dt = 8.3101e-03; 12.5 %
+            [Mach = 104.954643]
+> Writing file #25 (dbl) to disk...
+  [ 0.00 sec ]
+> Writing file #25 (vtk) to disk...
+  [ 0.00 sec ]
+step:15000; t = 1.2556e+02; dt = 8.3107e-03; 12.6 %
+            [Mach = 81.922674]
+step:15100; t = 1.2639e+02; dt = 8.3113e-03; 12.6 %
+            [Mach = 70.701664]
+step:15200; t = 1.2722e+02; dt = 8.3113e-03; 12.7 %
+            [Mach = 65.309717]
+step:15300; t = 1.2805e+02; dt = 8.3103e-03; 12.8 %
+            [Mach = 60.013751]
+step:15400; t = 1.2888e+02; dt = 8.3104e-03; 12.9 %
+            [Mach = 56.464796]
+step:15500; t = 1.2971e+02; dt = 8.3106e-03; 13.0 %
+            [Mach = 52.623112]
+> Writing file #26 (dbl) to disk...
+  [ 0.00 sec ]
+> Writing file #26 (vtk) to disk...
+  [ 0.00 sec ]
+step:15600; t = 1.3054e+02; dt = 8.3103e-03; 13.1 %
+            [Mach = 50.794726]
+step:15700; t = 1.3137e+02; dt = 8.3105e-03; 13.1 %
+            [Mach = 49.273573]
+step:15800; t = 1.3221e+02; dt = 8.3108e-03; 13.2 %
+            [Mach = 48.599658]
+step:15900; t = 1.3304e+02; dt = 8.3119e-03; 13.3 %
+            [Mach = 47.685650]
+step:16000; t = 1.3387e+02; dt = 8.3127e-03; 13.4 %
+            [Mach = 45.793087]
+step:16100; t = 1.3470e+02; dt = 8.3138e-03; 13.5 %
+            [Mach = 45.108289]
+> Writing file #27 (dbl) to disk...
+  [ 0.00 sec ]
+> Writing file #27 (vtk) to disk...
+  [ 0.00 sec ]
+step:16200; t = 1.3553e+02; dt = 8.3157e-03; 13.6 %
+            [Mach = 44.723103]
+step:16300; t = 1.3636e+02; dt = 8.3175e-03; 13.6 %
+            [Mach = 44.407536]
+step:16400; t = 1.3719e+02; dt = 8.3177e-03; 13.7 %
+            [Mach = 43.661976]
+step:16500; t = 1.3803e+02; dt = 8.3184e-03; 13.8 %
+            [Mach = 42.108747]
+step:16600; t = 1.3886e+02; dt = 8.3195e-03; 13.9 %
+            [Mach = 40.125633]
+step:16700; t = 1.3969e+02; dt = 8.3202e-03; 14.0 %
+            [Mach = 38.636404]
+> Writing file #28 (dbl) to disk...
+  [ 0.00 sec ]
+> Writing file #28 (vtk) to disk...
+  [ 0.00 sec ]
+step:16800; t = 1.4052e+02; dt = 8.3207e-03; 14.1 %
+            [Mach = 37.406922]
+step:16900; t = 1.4135e+02; dt = 8.3220e-03; 14.1 %
+            [Mach = 32.049402]
+step:17000; t = 1.4219e+02; dt = 8.3240e-03; 14.2 %
+            [Mach = 29.278225]
+step:17100; t = 1.4302e+02; dt = 8.3258e-03; 14.3 %
+            [Mach = 28.422570]
+step:17200; t = 1.4385e+02; dt = 8.3272e-03; 14.4 %
+            [Mach = 27.035479]
+step:17300; t = 1.4468e+02; dt = 8.3297e-03; 14.5 %
+            [Mach = 26.972292]
+> Writing file #29 (dbl) to disk...
+  [ 0.00 sec ]
+> Writing file #29 (vtk) to disk...
+  [ 0.00 sec ]
+step:17400; t = 1.4552e+02; dt = 8.3326e-03; 14.6 %
+            [Mach = 27.169638]
+step:17500; t = 1.4635e+02; dt = 8.3337e-03; 14.6 %
+            [Mach = 27.475186]
+step:17600; t = 1.4718e+02; dt = 8.3342e-03; 14.7 %
+            [Mach = 27.469770]
+step:17700; t = 1.4802e+02; dt = 8.3354e-03; 14.8 %
+            [Mach = 27.331486]
+step:17800; t = 1.4885e+02; dt = 8.3371e-03; 14.9 %
+            [Mach = 27.426680]
+step:17900; t = 1.4968e+02; dt = 8.3381e-03; 15.0 %
+            [Mach = 27.248184]
+> Writing file #30 (dbl) to disk...
+  [ 0.00 sec ]
+> Writing file #30 (vtk) to disk...
+  [ 0.00 sec ]
+step:18000; t = 1.5052e+02; dt = 8.3392e-03; 15.1 %
+            [Mach = 27.275142]
+step:18100; t = 1.5135e+02; dt = 8.3416e-03; 15.1 %
+            [Mach = 27.157104]
+step:18200; t = 1.5219e+02; dt = 8.3442e-03; 15.2 %
+            [Mach = 26.908624]
+step:18300; t = 1.5302e+02; dt = 8.3454e-03; 15.3 %
+            [Mach = 27.033865]
+step:18400; t = 1.5386e+02; dt = 8.3477e-03; 15.4 %
+            [Mach = 27.333190]
+step:18500; t = 1.5469e+02; dt = 8.3503e-03; 15.5 %
+            [Mach = 27.639960]
+> Writing file #31 (dbl) to disk...
+  [ 0.00 sec ]
+> Writing file #31 (vtk) to disk...
+  [ 0.00 sec ]
+step:18600; t = 1.5553e+02; dt = 8.3515e-03; 15.6 %
+            [Mach = 27.933146]
+step:18700; t = 1.5636e+02; dt = 8.3520e-03; 15.6 %
+            [Mach = 28.285489]
+step:18800; t = 1.5720e+02; dt = 8.3529e-03; 15.7 %
+            [Mach = 28.307353]
+step:18900; t = 1.5803e+02; dt = 8.3549e-03; 15.8 %
+            [Mach = 28.027492]
+step:19000; t = 1.5887e+02; dt = 8.3565e-03; 15.9 %
+            [Mach = 28.172002]
+step:19100; t = 1.5970e+02; dt = 8.3578e-03; 16.0 %
+            [Mach = 27.514001]
+> Writing file #32 (dbl) to disk...
+  [ 0.00 sec ]
+> Writing file #32 (vtk) to disk...
+  [ 0.00 sec ]
+step:19200; t = 1.6054e+02; dt = 8.3597e-03; 16.1 %
+            [Mach = 27.857546]
+step:19300; t = 1.6138e+02; dt = 8.3617e-03; 16.1 %
+            [Mach = 27.861907]
+step:19400; t = 1.6221e+02; dt = 8.3635e-03; 16.2 %
+            [Mach = 28.158520]
+step:19500; t = 1.6305e+02; dt = 8.3649e-03; 16.3 %
+            [Mach = 28.497018]
+step:19600; t = 1.6388e+02; dt = 8.3656e-03; 16.4 %
+            [Mach = 28.829385]
+step:19700; t = 1.6472e+02; dt = 8.3663e-03; 16.5 %
+            [Mach = 29.021178]
+> Writing file #33 (dbl) to disk...
+  [ 0.00 sec ]
+> Writing file #33 (vtk) to disk...
+  [ 0.00 sec ]
+step:19800; t = 1.6556e+02; dt = 8.3662e-03; 16.6 %
+            [Mach = 29.168520]
+step:19900; t = 1.6639e+02; dt = 8.3665e-03; 16.6 %
+            [Mach = 28.912258]
+step:20000; t = 1.6723e+02; dt = 8.3673e-03; 16.7 %
+            [Mach = 28.821226]
+step:20100; t = 1.6807e+02; dt = 8.3679e-03; 16.8 %
+            [Mach = 34.980032]
+step:20200; t = 1.6890e+02; dt = 8.3688e-03; 16.9 %
+            [Mach = 33.625548]
+step:20300; t = 1.6974e+02; dt = 8.3692e-03; 17.0 %
+            [Mach = 35.369729]
+> Writing file #34 (dbl) to disk...
+  [ 0.00 sec ]
+> Writing file #34 (vtk) to disk...
+  [ 0.00 sec ]
+step:20400; t = 1.7058e+02; dt = 8.3684e-03; 17.1 %
+            [Mach = 31.058110]
+step:20500; t = 1.7142e+02; dt = 8.3677e-03; 17.1 %
+            [Mach = 27.564097]
+step:20600; t = 1.7225e+02; dt = 8.3675e-03; 17.2 %
+            [Mach = 27.742070]
+step:20700; t = 1.7309e+02; dt = 8.3672e-03; 17.3 %
+            [Mach = 28.920658]
+step:20800; t = 1.7393e+02; dt = 8.3674e-03; 17.4 %
+            [Mach = 29.467601]
+step:20900; t = 1.7476e+02; dt = 8.3671e-03; 17.5 %
+            [Mach = 29.296316]
+> Writing file #35 (dbl) to disk...
+  [ 0.00 sec ]
+> Writing file #35 (vtk) to disk...
+  [ 0.00 sec ]
+step:21000; t = 1.7560e+02; dt = 8.3660e-03; 17.6 %
+            [Mach = 29.136029]
+step:21100; t = 1.7644e+02; dt = 8.3647e-03; 17.6 %
+            [Mach = 30.254281]
+step:21200; t = 1.7727e+02; dt = 8.3637e-03; 17.7 %
+            [Mach = 30.314477]
+step:21300; t = 1.7811e+02; dt = 8.3630e-03; 17.8 %
+            [Mach = 31.025549]
+step:21400; t = 1.7894e+02; dt = 8.3628e-03; 17.9 %
+            [Mach = 32.089420]
+step:21500; t = 1.7978e+02; dt = 8.3616e-03; 18.0 %
+            [Mach = 32.919545]
+> Writing file #36 (dbl) to disk...
+  [ 0.00 sec ]
+> Writing file #36 (vtk) to disk...
+  [ 0.00 sec ]
+step:21600; t = 1.8062e+02; dt = 8.3600e-03; 18.1 %
+            [Mach = 31.675942]
+step:21700; t = 1.8145e+02; dt = 8.3585e-03; 18.1 %
+            [Mach = 38.750366]
+step:21800; t = 1.8229e+02; dt = 8.3573e-03; 18.2 %
+            [Mach = 42.981187]
+step:21900; t = 1.8312e+02; dt = 8.3560e-03; 18.3 %
+            [Mach = 45.539316]
+step:22000; t = 1.8396e+02; dt = 8.3552e-03; 18.4 %
+            [Mach = 49.805105]
+step:22100; t = 1.8480e+02; dt = 8.3535e-03; 18.5 %
+            [Mach = 51.183646]
+> Writing file #37 (dbl) to disk...
+  [ 0.00 sec ]
+> Writing file #37 (vtk) to disk...
+  [ 0.00 sec ]
+step:22200; t = 1.8563e+02; dt = 8.3515e-03; 18.6 %
+            [Mach = 51.016721]
+step:22300; t = 1.8647e+02; dt = 8.3498e-03; 18.6 %
+            [Mach = 50.778372]
+step:22400; t = 1.8730e+02; dt = 8.3481e-03; 18.7 %
+            [Mach = 49.699811]
+step:22500; t = 1.8814e+02; dt = 8.3469e-03; 18.8 %
+            [Mach = 46.560962]
+step:22600; t = 1.8897e+02; dt = 8.3454e-03; 18.9 %
+            [Mach = 44.333782]
+step:22700; t = 1.8980e+02; dt = 8.3434e-03; 19.0 %
+            [Mach = 42.819364]
+> Writing file #38 (dbl) to disk...
+  [ 0.00 sec ]
+> Writing file #38 (vtk) to disk...
+  [ 0.00 sec ]
+step:22800; t = 1.9064e+02; dt = 8.3416e-03; 19.1 %
+            [Mach = 42.541384]
+step:22900; t = 1.9147e+02; dt = 8.3401e-03; 19.1 %
+            [Mach = 42.988707]
+step:23000; t = 1.9231e+02; dt = 8.3389e-03; 19.2 %
+            [Mach = 42.741342]
+step:23100; t = 1.9314e+02; dt = 8.3384e-03; 19.3 %
+            [Mach = 44.555632]
+step:23200; t = 1.9397e+02; dt = 8.3368e-03; 19.4 %
+            [Mach = 48.175884]
+step:23300; t = 1.9481e+02; dt = 8.3353e-03; 19.5 %
+            [Mach = 57.818972]
+> Writing file #39 (dbl) to disk...
+  [ 0.00 sec ]
+> Writing file #39 (vtk) to disk...
+  [ 0.00 sec ]
+step:23400; t = 1.9564e+02; dt = 8.3339e-03; 19.6 %
+            [Mach = 61.662557]
+step:23500; t = 1.9647e+02; dt = 8.3327e-03; 19.6 %
+            [Mach = 65.774343]
+step:23600; t = 1.9731e+02; dt = 8.3315e-03; 19.7 %
+            [Mach = 71.464628]
+step:23700; t = 1.9814e+02; dt = 8.3307e-03; 19.8 %
+            [Mach = 73.869475]
+step:23800; t = 1.9897e+02; dt = 8.3298e-03; 19.9 %
+            [Mach = 74.878873]
+step:23900; t = 1.9981e+02; dt = 8.3281e-03; 20.0 %
+            [Mach = 73.609981]
+> Writing file #40 (dbl) to disk...
+  [ 0.00 sec ]
+> Writing file #40 (vtk) to disk...
+  [ 0.00 sec ]
+step:24000; t = 2.0064e+02; dt = 8.3267e-03; 20.1 %
+            [Mach = 67.954437]
+step:24100; t = 2.0147e+02; dt = 8.3254e-03; 20.1 %
+            [Mach = 64.038900]
+step:24200; t = 2.0230e+02; dt = 8.3246e-03; 20.2 %
+            [Mach = 59.494213]
+step:24300; t = 2.0314e+02; dt = 8.3238e-03; 20.3 %
+            [Mach = 59.071869]
+step:24400; t = 2.0397e+02; dt = 8.3231e-03; 20.4 %
+            [Mach = 61.308170]
+step:24500; t = 2.0480e+02; dt = 8.3223e-03; 20.5 %
+            [Mach = 64.666593]
+> Writing file #41 (dbl) to disk...
+  [ 0.00 sec ]
+> Writing file #41 (vtk) to disk...
+  [ 0.00 sec ]
+step:24600; t = 2.0563e+02; dt = 8.3210e-03; 20.6 %
+            [Mach = 70.114117]
+step:24700; t = 2.0647e+02; dt = 8.3202e-03; 20.6 %
+            [Mach = 78.871029]
+step:24800; t = 2.0730e+02; dt = 8.3194e-03; 20.7 %
+            [Mach = 91.976963]
+step:24900; t = 2.0813e+02; dt = 8.3187e-03; 20.8 %
+            [Mach = 111.954042]
+step:25000; t = 2.0896e+02; dt = 8.3183e-03; 20.9 %
+            [Mach = 125.593837]
+step:25100; t = 2.0979e+02; dt = 8.3181e-03; 21.0 %
+            [Mach = 122.345860]
+> Writing file #42 (dbl) to disk...
+  [ 0.00 sec ]
+> Writing file #42 (vtk) to disk...
+  [ 0.00 sec ]
+step:25200; t = 2.1063e+02; dt = 8.3178e-03; 21.1 %
+            [Mach = 138.448928]
+step:25300; t = 2.1146e+02; dt = 8.3166e-03; 21.1 %
+            [Mach = 139.147010]
+step:25400; t = 2.1229e+02; dt = 8.3160e-03; 21.2 %
+            [Mach = 149.224880]
+step:25500; t = 2.1312e+02; dt = 8.3159e-03; 21.3 %
+            [Mach = 150.428665]
+step:25600; t = 2.1395e+02; dt = 8.3156e-03; 21.4 %
+            [Mach = 174.653930]
+step:25700; t = 2.1478e+02; dt = 8.3157e-03; 21.5 %
+            [Mach = 223.151362]
+> Writing file #43 (dbl) to disk...
+  [ 0.00 sec ]
+> Writing file #43 (vtk) to disk...
+  [ 0.00 sec ]
+step:25800; t = 2.1561e+02; dt = 8.3154e-03; 21.6 %
+            [Mach = 325.011071]
+step:25900; t = 2.1645e+02; dt = 8.3142e-03; 21.6 %
+            [Mach = 1304.911902]
+step:26000; t = 2.1728e+02; dt = 8.3134e-03; 21.7 %
+            [Mach = 50576.550330]
+step:26100; t = 2.1811e+02; dt = 8.3129e-03; 21.8 %
+            [Mach = 50736.214344]
+step:26200; t = 2.1894e+02; dt = 8.3130e-03; 21.9 %
+            [Mach = 51037.894777]
+step:26300; t = 2.1977e+02; dt = 8.3129e-03; 22.0 %
+            [Mach = 51395.825676]
+> Writing file #44 (dbl) to disk...
+  [ 0.00 sec ]
+> Writing file #44 (vtk) to disk...
+  [ 0.00 sec ]
+step:26400; t = 2.2060e+02; dt = 8.3120e-03; 22.1 %
+            [Mach = 51622.779398]
+step:26500; t = 2.2143e+02; dt = 8.3106e-03; 22.1 %
+            [Mach = 51807.142701]
+step:26600; t = 2.2226e+02; dt = 8.3094e-03; 22.2 %
+            [Mach = 52006.472875]
+step:26700; t = 2.2310e+02; dt = 8.3086e-03; 22.3 %
+            [Mach = 52296.986625]
+step:26800; t = 2.2393e+02; dt = 8.3082e-03; 22.4 %
+            [Mach = 52654.900128]
+step:26900; t = 2.2476e+02; dt = 8.3079e-03; 22.5 %
+            [Mach = 53075.497916]
+> Writing file #45 (dbl) to disk...
+  [ 0.00 sec ]
+> Writing file #45 (vtk) to disk...
+  [ 0.00 sec ]
+step:27000; t = 2.2559e+02; dt = 8.3067e-03; 22.6 %
+            [Mach = 53402.760409]
+step:27100; t = 2.2642e+02; dt = 8.3049e-03; 22.6 %
+            [Mach = 53686.504600]
+step:27200; t = 2.2725e+02; dt = 8.3033e-03; 22.7 %
+            [Mach = 54010.639020]
+step:27300; t = 2.2808e+02; dt = 8.3023e-03; 22.8 %
+            [Mach = 54157.729297]
+step:27400; t = 2.2891e+02; dt = 8.3014e-03; 22.9 %
+            [Mach = 54440.190399]
+step:27500; t = 2.2974e+02; dt = 8.3008e-03; 23.0 %
+            [Mach = 54692.324848]
+> Writing file #46 (dbl) to disk...
+  [ 0.00 sec ]
+> Writing file #46 (vtk) to disk...
+  [ 0.00 sec ]
+step:27600; t = 2.3057e+02; dt = 8.2998e-03; 23.1 %
+            [Mach = 54925.835275]
+step:27700; t = 2.3140e+02; dt = 8.2980e-03; 23.1 %
+            [Mach = 55227.087630]
+step:27800; t = 2.3223e+02; dt = 8.2964e-03; 23.2 %
+            [Mach = 55530.709745]
+step:27900; t = 2.3306e+02; dt = 8.2948e-03; 23.3 %
+            [Mach = 55940.992882]
+step:28000; t = 2.3389e+02; dt = 8.2937e-03; 23.4 %
+            [Mach = 56128.198905]
+step:28100; t = 2.3472e+02; dt = 8.2930e-03; 23.5 %
+            [Mach = 56346.824911]
+> Writing file #47 (dbl) to disk...
+  [ 0.00 sec ]
+> Writing file #47 (vtk) to disk...
+  [ 0.00 sec ]
+step:28200; t = 2.3555e+02; dt = 8.2924e-03; 23.6 %
+            [Mach = 56589.199842]
+step:28300; t = 2.3638e+02; dt = 8.2912e-03; 23.6 %
+            [Mach = 56910.115005]
+step:28400; t = 2.3721e+02; dt = 8.2894e-03; 23.7 %
+            [Mach = 57100.007127]
+step:28500; t = 2.3803e+02; dt = 8.2883e-03; 23.8 %
+            [Mach = 57206.712549]
+step:28600; t = 2.3886e+02; dt = 8.2872e-03; 23.9 %
+            [Mach = 57333.441119]
+step:28700; t = 2.3969e+02; dt = 8.2863e-03; 24.0 %
+            [Mach = 57453.996104]
+> Writing file #48 (dbl) to disk...
+  [ 0.00 sec ]
+> Writing file #48 (vtk) to disk...
+  [ 0.00 sec ]
+step:28800; t = 2.4052e+02; dt = 8.2856e-03; 24.1 %
+            [Mach = 57566.452018]
+step:28900; t = 2.4135e+02; dt = 8.2854e-03; 24.1 %
+            [Mach = 57632.075056]
+step:29000; t = 2.4218e+02; dt = 8.2852e-03; 24.2 %
+            [Mach = 57684.332042]
+step:29100; t = 2.4301e+02; dt = 8.2841e-03; 24.3 %
+            [Mach = 57707.664997]
+step:29200; t = 2.4383e+02; dt = 8.2835e-03; 24.4 %
+            [Mach = 57743.470010]
+step:29300; t = 2.4466e+02; dt = 8.2829e-03; 24.5 %
+            [Mach = 57695.280684]
+> Writing file #49 (dbl) to disk...
+  [ 0.00 sec ]
+> Writing file #49 (vtk) to disk...
+  [ 0.00 sec ]
+step:29400; t = 2.4549e+02; dt = 8.2828e-03; 24.5 %
+            [Mach = 57775.795179]
+step:29500; t = 2.4632e+02; dt = 8.2830e-03; 24.6 %
+            [Mach = 57837.570301]
+step:29600; t = 2.4715e+02; dt = 8.2835e-03; 24.7 %
+            [Mach = 58117.754836]
+step:29700; t = 2.4798e+02; dt = 8.2841e-03; 24.8 %
+            [Mach = 58144.123981]
+step:29800; t = 2.4880e+02; dt = 8.2849e-03; 24.9 %
+            [Mach = 58198.061089]
+step:29900; t = 2.4963e+02; dt = 8.2859e-03; 25.0 %
+            [Mach = 58295.495013]
+> Writing file #50 (dbl) to disk...
+  [ 0.00 sec ]
+> Writing file #50 (vtk) to disk...
+  [ 0.00 sec ]
+step:30000; t = 2.5046e+02; dt = 8.2871e-03; 25.0 %
+            [Mach = 58336.207838]
+step:30100; t = 2.5129e+02; dt = 8.2882e-03; 25.1 %
+            [Mach = 58462.954756]
+step:30200; t = 2.5212e+02; dt = 8.2890e-03; 25.2 %
+            [Mach = 58603.411129]
+step:30300; t = 2.5295e+02; dt = 8.2899e-03; 25.3 %
+            [Mach = 58903.633018]
+step:30400; t = 2.5378e+02; dt = 8.2911e-03; 25.4 %
+            [Mach = 58817.429989]
+step:30500; t = 2.5461e+02; dt = 8.2928e-03; 25.5 %
+            [Mach = 59076.429997]
+> Writing file #51 (dbl) to disk...
+  [ 0.00 sec ]
+> Writing file #51 (vtk) to disk...
+  [ 0.00 sec ]
+step:30600; t = 2.5544e+02; dt = 8.2946e-03; 25.5 %
+            [Mach = 59202.696696]
+step:30700; t = 2.5627e+02; dt = 8.2966e-03; 25.6 %
+            [Mach = 59251.179982]
+step:30800; t = 2.5709e+02; dt = 8.2988e-03; 25.7 %
+            [Mach = 59295.466856]
+step:30900; t = 2.5792e+02; dt = 8.3013e-03; 25.8 %
+            [Mach = 59334.320726]
+step:31000; t = 2.5876e+02; dt = 8.3039e-03; 25.9 %
+            [Mach = 59255.767055]
+step:31100; t = 2.5959e+02; dt = 8.3066e-03; 26.0 %
+            [Mach = 59166.953081]
+> Writing file #52 (dbl) to disk...
+  [ 0.00 sec ]
+> Writing file #52 (vtk) to disk...
+  [ 0.00 sec ]
+step:31200; t = 2.6042e+02; dt = 8.3094e-03; 26.0 %
+            [Mach = 59099.539430]
+step:31300; t = 2.6125e+02; dt = 8.3125e-03; 26.1 %
+            [Mach = 59165.643813]
+step:31400; t = 2.6208e+02; dt = 8.3159e-03; 26.2 %
+            [Mach = 59287.744325]
+step:31500; t = 2.6291e+02; dt = 8.3195e-03; 26.3 %
+            [Mach = 59363.090528]
+step:31600; t = 2.6374e+02; dt = 8.3230e-03; 26.4 %
+            [Mach = 59371.900762]
+step:31700; t = 2.6458e+02; dt = 8.3235e-03; 26.5 %
+            [Mach = 59421.588049]
+> Writing file #53 (dbl) to disk...
+  [ 0.00 sec ]
+> Writing file #53 (vtk) to disk...
+  [ 0.00 sec ]
+step:31800; t = 2.6541e+02; dt = 8.3242e-03; 26.5 %
+            [Mach = 59915.641129]
+step:31900; t = 2.6624e+02; dt = 8.3243e-03; 26.6 %
+            [Mach = 60229.339862]
+step:32000; t = 2.6707e+02; dt = 8.3230e-03; 26.7 %
+            [Mach = 60365.833422]
+step:32100; t = 2.6790e+02; dt = 8.3224e-03; 26.8 %
+            [Mach = 60381.546788]
+step:32200; t = 2.6874e+02; dt = 8.3219e-03; 26.9 %
+            [Mach = 60396.202445]
+step:32300; t = 2.6957e+02; dt = 8.3198e-03; 27.0 %
+            [Mach = 60391.355890]
+> Writing file #54 (dbl) to disk...
+  [ 0.00 sec ]
+> Writing file #54 (vtk) to disk...
+  [ 0.00 sec ]
+step:32400; t = 2.7040e+02; dt = 8.3183e-03; 27.0 %
+            [Mach = 60372.766523]
+step:32500; t = 2.7123e+02; dt = 8.3171e-03; 27.1 %
+            [Mach = 60347.861483]
+step:32600; t = 2.7206e+02; dt = 8.3158e-03; 27.2 %
+            [Mach = 60344.486776]
+step:32700; t = 2.7290e+02; dt = 8.3148e-03; 27.3 %
+            [Mach = 60392.134249]
+step:32800; t = 2.7373e+02; dt = 8.3141e-03; 27.4 %
+            [Mach = 60453.325609]
+step:32900; t = 2.7456e+02; dt = 8.3145e-03; 27.5 %
+            [Mach = 60218.491269]
+> Writing file #55 (dbl) to disk...
+  [ 0.00 sec ]
+> Writing file #55 (vtk) to disk...
+  [ 0.00 sec ]
+step:33000; t = 2.7539e+02; dt = 8.3156e-03; 27.5 %
+            [Mach = 59345.669178]
+step:33100; t = 2.7622e+02; dt = 8.3171e-03; 27.6 %
+            [Mach = 59761.834287]
+step:33200; t = 2.7705e+02; dt = 8.3195e-03; 27.7 %
+            [Mach = 60703.866393]
+step:33300; t = 2.7789e+02; dt = 8.3224e-03; 27.8 %
+            [Mach = 60707.624068]
+step:33400; t = 2.7872e+02; dt = 8.3259e-03; 27.9 %
+            [Mach = 60660.160845]
+step:33500; t = 2.7955e+02; dt = 8.3293e-03; 28.0 %
+            [Mach = 60618.155989]
+> Writing file #56 (dbl) to disk...
+  [ 0.00 sec ]
+> Writing file #56 (vtk) to disk...
+  [ 0.00 sec ]
+step:33600; t = 2.8038e+02; dt = 8.3335e-03; 28.0 %
+            [Mach = 60557.612781]
+step:33700; t = 2.8122e+02; dt = 8.3384e-03; 28.1 %
+            [Mach = 60538.369465]
+step:33800; t = 2.8205e+02; dt = 8.3437e-03; 28.2 %
+            [Mach = 60527.232378]
+step:33900; t = 2.8289e+02; dt = 8.3494e-03; 28.3 %
+            [Mach = 60533.198566]
+step:34000; t = 2.8372e+02; dt = 8.3553e-03; 28.4 %
+            [Mach = 60547.158626]
+step:34100; t = 2.8456e+02; dt = 8.3613e-03; 28.5 %
+            [Mach = 60536.691021]
+> Writing file #57 (dbl) to disk...
+  [ 0.00 sec ]
+> Writing file #57 (vtk) to disk...
+  [ 0.00 sec ]
+step:34200; t = 2.8539e+02; dt = 8.3625e-03; 28.5 %
+            [Mach = 60581.803325]
+step:34300; t = 2.8623e+02; dt = 8.3628e-03; 28.6 %
+            [Mach = 60549.239013]
+step:34400; t = 2.8707e+02; dt = 8.3630e-03; 28.7 %
+            [Mach = 60402.993266]
+step:34500; t = 2.8790e+02; dt = 8.3631e-03; 28.8 %
+            [Mach = 60258.361617]
+step:34600; t = 2.8874e+02; dt = 8.3630e-03; 28.9 %
+            [Mach = 60139.578680]
+step:34700; t = 2.8958e+02; dt = 8.3628e-03; 29.0 %
+            [Mach = 60054.741738]
+> Writing file #58 (dbl) to disk...
+  [ 0.00 sec ]
+> Writing file #58 (vtk) to disk...
+  [ 0.00 sec ]
+step:34800; t = 2.9041e+02; dt = 8.3627e-03; 29.0 %
+            [Mach = 60004.603580]
+step:34900; t = 2.9125e+02; dt = 8.3626e-03; 29.1 %
+            [Mach = 59961.611820]
+step:35000; t = 2.9208e+02; dt = 8.3627e-03; 29.2 %
+            [Mach = 59915.854921]
+step:35100; t = 2.9292e+02; dt = 8.3626e-03; 29.3 %
+            [Mach = 59889.017321]
+step:35200; t = 2.9376e+02; dt = 8.3625e-03; 29.4 %
+            [Mach = 59832.108025]
+step:35300; t = 2.9459e+02; dt = 8.3625e-03; 29.5 %
+            [Mach = 59755.577426]
+> Writing file #59 (dbl) to disk...
+  [ 0.00 sec ]
+> Writing file #59 (vtk) to disk...
+  [ 0.00 sec ]
+step:35400; t = 2.9543e+02; dt = 8.3625e-03; 29.5 %
+            [Mach = 59678.198146]
+step:35500; t = 2.9627e+02; dt = 8.3626e-03; 29.6 %
+            [Mach = 59587.280021]
+step:35600; t = 2.9710e+02; dt = 8.3627e-03; 29.7 %
+            [Mach = 59488.504489]
+step:35700; t = 2.9794e+02; dt = 8.3629e-03; 29.8 %
+            [Mach = 59380.633437]
+step:35800; t = 2.9877e+02; dt = 8.3630e-03; 29.9 %
+            [Mach = 59273.599811]
+step:35900; t = 2.9961e+02; dt = 8.3629e-03; 30.0 %
+            [Mach = 59176.913513]
+> Writing file #60 (dbl) to disk...
+  [ 0.00 sec ]
+> Writing file #60 (vtk) to disk...
+  [ 0.00 sec ]
+step:36000; t = 3.0045e+02; dt = 8.3608e-03; 30.0 %
+            [Mach = 58985.642408]
+step:36100; t = 3.0128e+02; dt = 8.3598e-03; 30.1 %
+            [Mach = 58673.613220]
+step:36200; t = 3.0212e+02; dt = 8.3599e-03; 30.2 %
+            [Mach = 58607.540184]
+step:36300; t = 3.0295e+02; dt = 8.3600e-03; 30.3 %
+            [Mach = 58600.267175]
+step:36400; t = 3.0379e+02; dt = 8.3601e-03; 30.4 %
+            [Mach = 58511.310315]
+step:36500; t = 3.0463e+02; dt = 8.3601e-03; 30.5 %
+            [Mach = 58388.045781]
+> Writing file #61 (dbl) to disk...
+  [ 0.00 sec ]
+> Writing file #61 (vtk) to disk...
+  [ 0.00 sec ]
+step:36600; t = 3.0546e+02; dt = 8.3602e-03; 30.5 %
+            [Mach = 58281.543016]
+step:36700; t = 3.0630e+02; dt = 8.3603e-03; 30.6 %
+            [Mach = 58144.095966]
+step:36800; t = 3.0713e+02; dt = 8.3603e-03; 30.7 %
+            [Mach = 57995.781221]
+step:36900; t = 3.0797e+02; dt = 8.3602e-03; 30.8 %
+            [Mach = 57860.680019]
+step:37000; t = 3.0881e+02; dt = 8.3599e-03; 30.9 %
+            [Mach = 57732.954190]
+step:37100; t = 3.0964e+02; dt = 8.3602e-03; 31.0 %
+            [Mach = 57607.161437]
+> Writing file #62 (dbl) to disk...
+  [ 0.00 sec ]
+> Writing file #62 (vtk) to disk...
+  [ 0.00 sec ]
+step:37200; t = 3.1048e+02; dt = 8.3600e-03; 31.0 %
+            [Mach = 57486.320882]
+step:37300; t = 3.1131e+02; dt = 8.3602e-03; 31.1 %
+            [Mach = 57363.353926]
+step:37400; t = 3.1215e+02; dt = 8.3598e-03; 31.2 %
+            [Mach = 57227.116190]
+step:37500; t = 3.1299e+02; dt = 8.3605e-03; 31.3 %
+            [Mach = 57048.148426]
+step:37600; t = 3.1382e+02; dt = 8.3607e-03; 31.4 %
+            [Mach = 56924.476579]
+step:37700; t = 3.1466e+02; dt = 8.3608e-03; 31.5 %
+            [Mach = 56817.635414]
+> Writing file #63 (dbl) to disk...
+  [ 0.00 sec ]
+> Writing file #63 (vtk) to disk...
+  [ 0.00 sec ]
+step:37800; t = 3.1549e+02; dt = 8.3608e-03; 31.5 %
+            [Mach = 56690.610300]
+step:37900; t = 3.1633e+02; dt = 8.3607e-03; 31.6 %
+            [Mach = 56561.789163]
+step:38000; t = 3.1717e+02; dt = 8.3613e-03; 31.7 %
+            [Mach = 56462.252090]
+step:38100; t = 3.1800e+02; dt = 8.3639e-03; 31.8 %
+            [Mach = 56373.902840]
+step:38200; t = 3.1884e+02; dt = 8.3650e-03; 31.9 %
+            [Mach = 56338.866306]
+step:38300; t = 3.1968e+02; dt = 8.3658e-03; 32.0 %
+            [Mach = 56266.233837]
+> Writing file #64 (dbl) to disk...
+  [ 0.00 sec ]
+> Writing file #64 (vtk) to disk...
+  [ 0.00 sec ]
+step:38400; t = 3.2051e+02; dt = 8.3669e-03; 32.1 %
+            [Mach = 56151.169005]
+step:38500; t = 3.2135e+02; dt = 8.3678e-03; 32.1 %
+            [Mach = 56054.458388]
+step:38600; t = 3.2219e+02; dt = 8.3670e-03; 32.2 %
+            [Mach = 55891.017378]
+step:38700; t = 3.2302e+02; dt = 8.3666e-03; 32.3 %
+            [Mach = 55664.738317]
+step:38800; t = 3.2386e+02; dt = 8.3656e-03; 32.4 %
+            [Mach = 55443.337592]
+step:38900; t = 3.2470e+02; dt = 8.3668e-03; 32.5 %
+            [Mach = 55374.021585]
+> Writing file #65 (dbl) to disk...
+  [ 0.00 sec ]
+> Writing file #65 (vtk) to disk...
+  [ 0.00 sec ]
+step:39000; t = 3.2553e+02; dt = 8.3673e-03; 32.6 %
+            [Mach = 55276.607623]
+step:39100; t = 3.2637e+02; dt = 8.3687e-03; 32.6 %
+            [Mach = 55038.150086]
+step:39200; t = 3.2721e+02; dt = 8.3695e-03; 32.7 %
+            [Mach = 54612.188234]
+step:39300; t = 3.2804e+02; dt = 8.3692e-03; 32.8 %
+            [Mach = 54277.095263]
+step:39400; t = 3.2888e+02; dt = 8.3651e-03; 32.9 %
+            [Mach = 54086.820927]
+step:39500; t = 3.2972e+02; dt = 8.3630e-03; 33.0 %
+            [Mach = 54008.988996]
+> Writing file #66 (dbl) to disk...
+  [ 0.00 sec ]
+> Writing file #66 (vtk) to disk...
+  [ 0.00 sec ]
+step:39600; t = 3.3055e+02; dt = 8.3630e-03; 33.1 %
+            [Mach = 53991.294400]
+step:39700; t = 3.3139e+02; dt = 8.3631e-03; 33.1 %
+            [Mach = 53966.772685]
+step:39800; t = 3.3223e+02; dt = 8.3633e-03; 33.2 %
+            [Mach = 53898.842811]
+step:39900; t = 3.3306e+02; dt = 8.3636e-03; 33.3 %
+            [Mach = 53762.643053]
+step:40000; t = 3.3390e+02; dt = 8.3641e-03; 33.4 %
+            [Mach = 53599.864660]
+step:40100; t = 3.3473e+02; dt = 8.3647e-03; 33.5 %
+            [Mach = 53429.888899]
+> Writing file #67 (dbl) to disk...
+  [ 0.00 sec ]
+> Writing file #67 (vtk) to disk...
+  [ 0.00 sec ]
+step:40200; t = 3.3557e+02; dt = 8.3669e-03; 33.6 %
+            [Mach = 53285.976073]
+step:40300; t = 3.3641e+02; dt = 8.3687e-03; 33.6 %
+            [Mach = 53180.825078]
+step:40400; t = 3.3725e+02; dt = 8.3696e-03; 33.7 %
+            [Mach = 53073.010603]
+step:40500; t = 3.3808e+02; dt = 8.3704e-03; 33.8 %
+            [Mach = 52960.267242]
+step:40600; t = 3.3892e+02; dt = 8.3713e-03; 33.9 %
+            [Mach = 52833.653924]
+step:40700; t = 3.3976e+02; dt = 8.3726e-03; 34.0 %
+            [Mach = 52709.164313]
+> Writing file #68 (dbl) to disk...
+  [ 0.00 sec ]
+> Writing file #68 (vtk) to disk...
+  [ 0.00 sec ]
+step:40800; t = 3.4059e+02; dt = 8.3739e-03; 34.1 %
+            [Mach = 52608.578173]
+step:40900; t = 3.4143e+02; dt = 8.3765e-03; 34.1 %
+            [Mach = 52512.841812]
+step:41000; t = 3.4227e+02; dt = 8.3782e-03; 34.2 %
+            [Mach = 52432.314271]
+step:41100; t = 3.4311e+02; dt = 8.3754e-03; 34.3 %
+            [Mach = 52316.496106]
+step:41200; t = 3.4394e+02; dt = 8.3716e-03; 34.4 %
+            [Mach = 52110.400320]
+step:41300; t = 3.4478e+02; dt = 8.3708e-03; 34.5 %
+            [Mach = 51900.695291]
+> Writing file #69 (dbl) to disk...
+  [ 0.00 sec ]
+> Writing file #69 (vtk) to disk...
+  [ 0.00 sec ]
+step:41400; t = 3.4562e+02; dt = 8.3710e-03; 34.6 %
+            [Mach = 51717.163449]
+step:41500; t = 3.4646e+02; dt = 8.3714e-03; 34.6 %
+            [Mach = 51563.666534]
+step:41600; t = 3.4729e+02; dt = 8.3722e-03; 34.7 %
+            [Mach = 51433.993913]
+step:41700; t = 3.4813e+02; dt = 8.3739e-03; 34.8 %
+            [Mach = 51337.533242]
+step:41800; t = 3.4897e+02; dt = 8.3760e-03; 34.9 %
+            [Mach = 51305.342266]
+step:41900; t = 3.4980e+02; dt = 8.3773e-03; 35.0 %
+            [Mach = 51248.847467]
+> Writing file #70 (dbl) to disk...
+  [ 0.00 sec ]
+> Writing file #70 (vtk) to disk...
+  [ 0.00 sec ]
+step:42000; t = 3.5064e+02; dt = 8.3785e-03; 35.1 %
+            [Mach = 51161.493080]
+step:42100; t = 3.5148e+02; dt = 8.3796e-03; 35.1 %
+            [Mach = 51083.075764]
+step:42200; t = 3.5232e+02; dt = 8.3814e-03; 35.2 %
+            [Mach = 51015.305276]
+step:42300; t = 3.5316e+02; dt = 8.3836e-03; 35.3 %
+            [Mach = 50959.801056]
+step:42400; t = 3.5400e+02; dt = 8.3858e-03; 35.4 %
+            [Mach = 50923.310089]
+step:42500; t = 3.5483e+02; dt = 8.3857e-03; 35.5 %
+            [Mach = 50890.406311]
+> Writing file #71 (dbl) to disk...
+  [ 0.00 sec ]
+> Writing file #71 (vtk) to disk...
+  [ 0.00 sec ]
+step:42600; t = 3.5567e+02; dt = 8.3820e-03; 35.6 %
+            [Mach = 50765.370766]
+step:42700; t = 3.5651e+02; dt = 8.3795e-03; 35.7 %
+            [Mach = 50602.033192]
+step:42800; t = 3.5735e+02; dt = 8.3789e-03; 35.7 %
+            [Mach = 50478.687892]
+step:42900; t = 3.5819e+02; dt = 8.3788e-03; 35.8 %
+            [Mach = 50355.500458]
+step:43000; t = 3.5902e+02; dt = 8.3788e-03; 35.9 %
+            [Mach = 50197.398762]
+step:43100; t = 3.5986e+02; dt = 8.3801e-03; 36.0 %
+            [Mach = 50024.699090]
+> Writing file #72 (dbl) to disk...
+  [ 0.00 sec ]
+> Writing file #72 (vtk) to disk...
+  [ 0.00 sec ]
+step:43200; t = 3.6070e+02; dt = 8.3827e-03; 36.1 %
+            [Mach = 49890.313458]
+step:43300; t = 3.6154e+02; dt = 8.3854e-03; 36.2 %
+            [Mach = 49781.368630]
+step:43400; t = 3.6238e+02; dt = 8.3871e-03; 36.2 %
+            [Mach = 49669.690965]
+step:43500; t = 3.6322e+02; dt = 8.3901e-03; 36.3 %
+            [Mach = 49558.008622]
+step:43600; t = 3.6406e+02; dt = 8.3917e-03; 36.4 %
+            [Mach = 49451.743807]
+step:43700; t = 3.6489e+02; dt = 8.3900e-03; 36.5 %
+            [Mach = 49318.843256]
+> Writing file #73 (dbl) to disk...
+  [ 0.00 sec ]
+> Writing file #73 (vtk) to disk...
+  [ 0.00 sec ]
+step:43800; t = 3.6573e+02; dt = 8.3874e-03; 36.6 %
+            [Mach = 49127.181723]
+step:43900; t = 3.6657e+02; dt = 8.3856e-03; 36.7 %
+            [Mach = 48927.051102]
+step:44000; t = 3.6741e+02; dt = 8.3853e-03; 36.7 %
+            [Mach = 48754.673736]
+step:44100; t = 3.6825e+02; dt = 8.3855e-03; 36.8 %
+            [Mach = 48609.576955]
+step:44200; t = 3.6909e+02; dt = 8.3858e-03; 36.9 %
+            [Mach = 48498.659893]
+step:44300; t = 3.6993e+02; dt = 8.3860e-03; 37.0 %
+            [Mach = 48392.621605]
+> Writing file #74 (dbl) to disk...
+  [ 0.00 sec ]
+> Writing file #74 (vtk) to disk...
+  [ 0.00 sec ]
+step:44400; t = 3.7076e+02; dt = 8.3863e-03; 37.1 %
+            [Mach = 48287.992766]
+step:44500; t = 3.7160e+02; dt = 8.3869e-03; 37.2 %
+            [Mach = 48189.932101]
+step:44600; t = 3.7244e+02; dt = 8.3886e-03; 37.2 %
+            [Mach = 48116.397361]
+step:44700; t = 3.7328e+02; dt = 8.3911e-03; 37.3 %
+            [Mach = 48064.198458]
+step:44800; t = 3.7412e+02; dt = 8.3933e-03; 37.4 %
+            [Mach = 47983.129496]
+step:44900; t = 3.7496e+02; dt = 8.3962e-03; 37.5 %
+            [Mach = 47894.894846]
+> Writing file #75 (dbl) to disk...
+  [ 0.00 sec ]
+> Writing file #75 (vtk) to disk...
+  [ 0.00 sec ]
+step:45000; t = 3.7580e+02; dt = 8.3977e-03; 37.6 %
+            [Mach = 47832.285277]
+step:45100; t = 3.7664e+02; dt = 8.3964e-03; 37.7 %
+            [Mach = 47744.283437]
+step:45200; t = 3.7748e+02; dt = 8.3933e-03; 37.7 %
+            [Mach = 47580.701940]
+step:45300; t = 3.7832e+02; dt = 8.3911e-03; 37.8 %
+            [Mach = 47391.385396]
+step:45400; t = 3.7916e+02; dt = 8.3903e-03; 37.9 %
+            [Mach = 47221.089542]
+step:45500; t = 3.8000e+02; dt = 8.3899e-03; 38.0 %
+> Writing file #76 (dbl) to disk...
+  [ 0.00 sec ]
+> Writing file #76 (vtk) to disk...
+  [ 0.00 sec ]
+            [Mach = 47040.447209]
+step:45600; t = 3.8083e+02; dt = 8.3896e-03; 38.1 %
+            [Mach = 46861.834163]
+step:45700; t = 3.8167e+02; dt = 8.3899e-03; 38.2 %
+            [Mach = 46715.411074]
+step:45800; t = 3.8251e+02; dt = 8.3892e-03; 38.3 %
+            [Mach = 46605.891399]
+step:45900; t = 3.8335e+02; dt = 8.3877e-03; 38.3 %
+            [Mach = 46546.150762]
+step:46000; t = 3.8419e+02; dt = 8.3861e-03; 38.4 %
+            [Mach = 46540.036436]
+> Writing file #77 (dbl) to disk...
+  [ 0.00 sec ]
+> Writing file #77 (vtk) to disk...
+  [ 0.00 sec ]
+step:46100; t = 3.8503e+02; dt = 8.3846e-03; 38.5 %
+            [Mach = 46564.752208]
+step:46200; t = 3.8587e+02; dt = 8.3832e-03; 38.6 %
+            [Mach = 46608.407425]
+step:46300; t = 3.8671e+02; dt = 8.3818e-03; 38.7 %
+            [Mach = 46663.443288]
+step:46400; t = 3.8754e+02; dt = 8.3806e-03; 38.8 %
+            [Mach = 46690.123462]
+step:46500; t = 3.8838e+02; dt = 8.3794e-03; 38.8 %
+            [Mach = 46659.935844]
+step:46600; t = 3.8922e+02; dt = 8.3782e-03; 38.9 %
+            [Mach = 44263.231979]
+> Writing file #78 (dbl) to disk...
+  [ 0.00 sec ]
+> Writing file #78 (vtk) to disk...
+  [ 0.00 sec ]
+step:46700; t = 3.9006e+02; dt = 8.3770e-03; 39.0 %
+            [Mach = 44600.655983]
+step:46800; t = 3.9089e+02; dt = 8.3750e-03; 39.1 %
+            [Mach = 44483.181930]
+step:46900; t = 3.9173e+02; dt = 8.3730e-03; 39.2 %
+            [Mach = 44518.153618]
+step:47000; t = 3.9257e+02; dt = 8.3711e-03; 39.3 %
+            [Mach = 44452.084835]
+step:47100; t = 3.9341e+02; dt = 8.3693e-03; 39.3 %
+            [Mach = 44463.125337]
+step:47200; t = 3.9424e+02; dt = 8.3677e-03; 39.4 %
+            [Mach = 44532.053565]
+> Writing file #79 (dbl) to disk...
+  [ 0.00 sec ]
+> Writing file #79 (vtk) to disk...
+  [ 0.00 sec ]
+step:47300; t = 3.9508e+02; dt = 8.3662e-03; 39.5 %
+            [Mach = 44508.502844]
+step:47400; t = 3.9592e+02; dt = 8.3649e-03; 39.6 %
+            [Mach = 44420.318722]
+step:47500; t = 3.9675e+02; dt = 8.3627e-03; 39.7 %
+            [Mach = 44530.599447]
+step:47600; t = 3.9759e+02; dt = 8.3598e-03; 39.8 %
+            [Mach = 44415.227648]
+step:47700; t = 3.9843e+02; dt = 8.3572e-03; 39.8 %
+            [Mach = 44382.404548]
+step:47800; t = 3.9926e+02; dt = 8.3546e-03; 39.9 %
+            [Mach = 44421.270655]
+> Writing file #80 (dbl) to disk...
+  [ 0.00 sec ]
+> Writing file #80 (vtk) to disk...
+  [ 0.00 sec ]
+step:47900; t = 4.0010e+02; dt = 8.3522e-03; 40.0 %
+            [Mach = 44694.127315]
+step:48000; t = 4.0093e+02; dt = 8.3499e-03; 40.1 %
+            [Mach = 44900.613501]
+step:48100; t = 4.0177e+02; dt = 8.3477e-03; 40.2 %
+            [Mach = 44848.813395]
+step:48200; t = 4.0260e+02; dt = 8.3456e-03; 40.3 %
+            [Mach = 44654.101828]
+step:48300; t = 4.0344e+02; dt = 8.3436e-03; 40.3 %
+            [Mach = 44479.028916]
+step:48400; t = 4.0427e+02; dt = 8.3417e-03; 40.4 %
+            [Mach = 44386.676427]
+> Writing file #81 (dbl) to disk...
+  [ 0.00 sec ]
+> Writing file #81 (vtk) to disk...
+  [ 0.00 sec ]
+step:48500; t = 4.0510e+02; dt = 8.3399e-03; 40.5 %
+            [Mach = 44374.582685]
+step:48600; t = 4.0594e+02; dt = 8.3382e-03; 40.6 %
+            [Mach = 44340.284462]
+step:48700; t = 4.0677e+02; dt = 8.3370e-03; 40.7 %
+            [Mach = 44348.428822]
+step:48800; t = 4.0760e+02; dt = 8.3360e-03; 40.8 %
+            [Mach = 44390.281385]
+step:48900; t = 4.0844e+02; dt = 8.3341e-03; 40.8 %
+            [Mach = 44473.405339]
+step:49000; t = 4.0927e+02; dt = 8.3313e-03; 40.9 %
+            [Mach = 44610.361430]
+> Writing file #82 (dbl) to disk...
+  [ 0.00 sec ]
+> Writing file #82 (vtk) to disk...
+  [ 0.00 sec ]
+step:49100; t = 4.1010e+02; dt = 8.3286e-03; 41.0 %
+            [Mach = 44810.321595]
+step:49200; t = 4.1094e+02; dt = 8.3261e-03; 41.1 %
+            [Mach = 45047.090143]
+step:49300; t = 4.1177e+02; dt = 8.3237e-03; 41.2 %
+            [Mach = 45330.970512]
+step:49400; t = 4.1260e+02; dt = 8.3214e-03; 41.3 %
+            [Mach = 45503.334358]
+step:49500; t = 4.1343e+02; dt = 8.3192e-03; 41.3 %
+            [Mach = 45600.386794]
+step:49600; t = 4.1427e+02; dt = 8.3172e-03; 41.4 %
+            [Mach = 45620.034150]
+> Writing file #83 (dbl) to disk...
+  [ 0.00 sec ]
+> Writing file #83 (vtk) to disk...
+  [ 0.00 sec ]
+step:49700; t = 4.1510e+02; dt = 8.3152e-03; 41.5 %
+            [Mach = 45591.844386]
+step:49800; t = 4.1593e+02; dt = 8.3134e-03; 41.6 %
+            [Mach = 45541.226629]
+step:49900; t = 4.1676e+02; dt = 8.3117e-03; 41.7 %
+            [Mach = 45470.931197]
+step:50000; t = 4.1759e+02; dt = 8.3101e-03; 41.8 %
+            [Mach = 45410.607420]
+step:50100; t = 4.1842e+02; dt = 8.3088e-03; 41.8 %
+            [Mach = 45389.839532]
+step:50200; t = 4.1925e+02; dt = 8.3081e-03; 41.9 %
+            [Mach = 45412.176019]
+> Writing file #84 (dbl) to disk...
+  [ 0.00 sec ]
+> Writing file #84 (vtk) to disk...
+  [ 0.00 sec ]
+step:50300; t = 4.2008e+02; dt = 8.3066e-03; 42.0 %
+            [Mach = 45485.320768]
+step:50400; t = 4.2091e+02; dt = 8.3040e-03; 42.1 %
+            [Mach = 45564.647003]
+step:50500; t = 4.2174e+02; dt = 8.3014e-03; 42.2 %
+            [Mach = 45588.788921]
+step:50600; t = 4.2257e+02; dt = 8.2990e-03; 42.3 %
+            [Mach = 45602.218124]
+step:50700; t = 4.2340e+02; dt = 8.2967e-03; 42.3 %
+            [Mach = 45624.029373]
+step:50800; t = 4.2423e+02; dt = 8.2945e-03; 42.4 %
+            [Mach = 45632.167716]
+> Writing file #85 (dbl) to disk...
+  [ 0.00 sec ]
+> Writing file #85 (vtk) to disk...
+  [ 0.00 sec ]
+step:50900; t = 4.2506e+02; dt = 8.2922e-03; 42.5 %
+            [Mach = 45664.502473]
+step:51000; t = 4.2589e+02; dt = 8.2901e-03; 42.6 %
+            [Mach = 45781.258146]
+step:51100; t = 4.2672e+02; dt = 8.2881e-03; 42.7 %
+            [Mach = 46035.981026]
+step:51200; t = 4.2755e+02; dt = 8.2862e-03; 42.8 %
+            [Mach = 46220.289535]
+step:51300; t = 4.2838e+02; dt = 8.2844e-03; 42.8 %
+            [Mach = 46666.710364]
+step:51400; t = 4.2921e+02; dt = 8.2827e-03; 42.9 %
+            [Mach = 46326.879550]
+> Writing file #86 (dbl) to disk...
+  [ 0.00 sec ]
+> Writing file #86 (vtk) to disk...
+  [ 0.00 sec ]
+step:51500; t = 4.3004e+02; dt = 8.2811e-03; 43.0 %
+            [Mach = 47668.261447]
+step:51600; t = 4.3086e+02; dt = 8.2795e-03; 43.1 %
+            [Mach = 48367.728219]
+step:51700; t = 4.3169e+02; dt = 8.2781e-03; 43.2 %
+            [Mach = 48448.776372]
+step:51800; t = 4.3252e+02; dt = 8.2767e-03; 43.3 %
+            [Mach = 48523.637141]
+step:51900; t = 4.3335e+02; dt = 8.2754e-03; 43.3 %
+            [Mach = 48608.090780]
+step:52000; t = 4.3417e+02; dt = 8.2739e-03; 43.4 %
+            [Mach = 48720.356826]
+> Writing file #87 (dbl) to disk...
+  [ 0.00 sec ]
+> Writing file #87 (vtk) to disk...
+  [ 0.00 sec ]
+step:52100; t = 4.3500e+02; dt = 8.2720e-03; 43.5 %
+            [Mach = 48852.611369]
+step:52200; t = 4.3583e+02; dt = 8.2696e-03; 43.6 %
+            [Mach = 48959.788335]
+step:52300; t = 4.3666e+02; dt = 8.2674e-03; 43.7 %
+            [Mach = 49050.055988]
+step:52400; t = 4.3748e+02; dt = 8.2654e-03; 43.7 %
+            [Mach = 49080.172359]
+step:52500; t = 4.3831e+02; dt = 8.2635e-03; 43.8 %
+            [Mach = 49090.463737]
+step:52600; t = 4.3913e+02; dt = 8.2616e-03; 43.9 %
+            [Mach = 49151.794364]
+step:52700; t = 4.3996e+02; dt = 8.2597e-03; 44.0 %
+            [Mach = 49185.302286]
+> Writing file #88 (dbl) to disk...
+  [ 0.00 sec ]
+> Writing file #88 (vtk) to disk...
+  [ 0.00 sec ]
+step:52800; t = 4.4079e+02; dt = 8.2579e-03; 44.1 %
+            [Mach = 49123.286536]
+step:52900; t = 4.4161e+02; dt = 8.2562e-03; 44.2 %
+            [Mach = 49060.343783]
+step:53000; t = 4.4244e+02; dt = 8.2545e-03; 44.2 %
+            [Mach = 49124.098162]
+step:53100; t = 4.4326e+02; dt = 8.2529e-03; 44.3 %
+            [Mach = 49160.417887]
+step:53200; t = 4.4409e+02; dt = 8.2513e-03; 44.4 %
+            [Mach = 49178.361184]
+step:53300; t = 4.4491e+02; dt = 8.2498e-03; 44.5 %
+            [Mach = 47354.211731]
+> Writing file #89 (dbl) to disk...
+  [ 0.00 sec ]
+> Writing file #89 (vtk) to disk...
+  [ 0.00 sec ]
+step:53400; t = 4.4574e+02; dt = 8.2484e-03; 44.6 %
+            [Mach = 47542.050270]
+step:53500; t = 4.4656e+02; dt = 8.2470e-03; 44.7 %
+            [Mach = 48409.626127]
+step:53600; t = 4.4739e+02; dt = 8.2456e-03; 44.7 %
+            [Mach = 48909.945702]
+step:53700; t = 4.4821e+02; dt = 8.2440e-03; 44.8 %
+            [Mach = 49158.810979]
+step:53800; t = 4.4904e+02; dt = 8.2419e-03; 44.9 %
+            [Mach = 49237.520906]
+step:53900; t = 4.4986e+02; dt = 8.2397e-03; 45.0 %
+            [Mach = 49283.603564]
+> Writing file #90 (dbl) to disk...
+  [ 0.00 sec ]
+> Writing file #90 (vtk) to disk...
+  [ 0.00 sec ]
+step:54000; t = 4.5068e+02; dt = 8.2377e-03; 45.1 %
+            [Mach = 49110.670866]
+step:54100; t = 4.5151e+02; dt = 8.2356e-03; 45.2 %
+            [Mach = 49136.121046]
+step:54200; t = 4.5233e+02; dt = 8.2337e-03; 45.2 %
+            [Mach = 49264.693801]
+step:54300; t = 4.5315e+02; dt = 8.2318e-03; 45.3 %
+            [Mach = 49339.040314]
+step:54400; t = 4.5398e+02; dt = 8.2301e-03; 45.4 %
+            [Mach = 49414.041102]
+step:54500; t = 4.5480e+02; dt = 8.2284e-03; 45.5 %
+            [Mach = 49473.180094]
+> Writing file #91 (dbl) to disk...
+  [ 0.00 sec ]
+> Writing file #91 (vtk) to disk...
+  [ 0.00 sec ]
+step:54600; t = 4.5562e+02; dt = 8.2267e-03; 45.6 %
+            [Mach = 49510.928540]
+step:54700; t = 4.5645e+02; dt = 8.2252e-03; 45.6 %
+            [Mach = 49525.965528]
+step:54800; t = 4.5727e+02; dt = 8.2236e-03; 45.7 %
+            [Mach = 49536.858749]
+step:54900; t = 4.5809e+02; dt = 8.2221e-03; 45.8 %
+            [Mach = 49564.291870]
+step:55000; t = 4.5891e+02; dt = 8.2207e-03; 45.9 %
+            [Mach = 49609.979988]
+step:55100; t = 4.5973e+02; dt = 8.2187e-03; 46.0 %
+            [Mach = 49673.631819]
+> Writing file #92 (dbl) to disk...
+  [ 0.00 sec ]
+> Writing file #92 (vtk) to disk...
+  [ 0.00 sec ]
+step:55200; t = 4.6056e+02; dt = 8.2168e-03; 46.1 %
+            [Mach = 49763.552990]
+step:55300; t = 4.6138e+02; dt = 8.2150e-03; 46.1 %
+            [Mach = 49850.233286]
+step:55400; t = 4.6220e+02; dt = 8.2133e-03; 46.2 %
+            [Mach = 49904.646451]
+step:55500; t = 4.6302e+02; dt = 8.2097e-03; 46.3 %
+            [Mach = 49928.154243]
+step:55600; t = 4.6384e+02; dt = 8.2061e-03; 46.4 %
+            [Mach = 49941.517463]
+step:55700; t = 4.6466e+02; dt = 8.2020e-03; 46.5 %
+            [Mach = 49963.399801]
+> Writing file #93 (dbl) to disk...
+  [ 0.00 sec ]
+> Writing file #93 (vtk) to disk...
+  [ 0.00 sec ]
+step:55800; t = 4.6548e+02; dt = 8.1977e-03; 46.5 %
+            [Mach = 49969.499500]
+step:55900; t = 4.6630e+02; dt = 8.1948e-03; 46.6 %
+            [Mach = 49945.652399]
+step:56000; t = 4.6712e+02; dt = 8.1927e-03; 46.7 %
+            [Mach = 49925.258945]
+step:56100; t = 4.6794e+02; dt = 8.1907e-03; 46.8 %
+            [Mach = 49923.643127]
+step:56200; t = 4.6876e+02; dt = 8.1889e-03; 46.9 %
+            [Mach = 49940.653594]
+step:56300; t = 4.6958e+02; dt = 8.1872e-03; 47.0 %
+            [Mach = 49959.982998]
+> Writing file #94 (dbl) to disk...
+  [ 0.00 sec ]
+> Writing file #94 (vtk) to disk...
+  [ 0.00 sec ]
+step:56400; t = 4.7040e+02; dt = 8.1855e-03; 47.0 %
+            [Mach = 49985.336466]
+step:56500; t = 4.7122e+02; dt = 8.1840e-03; 47.1 %
+            [Mach = 50022.362717]
+step:56600; t = 4.7203e+02; dt = 8.1829e-03; 47.2 %
+            [Mach = 50056.809609]
+step:56700; t = 4.7285e+02; dt = 8.1823e-03; 47.3 %
+            [Mach = 50074.464719]
+step:56800; t = 4.7367e+02; dt = 8.1824e-03; 47.4 %
+            [Mach = 50077.610850]
+step:56900; t = 4.7449e+02; dt = 8.1824e-03; 47.4 %
+            [Mach = 50079.465277]
+> Writing file #95 (dbl) to disk...
+  [ 0.00 sec ]
+> Writing file #95 (vtk) to disk...
+  [ 0.00 sec ]
+step:57000; t = 4.7531e+02; dt = 8.1826e-03; 47.5 %
+            [Mach = 50092.585545]
+step:57100; t = 4.7612e+02; dt = 8.1824e-03; 47.6 %
+            [Mach = 50119.432056]
+step:57200; t = 4.7694e+02; dt = 8.1817e-03; 47.7 %
+            [Mach = 50160.450414]
+step:57300; t = 4.7776e+02; dt = 8.1808e-03; 47.8 %
+            [Mach = 50202.808779]
+step:57400; t = 4.7858e+02; dt = 8.1790e-03; 47.9 %
+            [Mach = 50229.362009]
+step:57500; t = 4.7940e+02; dt = 8.1780e-03; 47.9 %
+            [Mach = 50244.910766]
+> Writing file #96 (dbl) to disk...
+  [ 0.00 sec ]
+> Writing file #96 (vtk) to disk...
+  [ 0.00 sec ]
+step:57600; t = 4.8021e+02; dt = 8.1774e-03; 48.0 %
+            [Mach = 50257.712324]
+step:57700; t = 4.8103e+02; dt = 8.1760e-03; 48.1 %
+            [Mach = 50280.053903]
+step:57800; t = 4.8185e+02; dt = 8.1741e-03; 48.2 %
+            [Mach = 50316.942544]
+step:57900; t = 4.8267e+02; dt = 8.1719e-03; 48.3 %
+            [Mach = 50356.338106]
+step:58000; t = 4.8348e+02; dt = 8.1695e-03; 48.3 %
+            [Mach = 50394.216582]
+step:58100; t = 4.8430e+02; dt = 8.1672e-03; 48.4 %
+            [Mach = 50428.168444]
+> Writing file #97 (dbl) to disk...
+  [ 0.00 sec ]
+> Writing file #97 (vtk) to disk...
+  [ 0.00 sec ]
+step:58200; t = 4.8512e+02; dt = 8.1590e-03; 48.5 %
+            [Mach = 50448.864975]
+step:58300; t = 4.8593e+02; dt = 8.1448e-03; 48.6 %
+            [Mach = 50456.952789]
+step:58400; t = 4.8675e+02; dt = 8.1637e-03; 48.7 %
+            [Mach = 50467.702287]
+step:58500; t = 4.8756e+02; dt = 8.1623e-03; 48.8 %
+            [Mach = 50493.221895]
+step:58600; t = 4.8838e+02; dt = 8.1600e-03; 48.8 %
+            [Mach = 50517.691798]
+step:58700; t = 4.8920e+02; dt = 8.1485e-03; 48.9 %
+            [Mach = 50522.986680]
+> Writing file #98 (dbl) to disk...
+  [ 0.00 sec ]
+> Writing file #98 (vtk) to disk...
+  [ 0.00 sec ]
+step:58800; t = 4.9001e+02; dt = 8.1329e-03; 49.0 %
+            [Mach = 50504.883201]
+step:58900; t = 4.9082e+02; dt = 8.1207e-03; 49.1 %
+            [Mach = 50459.565598]
+step:59000; t = 4.9163e+02; dt = 8.1293e-03; 49.2 %
+            [Mach = 50395.750001]
+step:59100; t = 4.9245e+02; dt = 8.1274e-03; 49.2 %
+            [Mach = 50333.687375]
+step:59200; t = 4.9326e+02; dt = 8.1146e-03; 49.3 %
+            [Mach = 50277.290968]
+step:59300; t = 4.9407e+02; dt = 8.0954e-03; 49.4 %
+            [Mach = 50220.774279]
+step:59400; t = 4.9488e+02; dt = 8.0831e-03; 49.5 %
+            [Mach = 50153.320888]
+> Writing file #99 (dbl) to disk...
+  [ 0.00 sec ]
+> Writing file #99 (vtk) to disk...
+  [ 0.00 sec ]
+step:59500; t = 4.9569e+02; dt = 8.0905e-03; 49.6 %
+            [Mach = 50070.883707]
+step:59600; t = 4.9650e+02; dt = 8.0791e-03; 49.6 %
+            [Mach = 49976.717643]
+step:59700; t = 4.9730e+02; dt = 8.0605e-03; 49.7 %
+            [Mach = 49924.068565]
+step:59800; t = 4.9811e+02; dt = 8.1106e-03; 49.8 %
+            [Mach = 47591.428666]
+step:59900; t = 4.9892e+02; dt = 8.0359e-03; 49.9 %
+            [Mach = 49341.329263]
+step:60000; t = 4.9973e+02; dt = 8.0704e-03; 50.0 %
+            [Mach = 49650.648419]
+> Writing file #100 (dbl) to disk...
+  [ 0.00 sec ]
+> Writing file #100 (vtk) to disk...
+  [ 0.00 sec ]
+step:60100; t = 5.0054e+02; dt = 8.1362e-03; 50.1 %
+            [Mach = 49686.167000]
+step:60200; t = 5.0135e+02; dt = 8.1491e-03; 50.1 %
+            [Mach = 49687.890750]
+step:60300; t = 5.0217e+02; dt = 8.1506e-03; 50.2 %
+            [Mach = 49696.838203]
+step:60400; t = 5.0298e+02; dt = 8.1523e-03; 50.3 %
+            [Mach = 49676.635594]
+step:60500; t = 5.0380e+02; dt = 8.1542e-03; 50.4 %
+            [Mach = 49643.435519]
+step:60600; t = 5.0462e+02; dt = 8.1563e-03; 50.5 %
+            [Mach = 49599.171325]
+> Writing file #101 (dbl) to disk...
+  [ 0.00 sec ]
+> Writing file #101 (vtk) to disk...
+  [ 0.00 sec ]
+step:60700; t = 5.0543e+02; dt = 8.1584e-03; 50.5 %
+            [Mach = 49549.536648]
+step:60800; t = 5.0625e+02; dt = 8.1607e-03; 50.6 %
+            [Mach = 49508.625322]
+step:60900; t = 5.0706e+02; dt = 8.1629e-03; 50.7 %
+            [Mach = 49469.464242]
+step:61000; t = 5.0788e+02; dt = 8.1551e-03; 50.8 %
+            [Mach = 49429.410249]
+step:61100; t = 5.0869e+02; dt = 8.1329e-03; 50.9 %
+            [Mach = 49403.891437]
+step:61200; t = 5.0951e+02; dt = 8.1175e-03; 51.0 %
+            [Mach = 49394.891638]
+> Writing file #102 (dbl) to disk...
+  [ 0.00 sec ]
+> Writing file #102 (vtk) to disk...
+  [ 0.00 sec ]
+step:61300; t = 5.1032e+02; dt = 8.1047e-03; 51.0 %
+            [Mach = 49399.812342]
+step:61400; t = 5.1113e+02; dt = 8.0929e-03; 51.1 %
+            [Mach = 49404.368151]
+step:61500; t = 5.1194e+02; dt = 8.0836e-03; 51.2 %
+            [Mach = 49407.314962]
+step:61600; t = 5.1274e+02; dt = 8.0739e-03; 51.3 %
+            [Mach = 49402.734002]
+step:61700; t = 5.1355e+02; dt = 8.0534e-03; 51.4 %
+            [Mach = 49386.085496]
+step:61800; t = 5.1436e+02; dt = 8.0328e-03; 51.4 %
+            [Mach = 49358.062189]
+> Writing file #103 (dbl) to disk...
+  [ 0.00 sec ]
+> Writing file #103 (vtk) to disk...
+  [ 0.00 sec ]
+step:61900; t = 5.1516e+02; dt = 8.0177e-03; 51.5 %
+            [Mach = 49324.401909]
+step:62000; t = 5.1597e+02; dt = 8.1056e-03; 51.6 %
+            [Mach = 49287.443413]
+step:62100; t = 5.1678e+02; dt = 8.0974e-03; 51.7 %
+            [Mach = 49246.330620]
+step:62200; t = 5.1759e+02; dt = 8.0883e-03; 51.8 %
+            [Mach = 49201.912695]
+step:62300; t = 5.1839e+02; dt = 8.0844e-03; 51.8 %
+            [Mach = 49148.318816]
+step:62400; t = 5.1920e+02; dt = 8.0867e-03; 51.9 %
+            [Mach = 49088.673932]
+> Writing file #104 (dbl) to disk...
+  [ 0.00 sec ]
+> Writing file #104 (vtk) to disk...
+  [ 0.00 sec ]
+step:62500; t = 5.2001e+02; dt = 8.0028e-03; 52.0 %
+            [Mach = 49026.115981]
+step:62600; t = 5.2081e+02; dt = 8.0144e-03; 52.1 %
+            [Mach = 48962.002284]
+step:62700; t = 5.2161e+02; dt = 8.0243e-03; 52.2 %
+            [Mach = 48899.245002]
+step:62800; t = 5.2242e+02; dt = 8.0287e-03; 52.2 %
+            [Mach = 48830.792262]
+step:62900; t = 5.2322e+02; dt = 8.0258e-03; 52.3 %
+            [Mach = 48759.977547]
+step:63000; t = 5.2402e+02; dt = 8.0185e-03; 52.4 %
+            [Mach = 48688.175195]
+step:63100; t = 5.2482e+02; dt = 8.0125e-03; 52.5 %
+            [Mach = 48611.140218]
+> Writing file #105 (dbl) to disk...
+  [ 0.00 sec ]
+> Writing file #105 (vtk) to disk...
+  [ 0.00 sec ]
+step:63200; t = 5.2562e+02; dt = 8.0128e-03; 52.6 %
+            [Mach = 48519.318196]
+step:63300; t = 5.2643e+02; dt = 8.0245e-03; 52.6 %
+            [Mach = 48398.757652]
+step:63400; t = 5.2723e+02; dt = 8.0438e-03; 52.7 %
+            [Mach = 48131.955621]
+step:63500; t = 5.2803e+02; dt = 8.0516e-03; 52.8 %
+            [Mach = 47863.529191]
+step:63600; t = 5.2884e+02; dt = 8.0560e-03; 52.9 %
+            [Mach = 47655.814277]
+step:63700; t = 5.2965e+02; dt = 8.0622e-03; 53.0 %
+            [Mach = 47476.172004]
+> Writing file #106 (dbl) to disk...
+  [ 0.00 sec ]
+> Writing file #106 (vtk) to disk...
+  [ 0.00 sec ]
+step:63800; t = 5.3045e+02; dt = 8.0675e-03; 53.0 %
+            [Mach = 47304.175785]
+step:63900; t = 5.3126e+02; dt = 8.1219e-03; 53.1 %
+            [Mach = 47115.571211]
+step:64000; t = 5.3207e+02; dt = 8.1239e-03; 53.2 %
+            [Mach = 46967.880445]
+step:64100; t = 5.3288e+02; dt = 8.1228e-03; 53.3 %
+            [Mach = 46817.545136]
+step:64200; t = 5.3370e+02; dt = 8.1122e-03; 53.4 %
+            [Mach = 46693.387087]
+step:64300; t = 5.3451e+02; dt = 8.0940e-03; 53.5 %
+            [Mach = 46621.063945]
+> Writing file #107 (dbl) to disk...
+  [ 0.00 sec ]
+> Writing file #107 (vtk) to disk...
+  [ 0.00 sec ]
+step:64400; t = 5.3532e+02; dt = 8.1529e-03; 53.5 %
+            [Mach = 46593.244470]
+step:64500; t = 5.3614e+02; dt = 8.1151e-03; 53.6 %
+            [Mach = 46552.871327]
+step:64600; t = 5.3695e+02; dt = 8.1436e-03; 53.7 %
+            [Mach = 46512.619251]
+step:64700; t = 5.3776e+02; dt = 8.1758e-03; 53.8 %
+            [Mach = 46478.934730]
+step:64800; t = 5.3858e+02; dt = 8.2141e-03; 53.9 %
+            [Mach = 46451.771946]
+step:64900; t = 5.3941e+02; dt = 8.2219e-03; 53.9 %
+            [Mach = 46420.760188]
+> Writing file #108 (dbl) to disk...
+  [ 0.00 sec ]
+> Writing file #108 (vtk) to disk...
+  [ 0.00 sec ]
+step:65000; t = 5.4023e+02; dt = 8.2383e-03; 54.0 %
+            [Mach = 46400.683583]
+step:65100; t = 5.4105e+02; dt = 8.2436e-03; 54.1 %
+            [Mach = 46379.641967]
+step:65200; t = 5.4188e+02; dt = 8.2472e-03; 54.2 %
+            [Mach = 46363.035997]
+step:65300; t = 5.4270e+02; dt = 8.2480e-03; 54.3 %
+            [Mach = 46329.163170]
+step:65400; t = 5.4353e+02; dt = 8.2486e-03; 54.4 %
+            [Mach = 46283.547280]
+step:65500; t = 5.4435e+02; dt = 8.2490e-03; 54.4 %
+            [Mach = 46237.377611]
+> Writing file #109 (dbl) to disk...
+  [ 0.00 sec ]
+> Writing file #109 (vtk) to disk...
+  [ 0.00 sec ]
+step:65600; t = 5.4518e+02; dt = 8.2487e-03; 54.5 %
+            [Mach = 46201.807401]
+step:65700; t = 5.4600e+02; dt = 8.2469e-03; 54.6 %
+            [Mach = 46173.968298]
+step:65800; t = 5.4683e+02; dt = 8.2450e-03; 54.7 %
+            [Mach = 46154.494891]
+step:65900; t = 5.4765e+02; dt = 8.2437e-03; 54.8 %
+            [Mach = 46132.169957]
+step:66000; t = 5.4848e+02; dt = 8.2426e-03; 54.8 %
+            [Mach = 46113.569933]
+step:66100; t = 5.4930e+02; dt = 8.2408e-03; 54.9 %
+            [Mach = 46093.039229]
+> Writing file #110 (dbl) to disk...
+  [ 0.00 sec ]
+> Writing file #110 (vtk) to disk...
+  [ 0.00 sec ]
+step:66200; t = 5.5012e+02; dt = 8.2381e-03; 55.0 %
+            [Mach = 46086.980961]
+step:66300; t = 5.5095e+02; dt = 8.2368e-03; 55.1 %
+            [Mach = 46089.044767]
+step:66400; t = 5.5177e+02; dt = 8.2351e-03; 55.2 %
+            [Mach = 46085.261973]
+step:66500; t = 5.5259e+02; dt = 8.2325e-03; 55.3 %
+            [Mach = 46071.065181]
+step:66600; t = 5.5342e+02; dt = 8.2300e-03; 55.3 %
+            [Mach = 46060.886253]
+step:66700; t = 5.5424e+02; dt = 8.2281e-03; 55.4 %
+            [Mach = 46047.252794]
+> Writing file #111 (dbl) to disk...
+  [ 0.00 sec ]
+> Writing file #111 (vtk) to disk...
+  [ 0.00 sec ]
+step:66800; t = 5.5506e+02; dt = 8.2265e-03; 55.5 %
+            [Mach = 46029.524443]
+step:66900; t = 5.5589e+02; dt = 8.2230e-03; 55.6 %
+            [Mach = 45991.159569]
+step:67000; t = 5.5671e+02; dt = 8.2192e-03; 55.7 %
+            [Mach = 45945.820762]
+step:67100; t = 5.5753e+02; dt = 8.2170e-03; 55.8 %
+            [Mach = 45910.695308]
+step:67200; t = 5.5835e+02; dt = 8.2155e-03; 55.8 %
+            [Mach = 45855.467443]
+step:67300; t = 5.5917e+02; dt = 8.2139e-03; 55.9 %
+            [Mach = 45789.515707]
+step:67400; t = 5.5999e+02; dt = 8.2128e-03; 56.0 %
+> Writing file #112 (dbl) to disk...
+  [ 0.00 sec ]
+> Writing file #112 (vtk) to disk...
+  [ 0.00 sec ]
+            [Mach = 45695.540421]
+step:67500; t = 5.6082e+02; dt = 8.2124e-03; 56.1 %
+            [Mach = 45602.552658]
+step:67600; t = 5.6164e+02; dt = 8.2120e-03; 56.2 %
+            [Mach = 45533.415578]
+step:67700; t = 5.6246e+02; dt = 8.2119e-03; 56.2 %
+            [Mach = 45501.166588]
+step:67800; t = 5.6328e+02; dt = 8.2114e-03; 56.3 %
+            [Mach = 45459.740814]
+step:67900; t = 5.6410e+02; dt = 8.2114e-03; 56.4 %
+            [Mach = 45409.672211]
+step:68000; t = 5.6492e+02; dt = 8.2131e-03; 56.5 %
+            [Mach = 45342.491142]
+> Writing file #113 (dbl) to disk...
+  [ 0.00 sec ]
+> Writing file #113 (vtk) to disk...
+  [ 0.00 sec ]
+step:68100; t = 5.6574e+02; dt = 8.2106e-03; 56.6 %
+            [Mach = 45302.423595]
+step:68200; t = 5.6656e+02; dt = 8.2119e-03; 56.7 %
+            [Mach = 45252.702650]
+step:68300; t = 5.6739e+02; dt = 8.2173e-03; 56.7 %
+            [Mach = 45194.322739]
+step:68400; t = 5.6821e+02; dt = 8.2230e-03; 56.8 %
+            [Mach = 45136.319872]
+step:68500; t = 5.6903e+02; dt = 8.2283e-03; 56.9 %
+            [Mach = 45066.292232]
+step:68600; t = 5.6985e+02; dt = 8.2340e-03; 57.0 %
+            [Mach = 45001.343294]
+> Writing file #114 (dbl) to disk...
+  [ 0.00 sec ]
+> Writing file #114 (vtk) to disk...
+  [ 0.00 sec ]
+step:68700; t = 5.7068e+02; dt = 8.2374e-03; 57.1 %
+            [Mach = 44940.328901]
+step:68800; t = 5.7150e+02; dt = 8.2404e-03; 57.2 %
+            [Mach = 44877.501576]
+step:68900; t = 5.7232e+02; dt = 8.2420e-03; 57.2 %
+            [Mach = 44826.187579]
+step:69000; t = 5.7315e+02; dt = 8.2433e-03; 57.3 %
+            [Mach = 44784.623444]
+step:69100; t = 5.7397e+02; dt = 8.2446e-03; 57.4 %
+            [Mach = 44739.244995]
+step:69200; t = 5.7480e+02; dt = 8.2450e-03; 57.5 %
+            [Mach = 44696.938774]
+> Writing file #115 (dbl) to disk...
+  [ 0.00 sec ]
+> Writing file #115 (vtk) to disk...
+  [ 0.00 sec ]
+step:69300; t = 5.7562e+02; dt = 8.2448e-03; 57.6 %
+            [Mach = 44664.588549]
+step:69400; t = 5.7645e+02; dt = 8.2448e-03; 57.6 %
+            [Mach = 44623.163059]
+step:69500; t = 5.7727e+02; dt = 8.2446e-03; 57.7 %
+            [Mach = 44562.040271]
+step:69600; t = 5.7810e+02; dt = 8.2448e-03; 57.8 %
+            [Mach = 44503.615487]
+step:69700; t = 5.7892e+02; dt = 8.2454e-03; 57.9 %
+            [Mach = 44445.240818]
+step:69800; t = 5.7974e+02; dt = 8.2463e-03; 58.0 %
+            [Mach = 44398.090518]
+> Writing file #116 (dbl) to disk...
+  [ 0.00 sec ]
+> Writing file #116 (vtk) to disk...
+  [ 0.00 sec ]
+step:69900; t = 5.8057e+02; dt = 8.2477e-03; 58.1 %
+            [Mach = 44351.794669]
+step:70000; t = 5.8139e+02; dt = 8.2490e-03; 58.1 %
+            [Mach = 44267.649932]
+step:70100; t = 5.8222e+02; dt = 8.2518e-03; 58.2 %
+            [Mach = 44188.207410]
+step:70200; t = 5.8304e+02; dt = 8.2549e-03; 58.3 %
+            [Mach = 44136.291724]
+step:70300; t = 5.8387e+02; dt = 8.2548e-03; 58.4 %
+            [Mach = 44754.008980]
+step:70400; t = 5.8470e+02; dt = 8.2550e-03; 58.5 %
+            [Mach = 44082.440115]
+> Writing file #117 (dbl) to disk...
+  [ 0.00 sec ]
+> Writing file #117 (vtk) to disk...
+  [ 0.00 sec ]
+step:70500; t = 5.8552e+02; dt = 8.2557e-03; 58.6 %
+            [Mach = 44026.128996]
+step:70600; t = 5.8635e+02; dt = 8.2572e-03; 58.6 %
+            [Mach = 43961.439321]
+step:70700; t = 5.8717e+02; dt = 8.2593e-03; 58.7 %
+            [Mach = 43919.658289]
+step:70800; t = 5.8800e+02; dt = 8.2629e-03; 58.8 %
+            [Mach = 43880.122498]
+step:70900; t = 5.8882e+02; dt = 8.2650e-03; 58.9 %
+            [Mach = 43833.867083]
+step:71000; t = 5.8965e+02; dt = 8.2674e-03; 59.0 %
+            [Mach = 43772.800972]
+> Writing file #118 (dbl) to disk...
+  [ 0.00 sec ]
+> Writing file #118 (vtk) to disk...
+  [ 0.00 sec ]
+step:71100; t = 5.9048e+02; dt = 8.2676e-03; 59.0 %
+            [Mach = 43699.917416]
+step:71200; t = 5.9131e+02; dt = 8.2679e-03; 59.1 %
+            [Mach = 43630.472531]
+step:71300; t = 5.9213e+02; dt = 8.2688e-03; 59.2 %
+            [Mach = 43571.160822]
+step:71400; t = 5.9296e+02; dt = 8.2702e-03; 59.3 %
+            [Mach = 43506.700552]
+step:71500; t = 5.9379e+02; dt = 8.2729e-03; 59.4 %
+            [Mach = 43431.352363]
+step:71600; t = 5.9461e+02; dt = 8.2758e-03; 59.5 %
+            [Mach = 43346.363543]
+> Writing file #119 (dbl) to disk...
+  [ 0.00 sec ]
+> Writing file #119 (vtk) to disk...
+  [ 0.00 sec ]
+step:71700; t = 5.9544e+02; dt = 8.2775e-03; 59.5 %
+            [Mach = 43267.797650]
+step:71800; t = 5.9627e+02; dt = 8.2796e-03; 59.6 %
+            [Mach = 43204.955533]
+step:71900; t = 5.9710e+02; dt = 8.2816e-03; 59.7 %
+            [Mach = 43157.997957]
+step:72000; t = 5.9793e+02; dt = 8.2818e-03; 59.8 %
+            [Mach = 43117.998840]
+step:72100; t = 5.9875e+02; dt = 8.2826e-03; 59.9 %
+            [Mach = 43075.747903]
+step:72200; t = 5.9958e+02; dt = 8.2835e-03; 60.0 %
+            [Mach = 43029.614751]
+> Writing file #120 (dbl) to disk...
+  [ 0.00 sec ]
+> Writing file #120 (vtk) to disk...
+  [ 0.00 sec ]
+step:72300; t = 6.0041e+02; dt = 8.2849e-03; 60.0 %
+            [Mach = 42979.660514]
+step:72400; t = 6.0124e+02; dt = 8.2869e-03; 60.1 %
+            [Mach = 42936.694243]
+step:72500; t = 6.0207e+02; dt = 8.2901e-03; 60.2 %
+            [Mach = 42905.719758]
+step:72600; t = 6.0290e+02; dt = 8.2921e-03; 60.3 %
+            [Mach = 42860.187701]
+step:72700; t = 6.0373e+02; dt = 8.2940e-03; 60.4 %
+            [Mach = 42798.280109]
+step:72800; t = 6.0456e+02; dt = 8.2956e-03; 60.5 %
+            [Mach = 42731.308326]
+> Writing file #121 (dbl) to disk...
+  [ 0.00 sec ]
+> Writing file #121 (vtk) to disk...
+  [ 0.00 sec ]
+step:72900; t = 6.0539e+02; dt = 8.2974e-03; 60.5 %
+            [Mach = 42679.239865]
+step:73000; t = 6.0621e+02; dt = 8.2992e-03; 60.6 %
+            [Mach = 42653.038307]
+step:73100; t = 6.0704e+02; dt = 8.2997e-03; 60.7 %
+            [Mach = 42625.507776]
+step:73200; t = 6.0787e+02; dt = 8.3000e-03; 60.8 %
+            [Mach = 42583.637462]
+step:73300; t = 6.0870e+02; dt = 8.3008e-03; 60.9 %
+            [Mach = 42537.854951]
+step:73400; t = 6.0954e+02; dt = 8.3015e-03; 61.0 %
+            [Mach = 42500.907295]
+> Writing file #122 (dbl) to disk...
+  [ 0.00 sec ]
+> Writing file #122 (vtk) to disk...
+  [ 0.00 sec ]
+step:73500; t = 6.1037e+02; dt = 8.3025e-03; 61.0 %
+            [Mach = 42476.738463]
+step:73600; t = 6.1120e+02; dt = 8.3037e-03; 61.1 %
+            [Mach = 42452.572895]
+step:73700; t = 6.1203e+02; dt = 8.3065e-03; 61.2 %
+            [Mach = 42404.384117]
+step:73800; t = 6.1286e+02; dt = 8.3086e-03; 61.3 %
+            [Mach = 42321.332240]
+step:73900; t = 6.1369e+02; dt = 8.3096e-03; 61.4 %
+            [Mach = 42250.924159]
+step:74000; t = 6.1452e+02; dt = 8.3108e-03; 61.5 %
+            [Mach = 42201.892233]
+> Writing file #123 (dbl) to disk...
+  [ 0.00 sec ]
+> Writing file #123 (vtk) to disk...
+  [ 0.00 sec ]
+step:74100; t = 6.1535e+02; dt = 8.3118e-03; 61.5 %
+            [Mach = 42169.484388]
+step:74200; t = 6.1618e+02; dt = 8.3134e-03; 61.6 %
+            [Mach = 42130.998926]
+step:74300; t = 6.1701e+02; dt = 8.3146e-03; 61.7 %
+            [Mach = 42071.617278]
+step:74400; t = 6.1784e+02; dt = 8.3157e-03; 61.8 %
+            [Mach = 42020.430576]
+step:74500; t = 6.1868e+02; dt = 8.3156e-03; 61.9 %
+            [Mach = 41984.806946]
+step:74600; t = 6.1951e+02; dt = 8.3163e-03; 62.0 %
+            [Mach = 41957.541843]
+> Writing file #124 (dbl) to disk...
+  [ 0.00 sec ]
+> Writing file #124 (vtk) to disk...
+  [ 0.00 sec ]
+step:74700; t = 6.2034e+02; dt = 8.3166e-03; 62.0 %
+            [Mach = 41919.829600]
+step:74800; t = 6.2117e+02; dt = 8.3177e-03; 62.1 %
+            [Mach = 41885.532843]
+step:74900; t = 6.2200e+02; dt = 8.3190e-03; 62.2 %
+            [Mach = 41885.347667]
+step:75000; t = 6.2283e+02; dt = 8.3224e-03; 62.3 %
+            [Mach = 41929.756670]
+step:75100; t = 6.2367e+02; dt = 8.3236e-03; 62.4 %
+            [Mach = 41939.216176]
+step:75200; t = 6.2450e+02; dt = 8.3241e-03; 62.4 %
+            [Mach = 41905.167678]
+> Writing file #125 (dbl) to disk...
+  [ 0.00 sec ]
+> Writing file #125 (vtk) to disk...
+  [ 0.00 sec ]
+step:75300; t = 6.2533e+02; dt = 8.3251e-03; 62.5 %
+            [Mach = 41825.874823]
+step:75400; t = 6.2616e+02; dt = 8.3264e-03; 62.6 %
+            [Mach = 41761.246914]
+step:75500; t = 6.2700e+02; dt = 8.3277e-03; 62.7 %
+            [Mach = 41714.923844]
+step:75600; t = 6.2783e+02; dt = 8.3290e-03; 62.8 %
+            [Mach = 41673.182518]
+step:75700; t = 6.2866e+02; dt = 8.3297e-03; 62.9 %
+            [Mach = 41640.085324]
+step:75800; t = 6.2950e+02; dt = 8.3297e-03; 62.9 %
+            [Mach = 41612.536312]
+> Writing file #126 (dbl) to disk...
+  [ 0.00 sec ]
+> Writing file #126 (vtk) to disk...
+  [ 0.00 sec ]
+step:75900; t = 6.3033e+02; dt = 8.3302e-03; 63.0 %
+            [Mach = 41584.167787]
+step:76000; t = 6.3116e+02; dt = 8.3313e-03; 63.1 %
+            [Mach = 41555.015490]
+step:76100; t = 6.3199e+02; dt = 8.3329e-03; 63.2 %
+            [Mach = 41529.852699]
+step:76200; t = 6.3283e+02; dt = 8.3359e-03; 63.3 %
+            [Mach = 41510.277542]
+step:76300; t = 6.3366e+02; dt = 8.3367e-03; 63.4 %
+            [Mach = 41493.344186]
+step:76400; t = 6.3450e+02; dt = 8.3374e-03; 63.4 %
+            [Mach = 41476.810689]
+> Writing file #127 (dbl) to disk...
+  [ 0.00 sec ]
+> Writing file #127 (vtk) to disk...
+  [ 0.00 sec ]
+step:76500; t = 6.3533e+02; dt = 8.3381e-03; 63.5 %
+            [Mach = 41458.014623]
+step:76600; t = 6.3616e+02; dt = 8.3394e-03; 63.6 %
+            [Mach = 41431.193007]
+step:76700; t = 6.3700e+02; dt = 8.3408e-03; 63.7 %
+            [Mach = 41399.571520]
+step:76800; t = 6.3783e+02; dt = 8.3426e-03; 63.8 %
+            [Mach = 41365.799622]
+step:76900; t = 6.3867e+02; dt = 8.3432e-03; 63.9 %
+            [Mach = 41343.841658]
+step:77000; t = 6.3950e+02; dt = 8.3439e-03; 64.0 %
+            [Mach = 41325.845220]
+> Writing file #128 (dbl) to disk...
+  [ 0.00 sec ]
+> Writing file #128 (vtk) to disk...
+  [ 0.00 sec ]
+step:77100; t = 6.4033e+02; dt = 8.3446e-03; 64.0 %
+            [Mach = 41312.848981]
+step:77200; t = 6.4117e+02; dt = 8.3454e-03; 64.1 %
+            [Mach = 41305.240234]
+step:77300; t = 6.4200e+02; dt = 8.3462e-03; 64.2 %
+            [Mach = 41302.877288]
+step:77400; t = 6.4284e+02; dt = 8.3500e-03; 64.3 %
+            [Mach = 41303.850454]
+step:77500; t = 6.4367e+02; dt = 8.3505e-03; 64.4 %
+            [Mach = 41307.216530]
+step:77600; t = 6.4451e+02; dt = 8.3509e-03; 64.5 %
+            [Mach = 41315.164502]
+> Writing file #129 (dbl) to disk...
+  [ 0.00 sec ]
+> Writing file #129 (vtk) to disk...
+  [ 0.00 sec ]
+step:77700; t = 6.4534e+02; dt = 8.3513e-03; 64.5 %
+            [Mach = 41317.438897]
+step:77800; t = 6.4618e+02; dt = 8.3524e-03; 64.6 %
+            [Mach = 41304.882675]
+step:77900; t = 6.4701e+02; dt = 8.3537e-03; 64.7 %
+            [Mach = 41288.425800]
+step:78000; t = 6.4785e+02; dt = 8.3553e-03; 64.8 %
+            [Mach = 41268.499430]
+step:78100; t = 6.4869e+02; dt = 8.3560e-03; 64.9 %
+            [Mach = 41239.113503]
+step:78200; t = 6.4952e+02; dt = 8.3568e-03; 65.0 %
+            [Mach = 41208.990930]
+> Writing file #130 (dbl) to disk...
+  [ 0.00 sec ]
+> Writing file #130 (vtk) to disk...
+  [ 0.00 sec ]
+step:78300; t = 6.5036e+02; dt = 8.3572e-03; 65.0 %
+            [Mach = 41169.545843]
+step:78400; t = 6.5119e+02; dt = 8.3576e-03; 65.1 %
+            [Mach = 41133.058364]
+step:78500; t = 6.5203e+02; dt = 8.3601e-03; 65.2 %
+            [Mach = 41087.458522]
+step:78600; t = 6.5286e+02; dt = 8.3626e-03; 65.3 %
+            [Mach = 41043.176370]
+step:78700; t = 6.5370e+02; dt = 8.3633e-03; 65.4 %
+            [Mach = 41001.557367]
+step:78800; t = 6.5454e+02; dt = 8.3637e-03; 65.5 %
+            [Mach = 40961.849334]
+> Writing file #131 (dbl) to disk...
+  [ 0.00 sec ]
+> Writing file #131 (vtk) to disk...
+  [ 0.00 sec ]
+step:78900; t = 6.5537e+02; dt = 8.3645e-03; 65.5 %
+            [Mach = 40917.859444]
+step:79000; t = 6.5621e+02; dt = 8.3654e-03; 65.6 %
+            [Mach = 40888.572691]
+step:79100; t = 6.5705e+02; dt = 8.3663e-03; 65.7 %
+            [Mach = 40879.300390]
+step:79200; t = 6.5788e+02; dt = 8.3667e-03; 65.8 %
+            [Mach = 40866.766384]
+step:79300; t = 6.5872e+02; dt = 8.3674e-03; 65.9 %
+            [Mach = 40859.981663]
+step:79400; t = 6.5956e+02; dt = 8.3679e-03; 66.0 %
+            [Mach = 40844.394308]
+> Writing file #132 (dbl) to disk...
+  [ 0.00 sec ]
+> Writing file #132 (vtk) to disk...
+  [ 0.00 sec ]
+step:79500; t = 6.6039e+02; dt = 8.3686e-03; 66.0 %
+            [Mach = 40820.137399]
+step:79600; t = 6.6123e+02; dt = 8.3712e-03; 66.1 %
+            [Mach = 40796.524174]
+step:79700; t = 6.6207e+02; dt = 8.3736e-03; 66.2 %
+            [Mach = 40785.513105]
+step:79800; t = 6.6290e+02; dt = 8.3744e-03; 66.3 %
+            [Mach = 40779.686675]
+step:79900; t = 6.6374e+02; dt = 8.3749e-03; 66.4 %
+            [Mach = 40792.515503]
+step:80000; t = 6.6458e+02; dt = 8.3751e-03; 66.5 %
+            [Mach = 40737.890952]
+> Writing file #133 (dbl) to disk...
+  [ 0.00 sec ]
+> Writing file #133 (vtk) to disk...
+  [ 0.00 sec ]
+step:80100; t = 6.6542e+02; dt = 8.3763e-03; 66.5 %
+            [Mach = 40527.416152]
+step:80200; t = 6.6626e+02; dt = 8.3766e-03; 66.6 %
+            [Mach = 40447.991855]
+step:80300; t = 6.6709e+02; dt = 8.3773e-03; 66.7 %
+            [Mach = 40569.106159]
+step:80400; t = 6.6793e+02; dt = 8.3782e-03; 66.8 %
+            [Mach = 40721.347161]
+step:80500; t = 6.6877e+02; dt = 8.3807e-03; 66.9 %
+            [Mach = 40792.047154]
+step:80600; t = 6.6961e+02; dt = 8.3836e-03; 67.0 %
+            [Mach = 40853.351126]
+> Writing file #134 (dbl) to disk...
+  [ 0.00 sec ]
+> Writing file #134 (vtk) to disk...
+  [ 0.00 sec ]
+step:80700; t = 6.7045e+02; dt = 8.3867e-03; 67.0 %
+            [Mach = 40876.323828]
+step:80800; t = 6.7128e+02; dt = 8.3864e-03; 67.1 %
+            [Mach = 40842.232117]
+step:80900; t = 6.7212e+02; dt = 8.3880e-03; 67.2 %
+            [Mach = 40775.075871]
+step:81000; t = 6.7296e+02; dt = 8.3876e-03; 67.3 %
+            [Mach = 40843.409759]
+step:81100; t = 6.7380e+02; dt = 8.3891e-03; 67.4 %
+            [Mach = 41012.820710]
+step:81200; t = 6.7464e+02; dt = 8.3901e-03; 67.5 %
+            [Mach = 41120.457084]
+> Writing file #135 (dbl) to disk...
+  [ 0.00 sec ]
+> Writing file #135 (vtk) to disk...
+  [ 0.00 sec ]
+step:81300; t = 6.7548e+02; dt = 8.3924e-03; 67.5 %
+            [Mach = 41153.580016]
+step:81400; t = 6.7632e+02; dt = 8.3940e-03; 67.6 %
+            [Mach = 41199.636877]
+step:81500; t = 6.7716e+02; dt = 8.3942e-03; 67.7 %
+            [Mach = 41241.514568]
+step:81600; t = 6.7800e+02; dt = 8.3930e-03; 67.8 %
+            [Mach = 41277.861759]
+step:81700; t = 6.7884e+02; dt = 8.3929e-03; 67.9 %
+            [Mach = 41342.548464]
+step:81800; t = 6.7968e+02; dt = 8.3948e-03; 68.0 %
+            [Mach = 41412.357327]
+> Writing file #136 (dbl) to disk...
+  [ 0.00 sec ]
+> Writing file #136 (vtk) to disk...
+  [ 0.00 sec ]
+step:81900; t = 6.8051e+02; dt = 8.3981e-03; 68.1 %
+            [Mach = 41497.116500]
+step:82000; t = 6.8135e+02; dt = 8.4021e-03; 68.1 %
+            [Mach = 41552.828230]
+step:82100; t = 6.8220e+02; dt = 8.4056e-03; 68.2 %
+            [Mach = 41603.603926]
+step:82200; t = 6.8304e+02; dt = 8.4058e-03; 68.3 %
+            [Mach = 41641.238458]
+step:82300; t = 6.8388e+02; dt = 8.4063e-03; 68.4 %
+            [Mach = 41682.620679]
+step:82400; t = 6.8472e+02; dt = 8.4071e-03; 68.5 %
+            [Mach = 41679.630951]
+> Writing file #137 (dbl) to disk...
+  [ 0.00 sec ]
+> Writing file #137 (vtk) to disk...
+  [ 0.00 sec ]
+step:82500; t = 6.8556e+02; dt = 8.4082e-03; 68.6 %
+            [Mach = 41639.922556]
+step:82600; t = 6.8640e+02; dt = 8.4088e-03; 68.6 %
+            [Mach = 41588.684133]
+step:82700; t = 6.8724e+02; dt = 8.4087e-03; 68.7 %
+            [Mach = 41562.522234]
+step:82800; t = 6.8808e+02; dt = 8.4099e-03; 68.8 %
+            [Mach = 41554.743578]
+step:82900; t = 6.8892e+02; dt = 8.4131e-03; 68.9 %
+            [Mach = 41578.127375]
+step:83000; t = 6.8976e+02; dt = 8.4195e-03; 69.0 %
+            [Mach = 41616.310325]
+> Writing file #138 (dbl) to disk...
+  [ 0.00 sec ]
+> Writing file #138 (vtk) to disk...
+  [ 0.00 sec ]
+step:83100; t = 6.9061e+02; dt = 8.4215e-03; 69.1 %
+            [Mach = 41671.082802]
+step:83200; t = 6.9145e+02; dt = 8.4217e-03; 69.1 %
+            [Mach = 41699.702691]
+step:83300; t = 6.9229e+02; dt = 8.4220e-03; 69.2 %
+            [Mach = 41724.791885]
+step:83400; t = 6.9313e+02; dt = 8.4226e-03; 69.3 %
+            [Mach = 41744.798074]
+step:83500; t = 6.9397e+02; dt = 8.4236e-03; 69.4 %
+            [Mach = 41776.863584]
+step:83600; t = 6.9482e+02; dt = 8.4250e-03; 69.5 %
+            [Mach = 41816.466317]
+> Writing file #139 (dbl) to disk...
+  [ 0.00 sec ]
+> Writing file #139 (vtk) to disk...
+  [ 0.00 sec ]
+step:83700; t = 6.9566e+02; dt = 8.4270e-03; 69.6 %
+            [Mach = 52312.935683]
+step:83800; t = 6.9650e+02; dt = 8.4292e-03; 69.7 %
+            [Mach = 41921.047292]
+step:83900; t = 6.9734e+02; dt = 8.4304e-03; 69.7 %
+            [Mach = 41940.442089]
+step:84000; t = 6.9819e+02; dt = 8.4335e-03; 69.8 %
+            [Mach = 41940.455893]
+step:84100; t = 6.9903e+02; dt = 8.4413e-03; 69.9 %
+            [Mach = 41933.772622]
+step:84200; t = 6.9988e+02; dt = 8.4436e-03; 70.0 %
+            [Mach = 41895.772472]
+> Writing file #140 (dbl) to disk...
+  [ 0.00 sec ]
+> Writing file #140 (vtk) to disk...
+  [ 0.00 sec ]
+step:84300; t = 7.0072e+02; dt = 8.4442e-03; 70.1 %
+            [Mach = 41805.728089]
+step:84400; t = 7.0156e+02; dt = 8.4455e-03; 70.2 %
+            [Mach = 41710.777410]
+step:84500; t = 7.0241e+02; dt = 8.4470e-03; 70.2 %
+            [Mach = 41581.020363]
+step:84600; t = 7.0325e+02; dt = 8.4487e-03; 70.3 %
+            [Mach = 41463.630850]
+step:84700; t = 7.0410e+02; dt = 8.4508e-03; 70.4 %
+            [Mach = 41390.607825]
+step:84800; t = 7.0494e+02; dt = 8.4479e-03; 70.5 %
+            [Mach = 41360.948184]
+> Writing file #141 (dbl) to disk...
+  [ 0.00 sec ]
+> Writing file #141 (vtk) to disk...
+  [ 0.00 sec ]
+step:84900; t = 7.0579e+02; dt = 8.4445e-03; 70.6 %
+            [Mach = 41346.474252]
+step:85000; t = 7.0663e+02; dt = 8.4414e-03; 70.7 %
+            [Mach = 41383.482829]
+step:85100; t = 7.0748e+02; dt = 8.4386e-03; 70.7 %
+            [Mach = 41483.865350]
+step:85200; t = 7.0832e+02; dt = 8.4358e-03; 70.8 %
+            [Mach = 41551.511332]
+step:85300; t = 7.0916e+02; dt = 8.4330e-03; 70.9 %
+            [Mach = 41595.092083]
+> Writing file #142 (dbl) to disk...
+  [ 0.00 sec ]
+> Writing file #142 (vtk) to disk...
+  [ 0.00 sec ]
+step:85400; t = 7.1001e+02; dt = 8.4303e-03; 71.0 %
+            [Mach = 41590.173464]
+step:85500; t = 7.1085e+02; dt = 8.4279e-03; 71.1 %
+            [Mach = 41546.187276]
+step:85600; t = 7.1169e+02; dt = 8.4256e-03; 71.2 %
+            [Mach = 41483.357194]
+step:85700; t = 7.1254e+02; dt = 8.4231e-03; 71.3 %
+            [Mach = 41363.270857]
+step:85800; t = 7.1338e+02; dt = 8.4213e-03; 71.3 %
+            [Mach = 41286.230151]
+step:85900; t = 7.1422e+02; dt = 8.4198e-03; 71.4 %
+            [Mach = 41211.596981]
+> Writing file #143 (dbl) to disk...
+  [ 0.00 sec ]
+> Writing file #143 (vtk) to disk...
+  [ 0.00 sec ]
+step:86000; t = 7.1506e+02; dt = 8.4185e-03; 71.5 %
+            [Mach = 41155.854323]
+step:86100; t = 7.1590e+02; dt = 8.4176e-03; 71.6 %
+            [Mach = 41120.421250]
+step:86200; t = 7.1675e+02; dt = 8.4168e-03; 71.7 %
+            [Mach = 41103.160240]
+step:86300; t = 7.1759e+02; dt = 8.4162e-03; 71.8 %
+            [Mach = 41082.063382]
+step:86400; t = 7.1843e+02; dt = 8.4158e-03; 71.8 %
+            [Mach = 41109.029834]
+step:86500; t = 7.1927e+02; dt = 8.4154e-03; 71.9 %
+            [Mach = 41121.804784]
+> Writing file #144 (dbl) to disk...
+  [ 0.00 sec ]
+> Writing file #144 (vtk) to disk...
+  [ 0.00 sec ]
+step:86600; t = 7.2011e+02; dt = 8.4150e-03; 72.0 %
+            [Mach = 41117.401222]
+step:86700; t = 7.2095e+02; dt = 8.4144e-03; 72.1 %
+            [Mach = 41116.591028]
+step:86800; t = 7.2179e+02; dt = 8.4148e-03; 72.2 %
+            [Mach = 41117.091129]
+step:86900; t = 7.2264e+02; dt = 8.4138e-03; 72.3 %
+            [Mach = 41082.226879]
+step:87000; t = 7.2348e+02; dt = 8.4127e-03; 72.3 %
+            [Mach = 41040.376480]
+step:87100; t = 7.2432e+02; dt = 8.4115e-03; 72.4 %
+            [Mach = 40980.198674]
+> Writing file #145 (dbl) to disk...
+  [ 0.00 sec ]
+> Writing file #145 (vtk) to disk...
+  [ 0.00 sec ]
+step:87200; t = 7.2516e+02; dt = 8.4102e-03; 72.5 %
+            [Mach = 40946.782754]
+step:87300; t = 7.2600e+02; dt = 8.4091e-03; 72.6 %
+            [Mach = 40899.653829]
+step:87400; t = 7.2684e+02; dt = 8.4080e-03; 72.7 %
+            [Mach = 40824.055636]
+step:87500; t = 7.2768e+02; dt = 8.4061e-03; 72.8 %
+            [Mach = 40799.912845]
+step:87600; t = 7.2852e+02; dt = 8.4046e-03; 72.9 %
+            [Mach = 40780.149433]
+step:87700; t = 7.2936e+02; dt = 8.4033e-03; 72.9 %
+            [Mach = 40761.059451]
+> Writing file #146 (dbl) to disk...
+  [ 0.00 sec ]
+> Writing file #146 (vtk) to disk...
+  [ 0.00 sec ]
+step:87800; t = 7.3020e+02; dt = 8.4030e-03; 73.0 %
+            [Mach = 40741.269802]
+step:87900; t = 7.3104e+02; dt = 8.4009e-03; 73.1 %
+            [Mach = 40705.335442]
+step:88000; t = 7.3188e+02; dt = 8.4003e-03; 73.2 %
+            [Mach = 40664.703915]
+step:88100; t = 7.3272e+02; dt = 8.3998e-03; 73.3 %
+            [Mach = 40645.870037]
+step:88200; t = 7.3356e+02; dt = 8.3994e-03; 73.4 %
+            [Mach = 40577.143080]
+step:88300; t = 7.3440e+02; dt = 8.3991e-03; 73.4 %
+            [Mach = 40531.386761]
+> Writing file #147 (dbl) to disk...
+  [ 0.00 sec ]
+> Writing file #147 (vtk) to disk...
+  [ 0.00 sec ]
+step:88400; t = 7.3524e+02; dt = 8.3990e-03; 73.5 %
+            [Mach = 40540.680774]
+step:88500; t = 7.3608e+02; dt = 8.3988e-03; 73.6 %
+            [Mach = 40565.202438]
+step:88600; t = 7.3692e+02; dt = 8.3982e-03; 73.7 %
+            [Mach = 40596.629700]
+step:88700; t = 7.3776e+02; dt = 8.3972e-03; 73.8 %
+            [Mach = 40636.470769]
+step:88800; t = 7.3860e+02; dt = 8.3961e-03; 73.9 %
+            [Mach = 40698.573163]
+step:88900; t = 7.3944e+02; dt = 8.3956e-03; 73.9 %
+            [Mach = 40769.969320]
+> Writing file #148 (dbl) to disk...
+  [ 0.00 sec ]
+> Writing file #148 (vtk) to disk...
+  [ 0.00 sec ]
+step:89000; t = 7.4028e+02; dt = 8.3951e-03; 74.0 %
+            [Mach = 40830.328770]
+step:89100; t = 7.4112e+02; dt = 8.3942e-03; 74.1 %
+            [Mach = 40881.810131]
+step:89200; t = 7.4196e+02; dt = 8.3934e-03; 74.2 %
+            [Mach = 40949.526346]
+step:89300; t = 7.4280e+02; dt = 8.3927e-03; 74.3 %
+            [Mach = 40992.495258]
+step:89400; t = 7.4364e+02; dt = 8.3919e-03; 74.4 %
+            [Mach = 45400.204036]
+step:89500; t = 7.4448e+02; dt = 8.3914e-03; 74.4 %
+            [Mach = 41055.193172]
+> Writing file #149 (dbl) to disk...
+  [ 0.00 sec ]
+> Writing file #149 (vtk) to disk...
+  [ 0.00 sec ]
+step:89600; t = 7.4532e+02; dt = 8.3910e-03; 74.5 %
+            [Mach = 41079.573594]
+step:89700; t = 7.4616e+02; dt = 8.3904e-03; 74.6 %
+            [Mach = 41100.230606]
+step:89800; t = 7.4700e+02; dt = 8.3899e-03; 74.7 %
+            [Mach = 41085.034201]
+step:89900; t = 7.4783e+02; dt = 8.3893e-03; 74.8 %
+            [Mach = 41021.413538]
+step:90000; t = 7.4867e+02; dt = 8.3889e-03; 74.9 %
+            [Mach = 40877.258525]
+step:90100; t = 7.4951e+02; dt = 8.3887e-03; 75.0 %
+            [Mach = 40677.281919]
+> Writing file #150 (dbl) to disk...
+  [ 0.00 sec ]
+> Writing file #150 (vtk) to disk...
+  [ 0.00 sec ]
+step:90200; t = 7.5035e+02; dt = 8.3885e-03; 75.0 %
+            [Mach = 40452.557307]
+step:90300; t = 7.5119e+02; dt = 8.3884e-03; 75.1 %
+            [Mach = 40268.017431]
+step:90400; t = 7.5203e+02; dt = 8.3884e-03; 75.2 %
+            [Mach = 40161.314926]
+step:90500; t = 7.5287e+02; dt = 8.3885e-03; 75.3 %
+            [Mach = 40121.228675]
+step:90600; t = 7.5371e+02; dt = 8.3886e-03; 75.4 %
+            [Mach = 40086.531683]
+step:90700; t = 7.5455e+02; dt = 8.3887e-03; 75.5 %
+            [Mach = 40113.429927]
+> Writing file #151 (dbl) to disk...
+  [ 0.00 sec ]
+> Writing file #151 (vtk) to disk...
+  [ 0.00 sec ]
+step:90800; t = 7.5538e+02; dt = 8.3889e-03; 75.5 %
+            [Mach = 40264.852069]
+step:90900; t = 7.5622e+02; dt = 8.3893e-03; 75.6 %
+            [Mach = 40335.519621]
+step:91000; t = 7.5706e+02; dt = 8.3895e-03; 75.7 %
+            [Mach = 40351.974289]
+step:91100; t = 7.5790e+02; dt = 8.3901e-03; 75.8 %
+            [Mach = 40323.869199]
+step:91200; t = 7.5874e+02; dt = 8.3908e-03; 75.9 %
+            [Mach = 40243.514713]
+step:91300; t = 7.5958e+02; dt = 8.3915e-03; 76.0 %
+            [Mach = 40170.171251]
+> Writing file #152 (dbl) to disk...
+  [ 0.00 sec ]
+> Writing file #152 (vtk) to disk...
+  [ 0.00 sec ]
+step:91400; t = 7.6042e+02; dt = 8.3922e-03; 76.0 %
+            [Mach = 40100.062600]
+step:91500; t = 7.6126e+02; dt = 8.3930e-03; 76.1 %
+            [Mach = 40045.657017]
+step:91600; t = 7.6210e+02; dt = 8.3942e-03; 76.2 %
+            [Mach = 40010.416496]
+step:91700; t = 7.6294e+02; dt = 8.3954e-03; 76.3 %
+            [Mach = 39979.397974]
+step:91800; t = 7.6378e+02; dt = 8.3966e-03; 76.4 %
+            [Mach = 39942.734255]
+step:91900; t = 7.6462e+02; dt = 8.3980e-03; 76.5 %
+            [Mach = 39906.040833]
+> Writing file #153 (dbl) to disk...
+  [ 0.00 sec ]
+> Writing file #153 (vtk) to disk...
+  [ 0.00 sec ]
+step:92000; t = 7.6546e+02; dt = 8.3998e-03; 76.5 %
+            [Mach = 39867.843965]
+step:92100; t = 7.6630e+02; dt = 8.4018e-03; 76.6 %
+            [Mach = 39807.821237]
+step:92200; t = 7.6714e+02; dt = 8.4024e-03; 76.7 %
+            [Mach = 39765.853624]
+step:92300; t = 7.6798e+02; dt = 8.4025e-03; 76.8 %
+            [Mach = 39713.550452]
+step:92400; t = 7.6882e+02; dt = 8.4028e-03; 76.9 %
+            [Mach = 39668.476339]
+step:92500; t = 7.6966e+02; dt = 8.4028e-03; 77.0 %
+            [Mach = 39626.699939]
+> Writing file #154 (dbl) to disk...
+  [ 0.00 sec ]
+> Writing file #154 (vtk) to disk...
+  [ 0.00 sec ]
+step:92600; t = 7.7050e+02; dt = 8.4026e-03; 77.0 %
+            [Mach = 39593.364824]
+step:92700; t = 7.7134e+02; dt = 8.4025e-03; 77.1 %
+            [Mach = 39561.338858]
+step:92800; t = 7.7218e+02; dt = 8.4024e-03; 77.2 %
+            [Mach = 39528.651373]
+step:92900; t = 7.7302e+02; dt = 8.4024e-03; 77.3 %
+            [Mach = 39472.217553]
+step:93000; t = 7.7386e+02; dt = 8.4026e-03; 77.4 %
+            [Mach = 39433.587023]
+step:93100; t = 7.7470e+02; dt = 8.4026e-03; 77.5 %
+            [Mach = 39304.095780]
+> Writing file #155 (dbl) to disk...
+  [ 0.00 sec ]
+> Writing file #155 (vtk) to disk...
+  [ 0.00 sec ]
+step:93200; t = 7.7554e+02; dt = 8.4026e-03; 77.6 %
+            [Mach = 39271.557058]
+step:93300; t = 7.7638e+02; dt = 8.4027e-03; 77.6 %
+            [Mach = 39245.075919]
+step:93400; t = 7.7722e+02; dt = 8.4029e-03; 77.7 %
+            [Mach = 39219.321070]
+step:93500; t = 7.7806e+02; dt = 8.4028e-03; 77.8 %
+            [Mach = 39215.215774]
+step:93600; t = 7.7890e+02; dt = 8.4025e-03; 77.9 %
+            [Mach = 39209.373520]
+step:93700; t = 7.7974e+02; dt = 8.4024e-03; 78.0 %
+            [Mach = 39285.830841]
+> Writing file #156 (dbl) to disk...
+  [ 0.00 sec ]
+> Writing file #156 (vtk) to disk...
+  [ 0.00 sec ]
+step:93800; t = 7.8058e+02; dt = 8.4022e-03; 78.1 %
+            [Mach = 39301.004216]
+step:93900; t = 7.8142e+02; dt = 8.4019e-03; 78.1 %
+            [Mach = 39368.734389]
+step:94000; t = 7.8226e+02; dt = 8.4017e-03; 78.2 %
+            [Mach = 39427.137708]
+step:94100; t = 7.8310e+02; dt = 8.4015e-03; 78.3 %
+            [Mach = 39484.456648]
+step:94200; t = 7.8394e+02; dt = 8.4013e-03; 78.4 %
+            [Mach = 39517.889266]
+step:94300; t = 7.8478e+02; dt = 8.4011e-03; 78.5 %
+            [Mach = 39525.424512]
+> Writing file #157 (dbl) to disk...
+  [ 0.00 sec ]
+> Writing file #157 (vtk) to disk...
+  [ 0.00 sec ]
+step:94400; t = 7.8562e+02; dt = 8.4010e-03; 78.6 %
+            [Mach = 39515.930070]
+step:94500; t = 7.8646e+02; dt = 8.4010e-03; 78.6 %
+            [Mach = 39514.488121]
+step:94600; t = 7.8730e+02; dt = 8.4008e-03; 78.7 %
+            [Mach = 39518.386007]
+step:94700; t = 7.8814e+02; dt = 8.4007e-03; 78.8 %
+            [Mach = 39478.677719]
+step:94800; t = 7.8898e+02; dt = 8.4008e-03; 78.9 %
+            [Mach = 39458.825434]
+step:94900; t = 7.8982e+02; dt = 8.4010e-03; 79.0 %
+            [Mach = 39441.320924]
+> Writing file #158 (dbl) to disk...
+  [ 0.00 sec ]
+> Writing file #158 (vtk) to disk...
+  [ 0.00 sec ]
+step:95000; t = 7.9066e+02; dt = 8.4014e-03; 79.1 %
+            [Mach = 39448.085564]
+step:95100; t = 7.9150e+02; dt = 8.4019e-03; 79.2 %
+            [Mach = 39425.498226]
+step:95200; t = 7.9234e+02; dt = 8.4025e-03; 79.2 %
+            [Mach = 39394.390532]
+step:95300; t = 7.9318e+02; dt = 8.4031e-03; 79.3 %
+            [Mach = 39311.289751]
+step:95400; t = 7.9402e+02; dt = 8.4037e-03; 79.4 %
+            [Mach = 39203.130824]
+step:95500; t = 7.9486e+02; dt = 8.4042e-03; 79.5 %
+            [Mach = 39081.801615]
+> Writing file #159 (dbl) to disk...
+  [ 0.00 sec ]
+> Writing file #159 (vtk) to disk...
+  [ 0.00 sec ]
+step:95600; t = 7.9570e+02; dt = 8.4047e-03; 79.6 %
+            [Mach = 38972.325894]
+step:95700; t = 7.9654e+02; dt = 8.4052e-03; 79.7 %
+            [Mach = 38840.506756]
+step:95800; t = 7.9738e+02; dt = 8.4052e-03; 79.7 %
+            [Mach = 38703.002395]
+step:95900; t = 7.9822e+02; dt = 8.4038e-03; 79.8 %
+            [Mach = 38553.579804]
+step:96000; t = 7.9907e+02; dt = 8.4019e-03; 79.9 %
+            [Mach = 38428.731853]
+step:96100; t = 7.9991e+02; dt = 8.3996e-03; 80.0 %
+            [Mach = 38314.777233]
+> Writing file #160 (dbl) to disk...
+  [ 0.00 sec ]
+> Writing file #160 (vtk) to disk...
+  [ 0.00 sec ]
+step:96200; t = 8.0074e+02; dt = 8.3970e-03; 80.1 %
+            [Mach = 38208.863817]
+step:96300; t = 8.0158e+02; dt = 8.3950e-03; 80.2 %
+            [Mach = 38090.704509]
+step:96400; t = 8.0242e+02; dt = 8.3933e-03; 80.2 %
+            [Mach = 38001.158276]
+step:96500; t = 8.0326e+02; dt = 8.3911e-03; 80.3 %
+            [Mach = 37940.414119]
+step:96600; t = 8.0410e+02; dt = 8.3887e-03; 80.4 %
+            [Mach = 37840.076430]
+step:96700; t = 8.0494e+02; dt = 8.3867e-03; 80.5 %
+            [Mach = 37720.208091]
+> Writing file #161 (dbl) to disk...
+  [ 0.00 sec ]
+> Writing file #161 (vtk) to disk...
+  [ 0.00 sec ]
+step:96800; t = 8.0578e+02; dt = 8.3845e-03; 80.6 %
+            [Mach = 37607.178521]
+step:96900; t = 8.0662e+02; dt = 8.3820e-03; 80.7 %
+            [Mach = 37421.710580]
+step:97000; t = 8.0746e+02; dt = 8.3797e-03; 80.7 %
+            [Mach = 37350.763972]
+step:97100; t = 8.0829e+02; dt = 8.3770e-03; 80.8 %
+            [Mach = 37282.061877]
+step:97200; t = 8.0913e+02; dt = 8.3743e-03; 80.9 %
+            [Mach = 37202.836550]
+step:97300; t = 8.0997e+02; dt = 8.3714e-03; 81.0 %
+            [Mach = 37156.343655]
+> Writing file #162 (dbl) to disk...
+  [ 0.00 sec ]
+> Writing file #162 (vtk) to disk...
+  [ 0.00 sec ]
+step:97400; t = 8.1081e+02; dt = 8.3677e-03; 81.1 %
+            [Mach = 37164.456846]
+step:97500; t = 8.1164e+02; dt = 8.3644e-03; 81.2 %
+            [Mach = 37138.142352]
+step:97600; t = 8.1248e+02; dt = 8.3615e-03; 81.2 %
+            [Mach = 37159.866688]
+step:97700; t = 8.1331e+02; dt = 8.3599e-03; 81.3 %
+            [Mach = 37160.507600]
+step:97800; t = 8.1415e+02; dt = 8.3590e-03; 81.4 %
+            [Mach = 37157.237998]
+step:97900; t = 8.1499e+02; dt = 8.3580e-03; 81.5 %
+            [Mach = 37211.416708]
+> Writing file #163 (dbl) to disk...
+  [ 0.00 sec ]
+> Writing file #163 (vtk) to disk...
+  [ 0.00 sec ]
+step:98000; t = 8.1582e+02; dt = 8.3577e-03; 81.6 %
+            [Mach = 37182.920388]
+step:98100; t = 8.1666e+02; dt = 8.3584e-03; 81.7 %
+            [Mach = 37195.048120]
+step:98200; t = 8.1749e+02; dt = 8.3595e-03; 81.7 %
+            [Mach = 37213.286278]
+step:98300; t = 8.1833e+02; dt = 8.3601e-03; 81.8 %
+            [Mach = 37218.667814]
+step:98400; t = 8.1917e+02; dt = 8.3612e-03; 81.9 %
+            [Mach = 37197.462953]
+> Writing file #164 (dbl) to disk...
+  [ 0.00 sec ]
+> Writing file #164 (vtk) to disk...
+  [ 0.00 sec ]
+step:98500; t = 8.2000e+02; dt = 8.3623e-03; 82.0 %
+            [Mach = 37188.723400]
+step:98600; t = 8.2084e+02; dt = 8.3626e-03; 82.1 %
+            [Mach = 37198.293265]
+step:98700; t = 8.2167e+02; dt = 8.3619e-03; 82.2 %
+            [Mach = 37225.865476]
+step:98800; t = 8.2251e+02; dt = 8.3623e-03; 82.3 %
+            [Mach = 37281.899974]
+step:98900; t = 8.2335e+02; dt = 8.3621e-03; 82.3 %
+            [Mach = 37350.857490]
+step:99000; t = 8.2418e+02; dt = 8.3613e-03; 82.4 %
+            [Mach = 42991.694483]
+> Writing file #165 (dbl) to disk...
+  [ 0.00 sec ]
+> Writing file #165 (vtk) to disk...
+  [ 0.00 sec ]
+step:99100; t = 8.2502e+02; dt = 8.3601e-03; 82.5 %
+            [Mach = 37502.191034]
+step:99200; t = 8.2586e+02; dt = 8.3590e-03; 82.6 %
+            [Mach = 37600.986831]
+step:99300; t = 8.2669e+02; dt = 8.3573e-03; 82.7 %
+            [Mach = 37646.857343]
+step:99400; t = 8.2753e+02; dt = 8.3560e-03; 82.8 %
+            [Mach = 37705.235360]
+step:99500; t = 8.2836e+02; dt = 8.3550e-03; 82.8 %
+            [Mach = 37763.518121]
+step:99600; t = 8.2920e+02; dt = 8.3532e-03; 82.9 %
+            [Mach = 37784.929290]
+> Writing file #166 (dbl) to disk...
+  [ 0.00 sec ]
+> Writing file #166 (vtk) to disk...
+  [ 0.00 sec ]
+step:99700; t = 8.3003e+02; dt = 8.3508e-03; 83.0 %
+            [Mach = 37768.394651]
+step:99800; t = 8.3087e+02; dt = 8.3470e-03; 83.1 %
+            [Mach = 37739.807200]
+step:99900; t = 8.3170e+02; dt = 8.3421e-03; 83.2 %
+            [Mach = 37715.411277]
+step:100000; t = 8.3254e+02; dt = 8.3380e-03; 83.3 %
+             [Mach = 37704.305969]
+step:100100; t = 8.3337e+02; dt = 8.3339e-03; 83.3 %
+             [Mach = 37718.862274]
+step:100200; t = 8.3420e+02; dt = 8.3300e-03; 83.4 %
+             [Mach = 37749.222171]
+> Writing file #167 (dbl) to disk...
+  [ 0.00 sec ]
+> Writing file #167 (vtk) to disk...
+  [ 0.00 sec ]
+step:100300; t = 8.3504e+02; dt = 8.3253e-03; 83.5 %
+             [Mach = 37780.972082]
+step:100400; t = 8.3587e+02; dt = 8.3215e-03; 83.6 %
+             [Mach = 37822.176427]
+step:100500; t = 8.3670e+02; dt = 8.3158e-03; 83.7 %
+             [Mach = 37827.776299]
+step:100600; t = 8.3753e+02; dt = 8.3097e-03; 83.8 %
+             [Mach = 37818.453137]
+step:100700; t = 8.3836e+02; dt = 8.3121e-03; 83.8 %
+             [Mach = 37793.688898]
+step:100800; t = 8.3919e+02; dt = 8.3078e-03; 83.9 %
+             [Mach = 37754.483204]
+> Writing file #168 (dbl) to disk...
+  [ 0.00 sec ]
+> Writing file #168 (vtk) to disk...
+  [ 0.00 sec ]
+step:100900; t = 8.4002e+02; dt = 8.3033e-03; 84.0 %
+             [Mach = 37744.780929]
+step:101000; t = 8.4085e+02; dt = 8.3014e-03; 84.1 %
+             [Mach = 37717.352078]
+step:101100; t = 8.4168e+02; dt = 8.3006e-03; 84.2 %
+             [Mach = 37593.723171]
+step:101200; t = 8.4251e+02; dt = 8.2994e-03; 84.3 %
+             [Mach = 37550.404769]
+step:101300; t = 8.4334e+02; dt = 8.3000e-03; 84.3 %
+             [Mach = 37474.551186]
+step:101400; t = 8.4417e+02; dt = 8.3017e-03; 84.4 %
+             [Mach = 37362.527768]
+> Writing file #169 (dbl) to disk...
+  [ 0.00 sec ]
+> Writing file #169 (vtk) to disk...
+  [ 0.00 sec ]
+step:101500; t = 8.4500e+02; dt = 8.3047e-03; 84.5 %
+             [Mach = 37247.110800]
+step:101600; t = 8.4584e+02; dt = 8.3079e-03; 84.6 %
+             [Mach = 37153.746093]
+step:101700; t = 8.4667e+02; dt = 8.3114e-03; 84.7 %
+             [Mach = 36999.182608]
+step:101800; t = 8.4750e+02; dt = 8.3147e-03; 84.7 %
+             [Mach = 36853.438623]
+step:101900; t = 8.4833e+02; dt = 8.3177e-03; 84.8 %
+             [Mach = 36786.304426]
+step:102000; t = 8.4916e+02; dt = 8.3203e-03; 84.9 %
+             [Mach = 36765.812189]
+step:102100; t = 8.4999e+02; dt = 8.3234e-03; 85.0 %
+> Writing file #170 (dbl) to disk...
+  [ 0.00 sec ]
+> Writing file #170 (vtk) to disk...
+  [ 0.00 sec ]
+             [Mach = 36802.598740]
+step:102200; t = 8.5083e+02; dt = 8.3282e-03; 85.1 %
+             [Mach = 36841.055681]
+step:102300; t = 8.5166e+02; dt = 8.3324e-03; 85.2 %
+             [Mach = 36844.167558]
+step:102400; t = 8.5249e+02; dt = 8.3359e-03; 85.2 %
+             [Mach = 36815.785576]
+step:102500; t = 8.5333e+02; dt = 8.3383e-03; 85.3 %
+             [Mach = 36773.557499]
+step:102600; t = 8.5416e+02; dt = 8.3399e-03; 85.4 %
+             [Mach = 36823.126167]
+step:102700; t = 8.5499e+02; dt = 8.3413e-03; 85.5 %
+> Writing file #171 (dbl) to disk...
+  [ 0.00 sec ]
+> Writing file #171 (vtk) to disk...
+  [ 0.00 sec ]
+             [Mach = 36739.937726]
+step:102800; t = 8.5583e+02; dt = 8.3421e-03; 85.6 %
+             [Mach = 36669.278741]
+step:102900; t = 8.5666e+02; dt = 8.3414e-03; 85.7 %
+             [Mach = 36668.709218]
+step:103000; t = 8.5750e+02; dt = 8.3400e-03; 85.7 %
+             [Mach = 36675.972338]
+step:103100; t = 8.5833e+02; dt = 8.3387e-03; 85.8 %
+             [Mach = 36667.341149]
+step:103200; t = 8.5916e+02; dt = 8.3374e-03; 85.9 %
+             [Mach = 36584.945280]
+step:103300; t = 8.6000e+02; dt = 8.3355e-03; 86.0 %
+> Writing file #172 (dbl) to disk...
+  [ 0.00 sec ]
+> Writing file #172 (vtk) to disk...
+  [ 0.00 sec ]
+             [Mach = 36488.669890]
+step:103400; t = 8.6083e+02; dt = 8.3320e-03; 86.1 %
+             [Mach = 36289.384824]
+step:103500; t = 8.6166e+02; dt = 8.3255e-03; 86.2 %
+             [Mach = 36446.367022]
+step:103600; t = 8.6250e+02; dt = 8.3159e-03; 86.2 %
+             [Mach = 36304.320656]
+step:103700; t = 8.6333e+02; dt = 8.3054e-03; 86.3 %
+             [Mach = 36326.696533]
+step:103800; t = 8.6416e+02; dt = 8.2960e-03; 86.4 %
+             [Mach = 36404.090034]
+step:103900; t = 8.6499e+02; dt = 8.2883e-03; 86.5 %
+             [Mach = 36505.641570]
+> Writing file #173 (dbl) to disk...
+  [ 0.00 sec ]
+> Writing file #173 (vtk) to disk...
+  [ 0.00 sec ]
+step:104000; t = 8.6582e+02; dt = 8.2825e-03; 86.6 %
+             [Mach = 36501.033844]
+step:104100; t = 8.6664e+02; dt = 8.2783e-03; 86.7 %
+             [Mach = 36463.067038]
+step:104200; t = 8.6747e+02; dt = 8.2750e-03; 86.7 %
+             [Mach = 36499.072515]
+step:104300; t = 8.6830e+02; dt = 8.2720e-03; 86.8 %
+             [Mach = 36552.244967]
+step:104400; t = 8.6913e+02; dt = 8.2706e-03; 86.9 %
+             [Mach = 36588.820965]
+step:104500; t = 8.6995e+02; dt = 8.2704e-03; 87.0 %
+             [Mach = 36622.723522]
+> Writing file #174 (dbl) to disk...
+  [ 0.00 sec ]
+> Writing file #174 (vtk) to disk...
+  [ 0.00 sec ]
+step:104600; t = 8.7078e+02; dt = 8.2707e-03; 87.1 %
+             [Mach = 36665.243066]
+step:104700; t = 8.7161e+02; dt = 8.2696e-03; 87.2 %
+             [Mach = 36699.342600]
+step:104800; t = 8.7243e+02; dt = 8.2682e-03; 87.2 %
+             [Mach = 36724.437411]
+step:104900; t = 8.7326e+02; dt = 8.2672e-03; 87.3 %
+             [Mach = 36753.852312]
+step:105000; t = 8.7409e+02; dt = 8.2665e-03; 87.4 %
+             [Mach = 36800.761840]
+step:105100; t = 8.7491e+02; dt = 8.2659e-03; 87.5 %
+             [Mach = 36867.143030]
+> Writing file #175 (dbl) to disk...
+  [ 0.00 sec ]
+> Writing file #175 (vtk) to disk...
+  [ 0.00 sec ]
+step:105200; t = 8.7574e+02; dt = 8.2654e-03; 87.6 %
+             [Mach = 36935.553350]
+step:105300; t = 8.7657e+02; dt = 8.2651e-03; 87.7 %
+             [Mach = 37011.492994]
+step:105400; t = 8.7739e+02; dt = 8.2649e-03; 87.7 %
+             [Mach = 37080.713626]
+step:105500; t = 8.7822e+02; dt = 8.2649e-03; 87.8 %
+             [Mach = 37142.825831]
+step:105600; t = 8.7905e+02; dt = 8.2653e-03; 87.9 %
+             [Mach = 37191.862238]
+step:105700; t = 8.7987e+02; dt = 8.2659e-03; 88.0 %
+             [Mach = 37223.653289]
+> Writing file #176 (dbl) to disk...
+  [ 0.00 sec ]
+> Writing file #176 (vtk) to disk...
+  [ 0.00 sec ]
+step:105800; t = 8.8070e+02; dt = 8.2663e-03; 88.1 %
+             [Mach = 37243.098609]
+step:105900; t = 8.8153e+02; dt = 8.2668e-03; 88.2 %
+             [Mach = 37245.252955]
+step:106000; t = 8.8235e+02; dt = 8.2675e-03; 88.2 %
+             [Mach = 37246.231760]
+step:106100; t = 8.8318e+02; dt = 8.2689e-03; 88.3 %
+             [Mach = 37253.308649]
+step:106200; t = 8.8401e+02; dt = 8.2697e-03; 88.4 %
+             [Mach = 37268.340549]
+step:106300; t = 8.8483e+02; dt = 8.2705e-03; 88.5 %
+             [Mach = 37286.488711]
+> Writing file #177 (dbl) to disk...
+  [ 0.00 sec ]
+> Writing file #177 (vtk) to disk...
+  [ 0.00 sec ]
+step:106400; t = 8.8566e+02; dt = 8.2711e-03; 88.6 %
+             [Mach = 37310.269888]
+step:106500; t = 8.8649e+02; dt = 8.2710e-03; 88.6 %
+             [Mach = 37351.108544]
+step:106600; t = 8.8731e+02; dt = 8.2714e-03; 88.7 %
+             [Mach = 37397.445433]
+step:106700; t = 8.8814e+02; dt = 8.2714e-03; 88.8 %
+             [Mach = 37443.162482]
+step:106800; t = 8.8897e+02; dt = 8.2712e-03; 88.9 %
+             [Mach = 37484.544505]
+step:106900; t = 8.8980e+02; dt = 8.2711e-03; 89.0 %
+             [Mach = 37525.560643]
+> Writing file #178 (dbl) to disk...
+  [ 0.00 sec ]
+> Writing file #178 (vtk) to disk...
+  [ 0.00 sec ]
+step:107000; t = 8.9062e+02; dt = 8.2711e-03; 89.1 %
+             [Mach = 37567.589957]
+step:107100; t = 8.9145e+02; dt = 8.2719e-03; 89.1 %
+             [Mach = 37605.394569]
+step:107200; t = 8.9228e+02; dt = 8.2740e-03; 89.2 %
+             [Mach = 37638.352352]
+step:107300; t = 8.9311e+02; dt = 8.2754e-03; 89.3 %
+             [Mach = 37681.046589]
+step:107400; t = 8.9393e+02; dt = 8.2764e-03; 89.4 %
+             [Mach = 37715.142373]
+step:107500; t = 8.9476e+02; dt = 8.2770e-03; 89.5 %
+             [Mach = 37728.934162]
+> Writing file #179 (dbl) to disk...
+  [ 0.00 sec ]
+> Writing file #179 (vtk) to disk...
+  [ 0.00 sec ]
+step:107600; t = 8.9559e+02; dt = 8.2774e-03; 89.6 %
+             [Mach = 37734.102192]
+step:107700; t = 8.9642e+02; dt = 8.2778e-03; 89.6 %
+             [Mach = 37753.847691]
+step:107800; t = 8.9724e+02; dt = 8.2782e-03; 89.7 %
+             [Mach = 37775.730583]
+step:107900; t = 8.9807e+02; dt = 8.2790e-03; 89.8 %
+             [Mach = 37804.020414]
+step:108000; t = 8.9890e+02; dt = 8.2796e-03; 89.9 %
+             [Mach = 37831.911061]
+step:108100; t = 8.9973e+02; dt = 8.2802e-03; 90.0 %
+             [Mach = 37864.819823]
+> Writing file #180 (dbl) to disk...
+  [ 0.00 sec ]
+> Writing file #180 (vtk) to disk...
+  [ 0.00 sec ]
+step:108200; t = 9.0056e+02; dt = 8.2806e-03; 90.1 %
+             [Mach = 37902.128314]
+step:108300; t = 9.0138e+02; dt = 8.2810e-03; 90.1 %
+             [Mach = 37939.835141]
+step:108400; t = 9.0221e+02; dt = 8.2813e-03; 90.2 %
+             [Mach = 37963.500310]
+step:108500; t = 9.0304e+02; dt = 8.2817e-03; 90.3 %
+             [Mach = 38018.179578]
+step:108600; t = 9.0387e+02; dt = 8.2820e-03; 90.4 %
+             [Mach = 38096.780687]
+step:108700; t = 9.0470e+02; dt = 8.2822e-03; 90.5 %
+             [Mach = 38187.089101]
+> Writing file #181 (dbl) to disk...
+  [ 0.00 sec ]
+> Writing file #181 (vtk) to disk...
+  [ 0.00 sec ]
+step:108800; t = 9.0552e+02; dt = 8.2821e-03; 90.6 %
+             [Mach = 38253.765384]
+step:108900; t = 9.0635e+02; dt = 8.2823e-03; 90.6 %
+             [Mach = 38288.197066]
+step:109000; t = 9.0718e+02; dt = 8.2825e-03; 90.7 %
+             [Mach = 38332.173303]
+step:109100; t = 9.0801e+02; dt = 8.2828e-03; 90.8 %
+             [Mach = 38388.966932]
+step:109200; t = 9.0884e+02; dt = 8.2831e-03; 90.9 %
+             [Mach = 38447.563264]
+step:109300; t = 9.0967e+02; dt = 8.2834e-03; 91.0 %
+             [Mach = 38495.231406]
+> Writing file #182 (dbl) to disk...
+  [ 0.00 sec ]
+> Writing file #182 (vtk) to disk...
+  [ 0.00 sec ]
+step:109400; t = 9.1049e+02; dt = 8.2836e-03; 91.0 %
+             [Mach = 38539.612683]
+step:109500; t = 9.1132e+02; dt = 8.2839e-03; 91.1 %
+             [Mach = 38568.229312]
+step:109600; t = 9.1215e+02; dt = 8.2842e-03; 91.2 %
+             [Mach = 38604.646586]
+step:109700; t = 9.1298e+02; dt = 8.2846e-03; 91.3 %
+             [Mach = 38626.743067]
+step:109800; t = 9.1381e+02; dt = 8.2855e-03; 91.4 %
+             [Mach = 38656.848526]
+step:109900; t = 9.1464e+02; dt = 8.2863e-03; 91.5 %
+             [Mach = 38690.113737]
+> Writing file #183 (dbl) to disk...
+  [ 0.00 sec ]
+> Writing file #183 (vtk) to disk...
+  [ 0.00 sec ]
+step:110000; t = 9.1547e+02; dt = 8.2873e-03; 91.5 %
+             [Mach = 38715.712540]
+step:110100; t = 9.1629e+02; dt = 8.2882e-03; 91.6 %
+             [Mach = 38749.689839]
+step:110200; t = 9.1712e+02; dt = 8.2889e-03; 91.7 %
+             [Mach = 38774.937152]
+step:110300; t = 9.1795e+02; dt = 8.2898e-03; 91.8 %
+             [Mach = 38821.575974]
+step:110400; t = 9.1878e+02; dt = 8.2904e-03; 91.9 %
+             [Mach = 38829.332297]
+step:110500; t = 9.1961e+02; dt = 8.2909e-03; 92.0 %
+             [Mach = 38868.771506]
+> Writing file #184 (dbl) to disk...
+  [ 0.00 sec ]
+> Writing file #184 (vtk) to disk...
+  [ 0.00 sec ]
+step:110600; t = 9.2044e+02; dt = 8.2916e-03; 92.0 %
+             [Mach = 38891.829760]
+step:110700; t = 9.2127e+02; dt = 8.2924e-03; 92.1 %
+             [Mach = 38869.728042]
+step:110800; t = 9.2210e+02; dt = 8.2934e-03; 92.2 %
+             [Mach = 38914.424936]
+step:110900; t = 9.2293e+02; dt = 8.2939e-03; 92.3 %
+             [Mach = 38955.032239]
+step:111000; t = 9.2376e+02; dt = 8.2942e-03; 92.4 %
+             [Mach = 38880.897413]
+step:111100; t = 9.2459e+02; dt = 8.2941e-03; 92.5 %
+             [Mach = 38845.688878]
+> Writing file #185 (dbl) to disk...
+  [ 0.00 sec ]
+> Writing file #185 (vtk) to disk...
+  [ 0.00 sec ]
+step:111200; t = 9.2541e+02; dt = 8.2936e-03; 92.5 %
+             [Mach = 38818.204579]
+step:111300; t = 9.2624e+02; dt = 8.2928e-03; 92.6 %
+             [Mach = 38797.539715]
+step:111400; t = 9.2707e+02; dt = 8.2922e-03; 92.7 %
+             [Mach = 38781.288730]
+step:111500; t = 9.2790e+02; dt = 8.2914e-03; 92.8 %
+             [Mach = 38766.169797]
+step:111600; t = 9.2873e+02; dt = 8.2900e-03; 92.9 %
+             [Mach = 38736.604707]
+step:111700; t = 9.2956e+02; dt = 8.2885e-03; 93.0 %
+             [Mach = 38697.701023]
+> Writing file #186 (dbl) to disk...
+  [ 0.00 sec ]
+> Writing file #186 (vtk) to disk...
+  [ 0.00 sec ]
+step:111800; t = 9.3039e+02; dt = 8.2871e-03; 93.0 %
+             [Mach = 38656.066385]
+step:111900; t = 9.3122e+02; dt = 8.2861e-03; 93.1 %
+             [Mach = 38628.399745]
+step:112000; t = 9.3205e+02; dt = 8.2853e-03; 93.2 %
+             [Mach = 38610.560814]
+step:112100; t = 9.3288e+02; dt = 8.2843e-03; 93.3 %
+             [Mach = 38592.143786]
+step:112200; t = 9.3370e+02; dt = 8.2827e-03; 93.4 %
+             [Mach = 38576.571178]
+step:112300; t = 9.3453e+02; dt = 8.2813e-03; 93.5 %
+             [Mach = 38562.470454]
+> Writing file #187 (dbl) to disk...
+  [ 0.00 sec ]
+> Writing file #187 (vtk) to disk...
+  [ 0.00 sec ]
+step:112400; t = 9.3536e+02; dt = 8.2799e-03; 93.5 %
+             [Mach = 38564.310901]
+step:112500; t = 9.3619e+02; dt = 8.2803e-03; 93.6 %
+             [Mach = 38575.698225]
+step:112600; t = 9.3702e+02; dt = 8.2795e-03; 93.7 %
+             [Mach = 38591.786268]
+step:112700; t = 9.3784e+02; dt = 8.2792e-03; 93.8 %
+             [Mach = 38599.146839]
+step:112800; t = 9.3867e+02; dt = 8.2788e-03; 93.9 %
+             [Mach = 38602.806487]
+step:112900; t = 9.3950e+02; dt = 8.2789e-03; 93.9 %
+             [Mach = 38576.067210]
+> Writing file #188 (dbl) to disk...
+  [ 0.00 sec ]
+> Writing file #188 (vtk) to disk...
+  [ 0.00 sec ]
+step:113000; t = 9.4033e+02; dt = 8.2806e-03; 94.0 %
+             [Mach = 38555.889682]
+step:113100; t = 9.4116e+02; dt = 8.2813e-03; 94.1 %
+             [Mach = 38551.748591]
+step:113200; t = 9.4198e+02; dt = 8.2817e-03; 94.2 %
+             [Mach = 38553.879193]
+step:113300; t = 9.4281e+02; dt = 8.2831e-03; 94.3 %
+             [Mach = 38535.852466]
+step:113400; t = 9.4364e+02; dt = 8.2837e-03; 94.4 %
+             [Mach = 38523.272062]
+step:113500; t = 9.4447e+02; dt = 8.2854e-03; 94.4 %
+             [Mach = 38448.235261]
+> Writing file #189 (dbl) to disk...
+  [ 0.00 sec ]
+> Writing file #189 (vtk) to disk...
+  [ 0.00 sec ]
+step:113600; t = 9.4530e+02; dt = 8.2884e-03; 94.5 %
+             [Mach = 38530.495088]
+step:113700; t = 9.4613e+02; dt = 8.2919e-03; 94.6 %
+             [Mach = 38587.304736]
+step:113800; t = 9.4696e+02; dt = 8.2930e-03; 94.7 %
+             [Mach = 38618.770612]
+step:113900; t = 9.4778e+02; dt = 8.2935e-03; 94.8 %
+             [Mach = 38577.267467]
+step:114000; t = 9.4861e+02; dt = 8.2942e-03; 94.9 %
+             [Mach = 38422.019659]
+step:114100; t = 9.4944e+02; dt = 8.2944e-03; 94.9 %
+             [Mach = 38260.172159]
+> Writing file #190 (dbl) to disk...
+  [ 0.00 sec ]
+> Writing file #190 (vtk) to disk...
+  [ 0.00 sec ]
+step:114200; t = 9.5027e+02; dt = 8.2944e-03; 95.0 %
+             [Mach = 38264.002095]
+step:114300; t = 9.5110e+02; dt = 8.2943e-03; 95.1 %
+             [Mach = 38293.221586]
+step:114400; t = 9.5193e+02; dt = 8.2941e-03; 95.2 %
+             [Mach = 38249.323253]
+step:114500; t = 9.5276e+02; dt = 8.2936e-03; 95.3 %
+             [Mach = 38205.267266]
+step:114600; t = 9.5359e+02; dt = 8.2931e-03; 95.4 %
+             [Mach = 38180.773147]
+step:114700; t = 9.5442e+02; dt = 8.2896e-03; 95.4 %
+             [Mach = 38133.317196]
+> Writing file #191 (dbl) to disk...
+  [ 0.00 sec ]
+> Writing file #191 (vtk) to disk...
+  [ 0.00 sec ]
+step:114800; t = 9.5525e+02; dt = 8.2836e-03; 95.5 %
+             [Mach = 38062.785993]
+step:114900; t = 9.5608e+02; dt = 8.2828e-03; 95.6 %
+             [Mach = 38035.599354]
+step:115000; t = 9.5691e+02; dt = 8.2830e-03; 95.7 %
+             [Mach = 38020.922964]
+step:115100; t = 9.5773e+02; dt = 8.2845e-03; 95.8 %
+             [Mach = 38054.854050]
+step:115200; t = 9.5856e+02; dt = 8.2873e-03; 95.9 %
+             [Mach = 38117.550225]
+step:115300; t = 9.5939e+02; dt = 8.2873e-03; 95.9 %
+             [Mach = 38193.189811]
+> Writing file #192 (dbl) to disk...
+  [ 0.00 sec ]
+> Writing file #192 (vtk) to disk...
+  [ 0.00 sec ]
+step:115400; t = 9.6022e+02; dt = 8.2864e-03; 96.0 %
+             [Mach = 38266.468049]
+step:115500; t = 9.6105e+02; dt = 8.2861e-03; 96.1 %
+             [Mach = 38330.741309]
+step:115600; t = 9.6188e+02; dt = 8.2857e-03; 96.2 %
+             [Mach = 38389.396689]
+step:115700; t = 9.6271e+02; dt = 8.2872e-03; 96.3 %
+             [Mach = 38411.650924]
+step:115800; t = 9.6353e+02; dt = 8.2889e-03; 96.4 %
+             [Mach = 38444.489040]
+step:115900; t = 9.6436e+02; dt = 8.2890e-03; 96.4 %
+             [Mach = 38463.311906]
+> Writing file #193 (dbl) to disk...
+  [ 0.00 sec ]
+> Writing file #193 (vtk) to disk...
+  [ 0.00 sec ]
+step:116000; t = 9.6519e+02; dt = 8.2901e-03; 96.5 %
+             [Mach = 38462.946538]
+step:116100; t = 9.6602e+02; dt = 8.2908e-03; 96.6 %
+             [Mach = 38490.852988]
+step:116200; t = 9.6685e+02; dt = 8.2908e-03; 96.7 %
+             [Mach = 38474.312488]
+step:116300; t = 9.6768e+02; dt = 8.2909e-03; 96.8 %
+             [Mach = 38494.212970]
+step:116400; t = 9.6851e+02; dt = 8.2919e-03; 96.9 %
+             [Mach = 38495.747801]
+step:116500; t = 9.6934e+02; dt = 8.3135e-03; 96.9 %
+             [Mach = 39344.956510]
+> Writing file #194 (dbl) to disk...
+  [ 0.00 sec ]
+> Writing file #194 (vtk) to disk...
+  [ 0.00 sec ]
+step:116600; t = 9.7017e+02; dt = 8.3134e-03; 97.0 %
+             [Mach = 39370.991602]
+step:116700; t = 9.7100e+02; dt = 8.3130e-03; 97.1 %
+             [Mach = 39339.105361]
+step:116800; t = 9.7183e+02; dt = 8.3131e-03; 97.2 %
+             [Mach = 39194.525201]
+step:116900; t = 9.7266e+02; dt = 8.3132e-03; 97.3 %
+             [Mach = 39452.949617]
+step:117000; t = 9.7350e+02; dt = 8.3148e-03; 97.3 %
+             [Mach = 39384.967091]
+step:117100; t = 9.7433e+02; dt = 8.3325e-03; 97.4 %
+             [Mach = 39172.312643]
+> Writing file #195 (dbl) to disk...
+  [ 0.00 sec ]
+> Writing file #195 (vtk) to disk...
+  [ 0.00 sec ]
+step:117200; t = 9.7516e+02; dt = 8.3326e-03; 97.5 %
+             [Mach = 39270.919606]
+step:117300; t = 9.7599e+02; dt = 8.3327e-03; 97.6 %
+             [Mach = 38965.516147]
+step:117400; t = 9.7683e+02; dt = 8.3336e-03; 97.7 %
+             [Mach = 39203.035707]
+step:117500; t = 9.7766e+02; dt = 8.3345e-03; 97.8 %
+             [Mach = 38800.964593]
+step:117600; t = 9.7849e+02; dt = 8.3353e-03; 97.8 %
+             [Mach = 38977.941765]
+step:117700; t = 9.7933e+02; dt = 8.3366e-03; 97.9 %
+             [Mach = 38917.121413]
+> Writing file #196 (dbl) to disk...
+  [ 0.00 sec ]
+> Writing file #196 (vtk) to disk...
+  [ 0.00 sec ]
+step:117800; t = 9.8016e+02; dt = 8.3273e-03; 98.0 %
+             [Mach = 38735.148502]
+step:117900; t = 9.8099e+02; dt = 8.3293e-03; 98.1 %
+             [Mach = 39072.659792]
+step:118000; t = 9.8183e+02; dt = 8.3317e-03; 98.2 %
+             [Mach = 38744.900937]
+step:118100; t = 9.8266e+02; dt = 8.3341e-03; 98.3 %
+             [Mach = 38976.499461]
+step:118200; t = 9.8349e+02; dt = 8.3379e-03; 98.3 %
+             [Mach = 39055.661372]
+step:118300; t = 9.8433e+02; dt = 8.3406e-03; 98.4 %
+             [Mach = 38786.637178]
+> Writing file #197 (dbl) to disk...
+  [ 0.00 sec ]
+> Writing file #197 (vtk) to disk...
+  [ 0.00 sec ]
+step:118400; t = 9.8516e+02; dt = 8.3431e-03; 98.5 %
+             [Mach = 39150.988411]
+step:118500; t = 9.8600e+02; dt = 8.3468e-03; 98.6 %
+             [Mach = 38984.387950]
+step:118600; t = 9.8683e+02; dt = 8.3379e-03; 98.7 %
+             [Mach = 39041.211577]
+step:118700; t = 9.8767e+02; dt = 8.3404e-03; 98.8 %
+             [Mach = 39218.337732]
+step:118800; t = 9.8850e+02; dt = 8.3438e-03; 98.8 %
+             [Mach = 38991.377455]
+step:118900; t = 9.8933e+02; dt = 8.3494e-03; 98.9 %
+             [Mach = 39269.233279]
+> Writing file #198 (dbl) to disk...
+  [ 0.00 sec ]
+> Writing file #198 (vtk) to disk...
+  [ 0.00 sec ]
+step:119000; t = 9.9017e+02; dt = 8.3571e-03; 99.0 %
+             [Mach = 39213.210411]
+step:119100; t = 9.9101e+02; dt = 8.3579e-03; 99.1 %
+             [Mach = 39186.636586]
+step:119200; t = 9.9184e+02; dt = 8.3588e-03; 99.2 %
+             [Mach = 39472.089949]
+step:119300; t = 9.9268e+02; dt = 8.3603e-03; 99.3 %
+             [Mach = 39314.428458]
+step:119400; t = 9.9351e+02; dt = 8.3612e-03; 99.4 %
+             [Mach = 39603.347818]
+step:119500; t = 9.9435e+02; dt = 8.3636e-03; 99.4 %
+             [Mach = 39519.084349]
+> Writing file #199 (dbl) to disk...
+  [ 0.00 sec ]
+> Writing file #199 (vtk) to disk...
+  [ 0.00 sec ]
+step:119600; t = 9.9519e+02; dt = 8.3662e-03; 99.5 %
+             [Mach = 39604.507692]
+step:119700; t = 9.9602e+02; dt = 8.3680e-03; 99.6 %
+             [Mach = 39697.906262]
+step:119800; t = 9.9686e+02; dt = 8.3693e-03; 99.7 %
+             [Mach = 38723.195033]
+step:119900; t = 9.9770e+02; dt = 8.3708e-03; 99.8 %
+             [Mach = 39446.439846]
+step:120000; t = 9.9853e+02; dt = 8.3724e-03; 99.9 %
+             [Mach = 40084.424620]
+step:120100; t = 9.9937e+02; dt = 8.3735e-03; 99.9 %
+             [Mach = 39869.197536]
+> Writing file #200 (dbl) to disk...
+  [ 0.00 sec ]
+> Writing file #200 (vtk) to disk...
+  [ 0.00 sec ]
+
+> Total allocated memory    0.48 Mb (proc #0)
+> Elapsed time              0d:0h:1m:32s
+> Average time/step         7.66e-04  (sec)  
+> Local time                Sat Aug 22 17:19:23 2026
+> Done
+
+   ___  __   __  ____________   
+  / _ \/ /  / / / /_  __/ __ \ 
+ / ___/ /__/ /_/ / / / / /_/ /  
+/_/  /____/\____/ /_/  \____/   
+=============================    v. 4.4-patch4 (Jun 2026)  
+
+> System:
+
+  USER:             fritz
+  SYSTEM_NAME:      Linux
+  NODE_NAME:        pluto
+  ARCH:             x86_64
+  BYTE_ORDER:       little
+
+  - Basic data type size (Bytes):
+    o sizeof (char)     = 1
+    o sizeof (uchar)    = 1
+    o sizeof (uint16_t) = 2
+    o sizeof (short)    = 2
+    o sizeof (ushort)   = 2
+    o sizeof (int)      = 4
+    o sizeof (long)     = 8
+    o sizeof (*int)     = 8
+    o sizeof (float)    = 4
+    o sizeof (double)   = 8
+    o sizeof (*double)  = 8
+
+  - Structure data type (Bytes):
+    o sizeof (cmdLine)    = 64
+    o sizeof (Data)       = 272
+    o sizeof (Grid)       = 1024
+    o sizeof (Float_Vect) = 12
+    o sizeof (Image)      = 856
+    o sizeof (Output)     = 1768
+    o sizeof (RGB)        = 3
+    o sizeof (Runtime)    = 47008
+    o sizeof (Restart)    = 128
+    o sizeof (timeStep)   = 144
+    o sizeof (RBox)       = 112
+    o sizeof (State)      = 128
+    o sizeof (Sweep)      = 568
+
+> Local time:       Sat Aug 22 17:25:13 2026
+
+> Cmd line args:    -restart 150 
+
+> Header configuration:
+
+  PHYSICS:          HD
+  DIMENSIONS:       2
+  GEOMETRY:         Spherical
+  BODY_FORCE:       EXPLICIT
+  RECONSTRUCTION:   Linear  (Primitive lim)
+  TIME STEPPING:    Runge-Kutta II
+  TRACERS:          1
+  VARIABLES:        6
+  ENTROPY_SWITCH:   NO
+  LOADED MODULES:
+
+  ROTATION:         NO
+  EOS:              Ideal
+  DIFFUSION TERMS:  Viscosity [EXPLICIT]
+
+> Runtime configuration (pluto.ini):
+
+  +----------------------------------------------------------
+  | [Grid]
+  | 
+  | X1-grid    1     2.1     90     l+    30.0
+  | X2-grid    1     0.0     45     u      1.570796327
+  | X3-grid    1     0.0      1     u      1.0
+  | 
+  | [Chombo Refinement]
+  | 
+  | Levels            4
+  | Ref_ratio         2 2 2 2 2
+  | Regrid_interval   2 2 2 2
+  | Refine_thresh     0.3
+  | Tag_buffer_size   3
+  | Block_factor      8
+  | Max_grid_size     64
+  | Fill_ratio        0.75
+  | 
+  | [Time]
+  | 
+  | CFL               0.4
+  | CFL_max_var       1.2
+  | tstop             1.0e3
+  | first_dt          1.0e-6
+  | 
+  | [Solver]
+  | 
+  | Solver         roe
+  | 
+  | [Boundary]
+  | 
+  | X1-beg         userdef
+  | X1-end         userdef
+  | X2-beg         axisymmetric
+  | X2-end         eqtsymmetric
+  | X3-beg         outflow
+  | X3-end         outflow
+  | 
+  | [Static Grid Output]
+  | 
+  | uservar       3 nu num Te
+  | dbl           5.0  -1   single_file
+  | flt          -1.0  -1   single_file
+  | vtk           5.0  -1   single_file
+  | tab          -1.0  -1
+  | dbl.h5       -5.0  -1
+  | ppm          -1.0  -1
+  | png          -1.0  -1
+  | log         100
+  | analysis     -1.0  -1
+  | 
+  | [Chombo HDF5 output]
+  | 
+  | Checkpoint_interval  -1
+  | Plot_interval       1.0
+  | 
+  | [Parameters]
+  | 
+  | ALPHAM                      0.4  
+  | MU                          0.1  
+  | TEMPF                       300.0  
+  | RHOC                        0.01  
+  | RD                          6.0  
+  | EPS                         0.1  
+  | OMG                         0.1  
+  | ALPHAV                      1.0  
+  | DFLOOR                      5.0e-7  
+  +---------------------------------------------------------
+
+> Generating grid...
+
+  Global grid:
+  X1: [   2.1000,  30.0000],     90 point(s), 3 ghosts
+  X2: [   0.0000,   1.5708],     45 point(s), 3 ghosts
+
+  Local grid:
+  X1: [   2.1000,   5.0955],     30 point(s); 3 ghosts; Active zones = [3, 32]
+  X2: [   0.0000,   0.8029],     23 point(s); 3 ghosts; Active zones = [3, 25]
+
+> Memory allocation
+> Assigning initial conditions (Startup) ...
+> Normalization Units:
+
+  [Density]:      8.500e-11 (gr/cm^3), 5.082e+13 (1/cm^3)
+  [Pressure]:     4.054e+04 (dyne/cm^2)
+  [Velocity]:     2.184e+07 (cm/s)
+  [Length]:       1.392e+11 (cm)
+  [Temperature]:  5.736e+06 X (p/rho*mu) (K)
+  [Time]:         6.374e+03 (sec), 2.021e-04 (yrs) 
+ 
+> Number of processors: 6
+> Proc size:            30 X 23
+> Parallel Directions:  X1/X2
+> Restarting from file #150 (dbl)
+> Starting computation... 
+
+step:90200; t = 7.5035e+02; dt = 8.3885e-03; 75.0 %
+            [Mach = 40452.557307]
+step:90300; t = 7.5119e+02; dt = 8.3884e-03; 75.1 %
+            [Mach = 40268.017431]
+step:90400; t = 7.5203e+02; dt = 8.3884e-03; 75.2 %
+            [Mach = 40161.314926]
+step:90500; t = 7.5287e+02; dt = 8.3885e-03; 75.3 %
+            [Mach = 40121.228675]
+step:90600; t = 7.5371e+02; dt = 8.3886e-03; 75.4 %
+            [Mach = 40086.531683]
+step:90700; t = 7.5455e+02; dt = 8.3887e-03; 75.5 %
+            [Mach = 40113.429927]
+> Writing file #151 (dbl) to disk...
+  [ 0.00 sec ]
+> Writing file #151 (vtk) to disk...
+  [ 0.00 sec ]
+step:90800; t = 7.5538e+02; dt = 8.3889e-03; 75.5 %
+            [Mach = 40264.852069]
+step:90900; t = 7.5622e+02; dt = 8.3893e-03; 75.6 %
+            [Mach = 40335.519621]
+step:91000; t = 7.5706e+02; dt = 8.3895e-03; 75.7 %
+            [Mach = 40351.974289]
+step:91100; t = 7.5790e+02; dt = 8.3901e-03; 75.8 %
+            [Mach = 40323.869199]
+step:91200; t = 7.5874e+02; dt = 8.3908e-03; 75.9 %
+            [Mach = 40243.514713]
+step:91300; t = 7.5958e+02; dt = 8.3915e-03; 76.0 %
+            [Mach = 40170.171251]
+> Writing file #152 (dbl) to disk...
+  [ 0.00 sec ]
+> Writing file #152 (vtk) to disk...
+  [ 0.00 sec ]
+step:91400; t = 7.6042e+02; dt = 8.3922e-03; 76.0 %
+            [Mach = 40100.062600]
+step:91500; t = 7.6126e+02; dt = 8.3930e-03; 76.1 %
+            [Mach = 40045.657017]
+step:91600; t = 7.6210e+02; dt = 8.3942e-03; 76.2 %
+            [Mach = 40010.416496]
+step:91700; t = 7.6294e+02; dt = 8.3954e-03; 76.3 %
+            [Mach = 39979.397974]
+step:91800; t = 7.6378e+02; dt = 8.3966e-03; 76.4 %
+            [Mach = 39942.734255]
+step:91900; t = 7.6462e+02; dt = 8.3980e-03; 76.5 %
+            [Mach = 39906.040833]
+> Writing file #153 (dbl) to disk...
+  [ 0.00 sec ]
+> Writing file #153 (vtk) to disk...
+  [ 0.00 sec ]
+step:92000; t = 7.6546e+02; dt = 8.3998e-03; 76.5 %
+            [Mach = 39867.843965]
+step:92100; t = 7.6630e+02; dt = 8.4018e-03; 76.6 %
+            [Mach = 39807.821237]
+step:92200; t = 7.6714e+02; dt = 8.4024e-03; 76.7 %
+            [Mach = 39765.853624]
+step:92300; t = 7.6798e+02; dt = 8.4025e-03; 76.8 %
+            [Mach = 39713.550452]
+step:92400; t = 7.6882e+02; dt = 8.4028e-03; 76.9 %
+            [Mach = 39668.476339]
+step:92500; t = 7.6966e+02; dt = 8.4028e-03; 77.0 %
+            [Mach = 39626.699939]
+> Writing file #154 (dbl) to disk...
+  [ 0.00 sec ]
+> Writing file #154 (vtk) to disk...
+  [ 0.00 sec ]
+step:92600; t = 7.7050e+02; dt = 8.4026e-03; 77.0 %
+            [Mach = 39593.364824]
+step:92700; t = 7.7134e+02; dt = 8.4025e-03; 77.1 %
+            [Mach = 39561.338858]
+step:92800; t = 7.7218e+02; dt = 8.4024e-03; 77.2 %
+            [Mach = 39528.651373]
+step:92900; t = 7.7302e+02; dt = 8.4024e-03; 77.3 %
+            [Mach = 39472.217553]
+step:93000; t = 7.7386e+02; dt = 8.4026e-03; 77.4 %
+            [Mach = 39433.587023]
+step:93100; t = 7.7470e+02; dt = 8.4026e-03; 77.5 %
+            [Mach = 39304.095780]
+> Writing file #155 (dbl) to disk...
+  [ 0.00 sec ]
+> Writing file #155 (vtk) to disk...
+  [ 0.00 sec ]
+step:93200; t = 7.7554e+02; dt = 8.4026e-03; 77.6 %
+            [Mach = 39271.557058]
+step:93300; t = 7.7638e+02; dt = 8.4027e-03; 77.6 %
+            [Mach = 39245.075919]
+step:93400; t = 7.7722e+02; dt = 8.4029e-03; 77.7 %
+            [Mach = 39219.321070]
+step:93500; t = 7.7806e+02; dt = 8.4028e-03; 77.8 %
+            [Mach = 39215.215774]
+step:93600; t = 7.7890e+02; dt = 8.4025e-03; 77.9 %
+            [Mach = 39209.373520]
+step:93700; t = 7.7974e+02; dt = 8.4024e-03; 78.0 %
+            [Mach = 39285.830841]
+> Writing file #156 (dbl) to disk...
+  [ 0.00 sec ]
+> Writing file #156 (vtk) to disk...
+  [ 0.00 sec ]
+step:93800; t = 7.8058e+02; dt = 8.4022e-03; 78.1 %
+            [Mach = 39301.004216]
+step:93900; t = 7.8142e+02; dt = 8.4019e-03; 78.1 %
+            [Mach = 39368.734389]
+step:94000; t = 7.8226e+02; dt = 8.4017e-03; 78.2 %
+            [Mach = 39427.137708]
+step:94100; t = 7.8310e+02; dt = 8.4015e-03; 78.3 %
+            [Mach = 39484.456648]
+step:94200; t = 7.8394e+02; dt = 8.4013e-03; 78.4 %
+            [Mach = 39517.889266]
+step:94300; t = 7.8478e+02; dt = 8.4011e-03; 78.5 %
+            [Mach = 39525.424512]
+> Writing file #157 (dbl) to disk...
+  [ 0.00 sec ]
+> Writing file #157 (vtk) to disk...
+  [ 0.00 sec ]
+step:94400; t = 7.8562e+02; dt = 8.4010e-03; 78.6 %
+            [Mach = 39515.930070]
+step:94500; t = 7.8646e+02; dt = 8.4010e-03; 78.6 %
+            [Mach = 39514.488121]
+step:94600; t = 7.8730e+02; dt = 8.4008e-03; 78.7 %
+            [Mach = 39518.386007]
+step:94700; t = 7.8814e+02; dt = 8.4007e-03; 78.8 %
+            [Mach = 39478.677719]
+step:94800; t = 7.8898e+02; dt = 8.4008e-03; 78.9 %
+            [Mach = 39458.825434]
+step:94900; t = 7.8982e+02; dt = 8.4010e-03; 79.0 %
+            [Mach = 39441.320924]
+> Writing file #158 (dbl) to disk...
+  [ 0.00 sec ]
+> Writing file #158 (vtk) to disk...
+  [ 0.00 sec ]
+step:95000; t = 7.9066e+02; dt = 8.4014e-03; 79.1 %
+            [Mach = 39448.085564]
+step:95100; t = 7.9150e+02; dt = 8.4019e-03; 79.2 %
+            [Mach = 39425.498226]
+step:95200; t = 7.9234e+02; dt = 8.4025e-03; 79.2 %
+            [Mach = 39394.390532]
+step:95300; t = 7.9318e+02; dt = 8.4031e-03; 79.3 %
+            [Mach = 39311.289751]
+step:95400; t = 7.9402e+02; dt = 8.4037e-03; 79.4 %
+            [Mach = 39203.130824]
+step:95500; t = 7.9486e+02; dt = 8.4042e-03; 79.5 %
+            [Mach = 39081.801615]
+> Writing file #159 (dbl) to disk...
+  [ 0.00 sec ]
+> Writing file #159 (vtk) to disk...
+  [ 0.00 sec ]
+step:95600; t = 7.9570e+02; dt = 8.4047e-03; 79.6 %
+            [Mach = 38972.325894]
+step:95700; t = 7.9654e+02; dt = 8.4052e-03; 79.7 %
+            [Mach = 38840.506756]
+step:95800; t = 7.9738e+02; dt = 8.4052e-03; 79.7 %
+            [Mach = 38703.002395]
+step:95900; t = 7.9822e+02; dt = 8.4038e-03; 79.8 %
+            [Mach = 38553.579804]
+step:96000; t = 7.9907e+02; dt = 8.4019e-03; 79.9 %
+            [Mach = 38428.731853]
+step:96100; t = 7.9991e+02; dt = 8.3996e-03; 80.0 %
+            [Mach = 38314.777233]
+> Writing file #160 (dbl) to disk...
+  [ 0.00 sec ]
+> Writing file #160 (vtk) to disk...
+  [ 0.00 sec ]
+step:96200; t = 8.0074e+02; dt = 8.3970e-03; 80.1 %
+            [Mach = 38208.863817]
+step:96300; t = 8.0158e+02; dt = 8.3950e-03; 80.2 %
+            [Mach = 38090.704509]
+step:96400; t = 8.0242e+02; dt = 8.3933e-03; 80.2 %
+            [Mach = 38001.158276]
+step:96500; t = 8.0326e+02; dt = 8.3911e-03; 80.3 %
+            [Mach = 37940.414119]
+step:96600; t = 8.0410e+02; dt = 8.3887e-03; 80.4 %
+            [Mach = 37840.076430]
+step:96700; t = 8.0494e+02; dt = 8.3867e-03; 80.5 %
+            [Mach = 37720.208091]
+> Writing file #161 (dbl) to disk...
+  [ 0.00 sec ]
+> Writing file #161 (vtk) to disk...
+  [ 0.00 sec ]
+step:96800; t = 8.0578e+02; dt = 8.3845e-03; 80.6 %
+            [Mach = 37607.178521]
+step:96900; t = 8.0662e+02; dt = 8.3820e-03; 80.7 %
+            [Mach = 37421.710580]
+step:97000; t = 8.0746e+02; dt = 8.3797e-03; 80.7 %
+            [Mach = 37350.763972]
+step:97100; t = 8.0829e+02; dt = 8.3770e-03; 80.8 %
+            [Mach = 37282.061877]
+step:97200; t = 8.0913e+02; dt = 8.3743e-03; 80.9 %
+            [Mach = 37202.836550]
+step:97300; t = 8.0997e+02; dt = 8.3714e-03; 81.0 %
+            [Mach = 37156.343655]
+> Writing file #162 (dbl) to disk...
+  [ 0.00 sec ]
+> Writing file #162 (vtk) to disk...
+  [ 0.00 sec ]
+step:97400; t = 8.1081e+02; dt = 8.3677e-03; 81.1 %
+            [Mach = 37164.456846]
+step:97500; t = 8.1164e+02; dt = 8.3644e-03; 81.2 %
+            [Mach = 37138.142352]
+step:97600; t = 8.1248e+02; dt = 8.3615e-03; 81.2 %
+            [Mach = 37159.866688]
+step:97700; t = 8.1331e+02; dt = 8.3599e-03; 81.3 %
+            [Mach = 37160.507600]
+step:97800; t = 8.1415e+02; dt = 8.3590e-03; 81.4 %
+            [Mach = 37157.237998]
+step:97900; t = 8.1499e+02; dt = 8.3580e-03; 81.5 %
+            [Mach = 37211.416708]
+> Writing file #163 (dbl) to disk...
+  [ 0.00 sec ]
+> Writing file #163 (vtk) to disk...
+  [ 0.00 sec ]
+step:98000; t = 8.1582e+02; dt = 8.3577e-03; 81.6 %
+            [Mach = 37182.920388]
+step:98100; t = 8.1666e+02; dt = 8.3584e-03; 81.7 %
+            [Mach = 37195.048120]
+step:98200; t = 8.1749e+02; dt = 8.3595e-03; 81.7 %
+            [Mach = 37213.286278]
+step:98300; t = 8.1833e+02; dt = 8.3601e-03; 81.8 %
+            [Mach = 37218.667814]
+step:98400; t = 8.1917e+02; dt = 8.3612e-03; 81.9 %
+            [Mach = 37197.462953]
+> Writing file #164 (dbl) to disk...
+  [ 0.00 sec ]
+> Writing file #164 (vtk) to disk...
+  [ 0.00 sec ]
+step:98500; t = 8.2000e+02; dt = 8.3623e-03; 82.0 %
+            [Mach = 37188.723400]
+step:98600; t = 8.2084e+02; dt = 8.3626e-03; 82.1 %
+            [Mach = 37198.293265]
+step:98700; t = 8.2167e+02; dt = 8.3619e-03; 82.2 %
+            [Mach = 37225.865476]
+step:98800; t = 8.2251e+02; dt = 8.3623e-03; 82.3 %
+            [Mach = 37281.899974]
+step:98900; t = 8.2335e+02; dt = 8.3621e-03; 82.3 %
+            [Mach = 37350.857490]
+step:99000; t = 8.2418e+02; dt = 8.3613e-03; 82.4 %
+            [Mach = 42991.694483]
+> Writing file #165 (dbl) to disk...
+  [ 0.00 sec ]
+> Writing file #165 (vtk) to disk...
+  [ 0.00 sec ]
+step:99100; t = 8.2502e+02; dt = 8.3601e-03; 82.5 %
+            [Mach = 37502.191034]
+step:99200; t = 8.2586e+02; dt = 8.3590e-03; 82.6 %
+            [Mach = 37600.986831]
+step:99300; t = 8.2669e+02; dt = 8.3573e-03; 82.7 %
+            [Mach = 37646.857343]
+step:99400; t = 8.2753e+02; dt = 8.3560e-03; 82.8 %
+            [Mach = 37705.235360]
+step:99500; t = 8.2836e+02; dt = 8.3550e-03; 82.8 %
+            [Mach = 37763.518121]
+step:99600; t = 8.2920e+02; dt = 8.3532e-03; 82.9 %
+            [Mach = 37784.929290]
+> Writing file #166 (dbl) to disk...
+  [ 0.00 sec ]
+> Writing file #166 (vtk) to disk...
+  [ 0.00 sec ]
+step:99700; t = 8.3003e+02; dt = 8.3508e-03; 83.0 %
+            [Mach = 37768.394651]
+step:99800; t = 8.3087e+02; dt = 8.3470e-03; 83.1 %
+            [Mach = 37739.807200]
+step:99900; t = 8.3170e+02; dt = 8.3421e-03; 83.2 %
+            [Mach = 37715.411277]
+step:100000; t = 8.3254e+02; dt = 8.3380e-03; 83.3 %
+             [Mach = 37704.305969]
+step:100100; t = 8.3337e+02; dt = 8.3339e-03; 83.3 %
+             [Mach = 37718.862274]
+step:100200; t = 8.3420e+02; dt = 8.3300e-03; 83.4 %
+             [Mach = 37749.222171]
+> Writing file #167 (dbl) to disk...
+  [ 0.00 sec ]
+> Writing file #167 (vtk) to disk...
+  [ 0.00 sec ]
+step:100300; t = 8.3504e+02; dt = 8.3253e-03; 83.5 %
+             [Mach = 37780.972082]
+step:100400; t = 8.3587e+02; dt = 8.3215e-03; 83.6 %
+             [Mach = 37822.176427]
+step:100500; t = 8.3670e+02; dt = 8.3158e-03; 83.7 %
+             [Mach = 37827.776299]
+step:100600; t = 8.3753e+02; dt = 8.3097e-03; 83.8 %
+             [Mach = 37818.453137]
+step:100700; t = 8.3836e+02; dt = 8.3121e-03; 83.8 %
+             [Mach = 37793.688898]
+step:100800; t = 8.3919e+02; dt = 8.3078e-03; 83.9 %
+             [Mach = 37754.483204]
+> Writing file #168 (dbl) to disk...
+  [ 0.00 sec ]
+> Writing file #168 (vtk) to disk...
+  [ 0.00 sec ]
+step:100900; t = 8.4002e+02; dt = 8.3033e-03; 84.0 %
+             [Mach = 37744.780929]
+step:101000; t = 8.4085e+02; dt = 8.3014e-03; 84.1 %
+             [Mach = 37717.352078]
+step:101100; t = 8.4168e+02; dt = 8.3006e-03; 84.2 %
+             [Mach = 37593.723171]
+step:101200; t = 8.4251e+02; dt = 8.2994e-03; 84.3 %
+             [Mach = 37550.404769]
+step:101300; t = 8.4334e+02; dt = 8.3000e-03; 84.3 %
+             [Mach = 37474.551186]
+step:101400; t = 8.4417e+02; dt = 8.3017e-03; 84.4 %
+             [Mach = 37362.527768]
+> Writing file #169 (dbl) to disk...
+  [ 0.00 sec ]
+> Writing file #169 (vtk) to disk...
+  [ 0.00 sec ]
+step:101500; t = 8.4500e+02; dt = 8.3047e-03; 84.5 %
+             [Mach = 37247.110800]
+step:101600; t = 8.4584e+02; dt = 8.3079e-03; 84.6 %
+             [Mach = 37153.746093]
+step:101700; t = 8.4667e+02; dt = 8.3114e-03; 84.7 %
+             [Mach = 36999.182608]
+step:101800; t = 8.4750e+02; dt = 8.3147e-03; 84.7 %
+             [Mach = 36853.438623]
+step:101900; t = 8.4833e+02; dt = 8.3177e-03; 84.8 %
+             [Mach = 36786.304426]
+step:102000; t = 8.4916e+02; dt = 8.3203e-03; 84.9 %
+             [Mach = 36765.812189]
+step:102100; t = 8.4999e+02; dt = 8.3234e-03; 85.0 %
+> Writing file #170 (dbl) to disk...
+  [ 0.00 sec ]
+> Writing file #170 (vtk) to disk...
+  [ 0.00 sec ]
+             [Mach = 36802.598740]
+step:102200; t = 8.5083e+02; dt = 8.3282e-03; 85.1 %
+             [Mach = 36841.055681]
+step:102300; t = 8.5166e+02; dt = 8.3324e-03; 85.2 %
+             [Mach = 36844.167558]
+step:102400; t = 8.5249e+02; dt = 8.3359e-03; 85.2 %
+             [Mach = 36815.785576]
+step:102500; t = 8.5333e+02; dt = 8.3383e-03; 85.3 %
+             [Mach = 36773.557499]
+step:102600; t = 8.5416e+02; dt = 8.3399e-03; 85.4 %
+             [Mach = 36823.126167]
+step:102700; t = 8.5499e+02; dt = 8.3413e-03; 85.5 %
+> Writing file #171 (dbl) to disk...
+  [ 0.00 sec ]
+> Writing file #171 (vtk) to disk...
+  [ 0.00 sec ]
+             [Mach = 36739.937726]
+step:102800; t = 8.5583e+02; dt = 8.3421e-03; 85.6 %
+             [Mach = 36669.278741]
+step:102900; t = 8.5666e+02; dt = 8.3414e-03; 85.7 %
+             [Mach = 36668.709218]
+step:103000; t = 8.5750e+02; dt = 8.3400e-03; 85.7 %
+             [Mach = 36675.972338]
+step:103100; t = 8.5833e+02; dt = 8.3387e-03; 85.8 %
+             [Mach = 36667.341149]
+step:103200; t = 8.5916e+02; dt = 8.3374e-03; 85.9 %
+             [Mach = 36584.945280]
+step:103300; t = 8.6000e+02; dt = 8.3355e-03; 86.0 %
+> Writing file #172 (dbl) to disk...
+  [ 0.00 sec ]
+> Writing file #172 (vtk) to disk...
+  [ 0.00 sec ]
+             [Mach = 36488.669890]
+step:103400; t = 8.6083e+02; dt = 8.3320e-03; 86.1 %
+             [Mach = 36289.384824]
+step:103500; t = 8.6166e+02; dt = 8.3255e-03; 86.2 %
+             [Mach = 36446.367022]
+step:103600; t = 8.6250e+02; dt = 8.3159e-03; 86.2 %
+             [Mach = 36304.320656]
+step:103700; t = 8.6333e+02; dt = 8.3054e-03; 86.3 %
+             [Mach = 36326.696533]
+step:103800; t = 8.6416e+02; dt = 8.2960e-03; 86.4 %
+             [Mach = 36404.090034]
+step:103900; t = 8.6499e+02; dt = 8.2883e-03; 86.5 %
+             [Mach = 36505.641570]
+> Writing file #173 (dbl) to disk...
+  [ 0.00 sec ]
+> Writing file #173 (vtk) to disk...
+  [ 0.00 sec ]
+step:104000; t = 8.6582e+02; dt = 8.2825e-03; 86.6 %
+             [Mach = 36501.033844]
+step:104100; t = 8.6664e+02; dt = 8.2783e-03; 86.7 %
+             [Mach = 36463.067038]
+step:104200; t = 8.6747e+02; dt = 8.2750e-03; 86.7 %
+             [Mach = 36499.072515]
+step:104300; t = 8.6830e+02; dt = 8.2720e-03; 86.8 %
+             [Mach = 36552.244967]
+step:104400; t = 8.6913e+02; dt = 8.2706e-03; 86.9 %
+             [Mach = 36588.820965]
+step:104500; t = 8.6995e+02; dt = 8.2704e-03; 87.0 %
+             [Mach = 36622.723522]
+> Writing file #174 (dbl) to disk...
+  [ 0.00 sec ]
+> Writing file #174 (vtk) to disk...
+  [ 0.00 sec ]
+step:104600; t = 8.7078e+02; dt = 8.2707e-03; 87.1 %
+             [Mach = 36665.243066]
+step:104700; t = 8.7161e+02; dt = 8.2696e-03; 87.2 %
+             [Mach = 36699.342600]
+step:104800; t = 8.7243e+02; dt = 8.2682e-03; 87.2 %
+             [Mach = 36724.437411]
+step:104900; t = 8.7326e+02; dt = 8.2672e-03; 87.3 %
+             [Mach = 36753.852312]
+step:105000; t = 8.7409e+02; dt = 8.2665e-03; 87.4 %
+             [Mach = 36800.761840]
+step:105100; t = 8.7491e+02; dt = 8.2659e-03; 87.5 %
+             [Mach = 36867.143030]
+> Writing file #175 (dbl) to disk...
+  [ 0.00 sec ]
+> Writing file #175 (vtk) to disk...
+  [ 0.00 sec ]
+step:105200; t = 8.7574e+02; dt = 8.2654e-03; 87.6 %
+             [Mach = 36935.553350]
+step:105300; t = 8.7657e+02; dt = 8.2651e-03; 87.7 %
+             [Mach = 37011.492994]
+step:105400; t = 8.7739e+02; dt = 8.2649e-03; 87.7 %
+             [Mach = 37080.713626]
+step:105500; t = 8.7822e+02; dt = 8.2649e-03; 87.8 %
+             [Mach = 37142.825831]
+step:105600; t = 8.7905e+02; dt = 8.2653e-03; 87.9 %
+             [Mach = 37191.862238]
+step:105700; t = 8.7987e+02; dt = 8.2659e-03; 88.0 %
+             [Mach = 37223.653289]
+> Writing file #176 (dbl) to disk...
+  [ 0.00 sec ]
+> Writing file #176 (vtk) to disk...
+  [ 0.00 sec ]
+step:105800; t = 8.8070e+02; dt = 8.2663e-03; 88.1 %
+             [Mach = 37243.098609]
+step:105900; t = 8.8153e+02; dt = 8.2668e-03; 88.2 %
+             [Mach = 37245.252955]
+step:106000; t = 8.8235e+02; dt = 8.2675e-03; 88.2 %
+             [Mach = 37246.231760]
+step:106100; t = 8.8318e+02; dt = 8.2689e-03; 88.3 %
+             [Mach = 37253.308649]
+step:106200; t = 8.8401e+02; dt = 8.2697e-03; 88.4 %
+             [Mach = 37268.340549]
+step:106300; t = 8.8483e+02; dt = 8.2705e-03; 88.5 %
+             [Mach = 37286.488711]
+> Writing file #177 (dbl) to disk...
+  [ 0.00 sec ]
+> Writing file #177 (vtk) to disk...
+  [ 0.00 sec ]
+step:106400; t = 8.8566e+02; dt = 8.2711e-03; 88.6 %
+             [Mach = 37310.269888]
+step:106500; t = 8.8649e+02; dt = 8.2710e-03; 88.6 %
+             [Mach = 37351.108544]
+step:106600; t = 8.8731e+02; dt = 8.2714e-03; 88.7 %
+             [Mach = 37397.445433]
+step:106700; t = 8.8814e+02; dt = 8.2714e-03; 88.8 %
+             [Mach = 37443.162482]
+step:106800; t = 8.8897e+02; dt = 8.2712e-03; 88.9 %
+             [Mach = 37484.544505]
+step:106900; t = 8.8980e+02; dt = 8.2711e-03; 89.0 %
+             [Mach = 37525.560643]
+> Writing file #178 (dbl) to disk...
+  [ 0.00 sec ]
+> Writing file #178 (vtk) to disk...
+  [ 0.00 sec ]
+step:107000; t = 8.9062e+02; dt = 8.2711e-03; 89.1 %
+             [Mach = 37567.589957]
+step:107100; t = 8.9145e+02; dt = 8.2719e-03; 89.1 %
+             [Mach = 37605.394569]
+step:107200; t = 8.9228e+02; dt = 8.2740e-03; 89.2 %
+             [Mach = 37638.352352]
+step:107300; t = 8.9311e+02; dt = 8.2754e-03; 89.3 %
+             [Mach = 37681.046589]
+step:107400; t = 8.9393e+02; dt = 8.2764e-03; 89.4 %
+             [Mach = 37715.142373]
+step:107500; t = 8.9476e+02; dt = 8.2770e-03; 89.5 %
+             [Mach = 37728.934162]
+> Writing file #179 (dbl) to disk...
+  [ 0.00 sec ]
+> Writing file #179 (vtk) to disk...
+  [ 0.00 sec ]
+step:107600; t = 8.9559e+02; dt = 8.2774e-03; 89.6 %
+             [Mach = 37734.102192]
+step:107700; t = 8.9642e+02; dt = 8.2778e-03; 89.6 %
+             [Mach = 37753.847691]
+step:107800; t = 8.9724e+02; dt = 8.2782e-03; 89.7 %
+             [Mach = 37775.730583]
+step:107900; t = 8.9807e+02; dt = 8.2790e-03; 89.8 %
+             [Mach = 37804.020414]
+step:108000; t = 8.9890e+02; dt = 8.2796e-03; 89.9 %
+             [Mach = 37831.911061]
+step:108100; t = 8.9973e+02; dt = 8.2802e-03; 90.0 %
+             [Mach = 37864.819823]
+> Writing file #180 (dbl) to disk...
+  [ 0.00 sec ]
+> Writing file #180 (vtk) to disk...
+  [ 0.00 sec ]
+step:108200; t = 9.0056e+02; dt = 8.2806e-03; 90.1 %
+             [Mach = 37902.128314]
+step:108300; t = 9.0138e+02; dt = 8.2810e-03; 90.1 %
+             [Mach = 37939.835141]
+step:108400; t = 9.0221e+02; dt = 8.2813e-03; 90.2 %
+             [Mach = 37963.500310]
+step:108500; t = 9.0304e+02; dt = 8.2817e-03; 90.3 %
+             [Mach = 38018.179578]
+step:108600; t = 9.0387e+02; dt = 8.2820e-03; 90.4 %
+             [Mach = 38096.780687]
+step:108700; t = 9.0470e+02; dt = 8.2822e-03; 90.5 %
+             [Mach = 38187.089101]
+> Writing file #181 (dbl) to disk...
+  [ 0.00 sec ]
+> Writing file #181 (vtk) to disk...
+  [ 0.00 sec ]
+step:108800; t = 9.0552e+02; dt = 8.2821e-03; 90.6 %
+             [Mach = 38253.765384]
+step:108900; t = 9.0635e+02; dt = 8.2823e-03; 90.6 %
+             [Mach = 38288.197066]
+step:109000; t = 9.0718e+02; dt = 8.2825e-03; 90.7 %
+             [Mach = 38332.173303]
+step:109100; t = 9.0801e+02; dt = 8.2828e-03; 90.8 %
+             [Mach = 38388.966932]
+step:109200; t = 9.0884e+02; dt = 8.2831e-03; 90.9 %
+             [Mach = 38447.563264]
+step:109300; t = 9.0967e+02; dt = 8.2834e-03; 91.0 %
+             [Mach = 38495.231406]
+> Writing file #182 (dbl) to disk...
+  [ 0.00 sec ]
+> Writing file #182 (vtk) to disk...
+  [ 0.00 sec ]
+step:109400; t = 9.1049e+02; dt = 8.2836e-03; 91.0 %
+             [Mach = 38539.612683]
+step:109500; t = 9.1132e+02; dt = 8.2839e-03; 91.1 %
+             [Mach = 38568.229312]
+step:109600; t = 9.1215e+02; dt = 8.2842e-03; 91.2 %
+             [Mach = 38604.646586]
+step:109700; t = 9.1298e+02; dt = 8.2846e-03; 91.3 %
+             [Mach = 38626.743067]
+step:109800; t = 9.1381e+02; dt = 8.2855e-03; 91.4 %
+             [Mach = 38656.848526]
+step:109900; t = 9.1464e+02; dt = 8.2863e-03; 91.5 %
+             [Mach = 38690.113737]
+> Writing file #183 (dbl) to disk...
+  [ 0.00 sec ]
+> Writing file #183 (vtk) to disk...
+  [ 0.00 sec ]
+step:110000; t = 9.1547e+02; dt = 8.2873e-03; 91.5 %
+             [Mach = 38715.712540]
+step:110100; t = 9.1629e+02; dt = 8.2882e-03; 91.6 %
+             [Mach = 38749.689839]
+step:110200; t = 9.1712e+02; dt = 8.2889e-03; 91.7 %
+             [Mach = 38774.937152]
+step:110300; t = 9.1795e+02; dt = 8.2898e-03; 91.8 %
+             [Mach = 38821.575974]
+step:110400; t = 9.1878e+02; dt = 8.2904e-03; 91.9 %
+             [Mach = 38829.332297]
+step:110500; t = 9.1961e+02; dt = 8.2909e-03; 92.0 %
+             [Mach = 38868.771506]
+> Writing file #184 (dbl) to disk...
+  [ 0.00 sec ]
+> Writing file #184 (vtk) to disk...
+  [ 0.00 sec ]
+step:110600; t = 9.2044e+02; dt = 8.2916e-03; 92.0 %
+             [Mach = 38891.829760]
+step:110700; t = 9.2127e+02; dt = 8.2924e-03; 92.1 %
+             [Mach = 38869.728042]
+step:110800; t = 9.2210e+02; dt = 8.2934e-03; 92.2 %
+             [Mach = 38914.424936]
+step:110900; t = 9.2293e+02; dt = 8.2939e-03; 92.3 %
+             [Mach = 38955.032239]
+step:111000; t = 9.2376e+02; dt = 8.2942e-03; 92.4 %
+             [Mach = 38880.897413]
+step:111100; t = 9.2459e+02; dt = 8.2941e-03; 92.5 %
+             [Mach = 38845.688878]
+> Writing file #185 (dbl) to disk...
+  [ 0.00 sec ]
+> Writing file #185 (vtk) to disk...
+  [ 0.00 sec ]
+step:111200; t = 9.2541e+02; dt = 8.2936e-03; 92.5 %
+             [Mach = 38818.204579]
+step:111300; t = 9.2624e+02; dt = 8.2928e-03; 92.6 %
+             [Mach = 38797.539715]
+step:111400; t = 9.2707e+02; dt = 8.2922e-03; 92.7 %
+             [Mach = 38781.288730]
+step:111500; t = 9.2790e+02; dt = 8.2914e-03; 92.8 %
+             [Mach = 38766.169797]
+step:111600; t = 9.2873e+02; dt = 8.2900e-03; 92.9 %
+             [Mach = 38736.604707]
+step:111700; t = 9.2956e+02; dt = 8.2885e-03; 93.0 %
+             [Mach = 38697.701023]
+> Writing file #186 (dbl) to disk...
+  [ 0.00 sec ]
+> Writing file #186 (vtk) to disk...
+  [ 0.00 sec ]
+step:111800; t = 9.3039e+02; dt = 8.2871e-03; 93.0 %
+             [Mach = 38656.066385]
+step:111900; t = 9.3122e+02; dt = 8.2861e-03; 93.1 %
+             [Mach = 38628.399745]
+step:112000; t = 9.3205e+02; dt = 8.2853e-03; 93.2 %
+             [Mach = 38610.560814]
+step:112100; t = 9.3288e+02; dt = 8.2843e-03; 93.3 %
+             [Mach = 38592.143786]
+step:112200; t = 9.3370e+02; dt = 8.2827e-03; 93.4 %
+             [Mach = 38576.571178]
+step:112300; t = 9.3453e+02; dt = 8.2813e-03; 93.5 %
+             [Mach = 38562.470454]
+> Writing file #187 (dbl) to disk...
+  [ 0.00 sec ]
+> Writing file #187 (vtk) to disk...
+  [ 0.00 sec ]
+step:112400; t = 9.3536e+02; dt = 8.2799e-03; 93.5 %
+             [Mach = 38564.310901]
+step:112500; t = 9.3619e+02; dt = 8.2803e-03; 93.6 %
+             [Mach = 38575.698225]
+step:112600; t = 9.3702e+02; dt = 8.2795e-03; 93.7 %
+             [Mach = 38591.786268]
+step:112700; t = 9.3784e+02; dt = 8.2792e-03; 93.8 %
+             [Mach = 38599.146839]
+step:112800; t = 9.3867e+02; dt = 8.2788e-03; 93.9 %
+             [Mach = 38602.806487]
+step:112900; t = 9.3950e+02; dt = 8.2789e-03; 93.9 %
+             [Mach = 38576.067210]
+> Writing file #188 (dbl) to disk...
+  [ 0.00 sec ]
+> Writing file #188 (vtk) to disk...
+  [ 0.00 sec ]
+step:113000; t = 9.4033e+02; dt = 8.2806e-03; 94.0 %
+             [Mach = 38555.889682]
+step:113100; t = 9.4116e+02; dt = 8.2813e-03; 94.1 %
+             [Mach = 38551.748591]
+step:113200; t = 9.4198e+02; dt = 8.2817e-03; 94.2 %
+             [Mach = 38553.879193]
+step:113300; t = 9.4281e+02; dt = 8.2831e-03; 94.3 %
+             [Mach = 38535.852466]
+step:113400; t = 9.4364e+02; dt = 8.2837e-03; 94.4 %
+             [Mach = 38523.272062]
+step:113500; t = 9.4447e+02; dt = 8.2854e-03; 94.4 %
+             [Mach = 38448.235261]
+> Writing file #189 (dbl) to disk...
+  [ 0.00 sec ]
+> Writing file #189 (vtk) to disk...
+  [ 0.00 sec ]
+step:113600; t = 9.4530e+02; dt = 8.2884e-03; 94.5 %
+             [Mach = 38530.495088]
+step:113700; t = 9.4613e+02; dt = 8.2919e-03; 94.6 %
+             [Mach = 38587.304736]
+step:113800; t = 9.4696e+02; dt = 8.2930e-03; 94.7 %
+             [Mach = 38618.770612]
+step:113900; t = 9.4778e+02; dt = 8.2935e-03; 94.8 %
+             [Mach = 38577.267467]
+step:114000; t = 9.4861e+02; dt = 8.2942e-03; 94.9 %
+             [Mach = 38422.019659]
+step:114100; t = 9.4944e+02; dt = 8.2944e-03; 94.9 %
+             [Mach = 38260.172159]
+> Writing file #190 (dbl) to disk...
+  [ 0.00 sec ]
+> Writing file #190 (vtk) to disk...
+  [ 0.00 sec ]
+step:114200; t = 9.5027e+02; dt = 8.2944e-03; 95.0 %
+             [Mach = 38264.002095]
+step:114300; t = 9.5110e+02; dt = 8.2943e-03; 95.1 %
+             [Mach = 38293.221586]
+step:114400; t = 9.5193e+02; dt = 8.2941e-03; 95.2 %
+             [Mach = 38249.323253]
+step:114500; t = 9.5276e+02; dt = 8.2936e-03; 95.3 %
+             [Mach = 38205.267266]
+step:114600; t = 9.5359e+02; dt = 8.2931e-03; 95.4 %
+             [Mach = 38180.773147]
+step:114700; t = 9.5442e+02; dt = 8.2896e-03; 95.4 %
+             [Mach = 38133.317196]
+> Writing file #191 (dbl) to disk...
+  [ 0.00 sec ]
+> Writing file #191 (vtk) to disk...
+  [ 0.00 sec ]
+step:114800; t = 9.5525e+02; dt = 8.2836e-03; 95.5 %
+             [Mach = 38062.785993]
+step:114900; t = 9.5608e+02; dt = 8.2828e-03; 95.6 %
+             [Mach = 38035.599354]
+step:115000; t = 9.5691e+02; dt = 8.2830e-03; 95.7 %
+             [Mach = 38020.922964]
+step:115100; t = 9.5773e+02; dt = 8.2845e-03; 95.8 %
+             [Mach = 38054.854050]
+step:115200; t = 9.5856e+02; dt = 8.2873e-03; 95.9 %
+             [Mach = 38117.550225]
+step:115300; t = 9.5939e+02; dt = 8.2873e-03; 95.9 %
+             [Mach = 38193.189811]
+> Writing file #192 (dbl) to disk...
+  [ 0.00 sec ]
+> Writing file #192 (vtk) to disk...
+  [ 0.00 sec ]
+step:115400; t = 9.6022e+02; dt = 8.2864e-03; 96.0 %
+             [Mach = 38266.468049]
+step:115500; t = 9.6105e+02; dt = 8.2861e-03; 96.1 %
+             [Mach = 38330.741309]
+step:115600; t = 9.6188e+02; dt = 8.2857e-03; 96.2 %
+             [Mach = 38389.396689]
+step:115700; t = 9.6271e+02; dt = 8.2872e-03; 96.3 %
+             [Mach = 38411.650924]
+step:115800; t = 9.6353e+02; dt = 8.2889e-03; 96.4 %
+             [Mach = 38444.489040]
+step:115900; t = 9.6436e+02; dt = 8.2890e-03; 96.4 %
+             [Mach = 38463.311906]
+> Writing file #193 (dbl) to disk...
+  [ 0.00 sec ]
+> Writing file #193 (vtk) to disk...
+  [ 0.00 sec ]
+step:116000; t = 9.6519e+02; dt = 8.2901e-03; 96.5 %
+             [Mach = 38462.946538]
+step:116100; t = 9.6602e+02; dt = 8.2908e-03; 96.6 %
+             [Mach = 38490.852988]
+step:116200; t = 9.6685e+02; dt = 8.2908e-03; 96.7 %
+             [Mach = 38474.312488]
+step:116300; t = 9.6768e+02; dt = 8.2909e-03; 96.8 %
+             [Mach = 38494.212970]
+step:116400; t = 9.6851e+02; dt = 8.2919e-03; 96.9 %
+             [Mach = 38495.747801]
+step:116500; t = 9.6934e+02; dt = 8.3135e-03; 96.9 %
+             [Mach = 39344.956510]
+> Writing file #194 (dbl) to disk...
+  [ 0.00 sec ]
+> Writing file #194 (vtk) to disk...
+  [ 0.00 sec ]
+step:116600; t = 9.7017e+02; dt = 8.3134e-03; 97.0 %
+             [Mach = 39370.991602]
+step:116700; t = 9.7100e+02; dt = 8.3130e-03; 97.1 %
+             [Mach = 39339.105361]
+step:116800; t = 9.7183e+02; dt = 8.3131e-03; 97.2 %
+             [Mach = 39194.525201]
+step:116900; t = 9.7266e+02; dt = 8.3132e-03; 97.3 %
+             [Mach = 39452.949617]
+step:117000; t = 9.7350e+02; dt = 8.3148e-03; 97.3 %
+             [Mach = 39384.967091]
+step:117100; t = 9.7433e+02; dt = 8.3325e-03; 97.4 %
+             [Mach = 39172.312643]
+> Writing file #195 (dbl) to disk...
+  [ 0.00 sec ]
+> Writing file #195 (vtk) to disk...
+  [ 0.00 sec ]
+step:117200; t = 9.7516e+02; dt = 8.3326e-03; 97.5 %
+             [Mach = 39270.919606]
+step:117300; t = 9.7599e+02; dt = 8.3327e-03; 97.6 %
+             [Mach = 38965.516147]
+step:117400; t = 9.7683e+02; dt = 8.3336e-03; 97.7 %
+             [Mach = 39203.035707]
+step:117500; t = 9.7766e+02; dt = 8.3345e-03; 97.8 %
+             [Mach = 38800.964593]
+step:117600; t = 9.7849e+02; dt = 8.3353e-03; 97.8 %
+             [Mach = 38977.941765]
+step:117700; t = 9.7933e+02; dt = 8.3366e-03; 97.9 %
+             [Mach = 38917.121413]
+> Writing file #196 (dbl) to disk...
+  [ 0.00 sec ]
+> Writing file #196 (vtk) to disk...
+  [ 0.00 sec ]
+step:117800; t = 9.8016e+02; dt = 8.3273e-03; 98.0 %
+             [Mach = 38735.148502]
+step:117900; t = 9.8099e+02; dt = 8.3293e-03; 98.1 %
+             [Mach = 39072.659792]
+step:118000; t = 9.8183e+02; dt = 8.3317e-03; 98.2 %
+             [Mach = 38744.900937]
+step:118100; t = 9.8266e+02; dt = 8.3341e-03; 98.3 %
+             [Mach = 38976.499461]
+step:118200; t = 9.8349e+02; dt = 8.3379e-03; 98.3 %
+             [Mach = 39055.661372]
+step:118300; t = 9.8433e+02; dt = 8.3406e-03; 98.4 %
+             [Mach = 38786.637178]
+> Writing file #197 (dbl) to disk...
+  [ 0.00 sec ]
+> Writing file #197 (vtk) to disk...
+  [ 0.00 sec ]
+step:118400; t = 9.8516e+02; dt = 8.3431e-03; 98.5 %
+             [Mach = 39150.988411]
+step:118500; t = 9.8600e+02; dt = 8.3468e-03; 98.6 %
+             [Mach = 38984.387950]
+step:118600; t = 9.8683e+02; dt = 8.3379e-03; 98.7 %
+             [Mach = 39041.211577]
+step:118700; t = 9.8767e+02; dt = 8.3404e-03; 98.8 %
+             [Mach = 39218.337732]
+step:118800; t = 9.8850e+02; dt = 8.3438e-03; 98.8 %
+             [Mach = 38991.377455]
+step:118900; t = 9.8933e+02; dt = 8.3494e-03; 98.9 %
+             [Mach = 39269.233279]
+> Writing file #198 (dbl) to disk...
+  [ 0.00 sec ]
+> Writing file #198 (vtk) to disk...
+  [ 0.00 sec ]
+step:119000; t = 9.9017e+02; dt = 8.3571e-03; 99.0 %
+             [Mach = 39213.210411]
+step:119100; t = 9.9101e+02; dt = 8.3579e-03; 99.1 %
+             [Mach = 39186.636586]
+step:119200; t = 9.9184e+02; dt = 8.3588e-03; 99.2 %
+             [Mach = 39472.089949]
+step:119300; t = 9.9268e+02; dt = 8.3603e-03; 99.3 %
+             [Mach = 39314.428458]
+step:119400; t = 9.9351e+02; dt = 8.3612e-03; 99.4 %
+             [Mach = 39603.347818]
+step:119500; t = 9.9435e+02; dt = 8.3636e-03; 99.4 %
+             [Mach = 39519.084349]
+> Writing file #199 (dbl) to disk...
+  [ 0.00 sec ]
+> Writing file #199 (vtk) to disk...
+  [ 0.00 sec ]
+step:119600; t = 9.9519e+02; dt = 8.3662e-03; 99.5 %
+             [Mach = 39604.507692]
+step:119700; t = 9.9602e+02; dt = 8.3680e-03; 99.6 %
+             [Mach = 39697.906262]
+step:119800; t = 9.9686e+02; dt = 8.3693e-03; 99.7 %
+             [Mach = 38723.195033]
+step:119900; t = 9.9770e+02; dt = 8.3708e-03; 99.8 %
+             [Mach = 39446.439846]
+step:120000; t = 9.9853e+02; dt = 8.3724e-03; 99.9 %
+             [Mach = 40084.424620]
+step:120100; t = 9.9937e+02; dt = 8.3735e-03; 99.9 %
+             [Mach = 39869.197536]
+> Writing file #200 (dbl) to disk...
+  [ 0.00 sec ]
+> Writing file #200 (vtk) to disk...
+  [ 0.00 sec ]
+
+> Total allocated memory    0.48 Mb (proc #0)
+> Elapsed time              0d:0h:0m:22s
+> Average time/step         1.83e-04  (sec)  
+> Local time                Sat Aug 22 17:25:35 2026
+> Done

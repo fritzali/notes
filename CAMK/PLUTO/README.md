@@ -11,7 +11,13 @@ This directory documents the installation and basic usage of the PLUTO code.
    
    ```alias plutosetup='python $PLUTO_DIR/setup.py'```
    
-   ```alias plutorun='mpirun -np 6 ./pluto'```
+   ```
+      plutorun() {
+          touch pluto.0.log
+          mpirun -np 6 ./pluto "$@" > /dev/null 2>&1 &
+          tail -f --pid=$! pluto.0.log
+      }
+   ```
 
 > *The former of these compiles your run, while latter uses six parallel processes for the run specified in the `pluto` executable located in the current directory. This is a good default for a processor with eight physical cores on consumer grade hardware.*
 
