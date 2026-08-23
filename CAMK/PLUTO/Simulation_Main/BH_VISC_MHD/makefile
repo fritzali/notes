@@ -6,7 +6,7 @@
 
 pluto:                              # Default target
 
-ARCH         = Linux.gcc.defs
+ARCH         = Linux.mpicc.defs
 PLUTO_DIR    = /home/fritz/work/notebooks/CAMK/PLUTO/PLUTO
 SRC          = $(PLUTO_DIR)/Src
 INCLUDE_DIRS = -I. -I$(SRC)
@@ -84,7 +84,6 @@ OBJ += parabolic_update.o
 include $(SRC)/MHD/makefile
 include $(SRC)/Viscosity/makefile
 include $(SRC)/MHD/CT/makefile
-include $(SRC)/MHD/Resistivity/makefile
 include $(SRC)/EOS/Ideal/makefile
 
 # ---------------------------------------------------------
