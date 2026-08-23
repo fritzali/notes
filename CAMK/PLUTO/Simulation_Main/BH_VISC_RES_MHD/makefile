@@ -6,7 +6,7 @@
 
 pluto:                              # Default target
 
-ARCH         = Linux.gcc.defs
+ARCH         = Linux.mpicc.defs
 PLUTO_DIR    = /home/fritz/work/notebooks/CAMK/PLUTO/PLUTO
 SRC          = $(PLUTO_DIR)/Src
 INCLUDE_DIRS = -I. -I$(SRC)
