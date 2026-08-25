@@ -130,7 +130,7 @@ void UpdateDiskFractionCache (const Data *d, Grid *grid)
   /* Classification parameters */
   const double median_factor = 5.0;
   const double vphi_frac     = 0.5;
-  const int blur_radius      = 1; /* 3x3 stencil window */
+  const int blur_radius      = 2; /* 3x3 stencil window */
 
   /* -----------------------------------------------------------------
    * Part A: Compute Global Radial Medians and Apply Rotation Veto

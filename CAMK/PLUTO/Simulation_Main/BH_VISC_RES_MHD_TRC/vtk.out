@@ -1,4 +1,6 @@
 0 0.000000e+00 1.000000e-06 0 single_file little rho vx1 vx3 Bx1 Bx3 prs tr1 nu num Te diskfrac 
 1 4.995757e+00 8.662854e-03 616 single_file little rho vx1 vx3 Bx1 Bx3 prs tr1 nu num Te diskfrac 
-
-4 1.999776e+01 8.650653e-03 2348 single_file little rho vx1 vx3 Bx1 Bx3 prs tr1 nu num Te diskfrac 
+2 9.996351e+00 8.673535e-03 1193 single_file little rho vx1 vx3 Bx1 Bx3 prs tr1 nu num Te diskfrac 
+3 1.499875e+01 8.622446e-03 1771 single_file little rho vx1 vx3 Bx1 Bx3 prs tr1 nu num Te diskfrac 
+4 1.999898e+01 8.635663e-03 2350 single_file little rho vx1 vx3 Bx1 Bx3 prs tr1 nu num Te diskfrac 
+5 2.499236e+01 7.982409e-03 2956 single_file little rho vx1 vx3 Bx1 Bx3 prs tr1 nu num Te diskfrac 
