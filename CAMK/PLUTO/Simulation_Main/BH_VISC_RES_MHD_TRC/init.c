@@ -43,10 +43,41 @@
 #endif
 
 /* Global persistent arrays for cached lookup */
-static double ***disk_frac_cache = NULL;
-static double **raw_mask         = NULL;
+static double ***disk_frac_cache = NULL;  /* EMA-relaxed value actually used by physics */
+static double **raw_mask         = NULL;  /* instantaneous, hard-thresholded classification */
+static double **smooth_mask      = NULL;  /* spatially blurred version of raw_mask (this step) */
 static double *local_rho_buf     = NULL;
 static double *global_rho_buf    = NULL;
+
+/* Set to 1 once InitDomain has primed disk_frac_cache with a first value,
+ * so the very first Analysis() call blends against a real field instead
+ * of zero-initialized memory (which would otherwise be seen as "all corona"
+ * and instantaneously kill dissipation everywhere on step 1). */
+static int disk_frac_primed = 0;
+
+/* -------------------------------------------------------------------
+ * DESIGN NOTE (read before touching this file again):
+ *
+ * The original version of this cache recomputed a HARD boolean
+ * (rot_flag && rho_flag) every call to Analysis() and fed it straight
+ * into disk_frac_cache, which in turn gates viscosity/opacity. That
+ * is a discontinuous function of the solution feeding back into the
+ * coefficients of the PDE being solved every step: a cell straddling
+ * the threshold flips 0<->1 from one step to the next, dissipation
+ * switches on/off like a delta-function forcing term, and the
+ * resulting shock drives local density toward DFLOOR, which can push
+ * neighbouring cells across their own threshold on the next step.
+ * That is a real, first-order stability defect, not a corner case.
+ *
+ * Fix implemented below: disk_frac_cache is an EXPONENTIAL MOVING
+ * AVERAGE (EMA) of the hard/blurred classification, updated once per
+ * call with a fixed relaxation rate EMA_ALPHA. The physics-facing
+ * value can now only change by a bounded amount per call, so it can
+ * no longer act as an impulsive forcing term. Do not read raw_mask or
+ * smooth_mask directly from viscosity/opacity code -- always go
+ * through DiskFraction(), which returns the relaxed value.
+ * ------------------------------------------------------------------- */
+#define EMA_ALPHA 0.1   /* relaxation rate; ~1/EMA_ALPHA calls to reach steady state */
 
 /* MPI Gathering Buffers */
 #ifdef PARALLEL
@@ -90,6 +121,9 @@ void UpdateDiskFractionCache (const Data *d, Grid *grid)
   if (raw_mask == NULL) {
     raw_mask = ARRAY_2D(NX2_TOT, NX1_TOT, double);
   }
+  if (smooth_mask == NULL) {
+    smooth_mask = ARRAY_2D(NX2_TOT, NX1_TOT, double);
+  }
   if (local_rho_buf == NULL) {
     local_rho_buf = ARRAY_1D(NX2_TOT, double);
   }
@@ -130,7 +164,7 @@ void UpdateDiskFractionCache (const Data *d, Grid *grid)
   /* Classification parameters */
   const double median_factor = 5.0;
   const double vphi_frac     = 0.5;
-  const int blur_radius      = 2; /* 3x3 stencil window */
+  const int blur_radius      = 1; /* 3x3 stencil window (radius=2 gives 5x5, not 3x3 -- fixed) */
 
   /* -----------------------------------------------------------------
    * Part A: Compute Global Radial Medians and Apply Rotation Veto
@@ -138,10 +172,18 @@ void UpdateDiskFractionCache (const Data *d, Grid *grid)
   for (i = 0; i < NX1_TOT; i++) {
     double R = grid->x[IDIR][i];
 
-    /* Extract local polar density slice for radial cell i */
+    /* Extract local polar density slice for radial cell i, azimuthally
+     * averaged over all local KBEG..KEND planes. Sampling KBEG alone
+     * assumes axisymmetry; in a 3D run with turbulence or warping,
+     * a single phi-plane is not representative of the shell and will
+     * misclassify material at other azimuths. */
     int local_idx = 0;
     for (j = JBEG; j <= JEND; j++) {
-      local_rho_buf[local_idx++] = d->Vc[RHO][KBEG][j][i];
+      double rho_sum = 0.0;
+      for (k = KBEG; k <= KEND; k++) {
+        rho_sum += d->Vc[RHO][k][j][i];
+      }
+      local_rho_buf[local_idx++] = rho_sum / (double)(KEND - KBEG + 1);
     }
 
     /* Gather full polar density vector across theta sub-communicator */
@@ -159,16 +201,26 @@ void UpdateDiskFractionCache (const Data *d, Grid *grid)
       med_rho = global_rho_buf[global_n2 / 2];
     }
 
-    /* Apply thresholding and rotation veto across active and ghost cells */
+    /* Apply thresholding and rotation veto across active and ghost cells.
+     * Both rho and vphi are azimuthally averaged over local phi planes
+     * for the same reason as above -- consistency with the median that
+     * was computed from azimuthally-averaged density. */
     for (j = 0; j < NX2_TOT; j++) {
       double theta = grid->x[JDIR][j];
       double Rcyl  = R * sin(theta);
 
-      double vK   = (Rcyl > 1.0e-12) ? (1.0 / sqrt(Rcyl)) : 0.0;
-      double vphi = d->Vc[iVPHI][KBEG][j][i];
+      double vK = (Rcyl > 1.0e-12) ? (1.0 / sqrt(Rcyl)) : 0.0;
 
-      int rot_flag = (vphi > vphi_frac * vK);
-      int rho_flag = (d->Vc[RHO][KBEG][j][i] > median_factor * med_rho);
+      double rho_avg = 0.0, vphi_avg = 0.0;
+      for (k = KBEG; k <= KEND; k++) {
+        rho_avg  += d->Vc[RHO][k][j][i];
+        vphi_avg += d->Vc[iVPHI][k][j][i];
+      }
+      rho_avg  /= (double)(KEND - KBEG + 1);
+      vphi_avg /= (double)(KEND - KBEG + 1);
+
+      int rot_flag = (vphi_avg > vphi_frac * vK);
+      int rho_flag = (rho_avg > median_factor * med_rho);
 
       if (rot_flag && rho_flag) {
         raw_mask[j][i] = 1.0;
@@ -179,7 +231,7 @@ void UpdateDiskFractionCache (const Data *d, Grid *grid)
   }
 
   /* -----------------------------------------------------------------
-   * Part B: Spatial 2D Moving-Box Blur (3x3 stencil)
+   * Part B: Spatial 2D Moving-Box Blur (3x3 stencil, blur_radius=1)
    * ----------------------------------------------------------------- */
   for (j = JBEG; j <= JEND; j++) {
     for (i = IBEG; i <= IEND; i++) {
@@ -196,17 +248,44 @@ void UpdateDiskFractionCache (const Data *d, Grid *grid)
         }
       }
 
-      double smooth_val = sum / (double)count;
-
-      /* Store in active domain across all phi planes */
-      for (k = KBEG; k <= KEND; k++) {
-        disk_frac_cache[k][j][i] = smooth_val;
-      }
+      smooth_mask[j][i] = sum / (double)count;
     }
   }
 
   /* -----------------------------------------------------------------
-   * Part C: Pad Ghost Zones for Boundary Queries
+   * Part C: Temporal Relaxation (EMA) -- THE critical stability fix.
+   *
+   * disk_frac_cache is never overwritten with the instantaneous
+   * smooth_mask. Instead it is relaxed toward it:
+   *
+   *   F^{n+1} = alpha * smooth_mask + (1 - alpha) * F^n
+   *
+   * so viscosity/opacity gated by DiskFraction() can only change by a
+   * bounded amount (~EMA_ALPHA) per call, never jump discontinuously.
+   * On the very first call (t=0, from InitDomain), there is no
+   * meaningful F^n yet, so we seed disk_frac_cache directly from
+   * smooth_mask instead of blending against zero-initialized memory
+   * (blending against zero would read as "instant corona everywhere"
+   * and kill dissipation on step 1).
+   * ----------------------------------------------------------------- */
+  for (j = JBEG; j <= JEND; j++) {
+    for (i = IBEG; i <= IEND; i++) {
+      double relaxed;
+      if (!disk_frac_primed) {
+        relaxed = smooth_mask[j][i];
+      } else {
+        relaxed = EMA_ALPHA * smooth_mask[j][i]
+                + (1.0 - EMA_ALPHA) * disk_frac_cache[KBEG][j][i];
+      }
+      for (k = KBEG; k <= KEND; k++) {
+        disk_frac_cache[k][j][i] = relaxed;
+      }
+    }
+  }
+  disk_frac_primed = 1;
+
+  /* -----------------------------------------------------------------
+   * Part D: Pad Ghost Zones for Boundary Queries
    * ----------------------------------------------------------------- */
   for (k = 0; k < NX3_TOT; k++) {
     int clamped_k = ClampIndex(k, KBEG, KEND);
@@ -255,7 +334,28 @@ void InitDomain (Data *d, Grid *grid)
   UpdateDiskFractionCache(d, grid);
 }
 
-/* Called at the end of every timestep */
+/* Called at the end of every timestep.
+ *
+ * KNOWN LIMITATION -- read before relying on this for fast disk
+ * evolution: PLUTO does not expose a user hook that runs before the
+ * first RK/CT sub-stage of a step, only Analysis() (end of step) and
+ * InitDomain() (t=0 only). That means disk_frac_cache, and therefore
+ * every viscosity/opacity call that reads DiskFraction(), is always
+ * one full step stale relative to the sub-stages currently being
+ * integrated -- Vc has already advanced by the time this runs.
+ *
+ * With EMA_ALPHA ~ 0.08 the cache changes slowly enough per call that
+ * one step of staleness is not itself destabilizing (it was the
+ * *instantaneous hard* reclassification, not the staleness, that
+ * caused the original explosion). But if the disk boundary is
+ * expected to move on a timescale comparable to a few timesteps, this
+ * lag will visibly trail the true disk/corona interface. If that
+ * becomes a problem, the correct fix is not to shrink EMA_ALPHA (that
+ * reintroduces the impulsive-forcing failure mode) but to update the
+ * cache from inside a lower-level hook that runs pre-stage, e.g.
+ * wrapping RightHandSide() or the viscosity source term itself --
+ * confirm the exact call graph against the PLUTO version in use
+ * before doing that; do not guess at an API that isn't verified. */
 void Analysis (const Data *d, Grid *grid)
 {
   UpdateDiskFractionCache(d, grid);
