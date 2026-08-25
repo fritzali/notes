@@ -59,7 +59,8 @@ static int *disps          = NULL;
 /* -------------------------------------------------------------------
  * Helper: Double comparison for quicksort median calculation
  * ------------------------------------------------------------------- */
-static int CompareDoubles(const void *a, const void *b) {
+static int CompareDoubles (const void *a, const void *b)
+{
   double da = *(const double *)a;
   double db = *(const double *)b;
   return (da > db) - (da < db);
@@ -68,7 +69,8 @@ static int CompareDoubles(const void *a, const void *b) {
 /* -------------------------------------------------------------------
  * Helper: Index clamping for boundary domain padding
  * ------------------------------------------------------------------- */
-static inline int ClampIndex(int val, int min_val, int max_val) {
+static inline int ClampIndex (int val, int min_val, int max_val)
+{
   if (val < min_val) return min_val;
   if (val > max_val) return max_val;
   return val;
@@ -77,7 +79,8 @@ static inline int ClampIndex(int val, int min_val, int max_val) {
 /* -------------------------------------------------------------------
  * STEP 2: Smooth Median Generator & Rotation Veto (MPI-Safe Timestep Hook)
  * ------------------------------------------------------------------- */
-void UpdateDiskFractionCache(const Data *d, Grid *grid) {
+void UpdateDiskFractionCache (const Data *d, Grid *grid)
+{
   int i, j, k;
 
   /* 1. Persistent memory allocations */
@@ -220,7 +223,8 @@ void UpdateDiskFractionCache(const Data *d, Grid *grid) {
 /* -------------------------------------------------------------------
  * STEP 3: Fast O(1) Lookup Function
  * ------------------------------------------------------------------- */
-double DiskFraction(double *v, double x1, double x2) {
+double DiskFraction (double *v, double x1, double x2)
+{
   if (disk_frac_cache != NULL) {
     int i = ClampIndex(g_i, 0, NX1_TOT - 1);
     int j = ClampIndex(g_j, 0, NX2_TOT - 1);
@@ -235,12 +239,25 @@ double DiskFraction(double *v, double x1, double x2) {
  * ------------------------------------------------------------------- */
 
 /* Called BEFORE time-stepping starts (Cold-Start Guard at t=0) */
-void InitDomain(Data *d, Grid *grid) {
+void InitDomain (Data *d, Grid *grid)
+{
+  /* 1. Force immediate boundary fill and MPI exchange for initial condition Vc */
+  Boundary(d, X1_BEG, grid);
+  Boundary(d, X1_END, grid);
+  Boundary(d, X2_BEG, grid);
+  Boundary(d, X2_END, grid);
+#if DIMENSIONS == 3
+  Boundary(d, X3_BEG, grid);
+  Boundary(d, X3_END, grid);
+#endif
+
+  /* 2. Safely populate disk fraction lookup cache using valid ghost data */
   UpdateDiskFractionCache(d, grid);
 }
 
 /* Called at the end of every timestep */
-void Analysis(const Data *d, Grid *grid) {
+void Analysis (const Data *d, Grid *grid)
+{
   UpdateDiskFractionCache(d, grid);
 }
 
