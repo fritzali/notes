@@ -33,49 +33,172 @@
  #define INNER_BOUNDARY BOUNDARY_BH  /* Set to BOUNDARY_STAR or BOUNDARY_BH */
 #endif
 
-/* ********************************************************************* */
-double DiskFraction (double *v, double x1, double x2)
-/*!
- * Replaces the (unreliable) passive tracer v[TRC] as the disk/corona
- * discriminator used to gate alpha-viscosity and alpha-resistivity.
- *
- * Classification rule (validated in Python against the tracer on
- * relaxed disk states, ~98-99% agreement in the relaxed regime):
- *   - "dense": local density exceeds `factor` times the analytic
- *     corona density profile at this radius, RHOC * x1^(-1/(gamma-1))
- *     (matching the corona law used in Init()).
- *   - "rotating": local azimuthal velocity exceeds `vphi_frac` times
- *     the local Keplerian velocity, used to reject dense-but-static
- *     infalling/outflow material (in particular polar outflows) that
- *     would otherwise be misclassified as disk.
- *
- * This is a purely local (pointwise) evaluation -- no MPI reduction
- * or shell-wide gather is required, unlike a true per-radius median,
- * so it can be called directly from Visc_nu(), Resistive_eta(), and
- * the viscous/resistive heating-correction terms without any change
- * to the existing per-cell call pattern.
- *
- * \param [in] v   array of primitive variables (must contain RHO, VX3)
- * \param [in] x1  spherical radius
- * \param [in] x2  polar angle
- *
- * \return  1.0 if the cell is classified as disk material, 0.0 otherwise.
- *********************************************************************** */
-{
-  double rcyl, vK, rho_corona_local;
-  double factor    = 10.0;  /* density contrast above local corona value */
-  double vphi_frac = 0.5;   /* fraction of Keplerian vphi required */
-  int dense, rotating;
 
-  rho_corona_local = g_inputParam[RHOC]*pow(x1, -1.5);  /* matches Init() corona law */
-  rcyl = x1*sin(x2);
-  vK   = 1.0/sqrt(rcyl);
+/* ---------------------------------------------------------------------
+ * START: Lagrangian Tracer Replacement from Physical Properties
+ * --------------------------------------------------------------------- */
 
-  dense    = (v[RHO] > factor*rho_corona_local);
-  rotating = (v[VX3] > vphi_frac*vK);
+/* Ensure iVPHI points to azimuthal velocity component in spherical geometry */
+#ifndef iVPHI
+  #define iVPHI VX3
+#endif
 
-  return (dense && rotating) ? 1.0 : 0.0;
+/* Global persistent arrays for cached lookup */
+static double ***disk_frac_cache = NULL;
+static double **raw_mask         = NULL;
+static double *theta_rho_buf     = NULL;
+
+/* -------------------------------------------------------------------
+ * Helper: Double comparison for quicksort median calculation
+ * ------------------------------------------------------------------- */
+static int CompareDoubles(const void *a, const void *b) {
+  double da = *(const double *)a;
+  double db = *(const double *)b;
+  return (da > db) - (da < db);
 }
+
+/* -------------------------------------------------------------------
+ * Helper: Index clamping for boundary domain padding
+ * ------------------------------------------------------------------- */
+static inline int ClampIndex(int val, int min_val, int max_val) {
+  if (val < min_val) return min_val;
+  if (val > max_val) return max_val;
+  return val;
+}
+
+/* -------------------------------------------------------------------
+ * STEP 2: Smooth Median Generator & Rotation Veto (Timestep Hook)
+ * Calculates smoothed disk fraction field once per timestep.
+ * ------------------------------------------------------------------- */
+void UpdateDiskFractionCache(const Data *d, Grid *grid) {
+  int i, j, k;
+
+  /* Allocate persistent grid arrays on first execution */
+  if (disk_frac_cache == NULL) {
+    disk_frac_cache = ARRAY_3D(NX3_TOT, NX2_TOT, NX1_TOT, double);
+  }
+  if (raw_mask == NULL) {
+    raw_mask = ARRAY_2D(NX2_TOT, NX1_TOT, double);
+  }
+  if (theta_rho_buf == NULL) {
+    theta_rho_buf = ARRAY_1D(NX2_TOT, double);
+  }
+
+  /* Classification parameters */
+  const double median_factor = 5.0;
+  const double vphi_frac     = 0.5;
+  const int blur_radius      = 1; /* 3x3 stencil window (radius = 1) */
+
+  /* -----------------------------------------------------------------
+   * Part A: Compute Radial Medians and Apply Rotation Veto
+   * ----------------------------------------------------------------- */
+  for (i = IBEG; i <= IEND; i++) {
+    double R = grid->x[IDIR][i];
+
+    /* Extract polar density slice for radial index i */
+    int num_theta = 0;
+    for (j = JBEG; j <= JEND; j++) {
+      theta_rho_buf[num_theta++] = d->Vc[RHO][KBEG][j][i];
+    }
+
+    /* Compute median density along theta dimension */
+    qsort(theta_rho_buf, num_theta, sizeof(double), CompareDoubles);
+    double med_rho;
+    if (num_theta % 2 == 0) {
+      med_rho = 0.5 * (theta_rho_buf[num_theta / 2 - 1] + theta_rho_buf[num_theta / 2]);
+    } else {
+      med_rho = theta_rho_buf[num_theta / 2];
+    }
+
+    /* Apply density threshold and rotation veto per cell */
+    for (j = JBEG; j <= JEND; j++) {
+      double theta = grid->x[JDIR][j];
+      double Rcyl  = R * sin(theta);
+
+      /* Compute Keplerian velocity threshold */
+      double vK   = (Rcyl > 1.0e-12) ? (1.0 / sqrt(Rcyl)) : 0.0;
+      double vphi = d->Vc[iVPHI][KBEG][j][i];
+
+      int rot_flag = (vphi > vphi_frac * vK);
+      int rho_flag = (d->Vc[RHO][KBEG][j][i] > median_factor * med_rho);
+
+      if (rot_flag && rho_flag) {
+        raw_mask[j][i] = 1.0;
+      } else {
+        raw_mask[j][i] = 0.0;
+      }
+    }
+  }
+
+  /* -----------------------------------------------------------------
+   * Part B: Spatial 2D Moving-Box Blur (3x3 stencil)
+   * ----------------------------------------------------------------- */
+  for (j = JBEG; j <= JEND; j++) {
+    for (i = IBEG; i <= IEND; i++) {
+      double sum = 0.0;
+      int count = 0;
+
+      for (int dj = -blur_radius; dj <= blur_radius; dj++) {
+        for (int di = -blur_radius; di <= blur_radius; di++) {
+          int sample_i = ClampIndex(i + di, IBEG, IEND);
+          int sample_j = ClampIndex(j + dj, JBEG, JEND);
+
+          sum += raw_mask[sample_j][sample_i];
+          count++;
+        }
+      }
+
+      double smooth_val = sum / (double)count;
+
+      /* Store in active domain across all phi slices */
+      for (k = KBEG; k <= KEND; k++) {
+        disk_frac_cache[k][j][i] = smooth_val;
+      }
+    }
+  }
+
+  /* -----------------------------------------------------------------
+   * Part C: Pad Ghost Zones for Safe Boundary Queries
+   * ----------------------------------------------------------------- */
+  for (k = 0; k < NX3_TOT; k++) {
+    int clamped_k = ClampIndex(k, KBEG, KEND);
+    for (j = 0; j < NX2_TOT; j++) {
+      int clamped_j = ClampIndex(j, JBEG, JEND);
+      for (i = 0; i < NX1_TOT; i++) {
+        int clamped_i = ClampIndex(i, IBEG, IEND);
+        disk_frac_cache[k][j][i] = disk_frac_cache[clamped_k][clamped_j][clamped_i];
+      }
+    }
+  }
+}
+
+/* -------------------------------------------------------------------
+ * STEP 3: O(1) Fast Lookup Function
+ * Replaces original DiskFraction implementation.
+ * ------------------------------------------------------------------- */
+double DiskFraction(double *v, double x1, double x2) {
+  if (disk_frac_cache != NULL) {
+    int i = ClampIndex(g_i, 0, NX1_TOT - 1);
+    int j = ClampIndex(g_j, 0, NX2_TOT - 1);
+    int k = ClampIndex(g_k, 0, NX3_TOT - 1);
+    return disk_frac_cache[k][j][i];
+  }
+  return 0.0;
+}
+
+/* -------------------------------------------------------------------
+ * STEP 1: Integration Hooks inside init.c
+ * ------------------------------------------------------------------- */
+
+/* Called at the end of every timestep */
+void Analysis(const Data *d, Grid *grid) {
+  /* Update disk fraction cache once per step */
+  UpdateDiskFractionCache(d, grid);
+}
+
+/* ---------------------------------------------------------------------
+ * END: Lagrangian Tracer Replacement from Physical Properties
+ * --------------------------------------------------------------------- */
 
 /* ********************************************************************* */
 void Init (double *v, double x1, double x2, double x3)
@@ -152,10 +275,6 @@ void Init (double *v, double x1, double x2, double x3)
 
 /* ********************************************************************* */
 void InitDomain (Data *d, Grid *grid)
-{}
-
-/* ********************************************************************* */
-void Analysis (const Data *d, Grid *grid)
 {}
 
 #if PHYSICS == MHD
@@ -405,23 +524,6 @@ void UserDefBoundary (const Data *d, RBox *box, int side, Grid *grid)
     }
   }
 }
-
-// void ComputeUserVar (const Data *d, Grid *grid)
-// /*!
-//  * Register DiskFraction as an output variable "diskfrac", written to
-//  * .dbl files alongside the standard primitive variables.
-//  *********************************************************************** */
-// {
-//   int i, j, k;
-//   double ***diskfrac = GetUserVar("diskfrac");
-//   double v[NVAR];
-//   int nv;
-// 
-//   DOM_LOOP(k, j, i) {
-//     NVAR_LOOP(nv) v[nv] = d->Vc[nv][k][j][i];
-//     diskfrac[k][j][i] = DiskFraction(v, grid->x[IDIR][i], grid->x[JDIR][j]);
-//   }
-// }
 
 #if BODY_FORCE != NO
 /* ********************************************************************* */
