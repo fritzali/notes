@@ -33,7 +33,6 @@
  #define INNER_BOUNDARY BOUNDARY_BH  /* Set to BOUNDARY_STAR or BOUNDARY_BH */
 #endif
 
-
 /* ---------------------------------------------------------------------
  * START: Lagrangian Tracer Replacement from Physical Properties
  * --------------------------------------------------------------------- */
@@ -46,7 +45,16 @@
 /* Global persistent arrays for cached lookup */
 static double ***disk_frac_cache = NULL;
 static double **raw_mask         = NULL;
-static double *theta_rho_buf     = NULL;
+static double *local_rho_buf     = NULL;
+static double *global_rho_buf    = NULL;
+
+/* MPI Gathering Buffers */
+#ifdef PARALLEL
+static MPI_Comm theta_comm = MPI_COMM_NULL;
+static int theta_comm_init = 0;
+static int *recv_counts    = NULL;
+static int *disps          = NULL;
+#endif
 
 /* -------------------------------------------------------------------
  * Helper: Double comparison for quicksort median calculation
@@ -67,55 +75,92 @@ static inline int ClampIndex(int val, int min_val, int max_val) {
 }
 
 /* -------------------------------------------------------------------
- * STEP 2: Smooth Median Generator & Rotation Veto (Timestep Hook)
- * Calculates smoothed disk fraction field once per timestep.
+ * STEP 2: Smooth Median Generator & Rotation Veto (MPI-Safe Timestep Hook)
  * ------------------------------------------------------------------- */
 void UpdateDiskFractionCache(const Data *d, Grid *grid) {
   int i, j, k;
 
-  /* Allocate persistent grid arrays on first execution */
+  /* 1. Persistent memory allocations */
   if (disk_frac_cache == NULL) {
     disk_frac_cache = ARRAY_3D(NX3_TOT, NX2_TOT, NX1_TOT, double);
   }
   if (raw_mask == NULL) {
     raw_mask = ARRAY_2D(NX2_TOT, NX1_TOT, double);
   }
-  if (theta_rho_buf == NULL) {
-    theta_rho_buf = ARRAY_1D(NX2_TOT, double);
+  if (local_rho_buf == NULL) {
+    local_rho_buf = ARRAY_1D(NX2_TOT, double);
   }
+
+  /* 2. Setup MPI Sub-Communicator along Theta (JDIR) for each Radial (IDIR) Slice */
+  int global_n2 = NX2;
+#ifdef PARALLEL
+  if (!theta_comm_init) {
+    /* Group ranks sharing the same radial rank index (g_domBeg[IDIR]) */
+    MPI_Comm_split(MPI_COMM_WORLD, g_domBeg[IDIR], prank, &theta_comm);
+    theta_comm_init = 1;
+  }
+
+  int theta_proc_size;
+  MPI_Comm_size(theta_comm, &theta_proc_size);
+
+  if (recv_counts == NULL) {
+    recv_counts = (int *)malloc(theta_proc_size * sizeof(int));
+    disps       = (int *)malloc(theta_proc_size * sizeof(int));
+  }
+
+  int local_n2 = NX2; /* Local active theta cells */
+  MPI_Allgather(&local_n2, 1, MPI_INT, recv_counts, 1, MPI_INT, theta_comm);
+
+  disps[0] = 0;
+  for (int r = 1; r < theta_proc_size; r++) {
+    disps[r] = disps[r - 1] + recv_counts[r - 1];
+  }
+  global_n2 = disps[theta_proc_size - 1] + recv_counts[theta_proc_size - 1];
+
+  if (global_rho_buf == NULL) {
+    global_rho_buf = ARRAY_1D(global_n2, double);
+  }
+#else
+  global_rho_buf = local_rho_buf;
+#endif
 
   /* Classification parameters */
   const double median_factor = 5.0;
   const double vphi_frac     = 0.5;
-  const int blur_radius      = 1; /* 3x3 stencil window (radius = 1) */
+  const int blur_radius      = 1; /* 3x3 stencil window */
 
   /* -----------------------------------------------------------------
-   * Part A: Compute Radial Medians and Apply Rotation Veto
+   * Part A: Compute Global Radial Medians and Apply Rotation Veto
    * ----------------------------------------------------------------- */
-  for (i = IBEG; i <= IEND; i++) {
+  for (i = 0; i < NX1_TOT; i++) {
     double R = grid->x[IDIR][i];
 
-    /* Extract polar density slice for radial index i */
-    int num_theta = 0;
+    /* Extract local polar density slice for radial cell i */
+    int local_idx = 0;
     for (j = JBEG; j <= JEND; j++) {
-      theta_rho_buf[num_theta++] = d->Vc[RHO][KBEG][j][i];
+      local_rho_buf[local_idx++] = d->Vc[RHO][KBEG][j][i];
     }
 
-    /* Compute median density along theta dimension */
-    qsort(theta_rho_buf, num_theta, sizeof(double), CompareDoubles);
+    /* Gather full polar density vector across theta sub-communicator */
+#ifdef PARALLEL
+    MPI_Allgatherv(local_rho_buf, NX2, MPI_DOUBLE,
+                   global_rho_buf, recv_counts, disps, MPI_DOUBLE, theta_comm);
+#endif
+
+    /* Compute median density across global theta span */
+    qsort(global_rho_buf, global_n2, sizeof(double), CompareDoubles);
     double med_rho;
-    if (num_theta % 2 == 0) {
-      med_rho = 0.5 * (theta_rho_buf[num_theta / 2 - 1] + theta_rho_buf[num_theta / 2]);
+    if (global_n2 % 2 == 0) {
+      med_rho = 0.5 * (global_rho_buf[global_n2 / 2 - 1] + global_rho_buf[global_n2 / 2]);
     } else {
-      med_rho = theta_rho_buf[num_theta / 2];
+      med_rho = global_rho_buf[global_n2 / 2];
     }
 
-    /* Apply density threshold and rotation veto per cell */
-    for (j = JBEG; j <= JEND; j++) {
+    /* Apply thresholding and rotation veto across active and ghost cells */
+    for (j = 0; j < NX2_TOT; j++) {
       double theta = grid->x[JDIR][j];
       double Rcyl  = R * sin(theta);
 
-      /* Compute Keplerian velocity threshold */
       double vK   = (Rcyl > 1.0e-12) ? (1.0 / sqrt(Rcyl)) : 0.0;
       double vphi = d->Vc[iVPHI][KBEG][j][i];
 
@@ -140,8 +185,8 @@ void UpdateDiskFractionCache(const Data *d, Grid *grid) {
 
       for (int dj = -blur_radius; dj <= blur_radius; dj++) {
         for (int di = -blur_radius; di <= blur_radius; di++) {
-          int sample_i = ClampIndex(i + di, IBEG, IEND);
-          int sample_j = ClampIndex(j + dj, JBEG, JEND);
+          int sample_i = ClampIndex(i + di, 0, NX1_TOT - 1);
+          int sample_j = ClampIndex(j + dj, 0, NX2_TOT - 1);
 
           sum += raw_mask[sample_j][sample_i];
           count++;
@@ -150,7 +195,7 @@ void UpdateDiskFractionCache(const Data *d, Grid *grid) {
 
       double smooth_val = sum / (double)count;
 
-      /* Store in active domain across all phi slices */
+      /* Store in active domain across all phi planes */
       for (k = KBEG; k <= KEND; k++) {
         disk_frac_cache[k][j][i] = smooth_val;
       }
@@ -158,7 +203,7 @@ void UpdateDiskFractionCache(const Data *d, Grid *grid) {
   }
 
   /* -----------------------------------------------------------------
-   * Part C: Pad Ghost Zones for Safe Boundary Queries
+   * Part C: Pad Ghost Zones for Boundary Queries
    * ----------------------------------------------------------------- */
   for (k = 0; k < NX3_TOT; k++) {
     int clamped_k = ClampIndex(k, KBEG, KEND);
@@ -173,8 +218,7 @@ void UpdateDiskFractionCache(const Data *d, Grid *grid) {
 }
 
 /* -------------------------------------------------------------------
- * STEP 3: O(1) Fast Lookup Function
- * Replaces original DiskFraction implementation.
+ * STEP 3: Fast O(1) Lookup Function
  * ------------------------------------------------------------------- */
 double DiskFraction(double *v, double x1, double x2) {
   if (disk_frac_cache != NULL) {
@@ -190,9 +234,13 @@ double DiskFraction(double *v, double x1, double x2) {
  * STEP 1: Integration Hooks inside init.c
  * ------------------------------------------------------------------- */
 
+/* Called BEFORE time-stepping starts (Cold-Start Guard at t=0) */
+void InitDomain(Data *d, Grid *grid) {
+  UpdateDiskFractionCache(d, grid);
+}
+
 /* Called at the end of every timestep */
 void Analysis(const Data *d, Grid *grid) {
-  /* Update disk fraction cache once per step */
   UpdateDiskFractionCache(d, grid);
 }
 
@@ -272,10 +320,6 @@ void Init (double *v, double x1, double x2, double x3)
 #endif
 #endif /* PHYSICS == MHD */
 }
-
-/* ********************************************************************* */
-void InitDomain (Data *d, Grid *grid)
-{}
 
 #if PHYSICS == MHD
 /* ********************************************************************* */

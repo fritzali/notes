@@ -7,7 +7,7 @@
 pluto:                              # Default target
 
 ARCH         = Linux.mpicc.defs
-PLUTO_DIR    = /home/fritza/pluto/PLUTO
+PLUTO_DIR    = /home/fritz/work/notebooks/CAMK/PLUTO/PLUTO
 SRC          = $(PLUTO_DIR)/Src
 INCLUDE_DIRS = -I. -I$(SRC)
 VPATH        = ./:$(SRC)/New:$(SRC):$(SRC)/Time_Stepping:$(SRC)/States
