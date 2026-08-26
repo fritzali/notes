@@ -134,11 +134,11 @@ To keep up with the demanding volume of coding tasks today, I bow to the rule of
 
    <pre>
    services:
-      api:
-         volumes:
-           - type: bind
-             source: ./librechat.yaml
-             target: /app/librechat.yaml
+     api:
+       volumes:
+       - type: bind
+         source: ./librechat.yaml
+         target: /app/librechat.yaml
    </pre>
 
 5. Create `librechat.yaml` and define your models, by copying the file included in this repository.
