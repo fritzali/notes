@@ -1,5 +1,16 @@
 version: 1.1.5
 
+summarization:
+  provider: "OpenRouter"
+  model: "deepseek/deepseek-chat-v3.1"
+  maxSummaryTokens: 2048
+  reserveRatio: 0.05
+  trigger:
+    type: "token_ratio"
+    value: 0.75
+  retainRecent:
+    turns: 4
+
 endpoints:
   custom:
     - name: "OpenRouter"
@@ -14,6 +25,8 @@ endpoints:
         fetch: false
       titleConvo: true
       titleModel: "deepseek/deepseek-chat-v3.1"
+      titleTiming: "immediate"
+      titleMethod: "completion"
       summarize: true
       summaryModel: "deepseek/deepseek-chat-v3.1"
       modelDisplayNames:
@@ -27,61 +40,54 @@ modelSpecs:
   enforce: true
   prioritize: true
   list:
-    # 1. PRIMARY CODING
-    - name: "primary-coder"
-      label: "Primary Coder (Claude Sonnet)"
+    # 1a: main coding
+    - name: "main-coder"
+      label: "Main Coder (Claude Sonnet)"
       description: "Optimized for scientific Python and C architecture"
       iconURL: "anthropic"
       default: true
-      conversation_starters:
-        - "Review this Python algorithm for performance bottlenecks."
-        - "Write a memory-safe C module with explicit pointer handling."
       preset:
         endpoint: "OpenRouter"
-        model: "anthropic/claude-3.7-sonnet"
+        model: "anthropic/claude-sonnet-5"
         temperature: 0.1
-        top_p: 0.95
+        top_p: 0.9
         promptPrefix: |
           You are an expert scientific software engineer specializing in high-performance C and vectorized Python (NumPy, SciPy).
           - Prioritize memory safety, cache locality, and explicit pointer handling.
           - Output clean, executable code blocks.
           - Explain edge cases or potential memory leaks briefly below code blocks.
 
-    # 2. FALLBACK CODING
+    # 1b: fallback coding
     - name: "fallback-coder"
-      label: "Coding Fallback (DeepSeek R1)"
+      label: "Fallback Coder (DeepSeek R1)"
       description: "Deep reasoning engine for intractable bugs and complex logic"
-      conversation_starters:
-        - "Analyze this core dump / stack trace."
-        - "Derive a highly optimized custom CUDA kernel."
       preset:
         endpoint: "OpenRouter"
-        model: "deepseek/deepseek-r1"
-        # Temperature is omitted here because reasoning models manage their own inference dynamics
+        model: "deepseek/deepseek-r1-0528"
         promptPrefix: |
           You are an expert systems programmer. 
-          Use internal reasoning to analyze complex logic flows, compiler flags, and race conditions before producing final code output.
+          - Use internal reasoning to analyze complex logic flows, compiler flags, and race conditions before producing final code output.
 
-    # 3. SECONDARY LEARNING (ASTROPHYSICS/MATH)
-    - name: "secondary-study"
-      label: "Astrophysics Tutor (o3-mini)"
-      description: "High-speed STEM logic and physics derivations"
+    # 2: astrophysics tutoring
+    - name: "astrophysics-tutor"
+      label: "Astrophysics Tutor (o4-mini)"
+      description: "Fast STEM logic and physics derivations"
       iconURL: "openai"
       preset:
         endpoint: "OpenRouter"
-        model: "openai/o3-mini"
+        model: "openai/o4-mini"
         promptPrefix: |
-          You are an expert theoretical astrophysicist and university tutor.
-          - Render all mathematical derivations using explicit LaTeX syntax ($...$ for inline, $$...$$ for block).
+          You are an expert theoretical and computational astrophysicist as well as university tutor.
+          - Render all mathematical derivations and numerical concepts using explicit LaTeX syntax ($...$ for inline, $$...$$ for block).
           - Break solutions down sequentially: Assumptions, Fundamental Equations, Derivation, Dimensional Check.
 
-    # 4. TERTIARY WRITING
-    - name: "tertiary-writing"
-      label: "Writing & Prose (DeepSeek V3)"
-      description: "Fast, cheap text editing and technical documentation drafting"
+    # 3: prose writing
+    - name: "writing-prose"
+      label: "Prose Writer (DeepSeek Chat V3)"
+      description: "Quick, cheap text editing and technical documentation drafting"
       preset:
         endpoint: "OpenRouter"
-        model: "deepseek/deepseek-chat"
+        model: "deepseek/deepseek-chat-v3.1"
         temperature: 0.7
         top_p: 0.90
         promptPrefix: |
