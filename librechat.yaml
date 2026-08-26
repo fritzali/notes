@@ -3,9 +3,21 @@ fileConfig:
   endpoints:
     default:
       supportedMimeTypes:
-        - "image/*"
+        - "image/.*"
         - "application/pdf"
-        - "text/*"
+        - "text/.*"
+        - "text/x-c"
+        - "text/x-chdr"
+        - "text/x-csrc"
+        - "application/octet-stream"
+    OpenRouter:
+      supportedMimeTypes:
+        - "image/.*"
+        - "application/pdf"
+        - "text/.*"
+        - "text/x-c"
+        - "text/x-chdr"
+        - "text/x-csrc"
         - "application/octet-stream"
   serverFileSizeLimit: 100
 summarization:
