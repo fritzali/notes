@@ -71,7 +71,6 @@ modelSpecs:
         endpoint: "OpenRouter"
         model: "anthropic/claude-sonnet-5"
         temperature: 0.1
-        top_p: 0.9
         promptPrefix: |
           You are an expert scientific software engineer specializing in high-performance C and vectorized Python (NumPy, SciPy).
           - Prioritize memory safety, cache locality, and explicit pointer handling.
