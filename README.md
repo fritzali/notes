@@ -92,7 +92,7 @@ To compile `LaTeX` documents, a current `TeX Live` installation is required. For
 
 *Adapted from the [Toolbox Workshop](https://toolbox.pep-dortmund.org/install/linux/).*
 
-### Assistance
+### Surrender
 
 To keep up with the demanding volume of coding tasks today, I bow to the rule of *Large Language Model* assistants.
 
