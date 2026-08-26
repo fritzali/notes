@@ -1,0 +1,91 @@
+version: 1.1.5
+
+endpoints:
+  custom:
+    - name: "OpenRouter"
+      apiKey: "{placeholder-key}"
+      baseURL: "https://openrouter.ai/api/v1"
+      models:
+        default:
+          - "anthropic/claude-sonnet-5"
+          - "deepseek/deepseek-r1-0528"
+          - "openai/o4-mini"
+          - "deepseek/deepseek-chat-v3.1"
+        fetch: false
+      titleConvo: true
+      titleModel: "deepseek/deepseek-chat-v3.1"
+      summarize: true
+      summaryModel: "deepseek/deepseek-chat-v3.1"
+      modelDisplayNames:
+        "anthropic/claude-sonnet-5": "Claude Sonnet 5"
+        "deepseek/deepseek-r1-0528": "DeepSeek R1 0528"
+        "openai/o4-mini": "OpenAI o4-mini"
+        "deepseek/deepseek-chat-v3.1": "DeepSeek Chat V3.1"
+
+modelSpecs:
+  # --- hides raw endpoint selector to only show clean defined presets --- #
+  enforce: true
+  prioritize: true
+  list:
+    # 1. PRIMARY CODING
+    - name: "primary-coder"
+      label: "Primary Coder (Claude Sonnet)"
+      description: "Optimized for scientific Python and C architecture"
+      iconURL: "anthropic"
+      default: true
+      conversation_starters:
+        - "Review this Python algorithm for performance bottlenecks."
+        - "Write a memory-safe C module with explicit pointer handling."
+      preset:
+        endpoint: "OpenRouter"
+        model: "anthropic/claude-3.7-sonnet"
+        temperature: 0.1
+        top_p: 0.95
+        promptPrefix: |
+          You are an expert scientific software engineer specializing in high-performance C and vectorized Python (NumPy, SciPy).
+          - Prioritize memory safety, cache locality, and explicit pointer handling.
+          - Output clean, executable code blocks.
+          - Explain edge cases or potential memory leaks briefly below code blocks.
+
+    # 2. FALLBACK CODING
+    - name: "fallback-coder"
+      label: "Coding Fallback (DeepSeek R1)"
+      description: "Deep reasoning engine for intractable bugs and complex logic"
+      conversation_starters:
+        - "Analyze this core dump / stack trace."
+        - "Derive a highly optimized custom CUDA kernel."
+      preset:
+        endpoint: "OpenRouter"
+        model: "deepseek/deepseek-r1"
+        # Temperature is omitted here because reasoning models manage their own inference dynamics
+        promptPrefix: |
+          You are an expert systems programmer. 
+          Use internal reasoning to analyze complex logic flows, compiler flags, and race conditions before producing final code output.
+
+    # 3. SECONDARY LEARNING (ASTROPHYSICS/MATH)
+    - name: "secondary-study"
+      label: "Astrophysics Tutor (o3-mini)"
+      description: "High-speed STEM logic and physics derivations"
+      iconURL: "openai"
+      preset:
+        endpoint: "OpenRouter"
+        model: "openai/o3-mini"
+        promptPrefix: |
+          You are an expert theoretical astrophysicist and university tutor.
+          - Render all mathematical derivations using explicit LaTeX syntax ($...$ for inline, $$...$$ for block).
+          - Break solutions down sequentially: Assumptions, Fundamental Equations, Derivation, Dimensional Check.
+
+    # 4. TERTIARY WRITING
+    - name: "tertiary-writing"
+      label: "Writing & Prose (DeepSeek V3)"
+      description: "Fast, cheap text editing and technical documentation drafting"
+      preset:
+        endpoint: "OpenRouter"
+        model: "deepseek/deepseek-chat"
+        temperature: 0.7
+        top_p: 0.90
+        promptPrefix: |
+          You are a technical editor for scientific and academic publications.
+          - Help draft, structure, and refine documentation, LaTeX papers, and README files.
+          - Maintain an active voice, precise academic vocabulary, and clear structural headers.
+          - Eliminate wordiness and conversational filler.
