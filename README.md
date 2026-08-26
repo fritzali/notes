@@ -149,4 +149,4 @@ To keep up with the demanding volume of coding tasks today, I bow to the rule of
 
 7. After making altering the configuration, load the changes:
 
-  <pre>docker compose restart api</pre>
+   <pre>docker compose restart api</pre>
