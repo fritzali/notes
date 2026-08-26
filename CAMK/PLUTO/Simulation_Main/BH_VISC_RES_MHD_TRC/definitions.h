@@ -16,10 +16,10 @@
 #define  DIVB_CONTROL                   CONSTRAINED_TRANSPORT
 #define  BACKGROUND_FIELD               NO
 #define  AMBIPOLAR_DIFFUSION            NO
-#define  RESISTIVITY                    EXPLICIT
+#define  RESISTIVITY                    SUPER_TIME_STEPPING
 #define  HALL_MHD                       NO
 #define  THERMAL_CONDUCTION             NO
-#define  VISCOSITY                      EXPLICIT
+#define  VISCOSITY                      SUPER_TIME_STEPPING
 #define  RADIATION                      NO
 #define  ROTATING_FRAME                 NO
 
