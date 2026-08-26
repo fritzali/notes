@@ -48,6 +48,9 @@ endpoints:
       titleTiming: "immediate"
       titleMethod: "completion"
       dropParams: ["stop"]
+      customParams:
+        defaultParamsEndpoint: custom
+        reasoningFormat: disabled
       activityLabel: true
       activityModel: "deepseek/deepseek-chat-v3.1"
       modelDisplayNames:
