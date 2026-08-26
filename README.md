@@ -100,7 +100,7 @@ To keep up with the demanding volume of coding tasks today, I bow to the rule of
 
 #### Backend
 
-1. Create an account on [*OpenRouter*](openrouter.ai) as an LLM API aggregator.
+1. Create an account on [*OpenRouter*](https://openrouter.ai/) as an LLM API aggregator.
 2. Buy usage credits and ensure automatic payments are off to only rely on manual deposits.
 3. Generate a key with an optional hard limit for added safeguarding against overcharges.
 
