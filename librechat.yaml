@@ -1,4 +1,13 @@
 version: 1.3.14
+fileConfig:
+  endpoints:
+    default:
+      supportedMimeTypes:
+        - "image/.*"
+        - "application/pdf"
+        - "text/.*"
+        - "application/octet-stream"
+  serverFileSizeLimit: 100
 summarization:
   enabled: true
   provider: "OpenRouter"
