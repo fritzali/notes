@@ -98,8 +98,51 @@ To keep up with the demanding volume of coding tasks today, I bow to the rule of
 
 #### Backend
 
-
+1. Create an account on [*OpenRouter*](openrouter.ai) as an LLM API aggregator.
+2. Buy usage credits and ensure automatic payments are off to only rely on manual deposits.
+3. Generate a key with an optional hard limit for added safeguarding against overcharges.
 
 #### Frontend
 
+1. Install *Docker* dependencies:
 
+   <pre>sudo pacman -Syu docker docker-compose</pre>
+
+   <pre>sudo systemctl enable --now docker.service</pre>
+
+   <pre>sudo usermod -aG docker $USER</pre>
+
+   <pre>newgrp docker</pre>
+
+2. Clone *LibreChat* Repository:
+
+   <pre>git clone https://github.com/danny-avila/LibreChat.git</pre>
+
+   <pre>cd LibreChat</pre>
+
+   <pre>cp .env.example .env</pre>
+
+   <pre>cp docker-compose.override.yml.example docker-compose.override.yml</pre>
+
+3. Open `.env` in a text editor and add the *OpenRouter* key:
+
+   <pre>OPENROUTER_KEY=<i>key</i></pre>
+
+4. Next, edit `docker-compose.override.yml` and check that the `librechat.yaml` volume mount is active:
+
+   <pre>
+   services:
+      api:
+         volumes:
+           - type: bind
+             source: ./librechat.yaml
+             target: /app/librechat.yaml
+   </pre>
+
+5. Create `librechat.yaml` and define your models:
+
+
+
+6. Launch the containerized application stack:
+
+   <pre>docker compose up -d</pre>
