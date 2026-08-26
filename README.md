@@ -116,7 +116,7 @@ To keep up with the demanding volume of coding tasks today, I bow to the rule of
 
    <pre>newgrp docker</pre>
 
-2. Clone *LibreChat* Repository:
+2. Clone [*LibreChat*](https://www.librechat.ai/) Repository:
 
    <pre>git clone https://github.com/danny-avila/LibreChat.git</pre>
 
