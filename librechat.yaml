@@ -3,9 +3,9 @@ fileConfig:
   endpoints:
     default:
       supportedMimeTypes:
-        - "image/.*"
+        - "image/*"
         - "application/pdf"
-        - "text/.*"
+        - "text/*"
         - "application/octet-stream"
   serverFileSizeLimit: 100
 summarization:
