@@ -141,10 +141,12 @@ To keep up with the demanding volume of coding tasks today, I bow to the rule of
              target: /app/librechat.yaml
    </pre>
 
-5. Create `librechat.yaml` and define your models:
-
-
+5. Create `librechat.yaml` and define your models, by copying the file included in this repository.
 
 6. Launch the containerized application stack:
 
    <pre>docker compose up -d</pre>
+
+7. After making altering the configuration, load the changes:
+
+  <pre>docker compose restart api</pre>
