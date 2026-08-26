@@ -57,7 +57,7 @@ endpoints:
         "anthropic/claude-sonnet-5": "Claude Sonnet 5"
         "deepseek/deepseek-r1-0528": "DeepSeek R1 0528"
         "openai/o4-mini": "OpenAI o4-mini"
-        "deepseek/deepseek-chat-v3.1": "DeepSeek Chat V3.1"
+        "deepseek/deepseek-chat-v3.1": "DeepSeek Chat"
 modelSpecs:
   # --- hides raw endpoint selector to only show clean defined presets --- #
   enforce: true
