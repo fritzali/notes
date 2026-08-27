@@ -67,8 +67,8 @@ modelSpecs:
   list:
     # 1a: main coding #
     - name: "main-coder-off"
-      label: "Main Coder — No Thinking"
-      description: "Sonnet 5, reasoning fully disabled. Fastest, cheapest, no hidden reasoning tokens."
+      label: "Main Coder — Off (Sonnet 5)"
+      description: "Thinking fully disabled. Zero reasoning tokens, fastest and cheapest."
       iconURL: "anthropic"
       default: true
       group: "OpenRouter"
@@ -85,8 +85,8 @@ modelSpecs:
           - Output clean, executable code blocks.
           - Explain edge cases or potential memory leaks briefly below code blocks.
     - name: "main-coder-low"
-      label: "Main Coder — Low Effort"
-      description: "Sonnet 5, low reasoning effort. Cheap, light thinking for routine tasks."
+      label: "Main Coder — Low (Sonnet 5)"
+      description: "Reasoning effort minimal. Suited to cheap and light routine thinking tasks."
       iconURL: "anthropic"
       group: "OpenRouter"
       preset:
@@ -102,8 +102,8 @@ modelSpecs:
           - Output clean, executable code blocks.
           - Explain edge cases or potential memory leaks briefly below code blocks.
     - name: "main-coder-medium"
-      label: "Main Coder — Medium Effort"
-      description: "Sonnet 5, medium reasoning effort. Balanced default for scientific Python and C architecture."
+      label: "Main Coder — Medium (Sonnet 5)"
+      description: "Reasoning effort average. Balanced setting for scientific code architecture."
       iconURL: "anthropic"
       group: "OpenRouter"
       preset:
@@ -119,8 +119,8 @@ modelSpecs:
           - Output clean, executable code blocks.
           - Explain edge cases or potential memory leaks briefly below code blocks.
     - name: "main-coder-high"
-      label: "Main Coder — High Effort"
-      description: "Sonnet 5, high reasoning effort. Deepest thinking, highest cost — for hard bugs."
+      label: "Main Coder — High (Sonnet 5)"
+      description: "Reasoning effort maximal. Only for hard problems, expensive deep thinking."
       iconURL: "anthropic"
       group: "OpenRouter"
       preset:
@@ -138,7 +138,7 @@ modelSpecs:
     # 1b: fallback coding #
     - name: "fallback-coder"
       label: "Fallback Coder (DeepSeek R1)"
-      description: "Deep reasoning engine for intractable bugs and complex logic"
+      description: "Deep reasoning engine for intractable bugs and complex logic."
       group: "OpenRouter"
       preset:
         endpoint: "OpenRouter"
@@ -148,8 +148,8 @@ modelSpecs:
           - Use internal reasoning to analyze complex logic flows, compiler flags, and race conditions before producing final code output.
     # 2: astrophysics tutoring #
     - name: "astrophysics-tutor-off"
-      label: "Astrophysics Tutor — No Thinking"
-      description: "o4-mini, reasoning fully disabled. Fastest, cheapest, no hidden reasoning tokens."
+      label: "Astrophysics Tutor — Off (o4-mini)"
+      description: "Thinking fully disabled. Zero reasoning tokens, fastest and cheapest."
       iconURL: "openai"
       group: "OpenRouter"
       preset:
@@ -163,8 +163,8 @@ modelSpecs:
           - Render all mathematical derivations and numerical concepts using explicit LaTeX syntax ($...$ for inline, $$...$$ for block).
           - Break solutions down sequentially: Assumptions, Fundamental Equations, Derivation, Dimensional Check.
     - name: "astrophysics-tutor-low"
-      label: "Astrophysics Tutor — Low Effort"
-      description: "o4-mini, low reasoning effort. Cheap, light thinking for routine tasks."
+      label: "Astrophysics Tutor — Low (o4-mini)"
+      description: "Reasoning effort minimal. Suited to cheap and light routine thinking tasks."
       iconURL: "openai"
       group: "OpenRouter"
       preset:
@@ -178,8 +178,8 @@ modelSpecs:
           - Render all mathematical derivations and numerical concepts using explicit LaTeX syntax ($...$ for inline, $$...$$ for block).
           - Break solutions down sequentially: Assumptions, Fundamental Equations, Derivation, Dimensional Check.
     - name: "astrophysics-tutor"
-      label: "Astrophysics Tutor — Medium Effort"
-      description: "o4-mini, medium reasoning effort. Balanced default for STEM logic and physics derivations."
+      label: "Astrophysics Tutor — Medium (o4-mini)"
+      description: "Reasoning effort average. Balanced setting for math logic and physics derivations."
       iconURL: "openai"
       group: "OpenRouter"
       preset:
@@ -193,8 +193,8 @@ modelSpecs:
           - Render all mathematical derivations and numerical concepts using explicit LaTeX syntax ($...$ for inline, $$...$$ for block).
           - Break solutions down sequentially: Assumptions, Fundamental Equations, Derivation, Dimensional Check.
     - name: "astrophysics-tutor-high"
-      label: "Astrophysics Tutor — High Effort"
-      description: "o4-mini, high reasoning effort. Deepest thinking, highest cost — for hard derivations."
+      label: "Astrophysics Tutor — High (o4-mini)"
+      description: "Reasoning effort maximal. Only for hard derivations, expensive deep thinking."
       iconURL: "openai"
       group: "OpenRouter"
       preset:
@@ -210,7 +210,7 @@ modelSpecs:
     # 3: prose writing #
     - name: "writing-prose"
       label: "Prose Writer (DeepSeek Chat V3)"
-      description: "Quick, cheap text editing and technical documentation drafting"
+      description: "Quick and cheap text editing or technical documentation drafting."
       group: "OpenRouter"
       preset:
         endpoint: "OpenRouter"
