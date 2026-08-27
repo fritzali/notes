@@ -458,15 +458,13 @@ double DiskFraction (double *v, double x1, double x2)
  * the density reference used by the existing sigmoid.
  *********************************************************************** */
 {
-  double rho_ref_c, rho_ref_d, log_span, position, arg;
+  double rho_ref_c, rho_ref_d, log_span, position;
+  double threshold, diff, width, arg;
  
-  (void) x2;   /* angle dependence is folded into the radial profiles;
-                  kept in the signature for call-site compatibility  */
+  (void) x2;   /* angle dependence is folded into the radial profiles */
  
   if (!g_coronaProfileInit) {
-    /* Fallback: profiles not built yet (very first call, or a restart
-       path that bypasses InitDomain() call). Use the original static
-       analytic corona/disk densities so behavior degrades gracefully. */
+    /* Fallback: profiles not built yet */
     rho_ref_c = AnalyticCoronaDensity(x1);
     rho_ref_d = AnalyticDiskDensity(x1);
     if (rho_ref_d <= 0.0) rho_ref_d = rho_ref_c;
@@ -475,15 +473,26 @@ double DiskFraction (double *v, double x1, double x2)
     rho_ref_d = GetDiskRefDensity(x1);
   }
  
+  /* 1. Calculate the normalized logarithmic position between references */
   log_span = log10(MAX(rho_ref_d, 1.e-30)) - log10(MAX(rho_ref_c, 1.e-30));
-  log_span = (fabs(log_span) < 1.e-12) ? 1.e-12 : log_span;  /* guard degenerate span */
- 
+  log_span = (fabs(log_span) < 1.e-12) ? 1.e-12 : log_span; 
   position = (log10(MAX(v[RHO], 1.e-30)) - log10(MAX(rho_ref_c, 1.e-30))) / log_span;
  
-  /* CORONA_THRESH_FAC now sets where along [0,1] the transition midpoint
-     sits (as a log-position, so 0.5 = geometric midpoint between the two
-     references); keep the existing macro rather than adding a new one. */
-  arg = (position - (1.0 - 1.0/CORONA_THRESH_FAC)) / CORONA_SIGMOID_WIDTH;
+  /* 2. Determine the transition midpoint (threshold) */
+  threshold = 1.0 - (1.0 / CORONA_THRESH_FAC);
+  diff = position - threshold;
+ 
+  /* 3. Apply asymmetric saturation widths */
+  if (diff > 0.0) {
+      /* Cell is denser than threshold: compress the width for fast saturation */
+      width = CORONA_SIGMOID_WIDTH * 0.3; 
+  } else {
+      /* Cell is less dense than threshold: expand the width for slow decay */
+      width = CORONA_SIGMOID_WIDTH * 2.0; 
+  }
+ 
+  /* 4. Evaluate the adjusted sigmoid */
+  arg = diff / width;
   arg = MIN(MAX(arg, -50.0), 50.0);      /* guard exp() over/underflow */
  
   return 1.0 / (1.0 + exp(-arg));
