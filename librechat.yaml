@@ -52,14 +52,7 @@ endpoints:
       dropParams: ["stop"]
       customParams:
         defaultParamsEndpoint: custom
-        reasoningFormat: reasoning_object
-        paramDefinitions:
-          - key: reasoning_effort
-            default: "medium"
-            options:
-              - "low"
-              - "medium"
-              - "high"
+        reasoningFormat: disabled
       activityLabel: true
       activityModel: "deepseek/deepseek-chat-v3.1"
       modelDisplayNames:
@@ -72,10 +65,44 @@ modelSpecs:
   enforce: true
   prioritize: true
   list:
-    # 1a: main coding
+    # --- Claude Sonnet variants, thinking off -> high --- #
+    - name: "main-coder-off"
+      label: "Main Coder — No Thinking"
+      description: "Sonnet 5, reasoning fully disabled. Fastest, cheapest, no hidden reasoning tokens."
+      iconURL: "anthropic"
+      group: "OpenRouter"
+      preset:
+        endpoint: "OpenRouter"
+        model: "anthropic/claude-sonnet-5"
+        temperature: 0.1
+        addParams:
+          reasoning:
+            enabled: false
+        promptPrefix: |
+          You are an expert scientific software engineer specializing in high-performance C and vectorized Python (NumPy, SciPy).
+          - Prioritize memory safety, cache locality, and explicit pointer handling.
+          - Output clean, executable code blocks.
+          - Explain edge cases or potential memory leaks briefly below code blocks.
+    - name: "main-coder-low"
+      label: "Main Coder — Low Effort"
+      description: "Sonnet 5, low reasoning effort. Cheap, light thinking for routine tasks."
+      iconURL: "anthropic"
+      group: "OpenRouter"
+      preset:
+        endpoint: "OpenRouter"
+        model: "anthropic/claude-sonnet-5"
+        temperature: 0.1
+        addParams:
+          reasoning:
+            effort: "low"
+        promptPrefix: |
+          You are an expert scientific software engineer specializing in high-performance C and vectorized Python (NumPy, SciPy).
+          - Prioritize memory safety, cache locality, and explicit pointer handling.
+          - Output clean, executable code blocks.
+          - Explain edge cases or potential memory leaks briefly below code blocks.
     - name: "main-coder"
-      label: "Main Coder (Claude Sonnet)"
-      description: "Optimized for scientific Python and C architecture"
+      label: "Main Coder — Medium Effort"
+      description: "Sonnet 5, medium reasoning effort. Balanced default for scientific Python and C architecture."
       iconURL: "anthropic"
       default: true
       group: "OpenRouter"
@@ -83,12 +110,32 @@ modelSpecs:
         endpoint: "OpenRouter"
         model: "anthropic/claude-sonnet-5"
         temperature: 0.1
+        addParams:
+          reasoning:
+            effort: "medium"
         promptPrefix: |
           You are an expert scientific software engineer specializing in high-performance C and vectorized Python (NumPy, SciPy).
           - Prioritize memory safety, cache locality, and explicit pointer handling.
           - Output clean, executable code blocks.
           - Explain edge cases or potential memory leaks briefly below code blocks.
-    # 1b: fallback coding
+    - name: "main-coder-high"
+      label: "Main Coder — High Effort"
+      description: "Sonnet 5, high reasoning effort. Deepest thinking, highest cost — for hard bugs."
+      iconURL: "anthropic"
+      group: "OpenRouter"
+      preset:
+        endpoint: "OpenRouter"
+        model: "anthropic/claude-sonnet-5"
+        temperature: 0.1
+        addParams:
+          reasoning:
+            effort: "high"
+        promptPrefix: |
+          You are an expert scientific software engineer specializing in high-performance C and vectorized Python (NumPy, SciPy).
+          - Prioritize memory safety, cache locality, and explicit pointer handling.
+          - Output clean, executable code blocks.
+          - Explain edge cases or potential memory leaks briefly below code blocks.
+    # --- fallback coding --- #
     - name: "fallback-coder"
       label: "Fallback Coder (DeepSeek R1)"
       description: "Deep reasoning engine for intractable bugs and complex logic"
@@ -99,20 +146,68 @@ modelSpecs:
         promptPrefix: |
           You are an expert systems programmer. 
           - Use internal reasoning to analyze complex logic flows, compiler flags, and race conditions before producing final code output.
-    # 2: astrophysics tutoring
-    - name: "astrophysics-tutor"
-      label: "Astrophysics Tutor (o4-mini)"
-      description: "Fast STEM logic and physics derivations"
+    # --- o4-mini variants, thinking off -> high --- #
+    - name: "astrophysics-tutor-off"
+      label: "Astrophysics Tutor — No Thinking"
+      description: "o4-mini, reasoning fully disabled. Fastest, cheapest, no hidden reasoning tokens."
       iconURL: "openai"
       group: "OpenRouter"
       preset:
         endpoint: "OpenRouter"
         model: "openai/o4-mini"
+        addParams:
+          reasoning:
+            enabled: false
         promptPrefix: |
           You are an expert theoretical and computational astrophysicist as well as university tutor.
           - Render all mathematical derivations and numerical concepts using explicit LaTeX syntax ($...$ for inline, $$...$$ for block).
           - Break solutions down sequentially: Assumptions, Fundamental Equations, Derivation, Dimensional Check.
-    # 3: prose writing
+    - name: "astrophysics-tutor-low"
+      label: "Astrophysics Tutor — Low Effort"
+      description: "o4-mini, low reasoning effort. Cheap, light thinking for routine tasks."
+      iconURL: "openai"
+      group: "OpenRouter"
+      preset:
+        endpoint: "OpenRouter"
+        model: "openai/o4-mini"
+        addParams:
+          reasoning:
+            effort: "low"
+        promptPrefix: |
+          You are an expert theoretical and computational astrophysicist as well as university tutor.
+          - Render all mathematical derivations and numerical concepts using explicit LaTeX syntax ($...$ for inline, $$...$$ for block).
+          - Break solutions down sequentially: Assumptions, Fundamental Equations, Derivation, Dimensional Check.
+    - name: "astrophysics-tutor"
+      label: "Astrophysics Tutor — Medium Effort"
+      description: "o4-mini, medium reasoning effort. Balanced default for STEM logic and physics derivations."
+      iconURL: "openai"
+      group: "OpenRouter"
+      preset:
+        endpoint: "OpenRouter"
+        model: "openai/o4-mini"
+        addParams:
+          reasoning:
+            effort: "medium"
+        promptPrefix: |
+          You are an expert theoretical and computational astrophysicist as well as university tutor.
+          - Render all mathematical derivations and numerical concepts using explicit LaTeX syntax ($...$ for inline, $$...$$ for block).
+          - Break solutions down sequentially: Assumptions, Fundamental Equations, Derivation, Dimensional Check.
+    - name: "astrophysics-tutor-high"
+      label: "Astrophysics Tutor — High Effort"
+      description: "o4-mini, high reasoning effort. Deepest thinking, highest cost — for hard derivations."
+      iconURL: "openai"
+      group: "OpenRouter"
+      preset:
+        endpoint: "OpenRouter"
+        model: "openai/o4-mini"
+        addParams:
+          reasoning:
+            effort: "high"
+        promptPrefix: |
+          You are an expert theoretical and computational astrophysicist as well as university tutor.
+          - Render all mathematical derivations and numerical concepts using explicit LaTeX syntax ($...$ for inline, $$...$$ for block).
+          - Break solutions down sequentially: Assumptions, Fundamental Equations, Derivation, Dimensional Check.
+    # --- prose writing --- #
     - name: "writing-prose"
       label: "Prose Writer (DeepSeek Chat V3)"
       description: "Quick, cheap text editing and technical documentation drafting"
