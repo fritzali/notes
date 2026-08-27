@@ -6,14 +6,16 @@
    Kept as compile-time constants to avoid touching "definitions.h" enumeration.
    --------------------------------------------------------------------------------- */
 
-#define NBINS_CORONA          90       /* number of logarithmic radial bins */
-#define CORONA_AVG_FREQ       10       /* update every number of steps */
-#define CORONA_EMA_ALPHA       0.05    /* temporal smoothing weight */
-#define CORONA_THRESH_FAC      1.05    /* transition midpoint, in terms of
+#define NBINS_CORONA          90        /* number of logarithmic radial bins */
+#define CORONA_AVG_FREQ       10        /* update every number of steps */
+#define CORONA_EMA_ALPHA       0.05     /* temporal smoothing weight */
+#define CORONA_THRESH_FAC      1.05     /* transition midpoint, in terms of
                                            position along the corona->disk
                                            log-density span (see DiskFraction) */
-#define CORONA_SIGMOID_WIDTH   0.25    /* transition width, same units */
-#define DISK_BIN_VOLFRAC_MIN   1.e-3   /* minimum disk-weighted volume
+#define CORONA_SIGMOID_WIDTH   0.25     /* transition width, same units */
+#define CORONA_SIGMOID_SCALE_ABOVE 0.1  /* width multiplier above threshold (fast saturation) */
+#define CORONA_SIGMOID_SCALE_BELOW 1.0  /* width multiplier below threshold (slow decay) */
+#define DISK_BIN_VOLFRAC_MIN   1.e-3    /* minimum disk-weighted volume
                                            fraction of a bin's total volume
                                            this step, below which the bin
                                            is NOT considered to have "real"

@@ -485,10 +485,10 @@ double DiskFraction (double *v, double x1, double x2)
   /* 3. Apply asymmetric saturation widths */
   if (diff > 0.0) {
       /* Cell is denser than threshold: compress the width for fast saturation */
-      width = CORONA_SIGMOID_WIDTH * 0.3; 
+      width = CORONA_SIGMOID_WIDTH * CORONA_SIGMOID_SCALE_ABOVE; 
   } else {
       /* Cell is less dense than threshold: expand the width for slow decay */
-      width = CORONA_SIGMOID_WIDTH * 2.0; 
+      width = CORONA_SIGMOID_WIDTH * CORONA_SIGMOID_SCALE_BELOW; 
   }
  
   /* 4. Evaluate the adjusted sigmoid */
