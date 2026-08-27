@@ -36,7 +36,7 @@ summarization:
 endpoints:
   custom:
     - name: "OpenRouter"
-      apiKey: "{placeholder-key}"
+      apiKey: "${OPENROUTER_KEY}"
       baseURL: "https://openrouter.ai/api/v1"
       models:
         default:
