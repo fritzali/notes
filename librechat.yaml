@@ -65,11 +65,12 @@ modelSpecs:
   enforce: true
   prioritize: true
   list:
-    # --- Claude Sonnet variants, thinking off -> high --- #
+    # 1a: main coding #
     - name: "main-coder-off"
       label: "Main Coder — No Thinking"
       description: "Sonnet 5, reasoning fully disabled. Fastest, cheapest, no hidden reasoning tokens."
       iconURL: "anthropic"
+      default: true
       group: "OpenRouter"
       preset:
         endpoint: "OpenRouter"
@@ -100,11 +101,10 @@ modelSpecs:
           - Prioritize memory safety, cache locality, and explicit pointer handling.
           - Output clean, executable code blocks.
           - Explain edge cases or potential memory leaks briefly below code blocks.
-    - name: "main-coder"
+    - name: "main-coder-medium"
       label: "Main Coder — Medium Effort"
       description: "Sonnet 5, medium reasoning effort. Balanced default for scientific Python and C architecture."
       iconURL: "anthropic"
-      default: true
       group: "OpenRouter"
       preset:
         endpoint: "OpenRouter"
@@ -135,7 +135,7 @@ modelSpecs:
           - Prioritize memory safety, cache locality, and explicit pointer handling.
           - Output clean, executable code blocks.
           - Explain edge cases or potential memory leaks briefly below code blocks.
-    # --- fallback coding --- #
+    # 1b: fallback coding #
     - name: "fallback-coder"
       label: "Fallback Coder (DeepSeek R1)"
       description: "Deep reasoning engine for intractable bugs and complex logic"
@@ -146,7 +146,7 @@ modelSpecs:
         promptPrefix: |
           You are an expert systems programmer. 
           - Use internal reasoning to analyze complex logic flows, compiler flags, and race conditions before producing final code output.
-    # --- o4-mini variants, thinking off -> high --- #
+    # 2: astrophysics tutoring #
     - name: "astrophysics-tutor-off"
       label: "Astrophysics Tutor — No Thinking"
       description: "o4-mini, reasoning fully disabled. Fastest, cheapest, no hidden reasoning tokens."
@@ -207,7 +207,7 @@ modelSpecs:
           You are an expert theoretical and computational astrophysicist as well as university tutor.
           - Render all mathematical derivations and numerical concepts using explicit LaTeX syntax ($...$ for inline, $$...$$ for block).
           - Break solutions down sequentially: Assumptions, Fundamental Equations, Derivation, Dimensional Check.
-    # --- prose writing --- #
+    # 3: prose writing #
     - name: "writing-prose"
       label: "Prose Writer (DeepSeek Chat V3)"
       description: "Quick, cheap text editing and technical documentation drafting"
