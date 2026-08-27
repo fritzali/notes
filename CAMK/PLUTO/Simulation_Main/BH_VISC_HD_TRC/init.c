@@ -291,7 +291,9 @@ void UpdateProfiles (const Data *d, Grid *grid)
     if (b < 0) b = 0;
     if (b >= NBINS_PROFILE) b = NBINS_PROFILE - 1;
  
-    vi[RHO] = d->Vc[RHO][k][j][i];              /* only RHO is read by DiskFraction */
+    vi[RHO] = d->Vc[RHO][k][j][i];              
+    vi[VX3] = d->Vc[VX3][k][j][i];               /* Added: VX3 (v_phi) now read by DiskFraction */
+    
     f  = DiskFraction(vi, r, grid->x[JDIR][j]);  /* soft disk weight, uses OLD profiles */
     wc = 1.0 - f;
     wd = f;
@@ -349,9 +351,6 @@ void UpdateProfiles (const Data *d, Grid *grid)
                            + (1.0 - CORONA_EMA_ALPHA) * g_rhoDiskProfile[b];
       g_diskProfileValid[b] = 1;
     }
-    /* else: bin not (yet) meaningfully disk-populated; left untouched
-       here, patched below from the nearest valid bin instead of keeping
-       whatever arbitrary analytic seed it started with. */
   }
  
   /* -- Patch never-yet-validated bins (e.g. inside ISCO before any
@@ -470,41 +469,25 @@ double DiskFraction (double *v, double x1, double x2)
  * At t=0 (before UpdateProfiles() has ever run on real simulation data),
  * this returns exactly 0.0 or 1.0 according to InitDiskCell(), i.e. it
  * matches what the removed tr1 tracer would have been initialized to,
- * without ever reading it. This holds both on the very first call (before
- * InitProfiles() has run) and immediately after InitProfiles() seeds the
- * analytic reference profiles, since at that point every cell's density
- * still equals its Init() value and InitDiskCell() is exactly the
- * condition Init() itself used to set that density.
+ * without ever reading it.
  *
  * Once UpdateProfiles() has accumulated at least one step of real
- * disk/corona-weighted data (g_profilesLive == 1), DiskFraction() switches
- * over to the adaptive-ratio classifier: rather than comparing the local
- * density against a fixed multiplicative threshold on the corona
- * reference alone, this tracks TWO running radial references - a corona
- * density profile and a disk density profile (see UpdateProfiles()) - and
- * classifies by where the cell sits between them:
+ * disk/corona-weighted data (g_profilesLive == 1), DiskFraction() uses
+ * two multiplicative criteria to decide if a cell is disk material:
+ * 
+ * 1. DENSITY: Tracks TWO running radial references - a corona density 
+ *    profile and a disk density profile (see UpdateProfiles()) - and
+ *    classifies by where the cell sits between them.
+ * 
+ * 2. ROTATION (New): Compares the local azimuthal velocity v[VX3] against
+ *    the expected Keplerian velocity at the cylindrical radius.
  *
- *   position = log10(rho / rho_corona(r)) / log10(rho_disk(r) / rho_corona(r))
- *
- * position ~ 0 means the cell density matches the current corona
- * reference at that radius; position ~ 1 means it matches the current
- * disk reference. Because rho_disk(r) is itself built from actual
- * disk-classified cells (see UpdateProfiles()), it decays along with
- * a genuinely evolving/draining inner disk, so the classification
- * threshold tracks the real disk instead of drifting away from it as a
- * fixed analytic reference would - this is what removes the horizon-side
- * disk truncation.
- *
- * The hard threshold on "position" is replaced by a logistic function,
- * giving a smooth spatial transition (in lieu of tracer diffusion) of
- * width CORONA_SIGMOID_WIDTH (now interpreted in units of the
- * corona-to-disk log-density span rather than dex).
- *
- * NOTE: no rotation-based criterion is included here; this only reworks
- * the density reference used by the existing sigmoid.
+ * Both criteria use independent logistic functions (sigmoids), and their 
+ * outputs are multiplied to yield the final continuous fraction [0, 1].
  *********************************************************************** */
 {
-  double rho_ref_c, rho_ref_d, log_span, position, arg;
+  double rho_ref_c, rho_ref_d, log_span, position, arg_den, arg_rot;
+  double den_factor, rot_factor, rcyl, v_kep, rot_frac;
  
   if (!g_profilesLive) {
     /* Exact t=0 match to the former tracer: no profile, no sigmoid,
@@ -527,18 +510,30 @@ double DiskFraction (double *v, double x1, double x2)
     rho_ref_d = GetDiskRefDensity(x1);
   }
  
+  /* --- 1. DENSITY SIGMOID --- */
   log_span = log10(MAX(rho_ref_d, 1.e-30)) - log10(MAX(rho_ref_c, 1.e-30));
   log_span = (fabs(log_span) < 1.e-12) ? 1.e-12 : log_span;  /* guard degenerate span */
  
   position = (log10(MAX(v[RHO], 1.e-30)) - log10(MAX(rho_ref_c, 1.e-30))) / log_span;
  
-  /* CORONA_THRESH_FAC now sets where along [0,1] the transition midpoint
-     sits (as a log-position, so 0.5 = geometric midpoint between the two
-     references); keep the existing macro rather than adding a new one. */
-  arg = (position - (1.0 - 1.0/CORONA_THRESH_FAC)) / CORONA_SIGMOID_WIDTH;
-  arg = MIN(MAX(arg, -50.0), 50.0);      /* guard exp() over/underflow */
- 
-  return 1.0 / (1.0 + exp(-arg));
+  arg_den = (position - (1.0 - 1.0/CORONA_THRESH_FAC)) / CORONA_SIGMOID_WIDTH;
+  arg_den = MIN(MAX(arg_den, -50.0), 50.0);      /* guard exp() over/underflow */
+  den_factor = 1.0 / (1.0 + exp(-arg_den));
+
+  /* --- 2. ROTATION SIGMOID --- */
+  rcyl  = x1 * sin(x2);
+  /* Ideal Newtonian Keplerian velocity matching the 1/sqrt(rcyl) injection setup */
+  v_kep = 1.0 / sqrt(MAX(rcyl, 1.e-12)); 
+  
+  /* Measure absolute rotation fraction against Keplerian */
+  rot_frac = fabs(v[VX3]) / v_kep;
+  
+  arg_rot = (rot_frac - ROTATION_THRESH_FAC) / ROTATION_SIGMOID_WIDTH;
+  arg_rot = MIN(MAX(arg_rot, -50.0), 50.0);
+  rot_factor = 1.0 / (1.0 + exp(-arg_rot));
+
+  /* Multiply factors: only rapidly rotating, dense material yields f ~ 1 */
+  return den_factor * rot_factor;
 }
  
 /* ********************************************************************* */
