@@ -1,5 +1,5 @@
 USER           = fritz
-WORKING_DIR    = /home/fritz/work/notebooks/CAMK/PLUTO/Simulation_Main/BH_VISC_RES_MHD_TRC
+WORKING_DIR    = /home/fritz/work/notebooks/CAMK/PLUTO/Simulation_Main/VISC_RES_MHD
 SYSTEM_NAME    = Linux
 NODE_NAME      = pluto
 RELEASE        = 7.1.8-arch1-3

@@ -22,10 +22,6 @@
   local thermal energy in a single step - the direct analog of the
   Ohmic cooling safeguard in ResistiveRHS().
 
-  The viscous heating correction is weighted by DiskFraction() (see
-  init.c) instead of the passive tracer v[TRC], since the tracer
-  field is unreliable in this setup (see project notes).
-
   \authors A. Mignone (andrea.mignone@unito.it)\n
 
  \b References
@@ -70,7 +66,7 @@ void ViscousRHS (const Data *d, Data_Arr dU, double *dcoeff,
   double cost = 2;              /* O(1) prefactor for the viscous heat */
   double cool_cutoff = 1e-1;    /* max fraction of thermal energy      */
                                  /* removable in a single step         */
-  double cool, disk_frac;
+  double cool;
   intList var_list;
   #if HAVE_ENERGY
   var_list.nvar = 4;
@@ -167,7 +163,7 @@ void ViscousRHS (const Data *d, Data_Arr dU, double *dcoeff,
              (ViF[iMR], ViF[iMTH], ViF[iMPHI]) and remove it from
              the internal energy:
 
-               cool = cost*disk_frac*dt * 0.5*(ViF_R^2+ViF_TH^2+ViF_PHI^2)/nu1
+               cool = cost*tracer*dt * 0.5*(ViF_R^2+ViF_TH^2+ViF_PHI^2)/nu1
 
              This is the viscous-heating analog of the Ohmic cooling
              correction in ResistiveRHS(): applied only where nu1
@@ -175,18 +171,17 @@ void ViscousRHS (const Data *d, Data_Arr dU, double *dcoeff,
              resulting energy removal stays below a fixed fraction
              (cool_cutoff) of the local thermal energy p/(gamma-1),
              to guard against over-cooling / negative pressures from
-             locally large viscous stresses. disk_frac (from
-             DiskFraction(), see init.c) replaces the passive tracer
-             vc[TRC] used previously to weight this correction.
+             locally large viscous stresses.
          -- */
 
       NVAR_LOOP(nv) {
         vc[nv] = d->Vc[nv][k][j][i];
       }
       Visc_nu(vc, x1[i], x2[j], x3[k], &nu1, &nu2);
-      disk_frac = DiskFraction(vc, x1[i], x2[j]);
       if (nu1 > nu_floor) {
-        cool = cost*disk_frac*dt*0.5*(pow(ViF[i][iMR],2)+pow(ViF[i][iMTH],2)
+//      cool = cost*vc[TRC]*dt*0.5*(pow(ViF[i][iMR],2)+pow(ViF[i][iMTH],2)+pow(ViF[i][iMPHI],2))/(nu1);
+  /* Replaced vc[TCR] with the DiskFraction(vc, x1, x2) reconstruction. */
+        cool = cost*DiskFraction(vc, x1[i], x2[j])*dt*0.5*(pow(ViF[i][iMR],2)+pow(ViF[i][iMTH],2)
                                      +pow(ViF[i][iMPHI],2))/(nu1);
         if (fabs(cool) < cool_cutoff*vc[PRS]/(g_gamma-1)) {
           rhs[ENG] -= cool;
@@ -271,17 +266,17 @@ void ViscousRHS (const Data *d, Data_Arr dU, double *dcoeff,
 
       /* -- 2c. Viscous heating correction (X2 momentum-flux component) --
              Same construction as step 1c, using the local nu1 and the
-             viscous momentum fluxes at the X2 interface index j, and
-             disk_frac from DiskFraction() in place of the tracer.
+             viscous momentum fluxes at the X2 interface index j.
          -- */
 
       NVAR_LOOP(nv) {
         vc[nv] = d->Vc[nv][k][j][i];
       }
       Visc_nu(vc, x1[i], x2[j], x3[k], &nu1, &nu2);
-      disk_frac = DiskFraction(vc, x1[i], x2[j]);
       if (nu1 > nu_floor) {
-        cool = cost*disk_frac*dt*0.5*(pow(ViF[j][iMR],2)+pow(ViF[j][iMTH],2)
+//      cool = cost*vc[TRC]*dt*0.5*(pow(ViF[j][iMR],2)+pow(ViF[j][iMTH],2)+pow(ViF[j][iMPHI],2))/(nu1);
+  /* Replaced vc[TCR] with the DiskFraction(vc, x1, x2) reconstruction. */
+        cool = cost*DiskFraction(vc, x1[i], x2[j])*dt*0.5*(pow(ViF[j][iMR],2)+pow(ViF[j][iMTH],2)
                                      +pow(ViF[j][iMPHI],2))/(nu1);
         if (fabs(cool) < cool_cutoff*vc[PRS]/(g_gamma-1)) {
           rhs[ENG] -= cool;
@@ -348,17 +343,17 @@ void ViscousRHS (const Data *d, Data_Arr dU, double *dcoeff,
 
       /* -- 3c. Viscous heating correction (X3 momentum-flux component) --
              Same construction as steps 1c/2c, using the local nu1 and
-             the viscous momentum fluxes at the X3 interface index k,
-             and disk_frac from DiskFraction() in place of the tracer.
+             the viscous momentum fluxes at the X3 interface index k.
          -- */
 
       NVAR_LOOP(nv) {
         vc[nv] = d->Vc[nv][k][j][i];
       }
       Visc_nu(vc, x1[i], x2[j], x3[k], &nu1, &nu2);
-      disk_frac = DiskFraction(vc, x1[i], x2[j]);
       if (nu1 > nu_floor) {
-        cool = cost*disk_frac*dt*0.5*(pow(ViF[k][iMR],2)+pow(ViF[k][iMTH],2)
+//      cool = cost*vc[TRC]*dt*0.5*(pow(ViF[k][iMR],2)+pow(ViF[k][iMTH],2)+pow(ViF[k][iMPHI],2))/(nu1);
+  /* Replaced vc[TCR] with the DiskFraction(vc, x1, x2) reconstruction. */
+        cool = cost*DiskFraction(vc, x1[i], x2[j])*dt*0.5*(pow(ViF[k][iMR],2)+pow(ViF[k][iMTH],2)
                                      +pow(ViF[k][iMPHI],2))/(nu1);
         if (fabs(cool) < cool_cutoff*vc[PRS]/(g_gamma-1)) {
           rhs[ENG] -= cool;

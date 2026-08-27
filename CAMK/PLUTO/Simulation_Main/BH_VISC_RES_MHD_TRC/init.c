@@ -18,6 +18,11 @@
 /* /////////////////////////////////////////////////////////////////////////// */
 
 #include "pluto.h"
+#include "modifications.h"
+
+#ifdef PARALLEL
+ #include <mpi.h>
+#endif
 
 /* ---------------------------------------------------------------------
  * Inner Boundary Condition Selector (X1_BEG)
@@ -34,336 +39,488 @@
 #endif
 
 /* ---------------------------------------------------------------------
- * START: Lagrangian Tracer Replacement from Physical Properties
+ * Adaptive disk versus corona classifier state
+ *
+ * g_rBinEdgesLog[]     : logarithmic edges of NBINS_PROFILE bins spanning the
+ *                        global radial domain (fixed at InitDomain() call).
+ * g_rhoCoronaProfile[] : temporally smoothed, multicore reduced average density
+ *                        of corona weighted cells per radial bin.
+ * g_rhoDiskProfile[]   : same, but for disk weighted cells - a running
+ *                        estimate of "what disk density actually looks like
+ *                        at radius r", tracked alongside the corona
+ *                        reference so DiskFraction() can classify by where
+ *                        the cell sits between the two evolving references,
+ *                        instead of by a fixed multiplicative threshold on
+ *                        the corona value alone. This lets the classifier
+ *                        track a genuinely decaying inner disk instead of
+ *                        drifting away from it.
+ * g_profilesInit  : guards against use before InitProfiles()
+ *                        has run (e.g. a restart path that skips
+ *                        InitDomain() call); in this case DiskFraction()
+ *                        falls back to the original static analytic profile
+ *                        for the corona side, and the analytic Keplerian
+ *                        disk profile for the disk side.
  * --------------------------------------------------------------------- */
-
-/* Ensure iVPHI points to azimuthal velocity component in spherical geometry */
-#ifndef iVPHI
-  #define iVPHI VX3
-#endif
-
-/* Global persistent arrays for cached lookup */
-static double ***disk_frac_cache = NULL;  /* EMA-relaxed value actually used by physics */
-static double **raw_mask         = NULL;  /* instantaneous, hard-thresholded classification */
-static double **smooth_mask      = NULL;  /* spatially blurred version of raw_mask (this step) */
-static double *local_rho_buf     = NULL;
-static double *global_rho_buf    = NULL;
-
-/* Set to 1 once InitDomain has primed disk_frac_cache with a first value,
- * so the very first Analysis() call blends against a real field instead
- * of zero-initialized memory (which would otherwise be seen as "all corona"
- * and instantaneously kill dissipation everywhere on step 1). */
-static int disk_frac_primed = 0;
-
-/* -------------------------------------------------------------------
- * DESIGN NOTE (read before touching this file again):
- *
- * The original version of this cache recomputed a HARD boolean
- * (rot_flag && rho_flag) every call to Analysis() and fed it straight
- * into disk_frac_cache, which in turn gates viscosity/opacity. That
- * is a discontinuous function of the solution feeding back into the
- * coefficients of the PDE being solved every step: a cell straddling
- * the threshold flips 0<->1 from one step to the next, dissipation
- * switches on/off like a delta-function forcing term, and the
- * resulting shock drives local density toward DFLOOR, which can push
- * neighbouring cells across their own threshold on the next step.
- * That is a real, first-order stability defect, not a corner case.
- *
- * Fix implemented below: disk_frac_cache is an EXPONENTIAL MOVING
- * AVERAGE (EMA) of the hard/blurred classification, updated once per
- * call with a fixed relaxation rate EMA_ALPHA. The physics-facing
- * value can now only change by a bounded amount per call, so it can
- * no longer act as an impulsive forcing term. Do not read raw_mask or
- * smooth_mask directly from viscosity/opacity code -- always go
- * through DiskFraction(), which returns the relaxed value.
- * ------------------------------------------------------------------- */
-#define EMA_ALPHA 0.1   /* relaxation rate; ~1/EMA_ALPHA calls to reach steady state */
-
-/* MPI Gathering Buffers */
-#ifdef PARALLEL
-static MPI_Comm theta_comm = MPI_COMM_NULL;
-static int theta_comm_init = 0;
-static int *recv_counts    = NULL;
-static int *disps          = NULL;
-#endif
-
-/* -------------------------------------------------------------------
- * Helper: Double comparison for quicksort median calculation
- * ------------------------------------------------------------------- */
-static int CompareDoubles (const void *a, const void *b)
+static double g_rBinEdgesLog[NBINS_PROFILE + 1];
+static double g_rhoCoronaProfile[NBINS_PROFILE];
+static double g_rhoDiskProfile[NBINS_PROFILE];
+static double g_vphiDiskProfile[NBINS_PROFILE];   /* temporally smoothed,
+                                                      disk-weighted average
+                                                      |v_phi| per radial bin -
+                                                      the "what does disk
+                                                      rotation actually look
+                                                      like at radius r"
+                                                      companion to
+                                                      g_rhoDiskProfile, used
+                                                      by DiskFraction()'s
+                                                      rotation sigmoid so it
+                                                      is measured against the
+                                                      real (sub-Keplerian,
+                                                      ISCO-plunging) disk
+                                                      profile instead of an
+                                                      idealized v_kep. */
+static int    g_diskProfileValid[NBINS_PROFILE];  /* has bin b ever seen a
+                                                      meaningful amount of
+                                                      real disk material?
+                                                      shared validity flag
+                                                      for both g_rhoDiskProfile
+                                                      and g_vphiDiskProfile,
+                                                      since both are only
+                                                      ever updated together
+                                                      from the same disk-
+                                                      weighted cell set. */
+static int    g_profilesInit = 0;
+static int    g_profilesLive = 0;  /* has UpdateProfiles() run at least once
+                                      on real simulation data? Until then,
+                                      DiskFraction() returns the exact t=0
+                                      classification (see InitDiskCell()),
+                                      matching what the removed tr1 tracer
+                                      would have been, instead of using the
+                                      profile-based sigmoid. */
+ 
+/* ********************************************************************* */
+static double InterpLogProfile (double *profile, double x1)
+/*!
+ * Shared linear interpolation (in log density, log radius space) of a
+ * tabulated radial profile at input radius. Used for both the corona and
+ * disk reference profiles. Falls back to clamped edge bins outside the
+ * tabulated range (e.g. within ghost zones just past the physical domain
+ * edge).
+ *********************************************************************** */
 {
-  double da = *(const double *)a;
-  double db = *(const double *)b;
-  return (da > db) - (da < db);
+  double lr, lmin, lmax, dl, lc0, s, frac;
+  double lrho0, lrho1, lrho;
+  int    ib0, ib1;
+ 
+  lr   = log10(x1);
+  lmin = g_rBinEdgesLog[0];
+  lmax = g_rBinEdgesLog[NBINS_PROFILE];
+  dl   = (lmax - lmin) / (double)NBINS_PROFILE;
+  lc0  = lmin + 0.5 * dl;                 /* center of first bin */
+ 
+  s    = (lr - lc0) / dl;                 /* fractional bin coordinate */
+  ib0  = (int)floor(s);
+  frac = s - ib0;
+  ib1  = ib0 + 1;
+ 
+  ib0 = (ib0 < 0) ? 0 : (ib0 > NBINS_PROFILE - 1 ? NBINS_PROFILE - 1 : ib0);
+  ib1 = (ib1 < 0) ? 0 : (ib1 > NBINS_PROFILE - 1 ? NBINS_PROFILE - 1 : ib1);
+ 
+  lrho0 = log10(MAX(profile[ib0], 1.e-30));
+  lrho1 = log10(MAX(profile[ib1], 1.e-30));
+  lrho  = lrho0 + frac * (lrho1 - lrho0);
+ 
+  return pow(10.0, lrho);
 }
-
-/* -------------------------------------------------------------------
- * Helper: Index clamping for boundary domain padding
- * ------------------------------------------------------------------- */
-static inline int ClampIndex (int val, int min_val, int max_val)
+ 
+/* ********************************************************************* */
+static double GetCoronaRefDensity (double x1)
+/*!
+ * Interpolated corona reference density at input radius.
+ *********************************************************************** */
 {
-  if (val < min_val) return min_val;
-  if (val > max_val) return max_val;
-  return val;
+  return InterpLogProfile(g_rhoCoronaProfile, x1);
 }
-
-/* -------------------------------------------------------------------
- * STEP 2: Smooth Median Generator & Rotation Veto (MPI-Safe Timestep Hook)
- * ------------------------------------------------------------------- */
-void UpdateDiskFractionCache (const Data *d, Grid *grid)
+ 
+/* ********************************************************************* */
+static double GetDiskRefDensity (double x1)
+/*!
+ * Interpolated disk reference density at input radius.
+ *********************************************************************** */
 {
-  int i, j, k;
-
-  /* 1. Persistent memory allocations */
-  if (disk_frac_cache == NULL) {
-    disk_frac_cache = ARRAY_3D(NX3_TOT, NX2_TOT, NX1_TOT, double);
+  return InterpLogProfile(g_rhoDiskProfile, x1);
+}
+ 
+/* ********************************************************************* */
+static double GetDiskRefVphi (double x1)
+/*!
+ * Interpolated disk reference |v_phi| at input radius. Same log-log
+ * interpolation as the density profiles (v_phi is well-approximated by a
+ * power law in r away from ISCO, so log-log interpolation is consistent
+ * with the treatment of both density profiles rather than a bespoke
+ * linear one).
+ *********************************************************************** */
+{
+  return InterpLogProfile(g_vphiDiskProfile, x1);
+}
+ 
+/* ********************************************************************* */
+static double AnalyticCoronaDensity (double r)
+/*!
+ * Static analytic corona density profile (RHOC*r^-1.5), used to seed the
+ * corona reference profile and as a restart-safety fallback.
+ *********************************************************************** */
+{
+  return g_inputParam[RHOC] * pow(r, -1.5);
+}
+ 
+/* ********************************************************************* */
+static double AnalyticDiskDensity (double r)
+/*!
+ * Midplane (rcyl = r) analytic Keplerian-disk density, same construction
+ * as the torus profile in Init(). Used to seed the disk reference profile
+ * and as a restart-safety fallback.
+ *********************************************************************** */
+{
+  double eps2, coeff;
+ 
+  eps2  = g_inputParam[EPS] * g_inputParam[EPS];
+  coeff = 0.4 / eps2 * (1.0 / r - (1.0 - 2.5 * eps2) / r);
+  coeff = MAX(coeff, 0.0);
+ 
+  return pow(coeff, 1.5);
+}
+ 
+/* ********************************************************************* */
+static double BinCenterRadius (int b)
+/*!
+ * Physical radius at the center of log-radial bin b.
+ *********************************************************************** */
+{
+  double lc = 0.5 * (g_rBinEdgesLog[b] + g_rBinEdgesLog[b + 1]);
+  return pow(10.0, lc);
+}
+ 
+/* ********************************************************************* */
+static double LocalDiskDensitySlope (int src)
+/*!
+ * Local power-law slope d(log rho_disk)/d(log r) of the CURRENT
+ * g_rhoDiskProfile, estimated from the two nearest valid bins straddling
+ * (or adjacent to) src, for use in rescaling a borrowed disk density from
+ * r_src to a different target radius. Falls back to the analytic
+ * Keplerian-disk midplane slope (-3/2, matching AnalyticDiskDensity's
+ * coeff^1.5 ~ r^-1.5 far from RD) if no second valid neighbor is
+ * available to differentiate against.
+ *********************************************************************** */
+{
+  int bb, nb;
+  double r_src, r_nb, slope;
+ 
+  r_src = BinCenterRadius(src);
+ 
+  /* Prefer a valid neighbor on the outward side of src (same side the
+     nearest-valid search draws from most often), then inward. */
+  nb = -1;
+  for (bb = src + 1; bb < NBINS_PROFILE; bb++) {
+    if (g_diskProfileValid[bb]) { nb = bb; break; }
   }
-  if (raw_mask == NULL) {
-    raw_mask = ARRAY_2D(NX2_TOT, NX1_TOT, double);
-  }
-  if (smooth_mask == NULL) {
-    smooth_mask = ARRAY_2D(NX2_TOT, NX1_TOT, double);
-  }
-  if (local_rho_buf == NULL) {
-    local_rho_buf = ARRAY_1D(NX2_TOT, double);
-  }
-
-  /* 2. Setup MPI Sub-Communicator along Theta (JDIR) for each Radial (IDIR) Slice */
-  int global_n2 = NX2;
-#ifdef PARALLEL
-  if (!theta_comm_init) {
-    /* Group ranks sharing the same radial rank index (g_domBeg[IDIR]) */
-    MPI_Comm_split(MPI_COMM_WORLD, g_domBeg[IDIR], prank, &theta_comm);
-    theta_comm_init = 1;
-  }
-
-  int theta_proc_size;
-  MPI_Comm_size(theta_comm, &theta_proc_size);
-
-  if (recv_counts == NULL) {
-    recv_counts = (int *)malloc(theta_proc_size * sizeof(int));
-    disps       = (int *)malloc(theta_proc_size * sizeof(int));
-  }
-
-  int local_n2 = NX2; /* Local active theta cells */
-  MPI_Allgather(&local_n2, 1, MPI_INT, recv_counts, 1, MPI_INT, theta_comm);
-
-  disps[0] = 0;
-  for (int r = 1; r < theta_proc_size; r++) {
-    disps[r] = disps[r - 1] + recv_counts[r - 1];
-  }
-  global_n2 = disps[theta_proc_size - 1] + recv_counts[theta_proc_size - 1];
-
-  if (global_rho_buf == NULL) {
-    global_rho_buf = ARRAY_1D(global_n2, double);
-  }
-#else
-  global_rho_buf = local_rho_buf;
-#endif
-
-  /* Classification parameters */
-  const double median_factor = 5.0;
-  const double vphi_frac     = 0.5;
-  const int blur_radius      = 1; /* 3x3 stencil window (radius=2 gives 5x5, not 3x3 -- fixed) */
-
-  /* -----------------------------------------------------------------
-   * Part A: Compute Global Radial Medians and Apply Rotation Veto
-   * ----------------------------------------------------------------- */
-  for (i = 0; i < NX1_TOT; i++) {
-    double R = grid->x[IDIR][i];
-
-    /* Extract local polar density slice for radial cell i, azimuthally
-     * averaged over all local KBEG..KEND planes. Sampling KBEG alone
-     * assumes axisymmetry; in a 3D run with turbulence or warping,
-     * a single phi-plane is not representative of the shell and will
-     * misclassify material at other azimuths. */
-    int local_idx = 0;
-    for (j = JBEG; j <= JEND; j++) {
-      double rho_sum = 0.0;
-      for (k = KBEG; k <= KEND; k++) {
-        rho_sum += d->Vc[RHO][k][j][i];
-      }
-      local_rho_buf[local_idx++] = rho_sum / (double)(KEND - KBEG + 1);
+  if (nb < 0) {
+    for (bb = src - 1; bb >= 0; bb--) {
+      if (g_diskProfileValid[bb]) { nb = bb; break; }
     }
-
-    /* Gather full polar density vector across theta sub-communicator */
-#ifdef PARALLEL
-    MPI_Allgatherv(local_rho_buf, NX2, MPI_DOUBLE,
-                   global_rho_buf, recv_counts, disps, MPI_DOUBLE, theta_comm);
-#endif
-
-    /* Compute median density across global theta span */
-    qsort(global_rho_buf, global_n2, sizeof(double), CompareDoubles);
-    double med_rho;
-    if (global_n2 % 2 == 0) {
-      med_rho = 0.5 * (global_rho_buf[global_n2 / 2 - 1] + global_rho_buf[global_n2 / 2]);
+  }
+ 
+  if (nb < 0) return -1.5;  /* only one valid bin exists anywhere; no
+                                local slope measurable, use analytic
+                                Keplerian-disk fallback */
+ 
+  r_nb = BinCenterRadius(nb);
+  if (fabs(log10(r_nb) - log10(r_src)) < 1.e-12) return -1.5;
+ 
+  slope = (log10(MAX(g_rhoDiskProfile[nb], 1.e-30))
+          - log10(MAX(g_rhoDiskProfile[src], 1.e-30)))
+        / (log10(r_nb) - log10(r_src));
+ 
+  return slope;
+}
+ 
+/* ********************************************************************* */
+static void PatchUnvalidatedDiskBins (void)
+/*!
+ * Fill any bin that has never seen a meaningful amount of real disk
+ * material (g_diskProfileValid[b] == 0) for BOTH the disk density and
+ * disk v_phi profiles, using the nearest already-validated bin as the
+ * source. Searches outward (increasing r) first, since real disk
+ * material first appears from larger radii and spreads/settles inward
+ * (e.g. after ISCO truncation at t=0), falling back to an inward search
+ * if nothing outward is valid either. Leaves both profiles' placeholder
+ * values untouched only if no bin anywhere is validated yet (before any
+ * disk material exists at all).
+ *
+ * DENSITY: rather than a flat copy of g_rhoDiskProfile[src] (which
+ * silently mismatches the radius of the borrowed value against the
+ * target bin's radius, distorting the density-sigmoid's log_span against
+ * the always-local corona reference), rescale the borrowed value from
+ * r_src to the target bin's radius using the local disk-profile slope
+ * (see LocalDiskDensitySlope()) - i.e. treat the source bin's density as
+ * a local power law and extrapolate it inward/outward to r_b instead of
+ * holding it constant.
+ *
+ * V_PHI: a flat copy is not physically appropriate even as an
+ * approximation, since real disk rotation should keep decreasing toward
+ * smaller r as gas loses rotational support in the plunging region
+ * inside ISCO (roughly conserved specific angular momentum there, so
+ * v_phi ~ 1/r rather than ~ constant or ~ r^-1/2). Apply that same
+ * source-bin-relative 1/r decay when patching inward (b's radius smaller
+ * than the source bin's), and a flat copy when patching outward (b's
+ * radius larger than the source bin's) - the profile there is being
+ * seeded ahead of real data reaching it, not decaying into a horizon.
+ *********************************************************************** */
+{
+  int b, bb, src;
+  double r_b, r_src, slope, ratio;
+ 
+  for (b = 0; b < NBINS_PROFILE; b++) {
+    if (g_diskProfileValid[b]) continue;
+ 
+    src = -1;
+    for (bb = b + 1; bb < NBINS_PROFILE; bb++) {
+      if (g_diskProfileValid[bb]) { src = bb; break; }
+    }
+    if (src < 0) {
+      for (bb = b - 1; bb >= 0; bb--) {
+        if (g_diskProfileValid[bb]) { src = bb; break; }
+      }
+    }
+    if (src < 0) continue;  /* nothing valid anywhere yet */
+ 
+    r_b   = BinCenterRadius(b);
+    r_src = BinCenterRadius(src);
+ 
+    /* -- Density: power-law rescale from r_src to r_b -- */
+    slope = LocalDiskDensitySlope(src);
+    g_rhoDiskProfile[b] = g_rhoDiskProfile[src] * pow(r_b / r_src, slope);
+ 
+    /* -- V_phi: 1/r decay only when extrapolating inward of the source
+          bin (the plunging-region case); flat copy outward -- */
+    if (r_b < r_src) {
+      ratio = r_b / r_src;
+      g_vphiDiskProfile[b] = g_vphiDiskProfile[src] * ratio;  /* ~1/r decay */
     } else {
-      med_rho = global_rho_buf[global_n2 / 2];
-    }
-
-    /* Apply thresholding and rotation veto across active and ghost cells.
-     * Both rho and vphi are azimuthally averaged over local phi planes
-     * for the same reason as above -- consistency with the median that
-     * was computed from azimuthally-averaged density. */
-    for (j = 0; j < NX2_TOT; j++) {
-      double theta = grid->x[JDIR][j];
-      double Rcyl  = R * sin(theta);
-
-      double vK = (Rcyl > 1.0e-12) ? (1.0 / sqrt(Rcyl)) : 0.0;
-
-      double rho_avg = 0.0, vphi_avg = 0.0;
-      for (k = KBEG; k <= KEND; k++) {
-        rho_avg  += d->Vc[RHO][k][j][i];
-        vphi_avg += d->Vc[iVPHI][k][j][i];
-      }
-      rho_avg  /= (double)(KEND - KBEG + 1);
-      vphi_avg /= (double)(KEND - KBEG + 1);
-
-      int rot_flag = (vphi_avg > vphi_frac * vK);
-      int rho_flag = (rho_avg > median_factor * med_rho);
-
-      if (rot_flag && rho_flag) {
-        raw_mask[j][i] = 1.0;
-      } else {
-        raw_mask[j][i] = 0.0;
-      }
-    }
-  }
-
-  /* -----------------------------------------------------------------
-   * Part B: Spatial 2D Moving-Box Blur (3x3 stencil, blur_radius=1)
-   * ----------------------------------------------------------------- */
-  for (j = JBEG; j <= JEND; j++) {
-    for (i = IBEG; i <= IEND; i++) {
-      double sum = 0.0;
-      int count = 0;
-
-      for (int dj = -blur_radius; dj <= blur_radius; dj++) {
-        for (int di = -blur_radius; di <= blur_radius; di++) {
-          int sample_i = ClampIndex(i + di, 0, NX1_TOT - 1);
-          int sample_j = ClampIndex(j + dj, 0, NX2_TOT - 1);
-
-          sum += raw_mask[sample_j][sample_i];
-          count++;
-        }
-      }
-
-      smooth_mask[j][i] = sum / (double)count;
-    }
-  }
-
-  /* -----------------------------------------------------------------
-   * Part C: Temporal Relaxation (EMA) -- THE critical stability fix.
-   *
-   * disk_frac_cache is never overwritten with the instantaneous
-   * smooth_mask. Instead it is relaxed toward it:
-   *
-   *   F^{n+1} = alpha * smooth_mask + (1 - alpha) * F^n
-   *
-   * so viscosity/opacity gated by DiskFraction() can only change by a
-   * bounded amount (~EMA_ALPHA) per call, never jump discontinuously.
-   * On the very first call (t=0, from InitDomain), there is no
-   * meaningful F^n yet, so we seed disk_frac_cache directly from
-   * smooth_mask instead of blending against zero-initialized memory
-   * (blending against zero would read as "instant corona everywhere"
-   * and kill dissipation on step 1).
-   * ----------------------------------------------------------------- */
-  for (j = JBEG; j <= JEND; j++) {
-    for (i = IBEG; i <= IEND; i++) {
-      double relaxed;
-      if (!disk_frac_primed) {
-        relaxed = smooth_mask[j][i];
-      } else {
-        relaxed = EMA_ALPHA * smooth_mask[j][i]
-                + (1.0 - EMA_ALPHA) * disk_frac_cache[KBEG][j][i];
-      }
-      for (k = KBEG; k <= KEND; k++) {
-        disk_frac_cache[k][j][i] = relaxed;
-      }
-    }
-  }
-  disk_frac_primed = 1;
-
-  /* -----------------------------------------------------------------
-   * Part D: Pad Ghost Zones for Boundary Queries
-   * ----------------------------------------------------------------- */
-  for (k = 0; k < NX3_TOT; k++) {
-    int clamped_k = ClampIndex(k, KBEG, KEND);
-    for (j = 0; j < NX2_TOT; j++) {
-      int clamped_j = ClampIndex(j, JBEG, JEND);
-      for (i = 0; i < NX1_TOT; i++) {
-        int clamped_i = ClampIndex(i, IBEG, IEND);
-        disk_frac_cache[k][j][i] = disk_frac_cache[clamped_k][clamped_j][clamped_i];
-      }
+      g_vphiDiskProfile[b] = g_vphiDiskProfile[src];
     }
   }
 }
-
-/* -------------------------------------------------------------------
- * STEP 3: Fast O(1) Lookup Function
- * ------------------------------------------------------------------- */
-double DiskFraction (double *v, double x1, double x2)
+ 
+/* ********************************************************************* */
+void InitProfiles (Grid *grid)
+/*!
+ * One time setup of the log radial bin edges spanning the global
+ * radial domain. Seeds both reference profiles with their respective
+ * original analytic values (corona: RHOC*r^-1.5; disk: the initial
+ * Keplerian-disk density coeff^1.5 from Init(), evaluated on the
+ * midplane where rcyl = r) so that DiskFraction() behaves sensibly
+ * before the first multicore reduced averages are available.
+ *
+ * NOTE: g_domBeg[]/g_domEnd[] are assumed to hold the global physical
+ * domain boundaries (set by PLUTO's grid setup from pluto.ini). If
+ * your PLUTO version exposes these under different names, substitute
+ * grid->xl_glob[IDIR][0] / grid->xr_glob[IDIR][grid->np_int_glob[IDIR]-1].
+ *********************************************************************** */
 {
-  if (disk_frac_cache != NULL) {
-    int i = ClampIndex(g_i, 0, NX1_TOT - 1);
-    int j = ClampIndex(g_j, 0, NX2_TOT - 1);
-    int k = ClampIndex(g_k, 0, NX3_TOT - 1);
-    return disk_frac_cache[k][j][i];
+  int    b;
+  double lmin, lmax, lc, r;
+ 
+  lmin = log10(g_domBeg[IDIR]);
+  lmax = log10(g_domEnd[IDIR]);
+ 
+  for (b = 0; b <= NBINS_PROFILE; b++) {
+    g_rBinEdgesLog[b] = lmin + (lmax - lmin) * (double)b / (double)NBINS_PROFILE;
   }
-  return 0.0;
+ 
+  for (b = 0; b < NBINS_PROFILE; b++) {
+    lc = 0.5 * (g_rBinEdgesLog[b] + g_rBinEdgesLog[b + 1]);
+    r  = pow(10.0, lc);
+ 
+    g_rhoCoronaProfile[b] = AnalyticCoronaDensity(r);
+ 
+    /* The analytic torus solution is only meaningful in the actual disk
+       region (rcyl > RD, matching the truncation in Init()); inside
+       that radius (e.g. within ISCO for a black hole run) there is no
+       disk at t=0 by construction, so don't seed a fabricated "disk"
+       density there - mark the bin unvalidated instead and let
+       UpdateProfiles()'s nearest-valid-bin fallback fill it in
+       once real disk material actually exists at some radius. */
+    if (r > g_inputParam[RD]) {
+      g_rhoDiskProfile[b]   = AnalyticDiskDensity(r);
+      if (g_rhoDiskProfile[b] <= 0.0) g_rhoDiskProfile[b] = g_rhoCoronaProfile[b];
+      g_vphiDiskProfile[b]  = 1.0 / sqrt(r);  /* analytic Keplerian midplane
+                                                  v_phi seed, same
+                                                  Newtonian form used
+                                                  elsewhere as a t=0
+                                                  placeholder; corrected
+                                                  toward the real
+                                                  sub-Keplerian value as
+                                                  soon as UpdateProfiles()
+                                                  runs on live data */
+      g_diskProfileValid[b] = 1;
+    } else {
+      g_rhoDiskProfile[b]   = g_rhoCoronaProfile[b];  /* placeholder only */
+      g_vphiDiskProfile[b]  = 1.0 / sqrt(r);           /* placeholder only */
+      g_diskProfileValid[b] = 0;
+    }
+  }
+ 
+  g_profilesInit = 1;
+  PatchUnvalidatedDiskBins();   /* so the very first DiskFraction() call,
+                                    before any UpdateProfiles(), does
+                                    not see an unphysical inside-RD seed */
 }
-
-/* -------------------------------------------------------------------
- * STEP 1: Integration Hooks inside init.c
- * ------------------------------------------------------------------- */
-
-/* Called BEFORE time-stepping starts (Cold-Start Guard at t=0) */
-void InitDomain (Data *d, Grid *grid)
+ 
+/* ********************************************************************* */
+void UpdateProfiles (const Data *d, Grid *grid)
+/*!
+ * Recompute the radially-binned corona AND disk density profiles:
+ *
+ *   1. Soft classify each active cell using the current (previous
+ *      update) profile via DiskFraction(); f = diskFraction.
+ *   2. Accumulate (1-f)*rho*dV / (1-f)*dV into the corona bin, and
+ *      f*rho*dV / f*dV into the disk bin, for the cell's radial bin.
+ *   3. Sum across all ranks -> every rank ends up with the same global
+ *      profiles regardless of domain decomposition in X1/X2/X3.
+ *   4. Exponential moving average in time to avoid abrupt jumps, applied
+ *      independently to each profile.
+ *
+ * Bins with zero accumulated volume this step (no weighted cells found
+ * for that profile) retain their previous value. Because both profiles
+ * are built from the same (previous-step) DiskFraction() classification,
+ * they stay mutually consistent: the disk reference tracks the actual
+ * evolving disk (including a decaying inner disk) instead of remaining
+ * pinned to the static initial analytic profile.
+ *********************************************************************** */
 {
-  /* 1. Force immediate boundary fill and MPI exchange for initial condition Vc */
-  Boundary(d, X1_BEG, grid);
-  Boundary(d, X1_END, grid);
-  Boundary(d, X2_BEG, grid);
-  Boundary(d, X2_END, grid);
-#if DIMENSIONS == 3
-  Boundary(d, X3_BEG, grid);
-  Boundary(d, X3_END, grid);
+  static double sumC_loc[NBINS_PROFILE], volC_loc[NBINS_PROFILE];
+  static double sumC_glob[NBINS_PROFILE], volC_glob[NBINS_PROFILE];
+  static double sumD_loc[NBINS_PROFILE], volD_loc[NBINS_PROFILE];
+  static double sumD_glob[NBINS_PROFILE], volD_glob[NBINS_PROFILE];
+  static double sumVphiD_loc[NBINS_PROFILE], sumVphiD_glob[NBINS_PROFILE];
+  static double volTot_loc[NBINS_PROFILE], volTot_glob[NBINS_PROFILE];
+ 
+  int    i, j, k, b;
+  double *x1 = grid->x[IDIR];
+  double r, dV, f, wc, wd, vi[NVAR];
+ 
+  if (!g_profilesInit) InitProfiles(grid);   /* restart safety net */
+ 
+  for (b = 0; b < NBINS_PROFILE; b++) {
+    sumC_loc[b] = volC_loc[b] = 0.0;
+    sumD_loc[b] = volD_loc[b] = 0.0;
+    sumVphiD_loc[b] = 0.0;
+    volTot_loc[b] = 0.0;
+  }
+ 
+  DOM_LOOP(k, j, i) {
+    r = x1[i];
+ 
+    b = (int)((log10(r) - g_rBinEdgesLog[0])
+              / (g_rBinEdgesLog[NBINS_PROFILE] - g_rBinEdgesLog[0])
+              * NBINS_PROFILE);
+    if (b < 0) b = 0;
+    if (b >= NBINS_PROFILE) b = NBINS_PROFILE - 1;
+ 
+    vi[RHO] = d->Vc[RHO][k][j][i];              
+    vi[VX3] = d->Vc[VX3][k][j][i];               /* Added: VX3 (v_phi) now read by DiskFraction */
+    
+    f  = DiskFraction(vi, r, grid->x[JDIR][j]);  /* soft disk weight, uses OLD profiles */
+    wc = 1.0 - f;
+    wd = f;
+    dV = grid->dV[k][j][i];
+ 
+    sumC_loc[b] += wc * vi[RHO] * dV;
+    volC_loc[b] += wc * dV;
+ 
+    sumD_loc[b] += wd * vi[RHO] * dV;
+    volD_loc[b] += wd * dV;
+ 
+    sumVphiD_loc[b] += wd * fabs(vi[VX3]) * dV;  /* disk-weighted |v_phi|,
+                                                     same wd weighting/dV
+                                                     as the disk density
+                                                     accumulator so both
+                                                     profiles are built
+                                                     from the identical
+                                                     cell set */
+ 
+    volTot_loc[b] += dV;
+  }
+ 
+#ifdef PARALLEL
+  MPI_Allreduce(sumC_loc, sumC_glob, NBINS_PROFILE, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+  MPI_Allreduce(volC_loc, volC_glob, NBINS_PROFILE, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+  MPI_Allreduce(sumD_loc, sumD_glob, NBINS_PROFILE, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+  MPI_Allreduce(volD_loc, volD_glob, NBINS_PROFILE, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+  MPI_Allreduce(sumVphiD_loc, sumVphiD_glob, NBINS_PROFILE, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+  MPI_Allreduce(volTot_loc, volTot_glob, NBINS_PROFILE, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+#else
+  for (b = 0; b < NBINS_PROFILE; b++) {
+    sumC_glob[b] = sumC_loc[b]; volC_glob[b] = volC_loc[b];
+    sumD_glob[b] = sumD_loc[b]; volD_glob[b] = volD_loc[b];
+    sumVphiD_glob[b] = sumVphiD_loc[b];
+    volTot_glob[b] = volTot_loc[b];
+  }
 #endif
-
-  /* 2. Safely populate disk fraction lookup cache using valid ghost data */
-  UpdateDiskFractionCache(d, grid);
+ 
+  /* -- Corona profile: unchanged, still just holds its previous value
+        when unpopulated this step (corona material is present nearly
+        everywhere so this is not the problematic case). -- */
+  for (b = 0; b < NBINS_PROFILE; b++) {
+    if (volC_glob[b] > 0.0) {
+      double new_val = sumC_glob[b] / volC_glob[b];
+      g_rhoCoronaProfile[b] = CORONA_EMA_ALPHA * new_val
+                             + (1.0 - CORONA_EMA_ALPHA) * g_rhoCoronaProfile[b];
+    }
+  }
+ 
+  /* -- Disk profile: only accept this step's estimate as "real" if the
+        disk-weighted volume is a non-negligible fraction of the bin's
+        total volume (guards against a single transient infalling cell
+        validating a bin that is otherwise all corona/vacuum, e.g. just
+        inside ISCO at early times). Once a bin is validated it keeps
+        being updated normally (EMA) even if a later step sees f~0
+        there again (retains its last known value, exactly as before).
+     -- */
+  for (b = 0; b < NBINS_PROFILE; b++) {
+    int meaningful = (volTot_glob[b] > 0.0)
+                   && (volD_glob[b] > DISK_BIN_VOLFRAC_MIN * volTot_glob[b]);
+ 
+    if (meaningful) {
+      double new_val     = sumD_glob[b] / volD_glob[b];
+      double new_val_vphi = sumVphiD_glob[b] / volD_glob[b];  /* same
+                                                                  wd-weighted
+                                                                  volume
+                                                                  denominator
+                                                                  as density,
+                                                                  since both
+                                                                  sums share
+                                                                  the wd*dV
+                                                                  weighting */
+      g_rhoDiskProfile[b] = CORONA_EMA_ALPHA * new_val
+                           + (1.0 - CORONA_EMA_ALPHA) * g_rhoDiskProfile[b];
+      g_vphiDiskProfile[b] = CORONA_EMA_ALPHA * new_val_vphi
+                           + (1.0 - CORONA_EMA_ALPHA) * g_vphiDiskProfile[b];
+      g_diskProfileValid[b] = 1;
+    }
+  }
+ 
+  /* -- Patch never-yet-validated bins (e.g. inside ISCO before any
+        material has fallen in and settled into a disk-like state) by
+        copying the nearest already-valid bin's current value - see
+        PatchUnvalidatedDiskBins(). -- */
+  PatchUnvalidatedDiskBins();
+ 
+  g_profilesLive = 1;   /* from here on DiskFraction() uses the adaptive
+                            sigmoid; this call has classified at least one
+                            full DOM_LOOP pass through real cell data. */
 }
-
-/* Called at the end of every timestep.
- *
- * KNOWN LIMITATION -- read before relying on this for fast disk
- * evolution: PLUTO does not expose a user hook that runs before the
- * first RK/CT sub-stage of a step, only Analysis() (end of step) and
- * InitDomain() (t=0 only). That means disk_frac_cache, and therefore
- * every viscosity/opacity call that reads DiskFraction(), is always
- * one full step stale relative to the sub-stages currently being
- * integrated -- Vc has already advanced by the time this runs.
- *
- * With EMA_ALPHA ~ 0.08 the cache changes slowly enough per call that
- * one step of staleness is not itself destabilizing (it was the
- * *instantaneous hard* reclassification, not the staleness, that
- * caused the original explosion). But if the disk boundary is
- * expected to move on a timescale comparable to a few timesteps, this
- * lag will visibly trail the true disk/corona interface. If that
- * becomes a problem, the correct fix is not to shrink EMA_ALPHA (that
- * reintroduces the impulsive-forcing failure mode) but to update the
- * cache from inside a lower-level hook that runs pre-stage, e.g.
- * wrapping RightHandSide() or the viscosity source term itself --
- * confirm the exact call graph against the PLUTO version in use
- * before doing that; do not guess at an API that isn't verified. */
-void Analysis (const Data *d, Grid *grid)
-{
-  UpdateDiskFractionCache(d, grid);
-}
-
-/* ---------------------------------------------------------------------
- * END: Lagrangian Tracer Replacement from Physical Properties
- * --------------------------------------------------------------------- */
 
 /* ********************************************************************* */
 void Init (double *v, double x1, double x2, double x3)
@@ -403,8 +560,7 @@ void Init (double *v, double x1, double x2, double x3)
     v[VX3] = (sqrt(1.0 - 2.5 * eps2) + (2.0 / 3.0) * eps2
              * g_inputParam[ALPHAV] * g_inputParam[ALPHAV]
              * lambda * (1.0 - 1.2 / (eps2 * tan(x2) * tan(x2)))) / sqrt(rcyl);
-    v[TRC] = 1.0;     /* Disk tracer (kept for diagnostics/comparison; no
-                          longer used to gate viscosity/resistivity) */
+    v[TRC] = 1.0;     /* Disk tracer */
   } else {
     v[PRS] = 0.4 * g_inputParam[RHOC] * pow(x1, -2.5);
     v[TRC] = 0.0;     /* Corona tracer */
@@ -436,6 +592,143 @@ void Init (double *v, double x1, double x2, double x3)
   #endif
 #endif
 #endif /* PHYSICS == MHD */
+}
+
+/* ********************************************************************* */
+static int InitDiskCell (double x1, double x2)
+/*!
+ * Reproduces, bit-for-bit, the branch condition Init() uses to decide
+ * disk vs corona at problem setup (the same test that used to set
+ * v[TRC] = 1.0 vs 0.0). Kept as a single source of truth so DiskFraction()
+ * can match the former tracer exactly at t=0 without ever reading TRC
+ * (which is slated for removal).
+ *
+ * Returns 1 if (x1, x2) is disk by the Init() criterion, 0 otherwise.
+ *********************************************************************** */
+{
+  double rcyl, eps2, coeff, pc, p_disk;
+ 
+  rcyl  = x1 * sin(x2);
+  eps2  = g_inputParam[EPS] * g_inputParam[EPS];
+  coeff = 0.4 / eps2 * (1.0 / x1 - (1.0 - 2.5 * eps2) / rcyl);
+ 
+  pc     = 0.4 * g_inputParam[RHOC] * pow(x1, -2.5);   /* corona pressure, Init() step 1 */
+  p_disk = eps2 * pow(coeff, 2.5);                     /* disk pressure, Init() step 2 */
+ 
+  return (p_disk >= pc && rcyl > g_inputParam[RD]) ? 1 : 0;
+}
+ 
+/* ********************************************************************* */
+double DiskFraction (double *v, double x1, double x2)
+/*!
+ * Continuous [0,1] replacement for the true tracer used to gate anomalous
+ * viscosity/resistivity to disk material.
+ *
+ * At t=0 (before UpdateProfiles() has ever run on real simulation data),
+ * this returns exactly 0.0 or 1.0 according to InitDiskCell(), i.e. it
+ * matches what the removed tr1 tracer would have been initialized to,
+ * without ever reading it.
+ *
+ * Once UpdateProfiles() has accumulated at least one step of real
+ * disk/corona-weighted data (g_profilesLive == 1), DiskFraction() uses
+ * two multiplicative criteria to decide if a cell is disk material:
+ * 
+ * 1. DENSITY: Tracks TWO running radial references - a corona density 
+ *    profile and a disk density profile (see UpdateProfiles()) - and
+ *    classifies by where the cell sits between them.
+ * 
+ * 2. ROTATION (New): Compares the local azimuthal velocity v[VX3] against
+ *    the expected Keplerian velocity at the cylindrical radius.
+ *
+ * Both criteria use independent logistic functions (sigmoids), and their 
+ * outputs are multiplied to yield the final continuous fraction [0, 1].
+ *********************************************************************** */
+{
+  double rho_ref_c, rho_ref_d, log_span, position, arg_den, arg_rot;
+  double den_factor, rot_factor, rcyl, v_kep, rot_frac;
+ 
+  if (!g_profilesLive) {
+    /* Exact t=0 match to the former tracer: no profile, no sigmoid,
+       just the same hard boolean Init() used. Covers both the
+       very-first-call case (g_profilesInit == 0) and the case right
+       after InitProfiles() has seeded the analytic profiles but no
+       real cell has been classified through UpdateProfiles() yet. */
+    return (double) InitDiskCell(x1, x2);
+  }
+ 
+  if (!g_profilesInit) {
+    /* Should not normally happen (g_profilesLive implies g_profilesInit),
+       but guard anyway: fall back to the original static analytic
+       corona/disk densities so behavior degrades gracefully. */
+    rho_ref_c = AnalyticCoronaDensity(x1);
+    rho_ref_d = AnalyticDiskDensity(x1);
+    if (rho_ref_d <= 0.0) rho_ref_d = rho_ref_c;
+  } else {
+    rho_ref_c = GetCoronaRefDensity(x1);
+    rho_ref_d = GetDiskRefDensity(x1);
+  }
+ 
+  /* --- 1. DENSITY SIGMOID --- */
+  log_span = log10(MAX(rho_ref_d, 1.e-30)) - log10(MAX(rho_ref_c, 1.e-30));
+  log_span = (fabs(log_span) < 1.e-12) ? 1.e-12 : log_span;  /* guard degenerate span */
+ 
+  position = (log10(MAX(v[RHO], 1.e-30)) - log10(MAX(rho_ref_c, 1.e-30))) / log_span;
+ 
+  arg_den = (position - (1.0 - 1.0/CORONA_THRESH_FAC)) / CORONA_SIGMOID_WIDTH;
+  arg_den = MIN(MAX(arg_den, -50.0), 50.0);      /* guard exp() over/underflow */
+  den_factor = 1.0 / (1.0 + exp(-arg_den));
+
+  /* --- 2. ROTATION SIGMOID --- */
+  rcyl  = x1 * sin(x2);
+
+  /* Reference rotation is now the disk's OWN measured |v_phi| profile
+     (g_vphiDiskProfile, tracked/patched alongside the density profile -
+     see UpdateProfiles() / PatchUnvalidatedDiskBins()) rather than an
+     idealized Newtonian or Paczynski-Wiita v_kep. This compares "is this
+     cell rotating like disk gas actually rotates at this radius" instead
+     of against a value the disk itself never reaches (Kluzniak-Kita disk
+     is sub-Keplerian by construction) or that diverges/mismatches
+     coordinate conventions inside ISCO (PW case). Falls back to the
+     analytic Keplerian estimate only in the pre-live-profile guard case
+     above (g_profilesLive == 0 returns early via InitDiskCell() and
+     never reaches this code), and to the restart-safety branch's
+     AnalyticDiskDensity-style seed otherwise via GetDiskRefVphi's
+     underlying seeded/patched profile. */
+  if (!g_profilesInit) {
+    v_kep = 1.0 / sqrt(MAX(rcyl, 1.e-12));  /* restart-safety fallback only */
+  } else {
+    v_kep = GetDiskRefVphi(x1);
+  }
+
+  /* Measure absolute rotation fraction against the disk's own reference
+     rotation at this radius, evaluated at spherical x1 (matching how
+     g_vphiDiskProfile is binned/interpolated in InterpLogProfile, which
+     bins by x1 = grid->x[IDIR] in UpdateProfiles()) rather than rcyl. */
+  rot_frac = fabs(v[VX3]) / MAX(v_kep, 1.e-30);
+  
+  arg_rot = (rot_frac - ROTATION_THRESH_FAC) / ROTATION_SIGMOID_WIDTH;
+  arg_rot = MIN(MAX(arg_rot, -50.0), 50.0);
+  rot_factor = 1.0 / (1.0 + exp(-arg_rot));
+
+  /* Multiply factors: only rapidly rotating, dense material yields f ~ 1 */
+  return den_factor * rot_factor;
+}
+ 
+/* ********************************************************************* */
+void InitDomain (Data *d, Grid *grid)
+{
+  InitProfiles(grid);
+}
+
+/* ********************************************************************* */
+void Analysis (const Data *d, Grid *grid)
+/*!
+ * Called by PLUTO at the cadence set by the "analysis" entry in
+ * pluto.ini. Used here to periodically refresh the corona/disk
+ * radial reference profiles consumed by DiskFraction().
+ *********************************************************************** */
+{
+  UpdateProfiles(d, grid);
 }
 
 #if PHYSICS == MHD

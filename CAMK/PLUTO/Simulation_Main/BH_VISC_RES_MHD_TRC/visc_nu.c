@@ -28,12 +28,6 @@
   disk corona or current-free funnel should not be artificially
   viscously heated).
 
-  Disk membership is now determined by DiskFraction() (see init.c)
-  instead of the passive tracer v[TRC], since the tracer field is
-  unreliable in this setup (see project notes). DiskFraction() uses a
-  local density-vs-corona-profile threshold combined with a rotation
-  criterion, and requires no MPI reduction.
-
   \authors T. Matsakos \n
            A. Mignone (mignone@ph.unito.it)
   \date    March 22, 2013
@@ -61,7 +55,6 @@ void Visc_nu(double *v, double x1, double x2, double x3,
  *********************************************************************** */
 {
   double coeff, cs, eps2, rcyl, beta, Bg[3], Bpol2;
-  double disk_frac;
 
 /* --------------------------------------------------------
    0. Geometry and background thermal profile.
@@ -97,8 +90,6 @@ void Visc_nu(double *v, double x1, double x2, double x3,
   coeff = MAX(coeff, 0.0);
   cs = eps2*coeff;  /* initial sound speed (squared, in code units) */
 
-  disk_frac = DiskFraction(v, x1, x2);
-
 #if PHYSICS == MHD
 
 /* --------------------------------------------------------
@@ -131,20 +122,22 @@ void Visc_nu(double *v, double x1, double x2, double x3,
 
   /* -- 1a. alpha-viscosity coefficient.
 
-        nu1 = (2/3) * rho * alpha * cs * rcyl^(3/2) * disk_frac
+        nu1 = (2/3) * rho * alpha * cs * rcyl^(3/2) * tracer
 
         The rcyl^(3/2) factor plays the role of a local disk
         scale-height-like length (consistent with the initial
         torus equilibrium above), so that nu1 has the standard
-        alpha-disk scaling nu ~ alpha * cs * H. disk_frac (valued
-        0 or 1, from DiskFraction()) restricts the viscosity to
-        zones identified as disk material (as opposed to the
-        ambient/funnel/outflow gas), replacing the passive tracer
-        v[TRC] previously used for this purpose.
+        alpha-disk scaling nu ~ alpha * cs * H. The passive tracer
+        v[TRC] (valued in [0,1]) restricts the viscosity to zones
+        that are identified as disk material (as opposed to the
+        ambient/funnel gas which carries tracer ~ 0), so that the
+        alpha-prescription is not applied outside the disk proper.
      -- */
 
+//  *nu1 = 2./3.*v[RHO]*g_inputParam[ALPHAV]*cs*sqrt(rcyl*rcyl*rcyl)*v[TRC];
+  /* Replaced v[TCR] with the DiskFraction(v, x1, x2) reconstruction. */
     *nu1 = 2./3.*v[RHO]*g_inputParam[ALPHAV]
-           *cs*sqrt(rcyl*rcyl*rcyl)*disk_frac;
+           *cs*sqrt(rcyl*rcyl*rcyl)*DiskFraction(v, x1, x2);
   } else {
     *nu1 = 0.0;
   }
@@ -154,11 +147,13 @@ void Visc_nu(double *v, double x1, double x2, double x3,
 /* --------------------------------------------------------
    1'. Pure hydro case: no magnetic field to gate the viscosity,
        so the alpha-prescription is applied unconditionally
-       (still restricted to disk material via disk_frac).
+       (still restricted to disk material via the tracer).
    -------------------------------------------------------- */
 
+//*nu1 = 2./3.*v[RHO]*g_inputParam[ALPHAV]*cs*sqrt(rcyl*rcyl*rcyl)*v[TRC];
+  /* Replaced v[TCR] with the DiskFraction(v, x1, x2) reconstruction. */
   *nu1 = 2./3.*v[RHO]*g_inputParam[ALPHAV]
-         *cs*sqrt(rcyl*rcyl*rcyl)*disk_frac;
+         *cs*sqrt(rcyl*rcyl*rcyl)*DiskFraction(v, x1, x2);
 
 #endif
 

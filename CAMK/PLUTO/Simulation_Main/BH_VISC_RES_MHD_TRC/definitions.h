@@ -13,13 +13,13 @@
 
 #define  EOS                            IDEAL
 #define  ENTROPY_SWITCH                 NO
-#define  DIVB_CONTROL                   CONSTRAINED_TRANSPORT
+#define  DIVB_CONTROL                   EIGHT_WAVES
 #define  BACKGROUND_FIELD               NO
 #define  AMBIPOLAR_DIFFUSION            NO
-#define  RESISTIVITY                    SUPER_TIME_STEPPING
+#define  RESISTIVITY                    EXPLICIT
 #define  HALL_MHD                       NO
 #define  THERMAL_CONDUCTION             NO
-#define  VISCOSITY                      SUPER_TIME_STEPPING
+#define  VISCOSITY                      EXPLICIT
 #define  RADIATION                      NO
 #define  ROTATING_FRAME                 NO
 

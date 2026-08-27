@@ -16,9 +16,7 @@
 /* /////////////////////////////////////////////////////////////////////////// */
 
 #include "pluto.h"
-
-/* Optional forward declaration for disk fraction computation */
-extern double DiskFraction(double *v, double x1, double x2);
+#include "modifications.h"
 
 /* ********************************************************************* */
 void ComputeUserVar (const Data *d, Grid *grid)
@@ -64,7 +62,7 @@ void ComputeUserVar (const Data *d, Grid *grid)
 
 #if PHYSICS == MHD
     /* Magnetic resistivity calculation */
-    Resistive_eta(vi, x1[i], x2[j], x3[k], J, eta);
+//  Resistive_eta(vi, x1[i], x2[j], x3[k], J, eta);
     num[k][j][i] = eta[0];
 #endif
 

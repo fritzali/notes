@@ -16,9 +16,12 @@
   evaluated from the initial (equilibrium) disk sound speed, gated by
   the local plasma \f$\beta\f$ so that magnetic diffusivity is only
   active where the flow is thermally dominated (\f$\beta>0.5\f$), and
-  restricted to disk material via DiskFraction() (see init.c), which
-  replaces the passive tracer v[TRC] as the disk/corona discriminator
-  used previously. \c eta is returned as a diagonal tensor (isotropic
+  restricted to disk material via the passive tracer. Physically this
+  represents an effective (unresolved) turbulent magnetic diffusivity
+  associated with the same MHD turbulence that transports angular
+  momentum via the anomalous viscosity, consistent with a standard
+  alpha-disk closure applied to both the Reynolds and Maxwell
+  stresses. \c eta is returned as a diagonal tensor (isotropic
   resistivity, i.e. \f$\eta_{x1}=\eta_{x2}=\eta_{x3}\f$).
 
   \authors T. Matsakos \n
@@ -47,7 +50,6 @@ void Resistive_eta(double *v, double x1, double x2, double x3,
  *********************************************************************** */
 {
   double coeff, cs, eps2, rcyl, beta, Bg[3], Bpol2, eta0;
-  double disk_frac;
 
 /* --------------------------------------------------------
    0. Background thermal profile of the initial disk.
@@ -67,8 +69,6 @@ void Resistive_eta(double *v, double x1, double x2, double x3,
   coeff = 2./5./eps2*(1./x1 - (1. - 5./2.*eps2)/rcyl);
   coeff = MAX(coeff, 0.0);
   cs = eps2*coeff;  /* initial sound speed (squared, in code units) */
-
-  disk_frac = DiskFraction(v, x1, x2);
 
 /* --------------------------------------------------------
    1. Plasma-beta gate.
@@ -95,15 +95,16 @@ void Resistive_eta(double *v, double x1, double x2, double x3,
 
   /* -- 1a. alpha-resistivity coefficient.
 
-        eta0 = alpha * cs * rcyl^(3/2) * disk_frac
+        eta0 = alpha * cs * rcyl^(3/2) * tracer
 
         Same alpha-disk scaling eta ~ alpha*cs*H used for the
-        viscosity, with disk_frac (from DiskFraction()) restricting
-        the diffusivity to zones identified as disk material,
-        replacing the passive tracer v[TRC] used previously.
+        viscosity, with the passive tracer v[TRC] again restricting
+        the diffusivity to zones identified as disk material.
      -- */
 
-    eta0 = g_inputParam[ALPHAV]*cs*sqrt(rcyl*rcyl*rcyl)*disk_frac;
+//  eta0 = g_inputParam[ALPHAV]*cs*sqrt(rcyl*rcyl*rcyl)*v[TRC];
+  /* Replaced v[TCR] with the DiskFraction(v, x1, x2) reconstruction. */
+    eta0 = g_inputParam[ALPHAV]*cs*sqrt(rcyl*rcyl*rcyl)*DiskFraction(v, x1, x2);
   } else {
     eta0 = 0.0;
   }
