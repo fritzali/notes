@@ -69,12 +69,12 @@ static int    g_diskProfileValid[NBINS_PROFILE];  /* has bin b ever seen a
                                                       real disk material? */
 static int    g_profilesInit = 0;
 static int    g_profilesLive = 0;  /* has UpdateProfiles() run at least once
-                                       on real simulation data? Until then,
-                                       DiskFraction() returns the exact t=0
-                                       classification (see InitDiskCell()),
-                                       matching what the removed tr1 tracer
-                                       would have been, instead of using the
-                                       profile-based sigmoid. */
+                                      on real simulation data? Until then,
+                                      DiskFraction() returns the exact t=0
+                                      classification (see InitDiskCell()),
+                                      matching what the removed tr1 tracer
+                                      would have been, instead of using the
+                                      profile-based sigmoid. */
  
 /* ********************************************************************* */
 static double InterpLogProfile (double *profile, double x1)
@@ -549,7 +549,14 @@ void InitDomain (Data *d, Grid *grid)
 
 /* ********************************************************************* */
 void Analysis (const Data *d, Grid *grid)
-{}
+/*!
+ * Called by PLUTO at the cadence set by the "analysis" entry in
+ * pluto.ini. Used here to periodically refresh the corona/disk
+ * radial reference profiles consumed by DiskFraction().
+ *********************************************************************** */
+{
+  UpdateProfiles(d, grid);
+}
 
 #if PHYSICS == MHD
 /* ********************************************************************* */
