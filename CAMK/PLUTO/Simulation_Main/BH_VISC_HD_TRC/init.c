@@ -458,41 +458,37 @@ double DiskFraction (double *v, double x1, double x2)
  * the density reference used by the existing sigmoid.
  *********************************************************************** */
 {
-  double rho_ref_c, rho_ref_d, log_span, position;
-  double threshold, diff, width, arg;
- 
-  (void) x2;   /* angle dependence is folded into the radial profiles */
+  double rho_ref_c, rho_ref_d, log_span, position, arg;
+  double rcyl, eps2, coeff, pc, disk_prs;
  
   if (!g_coronaProfileInit) {
-    /* Fallback: profiles not built yet */
-    rho_ref_c = AnalyticCoronaDensity(x1);
-    rho_ref_d = AnalyticDiskDensity(x1);
-    if (rho_ref_d <= 0.0) rho_ref_d = rho_ref_c;
+    /* Fallback at t=0: evaluate exact initialization conditions 
+       from Init() without relying on reference profiles. */
+    rcyl = x1 * sin(x2);
+    eps2 = g_inputParam[EPS] * g_inputParam[EPS];
+    coeff = 0.4 / eps2 * (1.0 / x1 - (1.0 - 2.5 * eps2) / rcyl);
+    pc = 0.4 * g_inputParam[RHOC] * pow(x1, -2.5);
+    
+    if (coeff > 0.0) {
+      disk_prs = eps2 * pow(coeff, 2.5);
+      if (disk_prs >= pc && rcyl > g_inputParam[RD]) {
+        return 1.0; 
+      }
+    }
+    return 0.0; 
   } else {
     rho_ref_c = GetCoronaRefDensity(x1);
     rho_ref_d = GetDiskRefDensity(x1);
   }
  
-  /* 1. Calculate the normalized logarithmic position between references */
+  /* Calculate normalized logarithmic position between references */
   log_span = log10(MAX(rho_ref_d, 1.e-30)) - log10(MAX(rho_ref_c, 1.e-30));
-  log_span = (fabs(log_span) < 1.e-12) ? 1.e-12 : log_span; 
+  log_span = (fabs(log_span) < 1.e-12) ? 1.e-12 : log_span;  /* guard degenerate span */
+ 
   position = (log10(MAX(v[RHO], 1.e-30)) - log10(MAX(rho_ref_c, 1.e-30))) / log_span;
  
-  /* 2. Determine the transition midpoint (threshold) */
-  threshold = 1.0 - (1.0 / CORONA_THRESH_FAC);
-  diff = position - threshold;
- 
-  /* 3. Apply asymmetric saturation widths */
-  if (diff > 0.0) {
-      /* Cell is denser than threshold: compress the width for fast saturation */
-      width = CORONA_SIGMOID_WIDTH * CORONA_SIGMOID_SCALE_ABOVE; 
-  } else {
-      /* Cell is less dense than threshold: expand the width for slow decay */
-      width = CORONA_SIGMOID_WIDTH * CORONA_SIGMOID_SCALE_BELOW; 
-  }
- 
-  /* 4. Evaluate the adjusted sigmoid */
-  arg = diff / width;
+  /* Evaluate standard symmetric sigmoid transition */
+  arg = (position - (1.0 - 1.0 / CORONA_THRESH_FAC)) / CORONA_SIGMOID_WIDTH;
   arg = MIN(MAX(arg, -50.0), 50.0);      /* guard exp() over/underflow */
  
   return 1.0 / (1.0 + exp(-arg));

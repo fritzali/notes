@@ -13,9 +13,7 @@
                                            position along the corona->disk
                                            log-density span (see DiskFraction) */
 #define CORONA_SIGMOID_WIDTH   0.25     /* transition width, same units */
-#define CORONA_SIGMOID_SCALE_ABOVE 0.1  /* width multiplier above threshold (fast saturation) */
-#define CORONA_SIGMOID_SCALE_BELOW 1.0  /* width multiplier below threshold (slow decay) */
-#define DISK_BIN_VOLFRAC_MIN   1.e-3    /* minimum disk-weighted volume
+#define DISK_BIN_VOLFRAC_MIN   1.e-4    /* minimum disk-weighted volume
                                            fraction of a bin's total volume
                                            this step, below which the bin
                                            is NOT considered to have "real"
