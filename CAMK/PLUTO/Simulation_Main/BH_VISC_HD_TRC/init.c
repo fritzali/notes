@@ -522,9 +522,15 @@ double DiskFraction (double *v, double x1, double x2)
 
   /* --- 2. ROTATION SIGMOID --- */
   rcyl  = x1 * sin(x2);
-  /* Ideal Newtonian Keplerian velocity matching the 1/sqrt(rcyl) injection setup */
-  v_kep = 1.0 / sqrt(MAX(rcyl, 1.e-12)); 
-  
+
+
+  /* Option 1: Newton Keplerian velocity */
+//  v_kep = 1.0 / sqrt(MAX(rcyl, 1.e-12)); 
+
+  /* Option 2: Paczynski-Wiita Keplerian velocity */
+  v_kep = sqrt(rcyl) / MAX(rcyl - 2., sqrt(2.)*1.e-12);
+
+
   /* Measure absolute rotation fraction against Keplerian */
   rot_frac = fabs(v[VX3]) / v_kep;
   

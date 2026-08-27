@@ -13,7 +13,7 @@
                                            position along the corona->disk
                                            log-density span (see DiskFraction) */
 #define CORONA_SIGMOID_WIDTH   0.3      /* transition width, same units */
-#define DISK_BIN_VOLFRAC_MIN   1.e-4    /* minimum disk-weighted volume
+#define DISK_BIN_VOLFRAC_MIN   1.e-3    /* minimum disk-weighted volume
                                            fraction of a bin's total volume
                                            this step, below which the bin
                                            is NOT considered to have "real"
@@ -21,7 +21,7 @@
                                            single transient infalling cell
                                            validating an ISCO-side bin) */
 
-#define ROTATION_THRESH_FAC    0.5      /* Midpoint fraction of local Keplerian velocity (e.g. 0.5 means v_phi = 0.5 * v_kep) */
+#define ROTATION_THRESH_FAC    0.9      /* Midpoint fraction of local Keplerian velocity (e.g. 0.5 means v_phi = 0.5 * v_kep) */
 #define ROTATION_SIGMOID_WIDTH 0.1      /* Transition width for the rotation sigmoid */
 
 double DiskFraction (double *v, double x1, double x2);
