@@ -9,6 +9,7 @@ fileConfig:
         - "text/x-c"
         - "text/x-chdr"
         - "text/x-csrc"
+        - "text/x-object"
         - "application/octet-stream"
     OpenRouter:
       supportedMimeTypes:
@@ -18,6 +19,7 @@ fileConfig:
         - "text/x-c"
         - "text/x-chdr"
         - "text/x-csrc"
+        - "text/x-object"
         - "application/octet-stream"
   serverFileSizeLimit: 100
 summarization:
@@ -50,7 +52,14 @@ endpoints:
       dropParams: ["stop"]
       customParams:
         defaultParamsEndpoint: custom
-        reasoningFormat: disabled
+        reasoningFormat: reasoning_object
+        paramDefinitions:
+          - key: reasoning_effort
+            default: "medium"
+            options:
+              - "low"
+              - "medium"
+              - "high"
       activityLabel: true
       activityModel: "deepseek/deepseek-chat-v3.1"
       modelDisplayNames:
