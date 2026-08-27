@@ -41,7 +41,7 @@
 /* ---------------------------------------------------------------------
  * Adaptive disk versus corona classifier state
  *
- * g_rBinEdgesLog[]     : logarithmic edges of NBINS_CORONA bins spanning the
+ * g_rBinEdgesLog[]     : logarithmic edges of NBINS_PROFILE bins spanning the
  *                        global radial domain (fixed at InitDomain() call).
  * g_rhoCoronaProfile[] : temporally smoothed, multicore reduced average density
  *                        of corona weighted cells per radial bin.
@@ -54,20 +54,27 @@
  *                        the corona value alone. This lets the classifier
  *                        track a genuinely decaying inner disk instead of
  *                        drifting away from it.
- * g_coronaProfileInit  : guards against use before InitCoronaProfile()
+ * g_profilesInit  : guards against use before InitProfiles()
  *                        has run (e.g. a restart path that skips
  *                        InitDomain() call); in this case DiskFraction()
  *                        falls back to the original static analytic profile
  *                        for the corona side, and the analytic Keplerian
  *                        disk profile for the disk side.
  * --------------------------------------------------------------------- */
-static double g_rBinEdgesLog[NBINS_CORONA + 1];
-static double g_rhoCoronaProfile[NBINS_CORONA];
-static double g_rhoDiskProfile[NBINS_CORONA];
-static int    g_diskProfileValid[NBINS_CORONA];  /* has bin b ever seen a
+static double g_rBinEdgesLog[NBINS_PROFILE + 1];
+static double g_rhoCoronaProfile[NBINS_PROFILE];
+static double g_rhoDiskProfile[NBINS_PROFILE];
+static int    g_diskProfileValid[NBINS_PROFILE];  /* has bin b ever seen a
                                                       meaningful amount of
                                                       real disk material? */
-static int    g_coronaProfileInit = 0;
+static int    g_profilesInit = 0;
+static int    g_profilesLive = 0;  /* has UpdateProfiles() run at least once
+                                       on real simulation data? Until then,
+                                       DiskFraction() returns the exact t=0
+                                       classification (see InitDiskCell()),
+                                       matching what the removed tr1 tracer
+                                       would have been, instead of using the
+                                       profile-based sigmoid. */
  
 /* ********************************************************************* */
 static double InterpLogProfile (double *profile, double x1)
@@ -85,8 +92,8 @@ static double InterpLogProfile (double *profile, double x1)
  
   lr   = log10(x1);
   lmin = g_rBinEdgesLog[0];
-  lmax = g_rBinEdgesLog[NBINS_CORONA];
-  dl   = (lmax - lmin) / (double)NBINS_CORONA;
+  lmax = g_rBinEdgesLog[NBINS_PROFILE];
+  dl   = (lmax - lmin) / (double)NBINS_PROFILE;
   lc0  = lmin + 0.5 * dl;                 /* center of first bin */
  
   s    = (lr - lc0) / dl;                 /* fractional bin coordinate */
@@ -94,8 +101,8 @@ static double InterpLogProfile (double *profile, double x1)
   frac = s - ib0;
   ib1  = ib0 + 1;
  
-  ib0 = (ib0 < 0) ? 0 : (ib0 > NBINS_CORONA - 1 ? NBINS_CORONA - 1 : ib0);
-  ib1 = (ib1 < 0) ? 0 : (ib1 > NBINS_CORONA - 1 ? NBINS_CORONA - 1 : ib1);
+  ib0 = (ib0 < 0) ? 0 : (ib0 > NBINS_PROFILE - 1 ? NBINS_PROFILE - 1 : ib0);
+  ib1 = (ib1 < 0) ? 0 : (ib1 > NBINS_PROFILE - 1 ? NBINS_PROFILE - 1 : ib1);
  
   lrho0 = log10(MAX(profile[ib0], 1.e-30));
   lrho1 = log10(MAX(profile[ib1], 1.e-30));
@@ -164,11 +171,11 @@ static void PatchUnvalidatedDiskBins (void)
 {
   int b, bb, src;
  
-  for (b = 0; b < NBINS_CORONA; b++) {
+  for (b = 0; b < NBINS_PROFILE; b++) {
     if (g_diskProfileValid[b]) continue;
  
     src = -1;
-    for (bb = b + 1; bb < NBINS_CORONA; bb++) {
+    for (bb = b + 1; bb < NBINS_PROFILE; bb++) {
       if (g_diskProfileValid[bb]) { src = bb; break; }
     }
     if (src < 0) {
@@ -181,7 +188,7 @@ static void PatchUnvalidatedDiskBins (void)
 }
  
 /* ********************************************************************* */
-void InitCoronaProfile (Grid *grid)
+void InitProfiles (Grid *grid)
 /*!
  * One time setup of the log radial bin edges spanning the global
  * radial domain. Seeds both reference profiles with their respective
@@ -202,11 +209,11 @@ void InitCoronaProfile (Grid *grid)
   lmin = log10(g_domBeg[IDIR]);
   lmax = log10(g_domEnd[IDIR]);
  
-  for (b = 0; b <= NBINS_CORONA; b++) {
-    g_rBinEdgesLog[b] = lmin + (lmax - lmin) * (double)b / (double)NBINS_CORONA;
+  for (b = 0; b <= NBINS_PROFILE; b++) {
+    g_rBinEdgesLog[b] = lmin + (lmax - lmin) * (double)b / (double)NBINS_PROFILE;
   }
  
-  for (b = 0; b < NBINS_CORONA; b++) {
+  for (b = 0; b < NBINS_PROFILE; b++) {
     lc = 0.5 * (g_rBinEdgesLog[b] + g_rBinEdgesLog[b + 1]);
     r  = pow(10.0, lc);
  
@@ -217,7 +224,7 @@ void InitCoronaProfile (Grid *grid)
        that radius (e.g. within ISCO for a black hole run) there is no
        disk at t=0 by construction, so don't seed a fabricated "disk"
        density there - mark the bin unvalidated instead and let
-       UpdateCoronaProfile()'s nearest-valid-bin fallback fill it in
+       UpdateProfiles()'s nearest-valid-bin fallback fill it in
        once real disk material actually exists at some radius. */
     if (r > g_inputParam[RD]) {
       g_rhoDiskProfile[b]   = AnalyticDiskDensity(r);
@@ -229,14 +236,14 @@ void InitCoronaProfile (Grid *grid)
     }
   }
  
-  g_coronaProfileInit = 1;
+  g_profilesInit = 1;
   PatchUnvalidatedDiskBins();   /* so the very first DiskFraction() call,
-                                    before any UpdateCoronaProfile(), does
+                                    before any UpdateProfiles(), does
                                     not see an unphysical inside-RD seed */
 }
  
 /* ********************************************************************* */
-void UpdateCoronaProfile (const Data *d, Grid *grid)
+void UpdateProfiles (const Data *d, Grid *grid)
 /*!
  * Recompute the radially-binned corona AND disk density profiles:
  *
@@ -257,19 +264,19 @@ void UpdateCoronaProfile (const Data *d, Grid *grid)
  * pinned to the static initial analytic profile.
  *********************************************************************** */
 {
-  static double sumC_loc[NBINS_CORONA], volC_loc[NBINS_CORONA];
-  static double sumC_glob[NBINS_CORONA], volC_glob[NBINS_CORONA];
-  static double sumD_loc[NBINS_CORONA], volD_loc[NBINS_CORONA];
-  static double sumD_glob[NBINS_CORONA], volD_glob[NBINS_CORONA];
-  static double volTot_loc[NBINS_CORONA], volTot_glob[NBINS_CORONA];
+  static double sumC_loc[NBINS_PROFILE], volC_loc[NBINS_PROFILE];
+  static double sumC_glob[NBINS_PROFILE], volC_glob[NBINS_PROFILE];
+  static double sumD_loc[NBINS_PROFILE], volD_loc[NBINS_PROFILE];
+  static double sumD_glob[NBINS_PROFILE], volD_glob[NBINS_PROFILE];
+  static double volTot_loc[NBINS_PROFILE], volTot_glob[NBINS_PROFILE];
  
   int    i, j, k, b;
   double *x1 = grid->x[IDIR];
   double r, dV, f, wc, wd, vi[NVAR];
  
-  if (!g_coronaProfileInit) InitCoronaProfile(grid);   /* restart safety net */
+  if (!g_profilesInit) InitProfiles(grid);   /* restart safety net */
  
-  for (b = 0; b < NBINS_CORONA; b++) {
+  for (b = 0; b < NBINS_PROFILE; b++) {
     sumC_loc[b] = volC_loc[b] = 0.0;
     sumD_loc[b] = volD_loc[b] = 0.0;
     volTot_loc[b] = 0.0;
@@ -279,10 +286,10 @@ void UpdateCoronaProfile (const Data *d, Grid *grid)
     r = x1[i];
  
     b = (int)((log10(r) - g_rBinEdgesLog[0])
-              / (g_rBinEdgesLog[NBINS_CORONA] - g_rBinEdgesLog[0])
-              * NBINS_CORONA);
+              / (g_rBinEdgesLog[NBINS_PROFILE] - g_rBinEdgesLog[0])
+              * NBINS_PROFILE);
     if (b < 0) b = 0;
-    if (b >= NBINS_CORONA) b = NBINS_CORONA - 1;
+    if (b >= NBINS_PROFILE) b = NBINS_PROFILE - 1;
  
     vi[RHO] = d->Vc[RHO][k][j][i];              /* only RHO is read by DiskFraction */
     f  = DiskFraction(vi, r, grid->x[JDIR][j]);  /* soft disk weight, uses OLD profiles */
@@ -300,13 +307,13 @@ void UpdateCoronaProfile (const Data *d, Grid *grid)
   }
  
 #ifdef PARALLEL
-  MPI_Allreduce(sumC_loc, sumC_glob, NBINS_CORONA, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
-  MPI_Allreduce(volC_loc, volC_glob, NBINS_CORONA, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
-  MPI_Allreduce(sumD_loc, sumD_glob, NBINS_CORONA, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
-  MPI_Allreduce(volD_loc, volD_glob, NBINS_CORONA, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
-  MPI_Allreduce(volTot_loc, volTot_glob, NBINS_CORONA, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+  MPI_Allreduce(sumC_loc, sumC_glob, NBINS_PROFILE, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+  MPI_Allreduce(volC_loc, volC_glob, NBINS_PROFILE, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+  MPI_Allreduce(sumD_loc, sumD_glob, NBINS_PROFILE, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+  MPI_Allreduce(volD_loc, volD_glob, NBINS_PROFILE, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+  MPI_Allreduce(volTot_loc, volTot_glob, NBINS_PROFILE, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
 #else
-  for (b = 0; b < NBINS_CORONA; b++) {
+  for (b = 0; b < NBINS_PROFILE; b++) {
     sumC_glob[b] = sumC_loc[b]; volC_glob[b] = volC_loc[b];
     sumD_glob[b] = sumD_loc[b]; volD_glob[b] = volD_loc[b];
     volTot_glob[b] = volTot_loc[b];
@@ -316,7 +323,7 @@ void UpdateCoronaProfile (const Data *d, Grid *grid)
   /* -- Corona profile: unchanged, still just holds its previous value
         when unpopulated this step (corona material is present nearly
         everywhere so this is not the problematic case). -- */
-  for (b = 0; b < NBINS_CORONA; b++) {
+  for (b = 0; b < NBINS_PROFILE; b++) {
     if (volC_glob[b] > 0.0) {
       double new_val = sumC_glob[b] / volC_glob[b];
       g_rhoCoronaProfile[b] = CORONA_EMA_ALPHA * new_val
@@ -332,7 +339,7 @@ void UpdateCoronaProfile (const Data *d, Grid *grid)
         being updated normally (EMA) even if a later step sees f~0
         there again (retains its last known value, exactly as before).
      -- */
-  for (b = 0; b < NBINS_CORONA; b++) {
+  for (b = 0; b < NBINS_PROFILE; b++) {
     int meaningful = (volTot_glob[b] > 0.0)
                    && (volD_glob[b] > DISK_BIN_VOLFRAC_MIN * volTot_glob[b]);
  
@@ -352,6 +359,10 @@ void UpdateCoronaProfile (const Data *d, Grid *grid)
         copying the nearest already-valid bin's current value - see
         PatchUnvalidatedDiskBins(). -- */
   PatchUnvalidatedDiskBins();
+ 
+  g_profilesLive = 1;   /* from here on DiskFraction() uses the adaptive
+                            sigmoid; this call has classified at least one
+                            full DOM_LOOP pass through real cell data. */
 }
 
 /* ********************************************************************* */
@@ -427,23 +438,58 @@ void Init (double *v, double x1, double x2, double x3)
 }
 
 /* ********************************************************************* */
+static int InitDiskCell (double x1, double x2)
+/*!
+ * Reproduces, bit-for-bit, the branch condition Init() uses to decide
+ * disk vs corona at problem setup (the same test that used to set
+ * v[TRC] = 1.0 vs 0.0). Kept as a single source of truth so DiskFraction()
+ * can match the former tracer exactly at t=0 without ever reading TRC
+ * (which is slated for removal).
+ *
+ * Returns 1 if (x1, x2) is disk by the Init() criterion, 0 otherwise.
+ *********************************************************************** */
+{
+  double rcyl, eps2, coeff, pc, p_disk;
+ 
+  rcyl  = x1 * sin(x2);
+  eps2  = g_inputParam[EPS] * g_inputParam[EPS];
+  coeff = 0.4 / eps2 * (1.0 / x1 - (1.0 - 2.5 * eps2) / rcyl);
+ 
+  pc     = 0.4 * g_inputParam[RHOC] * pow(x1, -2.5);   /* corona pressure, Init() step 1 */
+  p_disk = eps2 * pow(coeff, 2.5);                     /* disk pressure, Init() step 2 */
+ 
+  return (p_disk >= pc && rcyl > g_inputParam[RD]) ? 1 : 0;
+}
+ 
+/* ********************************************************************* */
 double DiskFraction (double *v, double x1, double x2)
 /*!
  * Continuous [0,1] replacement for the true tracer used to gate anomalous
  * viscosity/resistivity to disk material.
  *
- * Adaptive-ratio classifier: rather than comparing the local density
- * against a fixed multiplicative threshold on the corona reference alone,
- * this tracks TWO running radial references - a corona density profile
- * and a disk density profile (see UpdateCoronaProfile()) - and classifies
- * by where the cell sits between them:
+ * At t=0 (before UpdateProfiles() has ever run on real simulation data),
+ * this returns exactly 0.0 or 1.0 according to InitDiskCell(), i.e. it
+ * matches what the removed tr1 tracer would have been initialized to,
+ * without ever reading it. This holds both on the very first call (before
+ * InitProfiles() has run) and immediately after InitProfiles() seeds the
+ * analytic reference profiles, since at that point every cell's density
+ * still equals its Init() value and InitDiskCell() is exactly the
+ * condition Init() itself used to set that density.
+ *
+ * Once UpdateProfiles() has accumulated at least one step of real
+ * disk/corona-weighted data (g_profilesLive == 1), DiskFraction() switches
+ * over to the adaptive-ratio classifier: rather than comparing the local
+ * density against a fixed multiplicative threshold on the corona
+ * reference alone, this tracks TWO running radial references - a corona
+ * density profile and a disk density profile (see UpdateProfiles()) - and
+ * classifies by where the cell sits between them:
  *
  *   position = log10(rho / rho_corona(r)) / log10(rho_disk(r) / rho_corona(r))
  *
  * position ~ 0 means the cell density matches the current corona
  * reference at that radius; position ~ 1 means it matches the current
  * disk reference. Because rho_disk(r) is itself built from actual
- * disk-classified cells (see UpdateCoronaProfile()), it decays along with
+ * disk-classified cells (see UpdateProfiles()), it decays along with
  * a genuinely evolving/draining inner disk, so the classification
  * threshold tracks the real disk instead of drifting away from it as a
  * fixed analytic reference would - this is what removes the horizon-side
@@ -459,36 +505,37 @@ double DiskFraction (double *v, double x1, double x2)
  *********************************************************************** */
 {
   double rho_ref_c, rho_ref_d, log_span, position, arg;
-  double rcyl, eps2, coeff, pc, disk_prs;
  
-  if (!g_coronaProfileInit) {
-    /* Fallback at t=0: evaluate exact initialization conditions 
-       from Init() without relying on reference profiles. */
-    rcyl = x1 * sin(x2);
-    eps2 = g_inputParam[EPS] * g_inputParam[EPS];
-    coeff = 0.4 / eps2 * (1.0 / x1 - (1.0 - 2.5 * eps2) / rcyl);
-    pc = 0.4 * g_inputParam[RHOC] * pow(x1, -2.5);
-    
-    if (coeff > 0.0) {
-      disk_prs = eps2 * pow(coeff, 2.5);
-      if (disk_prs >= pc && rcyl > g_inputParam[RD]) {
-        return 1.0; 
-      }
-    }
-    return 0.0; 
+  if (!g_profilesLive) {
+    /* Exact t=0 match to the former tracer: no profile, no sigmoid,
+       just the same hard boolean Init() used. Covers both the
+       very-first-call case (g_profilesInit == 0) and the case right
+       after InitProfiles() has seeded the analytic profiles but no
+       real cell has been classified through UpdateProfiles() yet. */
+    return (double) InitDiskCell(x1, x2);
+  }
+ 
+  if (!g_profilesInit) {
+    /* Should not normally happen (g_profilesLive implies g_profilesInit),
+       but guard anyway: fall back to the original static analytic
+       corona/disk densities so behavior degrades gracefully. */
+    rho_ref_c = AnalyticCoronaDensity(x1);
+    rho_ref_d = AnalyticDiskDensity(x1);
+    if (rho_ref_d <= 0.0) rho_ref_d = rho_ref_c;
   } else {
     rho_ref_c = GetCoronaRefDensity(x1);
     rho_ref_d = GetDiskRefDensity(x1);
   }
  
-  /* Calculate normalized logarithmic position between references */
   log_span = log10(MAX(rho_ref_d, 1.e-30)) - log10(MAX(rho_ref_c, 1.e-30));
   log_span = (fabs(log_span) < 1.e-12) ? 1.e-12 : log_span;  /* guard degenerate span */
  
   position = (log10(MAX(v[RHO], 1.e-30)) - log10(MAX(rho_ref_c, 1.e-30))) / log_span;
  
-  /* Evaluate standard symmetric sigmoid transition */
-  arg = (position - (1.0 - 1.0 / CORONA_THRESH_FAC)) / CORONA_SIGMOID_WIDTH;
+  /* CORONA_THRESH_FAC now sets where along [0,1] the transition midpoint
+     sits (as a log-position, so 0.5 = geometric midpoint between the two
+     references); keep the existing macro rather than adding a new one. */
+  arg = (position - (1.0 - 1.0/CORONA_THRESH_FAC)) / CORONA_SIGMOID_WIDTH;
   arg = MIN(MAX(arg, -50.0), 50.0);      /* guard exp() over/underflow */
  
   return 1.0 / (1.0 + exp(-arg));
@@ -497,7 +544,7 @@ double DiskFraction (double *v, double x1, double x2)
 /* ********************************************************************* */
 void InitDomain (Data *d, Grid *grid)
 {
-  InitCoronaProfile(grid);
+  InitProfiles(grid);
 }
 
 /* ********************************************************************* */

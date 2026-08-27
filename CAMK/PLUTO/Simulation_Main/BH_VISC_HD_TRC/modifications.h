@@ -6,7 +6,7 @@
    Kept as compile-time constants to avoid touching "definitions.h" enumeration.
    --------------------------------------------------------------------------------- */
 
-#define NBINS_CORONA          90        /* number of logarithmic radial bins */
+#define NBINS_PROFILE          90        /* number of logarithmic radial bins */
 #define CORONA_AVG_FREQ       10        /* update every number of steps */
 #define CORONA_EMA_ALPHA       0.05     /* temporal smoothing weight */
 #define CORONA_THRESH_FAC      1.05     /* transition midpoint, in terms of
