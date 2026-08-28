@@ -102,9 +102,9 @@ void Resistive_eta(double *v, double x1, double x2, double x3,
         the diffusivity to zones identified as disk material.
      -- */
 
-//  eta0 = g_inputParam[ALPHAV]*cs*sqrt(rcyl*rcyl*rcyl)*v[TRC];
+//  eta0 = g_inputParam[BETAV]*cs*sqrt(rcyl*rcyl*rcyl)*v[TRC];
   /* Replaced v[TCR] with the DiskFraction(v, x1, x2) reconstruction. */
-    eta0 = g_inputParam[ALPHAV]*cs*sqrt(rcyl*rcyl*rcyl)*DiskFraction(v, x1, x2);
+    eta0 = g_inputParam[BETAV]*cs*sqrt(rcyl*rcyl*rcyl)*DiskFraction(v, x1, x2);
   } else {
     eta0 = 0.0;
   }

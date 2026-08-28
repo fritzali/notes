@@ -26,4 +26,8 @@
 
 double DiskFraction (double *v, double x1, double x2);
 
+#if RADIATION_VAR_OPACITIES
+void UserDefOpacitiesAt(double *v, double x1, double x2, double *abs, double *scat);
+#endif
+
 #endif /* MODIFICATIONS_H */

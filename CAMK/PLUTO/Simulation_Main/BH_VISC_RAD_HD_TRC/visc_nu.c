@@ -134,9 +134,9 @@ void Visc_nu(double *v, double x1, double x2, double x3,
         alpha-prescription is not applied outside the disk proper.
      -- */
 
-//  *nu1 = 2./3.*v[RHO]*g_inputParam[ALPHAV]*cs*sqrt(rcyl*rcyl*rcyl)*v[TRC];
+//  *nu1 = 2./3.*v[RHO]*g_inputParam[BETAV]*cs*sqrt(rcyl*rcyl*rcyl)*v[TRC];
   /* Replaced v[TCR] with the DiskFraction(v, x1, x2) reconstruction. */
-    *nu1 = 2./3.*v[RHO]*g_inputParam[ALPHAV]
+    *nu1 = 2./3.*v[RHO]*g_inputParam[BETAV]
            *cs*sqrt(rcyl*rcyl*rcyl)*DiskFraction(v, x1, x2);
   } else {
     *nu1 = 0.0;
@@ -150,9 +150,9 @@ void Visc_nu(double *v, double x1, double x2, double x3,
        (still restricted to disk material via the tracer).
    -------------------------------------------------------- */
 
-//*nu1 = 2./3.*v[RHO]*g_inputParam[ALPHAV]*cs*sqrt(rcyl*rcyl*rcyl)*v[TRC];
+//*nu1 = 2./3.*v[RHO]*g_inputParam[BETAV]*cs*sqrt(rcyl*rcyl*rcyl)*v[TRC];
   /* Replaced v[TCR] with the DiskFraction(v, x1, x2) reconstruction. */
-  *nu1 = 2./3.*v[RHO]*g_inputParam[ALPHAV]
+  *nu1 = 2./3.*v[RHO]*g_inputParam[BETAV]
          *cs*sqrt(rcyl*rcyl*rcyl)*DiskFraction(v, x1, x2);
 
 #endif

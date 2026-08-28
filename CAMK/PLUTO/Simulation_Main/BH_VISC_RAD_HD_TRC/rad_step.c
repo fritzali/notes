@@ -2,24 +2,24 @@
 /*!
   \file
   \brief Radiation implicit step
-  
+
   Main routines used for the implicit integration of the radiation-matter interaction
   terms. Six different implicit methods are implemented based on iterations of either
   the radiation or the internal energy densities. For stability reasons, the former
   are recommended when E_{rad} < prs, while the latter are recommended when
   E_{rad} > prs.
-  
+
   In nonrelativistic HD and MHD, the following two implicit methods are the fastest:
-  
+
   - RADIATION_NEWTON_NR_GAS: Solves the implicit step following Melon Fuksman et al.
 		(2022, Appendix B) via a Newton method iterating the internal energy.
 		
-  - RADIATION__NEWTON_NR_RAD: Similar to RADIATION_NEWTON_NR_GAS, but iterating the 
+  - RADIATION__NEWTON_NR_RAD: Similar to RADIATION_NEWTON_NR_GAS, but iterating the
 		radiation energy instead.
-  
+
   The remaining four methods can be used in both the relativistic and nonrelativistic
   modules:
-  	
+	
   - RADIATION_FIXEDPOINT_RAD: Solves the implicit step following Takahashi & Oshuga
 		(2013), by iterating the radiation fields. 
 		
@@ -33,20 +33,36 @@
 
   - RADIATION_NEWTON_RAD: Same as RADIATION_NEWTON_RAD, but performing iterations of
 		the radiation fields.
-  
-  \authors J. D. Melon Fuksman (fuksman@mpia.de)
-  \date    Nov 02, 2022
-  
-	\b References
-	 -  Melon Fuksman, J. D., and Mignone, A. 2019, ApJS, 242, 20.
-     -  Takahashi, H. R., & Ohsuga, K. 2013, ApJ, 772, 127.
-	 -  Melon Fuksman, J. D., Klahr, H., Flock, M., & Mignone, A. 2021, ApJ, 906, 78.
-	 -  Melon Fuksman, J. D., & Klahr, H. 2022, ApJ, 936, 16.
-	 
-*/
-/* ///////////////////////////////////////////////////////////////////// */
 
+  \authors J. D. Melon Fuksman (fuksman@mpia.de)
+  \date    Nov 02, 2022 
+
+  MODIFIED (local working-directory copy - shadows $PLUTO_DIR/Src/Radiation/rad_step.c
+  via VPATH; PLUTO source under $PLUTO_DIR is untouched):
+  Added a single global assignment, g_i_rad = i, inside RadImplicitNR()'s
+  per-cell loop. This exposes the radial grid index to init.c's
+  UserDefOpacities(), whose signature (fixed by radiation.h) does not
+  otherwise carry any grid-position information. g_i_rad is declared and
+  defined in init.c; only written here, never read here.
+
+	\b References
+	
+  -  Melon Fuksman, J. D., and Mignone, A. 2019, ApJS, 242, 20.
+	
+  -  Takahashi, H. R., & Ohsuga, K. 2013, ApJ, 772, 127.
+	
+  -  Melon Fuksman, J. D., Klahr, H., Flock, M., & Mignone, A. 2021, ApJ, 906, 78.
+	
+  -  Melon Fuksman, J. D., & Klahr, H. 2022, ApJ, 936, 16.
+	
+ */
+/* ///////////////////////////////////////////////////////////////////// */
 #include "pluto.h"
+
+extern int g_i_rad;  /* [ADDED] defined in init.c; radial grid index, set
+                         here per-cell during the radiation implicit step,
+                         read from init.c's UserDefOpacities(). */
+
 #if RADIATION
 /* ********************************************************************* */
 void RadStep (double **uprim, double **ucons, double **source,
@@ -63,26 +79,26 @@ void RadStep (double **uprim, double **ucons, double **source,
  * \param [in] 		  iend	 	final index of computation
  * \param [in,out] 	flag    array of flags
  * \param [in]      dt      time step
- * 
+ *  
  *********************************************************************** */
 {
   int i, j, m ;
   double err, gamma ;
-
+ 
   const int comps = RADIATION_NEQS - 1 ;
   static Rad_data rad_data;
-
+ 
   static double *primvar, *consvar ;
   static double * x, * dx, * mf, ** J;
 	
   /*-- Set flag and time step --*/
   rad_data.flag = flag ;
   rad_data.dt = dt ;
-
+ 
   /*-- Store primitive and conserved variables --*/
   rad_data.pv = uprim ;
   rad_data.cv = ucons ;
-
+ 
   #if RADIATION_IMPLICIT_NR
   	#if !RADIATION_NR
 	print("Error: RADIATION_NEWTON_NR_GAS and RADIATION_NEWTON_NR_RAD \n");
@@ -92,7 +108,7 @@ void RadStep (double **uprim, double **ucons, double **source,
 	RadImplicitNR(&rad_data,source,ibeg,iend);
 	return;
   #endif
-
+ 
   if (rad_data.Ttot == NULL){
     rad_data.Ttot = ARRAY_1D(RADIATION_NEQS, double);
     rad_data.Rini = ARRAY_1D(RADIATION_NEQS, double);
@@ -102,13 +118,13 @@ void RadStep (double **uprim, double **ucons, double **source,
 		 || RADIATION_IMPL == RADIATION_FIXEDPOINT_GAS
     rad_data.u = ARRAY_1D(3, double);
     #endif
-
+ 
     x  = ARRAY_1D(RADIATION_NEQS, double);
     dx = ARRAY_1D(RADIATION_NEQS, double);
     mf = ARRAY_1D(RADIATION_NEQS, double);
     J  = ARRAY_2D(RADIATION_NEQS, RADIATION_NEQS, double);
   }
-
+ 
   /* ----------------------------
        Main loop on positions
      ---------------------------- */
@@ -146,7 +162,7 @@ void RadStep (double **uprim, double **ucons, double **source,
 	#endif
 		
 	#endif
-
+ 
     /*-- Set initial extra variables if full convergence is imposed --*/
     #if (RADIATION_IMPL == RADIATION_NEWTON_RAD || RADIATION_IMPL == RADIATION_FIXEDPOINT_RAD) \
      && RADIATION_FULL_CONVERGENCE == YES
@@ -155,8 +171,8 @@ void RadStep (double **uprim, double **ucons, double **source,
 			 && RADIATION_FULL_CONVERGENCE == YES
     rad_data.exv_prev = primvar[ENR] ;
     #endif
-
-    /*-- Set fluxes and total momentum conserving mgas + (1/c_r) Frad
+ 
+    /*-- Set fluxes and total momentum conserving mgas + (1/c_r) Frad 
 		  	 if RADIATION_NR and mgas + Frad otherwise --*/
 	  for (j=0; j<comps; j++ ){
 		#if RADIATION_IMPL == RADIATION_FIXEDPOINT_GAS
@@ -175,7 +191,7 @@ void RadStep (double **uprim, double **ucons, double **source,
 		rad_data.Rini[j+1] = consvar[FR1+j] ;
 		rad_data.Ttot[j+1] = consvar[FR1+j]/g_reducedC ;
 		#else
-		rad_data.Rini[j+1] = rad_data.Ttot[j+1] = consvar[FR1+j] ;	 
+		rad_data.Rini[j+1] = rad_data.Ttot[j+1] = consvar[FR1+j] ;	
 		#endif
 		rad_data.Ttot[j+1] += consvar[MX1+j] ;
 		
@@ -185,12 +201,12 @@ void RadStep (double **uprim, double **ucons, double **source,
 			
 		#endif
 	  }
-
+ 
     /*-- Initial guess for the iterated fields --*/
     #if RADIATION_IMPL == RADIATION_NEWTON_GAS \
 		 || RADIATION_IMPL == RADIATION_FIXEDPOINT_GAS
-		#if !RADIATION_NR
-       	gamma = consvar[RHO]/primvar[RHO] ;
+		#if !RADIATION_NR       	
+      	gamma = consvar[RHO]/primvar[RHO] ;
 		#endif
       	x[0] = primvar[PRS] ;
 		#if RADIATION_IMPL == RADIATION_FIXEDPOINT_GAS
@@ -216,13 +232,13 @@ void RadStep (double **uprim, double **ucons, double **source,
      ----------------------------------------------------------------- */
 	m = 0 ; err = 1.0 ;
     while ( err > RADIATION_ERROR && m++ < RADIATION_MAXITER ){
-
+ 
 	  /*********************************
 		Update iterated fields
 	  *********************************/
       #if RADIATION_IMPL == RADIATION_FIXEDPOINT_RAD
-
-        /*-- Set coefficients of the system C.(E,F^i)^{(m+1)} == b  --*/ 	
+         /*-- Set coefficients of the system C.(E,F^i)^{(m+1)} == b  --*/
+	        
         RadFPMatrices (&rad_data, dx, J);
 				
         /*-- Update iterated fields and store them in x --*/
@@ -234,20 +250,19 @@ void RadStep (double **uprim, double **ucons, double **source,
         RadNewtonMinusF(&rad_data, x, mf);
 				
       #else
-
+ 
         /*-- Compute -F and the Jacobian --*/
         RadNewtonJacobian (x, mf, J, &rad_data) ;
-
+ 
         /*-- Solve the system J*dx == -F --*/
         if ( GaussianSolve (J, mf, dx, RADIATION_NEQS) ){
           WARNING(Where (i, NULL);)
           for (j=0; j < RADIATION_NEQS ; j++ ) dx[j] = mf[j];
           QUIT_PLUTO(1);
         }
-
+ 
         /*-- Update iterated fields --*/
-        for (j=0; j < RADIATION_NEQS ; j++ ) x[j] += dx[j];
-
+        for (j=0; j < RADIATION_NEQS ; j++ ) x[j] += dx[j]; 
       #endif
 			
 		/*********************************
@@ -264,8 +279,8 @@ void RadStep (double **uprim, double **ucons, double **source,
 		#endif
         for (j=0; j<comps; j++){
           	consvar[FR1+j] = x[j+1] ;
-			#if RADIATION_NR  
-           	consvar[MX1+j] = rad_data.Ttot[j+1] - x[j+1]/g_reducedC ;
+			#if RADIATION_NR             
+          	consvar[MX1+j] = rad_data.Ttot[j+1] - x[j+1]/g_reducedC ;
 			#else
 			consvar[MX1+j] = rad_data.Ttot[j+1] - x[j+1] ;
 			#endif
@@ -273,7 +288,7 @@ void RadStep (double **uprim, double **ucons, double **source,
 				
 		/*-- Update primitive variables --*/
         ConsToPrim (ucons, uprim, i, i, flag);
-
+ 
         /*-- Compute relative differences --*/
         err = RadErr(primvar, NULL, &rad_data) ;
 			
@@ -282,15 +297,14 @@ void RadStep (double **uprim, double **ucons, double **source,
 		/*-- Compute relative differences --*/
         err = RadErr(x, NULL, &rad_data) ;
 			
-		#else
-
+		#else 
+ 
 		/*-- Compute relative differences --*/
-		err = RadErr(x, dx, &rad_data) ;
-
+		err = RadErr(x, dx, &rad_data) ; 
 		#endif
-
-		}//End of iterations   
-
+ 
+	}//End of iterations
+ 
     /*-- Final update if needed --*/
     #if RADIATION_IMPL == RADIATION_NEWTON_GAS
       if ( RadIterToPrim (x, &rad_data) ) QUIT_PLUTO(1);
@@ -319,12 +333,12 @@ void RadStep (double **uprim, double **ucons, double **source,
         Where (i, NULL);
       )		
 	  }
-
+ 
     /*-- Compute and store source terms if needed --*/
     #if RADIATION_IMEX_SSP2 == YES
     RadSourceFunction(primvar,source[i]);					
     #endif
-
+ 
   }//End of loop on positions
 	
   /*-- Update conserved fields if needed --*/
@@ -347,21 +361,24 @@ void RadImplicitNR(Rad_data * rad_data, double ** source, int ibeg, int iend){
 	gmm1 = g_gamma - 1.0;
 	#endif
 	cratio = g_reducedC/g_radC;
-	dt = rad_data->dt;
-
+	dt = rad_data->dt; 
 	uprim = rad_data-> pv;
-	ucons = rad_data-> cv; 
-
+	ucons = rad_data-> cv;
+  
 	#if RADIATION_VAR_OPACITIES == NO
 	abs_op = g_absorptionCoeff;
 	scat_op = g_scatteringCoeff;
 	tot_op = g_totalOpacity ;
 	#endif
-
+ 
 	// Loop on positions
 	for (i = ibeg; i <= iend; i++){
 		u = ucons[i];
 		v = uprim[i];
+		g_i_rad = i;   /* [ADDED] expose current radial index to init.c's
+                          UserDefOpacities(), which has no i-index in its
+                          own fixed signature. Written here only; declared
+                          and defined in init.c. */
 
 		// Get modified total energy and momentum
 		ekin = 0.5*(u[MX1]*u[MX1]+u[MX2]*u[MX2]+u[MX3]*u[MX3])/u[RHO];
@@ -380,8 +397,7 @@ void RadImplicitNR(Rad_data * rad_data, double ** source, int ibeg, int iend){
 		}
 		
 		// Rescale coefficients by the density
-		rho0  = u[RHO] ;
-
+		rho0  = u[RHO] ; 
 		#if RADIATION_IMPL == RADIATION_NEWTON_NR_GAS
 		// x = (c/cr)Er-etot+ekin(n+1) with Er = Er(n) as first iteration
 		x = -(u[ENG]-ekin)/rho0;
@@ -404,7 +420,7 @@ void RadImplicitNR(Rad_data * rad_data, double ** source, int ibeg, int iend){
 			UserDefOpacities (v, &abs_op, &scat_op);
 			tot_op = abs_op + scat_op ;
 			#endif
-
+ 
 			// Get polynomial coeffs. independent on ekin 
 			// (do only once if constant opacities)
 			#if RADIATION_VAR_OPACITIES == NO
@@ -417,7 +433,7 @@ void RadImplicitNR(Rad_data * rad_data, double ** source, int ibeg, int iend){
 			#if RADIATION_VAR_OPACITIES == NO
 			}
 			#endif
-
+ 
 			// Update momentum and kinetic energy
 			#if RADIATION_VAR_OPACITIES
 			for (j=0; j<3; j++){
@@ -432,10 +448,9 @@ void RadImplicitNR(Rad_data * rad_data, double ** source, int ibeg, int iend){
         	#endif
 			etek = etot - ekin ;
 			#endif
-
+ 
 			// Compute remaining polynomial coefficient
 			C = erad + B/rho0*etek ;	
-
 			// Update x guess with Newton's method
 			x0 = x ;
 			x2 = x*x ;
@@ -453,8 +468,7 @@ void RadImplicitNR(Rad_data * rad_data, double ** source, int ibeg, int iend){
 			// Compute pressure error
 			dx2 = x-x0 ;
 			dx2 *= dx2 ;
-			err = (x2 > 1e-40) ? dx2/x2 : dx2/1e-40 ;
-
+			err = (x2 > 1e-40) ? dx2/x2 : dx2/1e-40 ; 
 			#if RADIATION_FULL_CONVERGENCE
 			y0 = y ;
 			#if RADIATION_IMPL == RADIATION_NEWTON_NR_GAS
@@ -469,7 +483,7 @@ void RadImplicitNR(Rad_data * rad_data, double ** source, int ibeg, int iend){
 			dx2 *= dx2 ;
 			err += (y2 > 1e-40) ? dx2/y2 : dx2/1e-40 ;
 			#endif
-
+ 
 			// Add velocity error (except for constant opacities)
 			#if RADIATION_VAR_OPACITIES
 			for (j=0; j<3; j++){
@@ -498,7 +512,7 @@ void RadImplicitNR(Rad_data * rad_data, double ** source, int ibeg, int iend){
 			}
 			#endif
 		}
-
+ 
 		// Check number of iterations
 		if ( m > RADIATION_MAXITER ) {
 		WARNING(
@@ -515,7 +529,7 @@ void RadImplicitNR(Rad_data * rad_data, double ** source, int ibeg, int iend){
 		u[ENR] = x*rho0 ;
 		u[ENG] = (etot - u[ENR]/cratio) ; 
 		#endif
-
+ 
 		// Update radiation flux and momentum
 		s = 1. + dt*u[RHO]*g_reducedC*tot_op ;
 		for (j=0; j<3; j++){
@@ -523,7 +537,7 @@ void RadImplicitNR(Rad_data * rad_data, double ** source, int ibeg, int iend){
 			u[FR1+j] /= s ;
 			u[MX1+j] = mtot[j] - u[FR1+j]/g_reducedC ; 
 		}
-
+ 
 	} // End loop on positions
 	
 	// Update primitive fields
@@ -531,8 +545,8 @@ void RadImplicitNR(Rad_data * rad_data, double ** source, int ibeg, int iend){
 	
 	// Compute and store source terms if needed
 	#if RADIATION_IMEX_SSP2 == YES
-	for (i = ibeg; i <= iend; i++) RadSourceFunction(uprim[i],source[i]);	
-  	#endif
+	for (i = ibeg; i <= iend; i++) RadSourceFunction(uprim[i],source[i]);	  
+	#endif
 		
 }
 #endif
@@ -544,11 +558,11 @@ void RadStep3D (Data_Arr U, Data_Arr V, Data_Arr S,
  *  Perform the implicit step for the matter-radiation interaction.
  *  Update both conserved and primitive variables. 
  *
- * \param [in]     U      pointer to 3D array of conserved variables,
+ * \param [in]     U      pointer to 3D array of conserved variables, 
  *                        with array indexing <tt>[k][j][i][nv]</tt>
- * \param [out]    V      pointer to 3D array of primitive variables,
+ * \param [out]    V      pointer to 3D array of primitive variables, 
  *                        with array indexing <tt>[nv][k][j][i]</tt>
- * \param [out]    S      pointer to 3D array of source terms,
+ * \param [out]    S      pointer to 3D array of source terms, 
  *                        with array indexing <tt>[nv][k][j][i]</tt>
  * \param [in,out] flag   pointer to 3D array of flags.
  * \param [in]     box    pointer to RBox structure containing the domain
@@ -562,8 +576,8 @@ void RadStep3D (Data_Arr U, Data_Arr V, Data_Arr S,
   int   current_dir ;
   static double **v, **u ;
 
-/* ----------------------------------------------
-    Allocate u and v (conserved and primitive
+ /* ----------------------------------------------
+     Allocate u and v (conserved and primitive
 	  variables) and set global constants.
    ---------------------------------------------- */
   if (v == NULL){
@@ -575,22 +589,22 @@ void RadStep3D (Data_Arr U, Data_Arr V, Data_Arr S,
     Save current sweep direction and by default,
     perform the step along X1 stripes
    ---------------------------------------------- */
-
+ 
   current_dir = g_dir; 
   g_dir = IDIR;
-  
-/* -----------------------------------------------
-    Set (beg,end) indices in ascending order for
-    proper call to RadStep()
+ 
+  /* -----------------------------------------------
+     Set (beg,end) indices in ascending order for
+     proper call to RadStep()
    ----------------------------------------------- */
-
+ 
   ibeg = (box->ibeg <= box->iend) ? (iend=box->iend, box->ibeg):(iend=box->ibeg, box->iend);
   jbeg = (box->jbeg <= box->jend) ? (jend=box->jend, box->jbeg):(jend=box->jbeg, box->jend);
   kbeg = (box->kbeg <= box->kend) ? (kend=box->kend, box->kbeg):(kend=box->kbeg, box->kend);
-
+ 
   for (k = kbeg; k <= kend; k++){ g_k = k;
   for (j = jbeg; j <= jend; j++){ g_j = j;
-
+ 
     for (i = ibeg; i <= iend; i++) NVAR_LOOP(nv) v[i][nv] = V[nv][k][j][i];
 		
     #if RADIATION_IMEX_SSP2 == YES
@@ -598,14 +612,13 @@ void RadStep3D (Data_Arr U, Data_Arr V, Data_Arr S,
     #else
     RadStep (v, U[k][j], NULL, ibeg, iend, flag[k][j], dt);
     #endif
-
-    for (i = ibeg; i <= iend; i++) { 
-  	  for (nv = NFLX; nv--; ) V[nv][k][j][i] = v[i][nv];   
-	}
-
-  }}
-
+ 
+    for (i = ibeg; i <= iend; i++) {
+   	  for (nv = NFLX; nv--; ) V[nv][k][j][i] = v[i][nv];
+   	}
+   }}
+ 
   g_dir = current_dir;
-
+ 
 }
 #endif

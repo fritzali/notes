@@ -14,6 +14,29 @@
   \date Jul 2020 / Modified 2024 (ccm, csk)
 
   Based on appendix of "Atlas" paper, Cemeljic, 2019, A&A, 624, A31.
+
+  FURTHER MODIFIED (opacity/DiskFraction consistency pass):
+  - UserDefOpacities() (fixed signature, called from the radiation module's
+    implicit step in rad_step.c) now gates opacities using the same
+    DiskFraction() classifier used elsewhere for viscosity/resistivity,
+    instead of an independent hard-cut condition on v[]. Since
+    UserDefOpacities()'s signature carries no grid position, this relies on
+    two new globals: g_i_rad (radial index, written by the patched local
+    copy of rad_step.c immediately before each call) and g_radGrid (grid
+    pointer, set once in InitDomain()). PLUTO's own g_j global (see
+    globals.h) supplies the poloidal index; it is already valid at the
+    point rad_step.c calls UserDefOpacities().
+  - A second entry point, UserDefOpacitiesAt(v, x1, x2, abs, scat), takes
+    x1, x2 explicitly. userdef_output.c's diagnostic loop calls this
+    directly with its own loop's real (x1[i], x2[j]) rather than going
+    through the g_i_rad/g_j globals, which would otherwise be stale
+    (left over from whatever cell the last radiation step visited, not
+    the cell the diagnostic loop is currently on). UserDefOpacities()
+    itself is now a thin wrapper around UserDefOpacitiesAt().
+  - v[TRC] is no longer read anywhere in opacity or viscosity/resistivity
+    gating; DiskFraction() is the sole disk/corona classifier used for
+    physics. TRC continues to be set/evolved elsewhere exactly as before,
+    for comparison/diagnostic purposes only.
 */
 /* /////////////////////////////////////////////////////////////////////////// */
 
@@ -37,6 +60,20 @@
 #ifndef INNER_BOUNDARY
  #define INNER_BOUNDARY BOUNDARY_BH  /* Set to BOUNDARY_STAR or BOUNDARY_BH */
 #endif
+
+/* ---------------------------------------------------------------------
+ * Radiation opacity call-site support (see file header note above)
+ *
+ * g_i_rad   : current radial grid index during the radiation implicit
+ *             step; written by the (locally patched) rad_step.c, read
+ *             only from UserDefOpacities() below. Meaningless outside
+ *             that call path - default 0 is a safe but arbitrary value.
+ * g_radGrid : grid pointer, set once from InitDomain(). Needed to turn
+ *             g_i_rad and PLUTO's g_j into physical (x1,x2) coordinates
+ *             for the DiskFraction() call inside UserDefOpacities().
+ * --------------------------------------------------------------------- */
+int          g_i_rad  = 0;      /* [ADDED] */
+static Grid *g_radGrid = NULL;  /* [ADDED] */
 
 /* ---------------------------------------------------------------------
  * Adaptive disk versus corona classifier state
@@ -376,7 +413,7 @@ void Init (double *v, double x1, double x2, double x3)
   rcyl = x1 * sin(x2);
   eps2 = g_inputParam[EPS] * g_inputParam[EPS];
   coeff = 0.4 / eps2 * (1.0 / x1 - (1.0 - 2.5 * eps2) / rcyl);
-  lambda = 2.2 / (1.0 + 2.56 * g_inputParam[ALPHAV] * g_inputParam[ALPHAV]);
+  lambda = 2.2 / (1.0 + 2.56 * g_inputParam[BETAV] * g_inputParam[BETAV]);
 
   /* -------------------------------------------------------------------
      1. Initial non-rotating adiabatic corona in hydrostatic equilibrium
@@ -396,16 +433,16 @@ void Init (double *v, double x1, double x2, double x3)
 
   if (v[PRS] >= pc && rcyl > g_inputParam[RD]) {
     v[RHO] = pow(coeff, 1.5);
-    v[VX1] = -g_inputParam[ALPHAV] / sin(x2) * eps2 * (10.0 - (32.0 / 3.0)
-             * lambda * g_inputParam[ALPHAV] * g_inputParam[ALPHAV]
+    v[VX1] = -g_inputParam[BETAV] / sin(x2) * eps2 * (10.0 - (32.0 / 3.0)
+             * lambda * g_inputParam[BETAV] * g_inputParam[BETAV]
              - lambda * (5.0 - 1.0 / (eps2 * tan(x2) * tan(x2)))) / sqrt(rcyl);
     v[VX3] = (sqrt(1.0 - 2.5 * eps2) + (2.0 / 3.0) * eps2
-             * g_inputParam[ALPHAV] * g_inputParam[ALPHAV]
+             * g_inputParam[BETAV] * g_inputParam[BETAV]
              * lambda * (1.0 - 1.2 / (eps2 * tan(x2) * tan(x2)))) / sqrt(rcyl);
-    v[TRC] = 1.0;     /* Disk tracer */
+    v[TRC] = 1.0;     /* Disk tracer - diagnostic only, see file header */
   } else {
     v[PRS] = 0.4 * g_inputParam[RHOC] * pow(x1, -2.5);
-    v[TRC] = 0.0;     /* Corona tracer */
+    v[TRC] = 0.0;     /* Corona tracer - diagnostic only, see file header */
   }
 
   /* -------------------------------------------------------------------
@@ -450,7 +487,7 @@ static int InitDiskCell (double x1, double x2)
  * disk vs corona at problem setup (the same test that used to set
  * v[TRC] = 1.0 vs 0.0). Kept as a single source of truth so DiskFraction()
  * can match the former tracer exactly at t=0 without ever reading TRC
- * (which is slated for removal).
+ * (which is diagnostic-only, see file header).
  *
  * Returns 1 if (x1, x2) is disk by the Init() criterion, 0 otherwise.
  *********************************************************************** */
@@ -470,8 +507,9 @@ static int InitDiskCell (double x1, double x2)
 /* ********************************************************************* */
 double DiskFraction (double *v, double x1, double x2)
 /*!
- * Continuous [0,1] replacement for the true tracer used to gate anomalous
- * viscosity/resistivity to disk material.
+ * Continuous [0,1] disk/corona classifier used to gate anomalous
+ * viscosity, resistivity, AND (see UserDefOpacities()/UserDefOpacitiesAt()
+ * below) opacities to disk material.
  *
  * At t=0 (before UpdateProfiles() has ever run on real simulation data),
  * this returns exactly 0.0 or 1.0 according to InitDiskCell(), i.e. it
@@ -546,6 +584,7 @@ double DiskFraction (double *v, double x1, double x2)
 /* ********************************************************************* */
 void InitDomain (Data *d, Grid *grid)
 {
+  g_radGrid = grid;   /* [ADDED] needed by UserDefOpacities() below */
   InitProfiles(grid);
 }
 
@@ -642,7 +681,7 @@ void UserDefBoundary (const Data *d, RBox *box, int side, Grid *grid)
         d->Vc[VX2][k][j][i] *= dfact;
         d->Vc[VX3][k][j][i] *= dfact;
 
-        /* Reset coronal tracer */
+        /* Reset coronal tracer (diagnostic only, see file header) */
         if (x2[j] < 0.5 * CONST_PI - atan(3.0 * g_inputParam[EPS]) ||
             x2[j] > 0.5 * CONST_PI + atan(3.0 * g_inputParam[EPS])) {
           d->Vc[TRC][k][j][i] = 0.0;
@@ -774,7 +813,7 @@ void UserDefBoundary (const Data *d, RBox *box, int side, Grid *grid)
         eps2   = g_inputParam[EPS] * g_inputParam[EPS];
         coeff  = (g_gamma - 1.0) / g_gamma / eps2 * (1.0 / x1[i] - (1.0 - eps2 * g_gamma / (g_gamma - 1.0)) / rcyl);
         coeff  = MAX(coeff, 0.0);
-        lambda = 2.2 / (1.0 + 2.56 * g_inputParam[ALPHAV] * g_inputParam[ALPHAV]);
+        lambda = 2.2 / (1.0 + 2.56 * g_inputParam[BETAV] * g_inputParam[BETAV]);
 
         if (x2[j] >= 0.5 * CONST_PI - atan(1.25 * g_inputParam[EPS]) &&
             x2[j] <= 0.5 * CONST_PI + atan(1.25 * g_inputParam[EPS])) {
@@ -786,12 +825,12 @@ void UserDefBoundary (const Data *d, RBox *box, int side, Grid *grid)
             d->Vc[PRS][k][j][i] = eps2 * pow(coeff, g_gamma / (g_gamma - 1.0));
           }  
 
-          d->Vc[VX1][k][j][i] = -g_inputParam[ALPHAV] / sin(x2[j]) * eps2
-            * (10.0 - (32.0 / 3.0) * lambda * g_inputParam[ALPHAV] * g_inputParam[ALPHAV]
+          d->Vc[VX1][k][j][i] = -g_inputParam[BETAV] / sin(x2[j]) * eps2
+            * (10.0 - (32.0 / 3.0) * lambda * g_inputParam[BETAV] * g_inputParam[BETAV]
             - lambda * (5.0 - 1.0 / (eps2 * tan(x2[j]) * tan(x2[j])))) / sqrt(rcyl);
 
           d->Vc[VX3][k][j][i] = (sqrt(1.0 - 2.5 * eps2) + (2.0 / 3.0) * eps2
-            * g_inputParam[ALPHAV] * g_inputParam[ALPHAV]
+            * g_inputParam[BETAV] * g_inputParam[BETAV]
             * lambda * (1.0 - 1.2 / (eps2 * tan(x2[j]) * tan(x2[j])))) / sqrt(rcyl);
         }
 
@@ -813,6 +852,12 @@ void UserDefBoundary (const Data *d, RBox *box, int side, Grid *grid)
 void BodyForceVector(double *v, double *g, double x1, double x2, double x3)
 /*!
  * Radial acceleration vector for point-mass central potential.
+ *
+ * NOTE: this implements the Newtonian -1/r^2 force only. It is currently
+ * unused while BODY_FORCE == POTENTIAL (BodyForcePotential() below is the
+ * active potential and implements Paczynski-Wiita). If BODY_FORCE is ever
+ * switched to VECTOR, this function would need to be updated to match
+ * -d/dr[-1/(r-2)] rather than silently reverting to Newtonian gravity.
  *********************************************************************** */
 {
   g[IDIR] = -1.0 / (x1 * x1);
@@ -825,6 +870,9 @@ double BodyForcePotential(double x1, double x2, double x3)
 /*!
  * Central gravitational potential options.
  * Select regime in definitions.h: #define BODY_FORCE POTENTIAL
+ *
+ * Active option: Paczynski-Wiita, singularity at x1 = 2 (i.e. r = 2 r_g =
+ * r_s, the Schwarzschild radius), consistent with UNIT_LENGTH = r_g.
  *********************************************************************** */
 {
   /* ccm -- Select active potential: */
@@ -864,16 +912,59 @@ double BodyForcePotential(double x1, double x2, double x3)
     const double K_ES = 1;//0.2  * (1.0 + X);
 
 
-void UserDefOpacities(double *v, double *abs, double *scat){
+/* ********************************************************************* */
+void UserDefOpacitiesAt(double *v, double x1, double x2, double *abs, double *scat)
+/*!
+ * Core opacity evaluation, taking x1, x2 explicitly. Called from two
+ * places:
+ *   1. UserDefOpacities() below, which is the fixed-signature entry point
+ *      the radiation module calls from rad_step.c; it supplies x1, x2 via
+ *      the g_i_rad / g_j globals.
+ *   2. userdef_output.c's diagnostic loop directly, with its own loop's
+ *      real (x1[i], x2[j]) - NOT via the globals, which would be stale
+ *      there (left over from whichever cell the last radiation implicit
+ *      step visited, not the cell the diagnostic loop is currently on).
+ *
+ * Opacities are gated by DiskFraction(v, x1, x2), the same continuous
+ * disk/corona classifier used for viscosity and resistivity, in place of
+ * the previous independent hard-cut condition on v[] (and no longer
+ * reads v[TRC], which is diagnostic-only - see file header).
+ *********************************************************************** */
+{
     double rho = v[RHO];
     double T   = GetTemperature(v[RHO], v[PRS]);
+    double f;
 
-    double kappa_es   = K_ES * v[TRC];                                        // cm^2/g
-    double kappa_ffbf = (K_BF + K_FF) * rho * pow(T, -3.5) ;          // cm^2/g
+    double kappa_es   = K_ES;                        /* cm^2/g; previously
+                                    pre-multiplied by v[TRC] - f (below)
+                                    now plays that role instead */
+    double kappa_ffbf = (K_BF + K_FF) * rho * pow(T, -3.5) ;  // cm^2/g
 
-    double fact=(v[VX3]>0.05 && v[RHO]>1e-4 && GetTemperature(v[RHO],v[PRS])<0.001) ? 1 : 0;
+    f = DiskFraction(v, x1, x2);
 
-    *scat = fact * rho * kappa_es;        // Thomson scattering only
-    *abs  = fact * rho * kappa_ffbf;      // free-free + bound-free true absorption
+    /* NOTE: verify against your original K_ES calibration - the previous
+       form was *scat = fact*rho*(K_ES*v[TRC]), a hard 0/1 gate; this is
+       now f*rho*K_ES with f continuous in [0,1]. If K_ES's numerical
+       value was tuned assuming the old hard-cut form, its effective
+       normalization may need revisiting now that the gate is smooth. */
+    *scat = f * rho * kappa_es;        // Thomson scattering only
+    *abs  = f * rho * kappa_ffbf;      // free-free + bound-free true absorption
+}
+
+/* ********************************************************************* */
+void UserDefOpacities(double *v, double *abs, double *scat)
+/*!
+ * Fixed-signature entry point required by radiation.h / called from the
+ * radiation module's implicit step (rad_step.c). Supplies x1, x2 via
+ * g_i_rad (set by the locally-patched rad_step.c immediately before this
+ * call, inside RadImplicitNR()'s per-cell loop) and g_j (PLUTO's own
+ * global, already valid at that point - see globals.h). See
+ * UserDefOpacitiesAt() above for the actual opacity evaluation.
+ *********************************************************************** */
+{
+    double x1 = g_radGrid->x[IDIR][g_i_rad];
+    double x2 = g_radGrid->x[JDIR][g_j];
+
+    UserDefOpacitiesAt(v, x1, x2, abs, scat);
 }
 #endif /* RADIATION_VAR_OPACITIES */
