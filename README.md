@@ -150,3 +150,5 @@ To keep up with the demanding volume of coding tasks today, I bow to the rule of
 7. After making altering the configuration, load the changes:
 
    <pre>docker compose restart api</pre>
+
+8. Finally, go to [localhost:3080](http://localhost:3080/c/new) for starting a new chat.
