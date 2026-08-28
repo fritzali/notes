@@ -64,31 +64,9 @@
 static double g_rBinEdgesLog[NBINS_PROFILE + 1];
 static double g_rhoCoronaProfile[NBINS_PROFILE];
 static double g_rhoDiskProfile[NBINS_PROFILE];
-static double g_vphiDiskProfile[NBINS_PROFILE];   /* temporally smoothed,
-                                                      disk-weighted average
-                                                      |v_phi| per radial bin -
-                                                      the "what does disk
-                                                      rotation actually look
-                                                      like at radius r"
-                                                      companion to
-                                                      g_rhoDiskProfile, used
-                                                      by DiskFraction()'s
-                                                      rotation sigmoid so it
-                                                      is measured against the
-                                                      real (sub-Keplerian,
-                                                      ISCO-plunging) disk
-                                                      profile instead of an
-                                                      idealized v_kep. */
 static int    g_diskProfileValid[NBINS_PROFILE];  /* has bin b ever seen a
                                                       meaningful amount of
-                                                      real disk material?
-                                                      shared validity flag
-                                                      for both g_rhoDiskProfile
-                                                      and g_vphiDiskProfile,
-                                                      since both are only
-                                                      ever updated together
-                                                      from the same disk-
-                                                      weighted cell set. */
+                                                      real disk material? */
 static int    g_profilesInit = 0;
 static int    g_profilesLive = 0;  /* has UpdateProfiles() run at least once
                                       on real simulation data? Until then,
@@ -152,19 +130,6 @@ static double GetDiskRefDensity (double x1)
 }
  
 /* ********************************************************************* */
-static double GetDiskRefVphi (double x1)
-/*!
- * Interpolated disk reference |v_phi| at input radius. Same log-log
- * interpolation as the density profiles (v_phi is well-approximated by a
- * power law in r away from ISCO, so log-log interpolation is consistent
- * with the treatment of both density profiles rather than a bespoke
- * linear one).
- *********************************************************************** */
-{
-  return InterpLogProfile(g_vphiDiskProfile, x1);
-}
- 
-/* ********************************************************************* */
 static double AnalyticCoronaDensity (double r)
 /*!
  * Static analytic corona density profile (RHOC*r^-1.5), used to seed the
@@ -192,93 +157,19 @@ static double AnalyticDiskDensity (double r)
 }
  
 /* ********************************************************************* */
-static double BinCenterRadius (int b)
-/*!
- * Physical radius at the center of log-radial bin b.
- *********************************************************************** */
-{
-  double lc = 0.5 * (g_rBinEdgesLog[b] + g_rBinEdgesLog[b + 1]);
-  return pow(10.0, lc);
-}
- 
-/* ********************************************************************* */
-static double LocalDiskDensitySlope (int src)
-/*!
- * Local power-law slope d(log rho_disk)/d(log r) of the CURRENT
- * g_rhoDiskProfile, estimated from the two nearest valid bins straddling
- * (or adjacent to) src, for use in rescaling a borrowed disk density from
- * r_src to a different target radius. Falls back to the analytic
- * Keplerian-disk midplane slope (-3/2, matching AnalyticDiskDensity's
- * coeff^1.5 ~ r^-1.5 far from RD) if no second valid neighbor is
- * available to differentiate against.
- *********************************************************************** */
-{
-  int bb, nb;
-  double r_src, r_nb, slope;
- 
-  r_src = BinCenterRadius(src);
- 
-  /* Prefer a valid neighbor on the outward side of src (same side the
-     nearest-valid search draws from most often), then inward. */
-  nb = -1;
-  for (bb = src + 1; bb < NBINS_PROFILE; bb++) {
-    if (g_diskProfileValid[bb]) { nb = bb; break; }
-  }
-  if (nb < 0) {
-    for (bb = src - 1; bb >= 0; bb--) {
-      if (g_diskProfileValid[bb]) { nb = bb; break; }
-    }
-  }
- 
-  if (nb < 0) return -1.5;  /* only one valid bin exists anywhere; no
-                                local slope measurable, use analytic
-                                Keplerian-disk fallback */
- 
-  r_nb = BinCenterRadius(nb);
-  if (fabs(log10(r_nb) - log10(r_src)) < 1.e-12) return -1.5;
- 
-  slope = (log10(MAX(g_rhoDiskProfile[nb], 1.e-30))
-          - log10(MAX(g_rhoDiskProfile[src], 1.e-30)))
-        / (log10(r_nb) - log10(r_src));
- 
-  return slope;
-}
- 
-/* ********************************************************************* */
 static void PatchUnvalidatedDiskBins (void)
 /*!
  * Fill any bin that has never seen a meaningful amount of real disk
- * material (g_diskProfileValid[b] == 0) for BOTH the disk density and
- * disk v_phi profiles, using the nearest already-validated bin as the
- * source. Searches outward (increasing r) first, since real disk
- * material first appears from larger radii and spreads/settles inward
- * (e.g. after ISCO truncation at t=0), falling back to an inward search
- * if nothing outward is valid either. Leaves both profiles' placeholder
- * values untouched only if no bin anywhere is validated yet (before any
- * disk material exists at all).
- *
- * DENSITY: rather than a flat copy of g_rhoDiskProfile[src] (which
- * silently mismatches the radius of the borrowed value against the
- * target bin's radius, distorting the density-sigmoid's log_span against
- * the always-local corona reference), rescale the borrowed value from
- * r_src to the target bin's radius using the local disk-profile slope
- * (see LocalDiskDensitySlope()) - i.e. treat the source bin's density as
- * a local power law and extrapolate it inward/outward to r_b instead of
- * holding it constant.
- *
- * V_PHI: a flat copy is not physically appropriate even as an
- * approximation, since real disk rotation should keep decreasing toward
- * smaller r as gas loses rotational support in the plunging region
- * inside ISCO (roughly conserved specific angular momentum there, so
- * v_phi ~ 1/r rather than ~ constant or ~ r^-1/2). Apply that same
- * source-bin-relative 1/r decay when patching inward (b's radius smaller
- * than the source bin's), and a flat copy when patching outward (b's
- * radius larger than the source bin's) - the profile there is being
- * seeded ahead of real data reaching it, not decaying into a horizon.
+ * material (g_diskProfileValid[b] == 0) by copying the nearest already
+ * validated bin's current g_rhoDiskProfile value. Searches outward
+ * (increasing r) first, since real disk material first appears from
+ * larger radii and spreads/settles inward (e.g. after ISCO truncation
+ * at t=0), falling back to an inward search if nothing outward is valid
+ * either. Leaves the bin's placeholder value untouched only if no bin
+ * anywhere is validated yet (before any disk material exists at all).
  *********************************************************************** */
 {
   int b, bb, src;
-  double r_b, r_src, slope, ratio;
  
   for (b = 0; b < NBINS_PROFILE; b++) {
     if (g_diskProfileValid[b]) continue;
@@ -292,23 +183,7 @@ static void PatchUnvalidatedDiskBins (void)
         if (g_diskProfileValid[bb]) { src = bb; break; }
       }
     }
-    if (src < 0) continue;  /* nothing valid anywhere yet */
- 
-    r_b   = BinCenterRadius(b);
-    r_src = BinCenterRadius(src);
- 
-    /* -- Density: power-law rescale from r_src to r_b -- */
-    slope = LocalDiskDensitySlope(src);
-    g_rhoDiskProfile[b] = g_rhoDiskProfile[src] * pow(r_b / r_src, slope);
- 
-    /* -- V_phi: 1/r decay only when extrapolating inward of the source
-          bin (the plunging-region case); flat copy outward -- */
-    if (r_b < r_src) {
-      ratio = r_b / r_src;
-      g_vphiDiskProfile[b] = g_vphiDiskProfile[src] * ratio;  /* ~1/r decay */
-    } else {
-      g_vphiDiskProfile[b] = g_vphiDiskProfile[src];
-    }
+    if (src >= 0) g_rhoDiskProfile[b] = g_rhoDiskProfile[src];
   }
 }
  
@@ -354,19 +229,9 @@ void InitProfiles (Grid *grid)
     if (r > g_inputParam[RD]) {
       g_rhoDiskProfile[b]   = AnalyticDiskDensity(r);
       if (g_rhoDiskProfile[b] <= 0.0) g_rhoDiskProfile[b] = g_rhoCoronaProfile[b];
-      g_vphiDiskProfile[b]  = 1.0 / sqrt(r);  /* analytic Keplerian midplane
-                                                  v_phi seed, same
-                                                  Newtonian form used
-                                                  elsewhere as a t=0
-                                                  placeholder; corrected
-                                                  toward the real
-                                                  sub-Keplerian value as
-                                                  soon as UpdateProfiles()
-                                                  runs on live data */
       g_diskProfileValid[b] = 1;
     } else {
       g_rhoDiskProfile[b]   = g_rhoCoronaProfile[b];  /* placeholder only */
-      g_vphiDiskProfile[b]  = 1.0 / sqrt(r);           /* placeholder only */
       g_diskProfileValid[b] = 0;
     }
   }
@@ -403,7 +268,6 @@ void UpdateProfiles (const Data *d, Grid *grid)
   static double sumC_glob[NBINS_PROFILE], volC_glob[NBINS_PROFILE];
   static double sumD_loc[NBINS_PROFILE], volD_loc[NBINS_PROFILE];
   static double sumD_glob[NBINS_PROFILE], volD_glob[NBINS_PROFILE];
-  static double sumVphiD_loc[NBINS_PROFILE], sumVphiD_glob[NBINS_PROFILE];
   static double volTot_loc[NBINS_PROFILE], volTot_glob[NBINS_PROFILE];
  
   int    i, j, k, b;
@@ -415,7 +279,6 @@ void UpdateProfiles (const Data *d, Grid *grid)
   for (b = 0; b < NBINS_PROFILE; b++) {
     sumC_loc[b] = volC_loc[b] = 0.0;
     sumD_loc[b] = volD_loc[b] = 0.0;
-    sumVphiD_loc[b] = 0.0;
     volTot_loc[b] = 0.0;
   }
  
@@ -442,14 +305,6 @@ void UpdateProfiles (const Data *d, Grid *grid)
     sumD_loc[b] += wd * vi[RHO] * dV;
     volD_loc[b] += wd * dV;
  
-    sumVphiD_loc[b] += wd * fabs(vi[VX3]) * dV;  /* disk-weighted |v_phi|,
-                                                     same wd weighting/dV
-                                                     as the disk density
-                                                     accumulator so both
-                                                     profiles are built
-                                                     from the identical
-                                                     cell set */
- 
     volTot_loc[b] += dV;
   }
  
@@ -458,13 +313,11 @@ void UpdateProfiles (const Data *d, Grid *grid)
   MPI_Allreduce(volC_loc, volC_glob, NBINS_PROFILE, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
   MPI_Allreduce(sumD_loc, sumD_glob, NBINS_PROFILE, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
   MPI_Allreduce(volD_loc, volD_glob, NBINS_PROFILE, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
-  MPI_Allreduce(sumVphiD_loc, sumVphiD_glob, NBINS_PROFILE, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
   MPI_Allreduce(volTot_loc, volTot_glob, NBINS_PROFILE, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
 #else
   for (b = 0; b < NBINS_PROFILE; b++) {
     sumC_glob[b] = sumC_loc[b]; volC_glob[b] = volC_loc[b];
     sumD_glob[b] = sumD_loc[b]; volD_glob[b] = volD_loc[b];
-    sumVphiD_glob[b] = sumVphiD_loc[b];
     volTot_glob[b] = volTot_loc[b];
   }
 #endif
@@ -493,20 +346,9 @@ void UpdateProfiles (const Data *d, Grid *grid)
                    && (volD_glob[b] > DISK_BIN_VOLFRAC_MIN * volTot_glob[b]);
  
     if (meaningful) {
-      double new_val     = sumD_glob[b] / volD_glob[b];
-      double new_val_vphi = sumVphiD_glob[b] / volD_glob[b];  /* same
-                                                                  wd-weighted
-                                                                  volume
-                                                                  denominator
-                                                                  as density,
-                                                                  since both
-                                                                  sums share
-                                                                  the wd*dV
-                                                                  weighting */
+      double new_val = sumD_glob[b] / volD_glob[b];
       g_rhoDiskProfile[b] = CORONA_EMA_ALPHA * new_val
                            + (1.0 - CORONA_EMA_ALPHA) * g_rhoDiskProfile[b];
-      g_vphiDiskProfile[b] = CORONA_EMA_ALPHA * new_val_vphi
-                           + (1.0 - CORONA_EMA_ALPHA) * g_vphiDiskProfile[b];
       g_diskProfileValid[b] = 1;
     }
   }
@@ -680,31 +522,11 @@ double DiskFraction (double *v, double x1, double x2)
 
   /* --- 2. ROTATION SIGMOID --- */
   rcyl  = x1 * sin(x2);
-
-  /* Reference rotation is now the disk's OWN measured |v_phi| profile
-     (g_vphiDiskProfile, tracked/patched alongside the density profile -
-     see UpdateProfiles() / PatchUnvalidatedDiskBins()) rather than an
-     idealized Newtonian or Paczynski-Wiita v_kep. This compares "is this
-     cell rotating like disk gas actually rotates at this radius" instead
-     of against a value the disk itself never reaches (Kluzniak-Kita disk
-     is sub-Keplerian by construction) or that diverges/mismatches
-     coordinate conventions inside ISCO (PW case). Falls back to the
-     analytic Keplerian estimate only in the pre-live-profile guard case
-     above (g_profilesLive == 0 returns early via InitDiskCell() and
-     never reaches this code), and to the restart-safety branch's
-     AnalyticDiskDensity-style seed otherwise via GetDiskRefVphi's
-     underlying seeded/patched profile. */
-  if (!g_profilesInit) {
-    v_kep = 1.0 / sqrt(MAX(rcyl, 1.e-12));  /* restart-safety fallback only */
-  } else {
-    v_kep = GetDiskRefVphi(x1);
-  }
-
-  /* Measure absolute rotation fraction against the disk's own reference
-     rotation at this radius, evaluated at spherical x1 (matching how
-     g_vphiDiskProfile is binned/interpolated in InterpLogProfile, which
-     bins by x1 = grid->x[IDIR] in UpdateProfiles()) rather than rcyl. */
-  rot_frac = fabs(v[VX3]) / MAX(v_kep, 1.e-30);
+  /* Ideal Newtonian Keplerian velocity matching the 1/sqrt(rcyl) injection setup */
+  v_kep = 1.0 / sqrt(MAX(rcyl, 1.e-12)); 
+  
+  /* Measure absolute rotation fraction against Keplerian */
+  rot_frac = fabs(v[VX3]) / v_kep;
   
   arg_rot = (rot_frac - ROTATION_THRESH_FAC) / ROTATION_SIGMOID_WIDTH;
   arg_rot = MIN(MAX(arg_rot, -50.0), 50.0);

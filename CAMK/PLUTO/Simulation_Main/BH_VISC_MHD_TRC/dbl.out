@@ -1,201 +1,201 @@
-0 0.000000e+00 1.000000e-06 0 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 nu num Te diskfrac 
-1 4.997791e+00 8.841219e-03 605 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 nu num Te diskfrac 
-2 9.994737e+00 8.518588e-03 1174 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 nu num Te diskfrac 
-3 1.499584e+01 8.342315e-03 1773 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 nu num Te diskfrac 
-4 1.999921e+01 8.335756e-03 2373 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 nu num Te diskfrac 
-5 2.499970e+01 8.332215e-03 2973 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 nu num Te diskfrac 
-6 2.999766e+01 8.326926e-03 3573 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 nu num Te diskfrac 
-7 3.499986e+01 8.323495e-03 4174 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 nu num Te diskfrac 
-8 3.999461e+01 8.366034e-03 4773 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 nu num Te diskfrac 
-9 4.499285e+01 8.377144e-03 5370 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 nu num Te diskfrac 
-10 4.999608e+01 8.386492e-03 5967 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 nu num Te diskfrac 
-11 5.499861e+01 8.401262e-03 6563 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 nu num Te diskfrac 
-12 5.999238e+01 8.409085e-03 7157 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 nu num Te diskfrac 
-13 6.499498e+01 8.405532e-03 7752 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 nu num Te diskfrac 
-14 6.999482e+01 8.400915e-03 8347 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 nu num Te diskfrac 
-15 7.499171e+01 8.394472e-03 8942 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 nu num Te diskfrac 
-16 7.999193e+01 8.384600e-03 9538 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 nu num Te diskfrac 
-17 8.499509e+01 8.376988e-03 10135 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 nu num Te diskfrac 
-18 8.999401e+01 8.369181e-03 10732 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 nu num Te diskfrac 
-19 9.499566e+01 8.359761e-03 11330 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 nu num Te diskfrac 
-20 9.999321e+01 8.354685e-03 11928 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 nu num Te diskfrac 
-21 1.049968e+02 8.351457e-03 12527 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 nu num Te diskfrac 
-22 1.099978e+02 8.347541e-03 13126 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 nu num Te diskfrac 
-23 1.149982e+02 8.349487e-03 13725 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 nu num Te diskfrac 
-24 1.199983e+02 8.346708e-03 14324 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 nu num Te diskfrac 
-25 1.249988e+02 8.347643e-03 14923 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 nu num Te diskfrac 
-26 1.299993e+02 8.348182e-03 15522 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 nu num Te diskfrac 
-27 1.349986e+02 8.344038e-03 16121 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 nu num Te diskfrac 
-28 1.399947e+02 8.336131e-03 16720 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 nu num Te diskfrac 
-29 1.449940e+02 8.326201e-03 17320 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 nu num Te diskfrac 
-30 1.499960e+02 8.319421e-03 17921 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 nu num Te diskfrac 
-31 1.549921e+02 8.307101e-03 18522 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 nu num Te diskfrac 
-32 1.599974e+02 8.293772e-03 19125 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 nu num Te diskfrac 
-33 1.649941e+02 8.278108e-03 19728 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 nu num Te diskfrac 
-34 1.699971e+02 8.261087e-03 20333 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 nu num Te diskfrac 
-35 1.749984e+02 8.245969e-03 20939 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 nu num Te diskfrac 
-36 1.799983e+02 8.228515e-03 21546 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 nu num Te diskfrac 
-37 1.849982e+02 8.219957e-03 22154 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 nu num Te diskfrac 
-38 1.899935e+02 8.212795e-03 22762 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 nu num Te diskfrac 
-39 1.949954e+02 8.211905e-03 23371 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 nu num Te diskfrac 
-40 1.999951e+02 8.204558e-03 23980 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 nu num Te diskfrac 
-41 2.049959e+02 8.190977e-03 24590 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 nu num Te diskfrac 
-42 2.099940e+02 8.168140e-03 25201 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 nu num Te diskfrac 
-43 2.149922e+02 8.134531e-03 25814 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 nu num Te diskfrac 
-44 2.199971e+02 8.089172e-03 26431 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 nu num Te diskfrac 
-45 2.249924e+02 8.128110e-03 27049 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 nu num Te diskfrac 
-46 2.299974e+02 8.195207e-03 27661 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 nu num Te diskfrac 
-47 2.349952e+02 8.231967e-03 28269 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 nu num Te diskfrac 
-48 2.399954e+02 8.246267e-03 28876 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 nu num Te diskfrac 
-49 2.449948e+02 8.250287e-03 29482 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 nu num Te diskfrac 
-50 2.499961e+02 8.254040e-03 30088 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 nu num Te diskfrac 
-51 2.549973e+02 8.251728e-03 30694 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 nu num Te diskfrac 
-52 2.599969e+02 8.248407e-03 31300 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 nu num Te diskfrac 
-53 2.649939e+02 8.243368e-03 31906 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 nu num Te diskfrac 
-54 2.699960e+02 8.237206e-03 32513 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 nu num Te diskfrac 
-55 2.749945e+02 8.231079e-03 33120 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 nu num Te diskfrac 
-56 2.799974e+02 8.224801e-03 33728 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 nu num Te diskfrac 
-57 2.849965e+02 8.219430e-03 34336 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 nu num Te diskfrac 
-58 2.899998e+02 8.213059e-03 34945 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 nu num Te diskfrac 
-59 2.949996e+02 8.205406e-03 35554 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 nu num Te diskfrac 
-60 2.999952e+02 8.200429e-03 36163 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 nu num Te diskfrac 
-61 3.049944e+02 8.190756e-03 36773 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 nu num Te diskfrac 
-62 3.099974e+02 8.184492e-03 37384 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 nu num Te diskfrac 
-63 3.149951e+02 8.175526e-03 37995 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 nu num Te diskfrac 
-64 3.199964e+02 8.166382e-03 38607 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 nu num Te diskfrac 
-65 3.249920e+02 8.157968e-03 39219 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 nu num Te diskfrac 
-66 3.299992e+02 8.151295e-03 39833 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 nu num Te diskfrac 
-67 3.349926e+02 8.141200e-03 40446 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 nu num Te diskfrac 
-68 3.399961e+02 8.131718e-03 41061 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 nu num Te diskfrac 
-69 3.449946e+02 8.124250e-03 41676 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 nu num Te diskfrac 
-70 3.499961e+02 8.113454e-03 42292 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 nu num Te diskfrac 
-71 3.549994e+02 8.103714e-03 42909 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 nu num Te diskfrac 
-72 3.599966e+02 8.094551e-03 43526 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 nu num Te diskfrac 
-73 3.649964e+02 8.086619e-03 44144 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 nu num Te diskfrac 
-74 3.699992e+02 8.075908e-03 44763 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 nu num Te diskfrac 
-75 3.749944e+02 8.062999e-03 45382 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 nu num Te diskfrac 
-76 3.799977e+02 8.051374e-03 46003 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 nu num Te diskfrac 
-77 3.849944e+02 8.041100e-03 46624 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 nu num Te diskfrac 
-78 3.899963e+02 8.014082e-03 47247 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 nu num Te diskfrac 
-79 3.949924e+02 7.974243e-03 47872 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 nu num Te diskfrac 
-80 3.999948e+02 7.926481e-03 48501 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 nu num Te diskfrac 
-81 4.049931e+02 7.868020e-03 49134 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 nu num Te diskfrac 
-82 4.099985e+02 7.826199e-03 49772 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 nu num Te diskfrac 
-83 4.149958e+02 7.788670e-03 50412 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 nu num Te diskfrac 
-84 4.199981e+02 7.744671e-03 51056 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 nu num Te diskfrac 
-85 4.249927e+02 7.693786e-03 51703 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 nu num Te diskfrac 
-86 4.299986e+02 7.636951e-03 52356 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 nu num Te diskfrac 
-87 4.349957e+02 7.574978e-03 53013 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 nu num Te diskfrac 
-88 4.399991e+02 7.519665e-03 53676 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 nu num Te diskfrac 
-89 4.449973e+02 7.467757e-03 54343 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 nu num Te diskfrac 
-90 4.499988e+02 7.417777e-03 55015 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 nu num Te diskfrac 
-91 4.549964e+02 7.367839e-03 55691 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 nu num Te diskfrac 
-92 4.599968e+02 7.317728e-03 56372 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 nu num Te diskfrac 
-93 4.649928e+02 7.268762e-03 57057 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 nu num Te diskfrac 
-94 4.699981e+02 7.219131e-03 57748 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 nu num Te diskfrac 
-95 4.749992e+02 7.173162e-03 58443 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 nu num Te diskfrac 
-96 4.799982e+02 7.129827e-03 59142 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 nu num Te diskfrac 
-97 4.849952e+02 7.087005e-03 59845 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 nu num Te diskfrac 
-98 4.899987e+02 7.046733e-03 60553 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 nu num Te diskfrac 
-99 4.949949e+02 7.007734e-03 61264 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 nu num Te diskfrac 
-100 4.999994e+02 6.971983e-03 61980 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 nu num Te diskfrac 
-101 5.049932e+02 6.938261e-03 62698 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 nu num Te diskfrac 
-102 5.099972e+02 6.903873e-03 63421 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 nu num Te diskfrac 
-103 5.149967e+02 6.868817e-03 64147 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 nu num Te diskfrac 
-104 5.199979e+02 6.832805e-03 64877 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 nu num Te diskfrac 
-105 5.249992e+02 6.794409e-03 65611 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 nu num Te diskfrac 
-106 5.299977e+02 6.751343e-03 66349 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 nu num Te diskfrac 
-107 5.349983e+02 6.710373e-03 67092 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 nu num Te diskfrac 
-108 5.399977e+02 6.676253e-03 67839 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 nu num Te diskfrac 
-109 5.449947e+02 6.650600e-03 68589 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 nu num Te diskfrac 
-110 5.499964e+02 6.635536e-03 69342 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 nu num Te diskfrac 
-111 5.549958e+02 6.626162e-03 70096 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 nu num Te diskfrac 
-112 5.599958e+02 6.618619e-03 70851 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 nu num Te diskfrac 
-113 5.649962e+02 6.609616e-03 71607 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 nu num Te diskfrac 
-114 5.699951e+02 6.597266e-03 72364 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 nu num Te diskfrac 
-115 5.749969e+02 6.581534e-03 73123 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 nu num Te diskfrac 
-116 5.799982e+02 6.562283e-03 73884 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 nu num Te diskfrac 
-117 5.849957e+02 6.560012e-03 74646 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 nu num Te diskfrac 
-118 5.899961e+02 6.609248e-03 75406 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 nu num Te diskfrac 
-119 5.949945e+02 6.645884e-03 76160 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 nu num Te diskfrac 
-120 5.999983e+02 6.607421e-03 76914 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 nu num Te diskfrac 
-121 6.049985e+02 6.543541e-03 77674 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 nu num Te diskfrac 
-122 6.099948e+02 6.494694e-03 78440 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 nu num Te diskfrac 
-123 6.149947e+02 6.452599e-03 79212 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 nu num Te diskfrac 
-124 6.199974e+02 6.409307e-03 79990 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 nu num Te diskfrac 
-125 6.249979e+02 6.374884e-03 80773 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 nu num Te diskfrac 
-126 6.299954e+02 6.349218e-03 81558 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 nu num Te diskfrac 
-127 6.349949e+02 6.312287e-03 82348 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 nu num Te diskfrac 
-128 6.399968e+02 6.448755e-03 83132 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 nu num Te diskfrac 
-129 6.449972e+02 6.569407e-03 83900 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 nu num Te diskfrac 
-130 6.499960e+02 6.670850e-03 84655 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 nu num Te diskfrac 
-131 6.549974e+02 6.698203e-03 85401 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 nu num Te diskfrac 
-132 6.599976e+02 6.684509e-03 86149 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 nu num Te diskfrac 
-133 6.649942e+02 6.614845e-03 86902 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 nu num Te diskfrac 
-134 6.699950e+02 6.733220e-03 87652 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 nu num Te diskfrac 
-135 6.749964e+02 6.823204e-03 88390 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 nu num Te diskfrac 
-136 6.799998e+02 6.921665e-03 89118 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 nu num Te diskfrac 
-137 6.849950e+02 7.011168e-03 89835 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 nu num Te diskfrac 
-138 6.899990e+02 7.106796e-03 90544 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 nu num Te diskfrac 
-139 6.949939e+02 7.212840e-03 91242 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 nu num Te diskfrac 
-140 6.999929e+02 7.229618e-03 91934 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 nu num Te diskfrac 
-141 7.049974e+02 7.233204e-03 92626 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 nu num Te diskfrac 
-142 7.099965e+02 7.236896e-03 93317 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 nu num Te diskfrac 
-143 7.149974e+02 7.236842e-03 94008 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 nu num Te diskfrac 
-144 7.199940e+02 7.223543e-03 94699 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 nu num Te diskfrac 
-145 7.249944e+02 7.207006e-03 95392 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 nu num Te diskfrac 
-146 7.299969e+02 7.188005e-03 96087 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 nu num Te diskfrac 
-147 7.349992e+02 7.164123e-03 96784 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 nu num Te diskfrac 
-148 7.399953e+02 7.130635e-03 97483 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 nu num Te diskfrac 
-149 7.449940e+02 7.091764e-03 98186 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 nu num Te diskfrac 
-150 7.499960e+02 7.056429e-03 98893 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 nu num Te diskfrac 
-151 7.549996e+02 7.019352e-03 99604 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 nu num Te diskfrac 
-152 7.599979e+02 6.981175e-03 100318 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 nu num Te diskfrac 
-153 7.649949e+02 6.935796e-03 101036 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 nu num Te diskfrac 
-154 7.699934e+02 6.892046e-03 101759 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 nu num Te diskfrac 
-155 7.749993e+02 6.862641e-03 102487 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 nu num Te diskfrac 
-156 7.799941e+02 6.841459e-03 103216 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 nu num Te diskfrac 
-157 7.849987e+02 6.810922e-03 103949 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 nu num Te diskfrac 
-158 7.899993e+02 6.652775e-03 104692 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 nu num Te diskfrac 
-159 7.949948e+02 6.524798e-03 105450 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 nu num Te diskfrac 
-160 7.999968e+02 6.418698e-03 106224 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 nu num Te diskfrac 
-161 8.049942e+02 6.372352e-03 107005 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 nu num Te diskfrac 
-162 8.099980e+02 6.280504e-03 107795 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 nu num Te diskfrac 
-163 8.149982e+02 6.188463e-03 108600 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 nu num Te diskfrac 
-164 8.199987e+02 6.513989e-03 109378 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 nu num Te diskfrac 
-165 8.249971e+02 6.595352e-03 110142 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 nu num Te diskfrac 
-166 8.299936e+02 6.676953e-03 110894 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 nu num Te diskfrac 
-167 8.349987e+02 6.719003e-03 111641 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 nu num Te diskfrac 
-168 8.399994e+02 6.741205e-03 112384 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 nu num Te diskfrac 
-169 8.449950e+02 6.756922e-03 113124 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 nu num Te diskfrac 
-170 8.499944e+02 6.773996e-03 113863 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 nu num Te diskfrac 
-171 8.549980e+02 6.804812e-03 114600 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 nu num Te diskfrac 
-172 8.599946e+02 6.849885e-03 115332 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 nu num Te diskfrac 
-173 8.649996e+02 6.881416e-03 116061 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 nu num Te diskfrac 
-174 8.699966e+02 6.922419e-03 116785 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 nu num Te diskfrac 
-175 8.749966e+02 6.964292e-03 117505 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 nu num Te diskfrac 
-176 8.799941e+02 6.992621e-03 118221 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 nu num Te diskfrac 
-177 8.849934e+02 7.007793e-03 118935 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 nu num Te diskfrac 
-178 8.899937e+02 6.996632e-03 119649 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 nu num Te diskfrac 
-179 8.949994e+02 6.985001e-03 120365 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 nu num Te diskfrac 
-180 8.999986e+02 6.973384e-03 121081 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 nu num Te diskfrac 
-181 9.049968e+02 6.949865e-03 121799 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 nu num Te diskfrac 
-182 9.099946e+02 6.931468e-03 122519 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 nu num Te diskfrac 
-183 9.149962e+02 6.924396e-03 123241 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 nu num Te diskfrac 
-184 9.199963e+02 6.905697e-03 123964 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 nu num Te diskfrac 
-185 9.249970e+02 6.889984e-03 124689 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 nu num Te diskfrac 
-186 9.299947e+02 6.878961e-03 125415 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 nu num Te diskfrac 
-187 9.349986e+02 6.868015e-03 126143 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 nu num Te diskfrac 
-188 9.399970e+02 6.865131e-03 126871 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 nu num Te diskfrac 
-189 9.449938e+02 6.860242e-03 127599 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 nu num Te diskfrac 
-190 9.499965e+02 6.846613e-03 128329 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 nu num Te diskfrac 
-191 9.549936e+02 6.822311e-03 129060 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 nu num Te diskfrac 
-192 9.599983e+02 6.773919e-03 129796 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 nu num Te diskfrac 
-193 9.649967e+02 6.721395e-03 130537 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 nu num Te diskfrac 
-194 9.699988e+02 6.652677e-03 131285 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 nu num Te diskfrac 
-195 9.749960e+02 6.594130e-03 132039 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 nu num Te diskfrac 
-196 9.799998e+02 6.530632e-03 132801 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 nu num Te diskfrac 
-197 9.849997e+02 6.462565e-03 133570 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 nu num Te diskfrac 
-198 9.899938e+02 6.381143e-03 134347 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 nu num Te diskfrac 
-199 9.949977e+02 6.270518e-03 135137 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 nu num Te diskfrac 
-200 1.000000e+03 2.246745e-03 135948 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 nu num Te diskfrac 
+0 0.000000e+00 1.000000e-06 0 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 Bx1s Bx2s nu num Te diskfrac 
+1 4.995545e+00 8.773908e-03 607 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 Bx1s Bx2s nu num Te diskfrac 
+2 9.994986e+00 8.408422e-03 1184 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 Bx1s Bx2s nu num Te diskfrac 
+3 1.499306e+01 8.171072e-03 1794 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 Bx1s Bx2s nu num Te diskfrac 
+4 1.999995e+01 8.166819e-03 2407 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 Bx1s Bx2s nu num Te diskfrac 
+5 2.499712e+01 8.166261e-03 3019 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 Bx1s Bx2s nu num Te diskfrac 
+6 2.999700e+01 8.172891e-03 3631 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 Bx1s Bx2s nu num Te diskfrac 
+7 3.499950e+01 8.175347e-03 4243 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 Bx1s Bx2s nu num Te diskfrac 
+8 3.999570e+01 8.178668e-03 4854 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 Bx1s Bx2s nu num Te diskfrac 
+9 4.499361e+01 8.180540e-03 5465 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 Bx1s Bx2s nu num Te diskfrac 
+10 4.999992e+01 8.179683e-03 6077 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 Bx1s Bx2s nu num Te diskfrac 
+11 5.499638e+01 8.174791e-03 6688 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 Bx1s Bx2s nu num Te diskfrac 
+12 5.999680e+01 8.165255e-03 7300 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 Bx1s Bx2s nu num Te diskfrac 
+13 6.499845e+01 8.153771e-03 7913 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 Bx1s Bx2s nu num Te diskfrac 
+14 6.999427e+01 8.145651e-03 8526 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 Bx1s Bx2s nu num Te diskfrac 
+15 7.499262e+01 8.134874e-03 9140 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 Bx1s Bx2s nu num Te diskfrac 
+16 7.999224e+01 8.123584e-03 9755 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 Bx1s Bx2s nu num Te diskfrac 
+17 8.499994e+01 8.108060e-03 10372 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 Bx1s Bx2s nu num Te diskfrac 
+18 8.999639e+01 8.087278e-03 10989 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 Bx1s Bx2s nu num Te diskfrac 
+19 9.499481e+01 8.062041e-03 11608 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 Bx1s Bx2s nu num Te diskfrac 
+20 9.999246e+01 8.032400e-03 12229 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 Bx1s Bx2s nu num Te diskfrac 
+21 1.049947e+02 7.999494e-03 12853 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 Bx1s Bx2s nu num Te diskfrac 
+22 1.099993e+02 7.965025e-03 13480 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 Bx1s Bx2s nu num Te diskfrac 
+23 1.149987e+02 7.930411e-03 14109 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 Bx1s Bx2s nu num Te diskfrac 
+24 1.199942e+02 7.903442e-03 14740 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 Bx1s Bx2s nu num Te diskfrac 
+25 1.249973e+02 7.880775e-03 15374 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 Bx1s Bx2s nu num Te diskfrac 
+26 1.299977e+02 7.871288e-03 16009 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 Bx1s Bx2s nu num Te diskfrac 
+27 1.349933e+02 7.863412e-03 16644 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 Bx1s Bx2s nu num Te diskfrac 
+28 1.399932e+02 7.862441e-03 17280 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 Bx1s Bx2s nu num Te diskfrac 
+29 1.449932e+02 7.862718e-03 17916 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 Bx1s Bx2s nu num Te diskfrac 
+30 1.499947e+02 7.865514e-03 18552 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 Bx1s Bx2s nu num Te diskfrac 
+31 1.549977e+02 7.867255e-03 19188 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 Bx1s Bx2s nu num Te diskfrac 
+32 1.599929e+02 7.866827e-03 19823 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 Bx1s Bx2s nu num Te diskfrac 
+33 1.649957e+02 7.866593e-03 20459 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 Bx1s Bx2s nu num Te diskfrac 
+34 1.699977e+02 7.863133e-03 21095 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 Bx1s Bx2s nu num Te diskfrac 
+35 1.749980e+02 7.861000e-03 21731 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 Bx1s Bx2s nu num Te diskfrac 
+36 1.799959e+02 7.847464e-03 22367 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 Bx1s Bx2s nu num Te diskfrac 
+37 1.849963e+02 7.803693e-03 23006 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 Bx1s Bx2s nu num Te diskfrac 
+38 1.899933e+02 7.763983e-03 23648 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 Bx1s Bx2s nu num Te diskfrac 
+39 1.949964e+02 7.725536e-03 24294 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 Bx1s Bx2s nu num Te diskfrac 
+40 1.999924e+02 7.695975e-03 24942 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 Bx1s Bx2s nu num Te diskfrac 
+41 2.049947e+02 7.673483e-03 25593 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 Bx1s Bx2s nu num Te diskfrac 
+42 2.099949e+02 7.663843e-03 26245 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 Bx1s Bx2s nu num Te diskfrac 
+43 2.149995e+02 7.636348e-03 26899 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 Bx1s Bx2s nu num Te diskfrac 
+44 2.199979e+02 7.602493e-03 27555 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 Bx1s Bx2s nu num Te diskfrac 
+45 2.249967e+02 7.568112e-03 28214 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 Bx1s Bx2s nu num Te diskfrac 
+46 2.299954e+02 7.533778e-03 28876 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 Bx1s Bx2s nu num Te diskfrac 
+47 2.349943e+02 7.500593e-03 29541 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 Bx1s Bx2s nu num Te diskfrac 
+48 2.399936e+02 7.468009e-03 30209 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 Bx1s Bx2s nu num Te diskfrac 
+49 2.449950e+02 7.441960e-03 30880 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 Bx1s Bx2s nu num Te diskfrac 
+50 2.499999e+02 7.433925e-03 31553 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 Bx1s Bx2s nu num Te diskfrac 
+51 2.549987e+02 7.434329e-03 32225 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 Bx1s Bx2s nu num Te diskfrac 
+52 2.599945e+02 7.386073e-03 32899 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 Bx1s Bx2s nu num Te diskfrac 
+53 2.649977e+02 7.330468e-03 33579 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 Bx1s Bx2s nu num Te diskfrac 
+54 2.699936e+02 7.277311e-03 34263 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 Bx1s Bx2s nu num Te diskfrac 
+55 2.749948e+02 7.219203e-03 34953 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 Bx1s Bx2s nu num Te diskfrac 
+56 2.799994e+02 7.160855e-03 35649 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 Bx1s Bx2s nu num Te diskfrac 
+57 2.849969e+02 7.096895e-03 36350 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 Bx1s Bx2s nu num Te diskfrac 
+58 2.900000e+02 7.033578e-03 37058 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 Bx1s Bx2s nu num Te diskfrac 
+59 2.949940e+02 6.976393e-03 37771 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 Bx1s Bx2s nu num Te diskfrac 
+60 2.999943e+02 6.914096e-03 38491 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 Bx1s Bx2s nu num Te diskfrac 
+61 3.049979e+02 6.852162e-03 39218 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 Bx1s Bx2s nu num Te diskfrac 
+62 3.099962e+02 6.803921e-03 39950 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 Bx1s Bx2s nu num Te diskfrac 
+63 3.149975e+02 6.755334e-03 40688 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 Bx1s Bx2s nu num Te diskfrac 
+64 3.199941e+02 6.706716e-03 41430 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 Bx1s Bx2s nu num Te diskfrac 
+65 3.249965e+02 6.651597e-03 42179 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 Bx1s Bx2s nu num Te diskfrac 
+66 3.299945e+02 6.590073e-03 42934 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 Bx1s Bx2s nu num Te diskfrac 
+67 3.349950e+02 6.533828e-03 43696 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 Bx1s Bx2s nu num Te diskfrac 
+68 3.399976e+02 6.479204e-03 44465 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 Bx1s Bx2s nu num Te diskfrac 
+69 3.449959e+02 6.416217e-03 45240 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 Bx1s Bx2s nu num Te diskfrac 
+70 3.499986e+02 6.366601e-03 46023 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 Bx1s Bx2s nu num Te diskfrac 
+71 3.549987e+02 6.303675e-03 46812 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 Bx1s Bx2s nu num Te diskfrac 
+72 3.599951e+02 6.233670e-03 47609 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 Bx1s Bx2s nu num Te diskfrac 
+73 3.649971e+02 6.150886e-03 48417 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 Bx1s Bx2s nu num Te diskfrac 
+74 3.699956e+02 6.062738e-03 49236 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 Bx1s Bx2s nu num Te diskfrac 
+75 3.749972e+02 5.973261e-03 50067 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 Bx1s Bx2s nu num Te diskfrac 
+76 3.799999e+02 5.877497e-03 50911 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 Bx1s Bx2s nu num Te diskfrac 
+77 3.849991e+02 5.775864e-03 51769 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 Bx1s Bx2s nu num Te diskfrac 
+78 3.899977e+02 5.723820e-03 52639 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 Bx1s Bx2s nu num Te diskfrac 
+79 3.949944e+02 5.656317e-03 53517 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 Bx1s Bx2s nu num Te diskfrac 
+80 3.999955e+02 5.592560e-03 54406 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 Bx1s Bx2s nu num Te diskfrac 
+81 4.049959e+02 5.543699e-03 55304 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 Bx1s Bx2s nu num Te diskfrac 
+82 4.099984e+02 5.504084e-03 56210 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 Bx1s Bx2s nu num Te diskfrac 
+83 4.149998e+02 5.463783e-03 57122 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 Bx1s Bx2s nu num Te diskfrac 
+84 4.199955e+02 5.441505e-03 58038 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 Bx1s Bx2s nu num Te diskfrac 
+85 4.249980e+02 5.438107e-03 58958 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 Bx1s Bx2s nu num Te diskfrac 
+86 4.299947e+02 5.423468e-03 59877 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 Bx1s Bx2s nu num Te diskfrac 
+87 4.349949e+02 5.396840e-03 60799 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 Bx1s Bx2s nu num Te diskfrac 
+88 4.399989e+02 5.533939e-03 61719 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 Bx1s Bx2s nu num Te diskfrac 
+89 4.449992e+02 5.657361e-03 62629 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 Bx1s Bx2s nu num Te diskfrac 
+90 4.499970e+02 5.525990e-03 63649 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 Bx1s Bx2s nu num Te diskfrac 
+91 4.549977e+02 5.066654e-03 64750 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 Bx1s Bx2s nu num Te diskfrac 
+92 4.599984e+02 2.877913e-03 66011 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 Bx1s Bx2s nu num Te diskfrac 
+93 4.649995e+02 5.542517e-03 67390 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 Bx1s Bx2s nu num Te diskfrac 
+94 4.699975e+02 2.868246e-03 68544 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 Bx1s Bx2s nu num Te diskfrac 
+95 4.749995e+02 2.988865e-03 70201 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 Bx1s Bx2s nu num Te diskfrac 
+96 4.799988e+02 3.212795e-03 71755 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 Bx1s Bx2s nu num Te diskfrac 
+97 4.850000e+02 3.227253e-03 73309 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 Bx1s Bx2s nu num Te diskfrac 
+98 4.899984e+02 4.148882e-03 74630 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 Bx1s Bx2s nu num Te diskfrac 
+99 4.949992e+02 3.631118e-03 75810 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 Bx1s Bx2s nu num Te diskfrac 
+100 4.999988e+02 5.328919e-03 76877 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 Bx1s Bx2s nu num Te diskfrac 
+101 5.049984e+02 5.161627e-03 77826 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 Bx1s Bx2s nu num Te diskfrac 
+102 5.099952e+02 5.161958e-03 78798 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 Bx1s Bx2s nu num Te diskfrac 
+103 5.149997e+02 5.153205e-03 79768 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 Bx1s Bx2s nu num Te diskfrac 
+104 5.199975e+02 5.135617e-03 80740 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 Bx1s Bx2s nu num Te diskfrac 
+105 5.249990e+02 5.183298e-03 81710 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 Bx1s Bx2s nu num Te diskfrac 
+106 5.299964e+02 5.171482e-03 82675 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 Bx1s Bx2s nu num Te diskfrac 
+107 5.349956e+02 5.132945e-03 83658 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 Bx1s Bx2s nu num Te diskfrac 
+108 5.399986e+02 4.903622e-03 84658 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 Bx1s Bx2s nu num Te diskfrac 
+109 5.449986e+02 2.239186e-03 86020 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 Bx1s Bx2s nu num Te diskfrac 
+110 5.499987e+02 1.889198e-03 88184 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 Bx1s Bx2s nu num Te diskfrac 
+111 5.549990e+02 1.914117e-03 90512 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 Bx1s Bx2s nu num Te diskfrac 
+112 5.599996e+02 1.669948e-03 93460 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 Bx1s Bx2s nu num Te diskfrac 
+113 5.649998e+02 2.026493e-03 96179 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 Bx1s Bx2s nu num Te diskfrac 
+114 5.699992e+02 1.695559e-03 98687 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 Bx1s Bx2s nu num Te diskfrac 
+115 5.749986e+02 1.617261e-03 101767 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 Bx1s Bx2s nu num Te diskfrac 
+116 5.800000e+02 1.761987e-03 104769 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 Bx1s Bx2s nu num Te diskfrac 
+117 5.849991e+02 1.915682e-03 107496 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 Bx1s Bx2s nu num Te diskfrac 
+118 5.899986e+02 1.942948e-03 110079 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 Bx1s Bx2s nu num Te diskfrac 
+119 5.949985e+02 1.642140e-03 112934 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 Bx1s Bx2s nu num Te diskfrac 
+120 5.999990e+02 1.621012e-03 116002 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 Bx1s Bx2s nu num Te diskfrac 
+121 6.049987e+02 1.622647e-03 119085 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 Bx1s Bx2s nu num Te diskfrac 
+122 6.099990e+02 1.637282e-03 122157 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 Bx1s Bx2s nu num Te diskfrac 
+123 6.149991e+02 1.650195e-03 125199 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 Bx1s Bx2s nu num Te diskfrac 
+124 6.199999e+02 1.636184e-03 128231 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 Bx1s Bx2s nu num Te diskfrac 
+125 6.249996e+02 1.614875e-03 131307 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 Bx1s Bx2s nu num Te diskfrac 
+126 6.299984e+02 1.595728e-03 134422 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 Bx1s Bx2s nu num Te diskfrac 
+127 6.349985e+02 1.578364e-03 137575 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 Bx1s Bx2s nu num Te diskfrac 
+128 6.399993e+02 1.594374e-03 140733 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 Bx1s Bx2s nu num Te diskfrac 
+129 6.449989e+02 1.610730e-03 143859 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 Bx1s Bx2s nu num Te diskfrac 
+130 6.499996e+02 1.623006e-03 146949 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 Bx1s Bx2s nu num Te diskfrac 
+131 6.549997e+02 1.623206e-03 150029 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 Bx1s Bx2s nu num Te diskfrac 
+132 6.599990e+02 1.621203e-03 153111 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 Bx1s Bx2s nu num Te diskfrac 
+133 6.649997e+02 1.609435e-03 156204 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 Bx1s Bx2s nu num Te diskfrac 
+134 6.699989e+02 1.600854e-03 159320 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 Bx1s Bx2s nu num Te diskfrac 
+135 6.749985e+02 1.603174e-03 162440 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 Bx1s Bx2s nu num Te diskfrac 
+136 6.800000e+02 1.589342e-03 165574 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 Bx1s Bx2s nu num Te diskfrac 
+137 6.849991e+02 1.578557e-03 168732 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 Bx1s Bx2s nu num Te diskfrac 
+138 6.899992e+02 1.576509e-03 171902 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 Bx1s Bx2s nu num Te diskfrac 
+139 6.949987e+02 1.569364e-03 175079 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 Bx1s Bx2s nu num Te diskfrac 
+140 6.999987e+02 1.559961e-03 178275 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 Bx1s Bx2s nu num Te diskfrac 
+141 7.049999e+02 1.488143e-03 181556 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 Bx1s Bx2s nu num Te diskfrac 
+142 7.099987e+02 1.488119e-03 184913 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 Bx1s Bx2s nu num Te diskfrac 
+143 7.149991e+02 1.477808e-03 188284 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 Bx1s Bx2s nu num Te diskfrac 
+144 7.199988e+02 1.449895e-03 191693 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 Bx1s Bx2s nu num Te diskfrac 
+145 7.249988e+02 1.414104e-03 195186 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 Bx1s Bx2s nu num Te diskfrac 
+146 7.299994e+02 1.386389e-03 198760 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 Bx1s Bx2s nu num Te diskfrac 
+147 7.349989e+02 1.362392e-03 202406 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 Bx1s Bx2s nu num Te diskfrac 
+148 7.399988e+02 1.364402e-03 206070 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 Bx1s Bx2s nu num Te diskfrac 
+149 7.449987e+02 1.364045e-03 209736 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 Bx1s Bx2s nu num Te diskfrac 
+150 7.499996e+02 1.379859e-03 213386 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 Bx1s Bx2s nu num Te diskfrac 
+151 7.549994e+02 1.400468e-03 216982 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 Bx1s Bx2s nu num Te diskfrac 
+152 7.599995e+02 1.422222e-03 220525 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 Bx1s Bx2s nu num Te diskfrac 
+153 7.649998e+02 1.440055e-03 224016 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 Bx1s Bx2s nu num Te diskfrac 
+154 7.699997e+02 1.456643e-03 227469 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 Bx1s Bx2s nu num Te diskfrac 
+155 7.749998e+02 1.468137e-03 230887 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 Bx1s Bx2s nu num Te diskfrac 
+156 7.799991e+02 1.475792e-03 234283 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 Bx1s Bx2s nu num Te diskfrac 
+157 7.849988e+02 1.479508e-03 237665 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 Bx1s Bx2s nu num Te diskfrac 
+158 7.899987e+02 1.479619e-03 241044 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 Bx1s Bx2s nu num Te diskfrac 
+159 7.949997e+02 1.478673e-03 244425 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 Bx1s Bx2s nu num Te diskfrac 
+160 7.999987e+02 1.477569e-03 247807 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 Bx1s Bx2s nu num Te diskfrac 
+161 8.049987e+02 1.476612e-03 251192 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 Bx1s Bx2s nu num Te diskfrac 
+162 8.099986e+02 1.475882e-03 254579 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 Bx1s Bx2s nu num Te diskfrac 
+163 8.149994e+02 1.475281e-03 257968 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 Bx1s Bx2s nu num Te diskfrac 
+164 8.199997e+02 1.474772e-03 261358 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 Bx1s Bx2s nu num Te diskfrac 
+165 8.249987e+02 1.474497e-03 264748 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 Bx1s Bx2s nu num Te diskfrac 
+166 8.299995e+02 1.474131e-03 268140 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 Bx1s Bx2s nu num Te diskfrac 
+167 8.349990e+02 1.473550e-03 271532 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 Bx1s Bx2s nu num Te diskfrac 
+168 8.399992e+02 1.473058e-03 274926 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 Bx1s Bx2s nu num Te diskfrac 
+169 8.449999e+02 1.472841e-03 278321 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 Bx1s Bx2s nu num Te diskfrac 
+170 8.499995e+02 1.472359e-03 281716 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 Bx1s Bx2s nu num Te diskfrac 
+171 8.549999e+02 1.471665e-03 285113 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 Bx1s Bx2s nu num Te diskfrac 
+172 8.599996e+02 1.471030e-03 288511 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 Bx1s Bx2s nu num Te diskfrac 
+173 8.649997e+02 1.470170e-03 291911 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 Bx1s Bx2s nu num Te diskfrac 
+174 8.699992e+02 1.468973e-03 295313 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 Bx1s Bx2s nu num Te diskfrac 
+175 8.749987e+02 1.467560e-03 298718 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 Bx1s Bx2s nu num Te diskfrac 
+176 8.799990e+02 1.465975e-03 302127 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 Bx1s Bx2s nu num Te diskfrac 
+177 8.849997e+02 1.464458e-03 305540 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 Bx1s Bx2s nu num Te diskfrac 
+178 8.899998e+02 1.462966e-03 308956 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 Bx1s Bx2s nu num Te diskfrac 
+179 8.949990e+02 1.461401e-03 312375 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 Bx1s Bx2s nu num Te diskfrac 
+180 8.999986e+02 1.459759e-03 315798 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 Bx1s Bx2s nu num Te diskfrac 
+181 9.050000e+02 1.458221e-03 319226 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 Bx1s Bx2s nu num Te diskfrac 
+182 9.099990e+02 1.456678e-03 322656 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 Bx1s Bx2s nu num Te diskfrac 
+183 9.149988e+02 1.455250e-03 326090 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 Bx1s Bx2s nu num Te diskfrac 
+184 9.199996e+02 1.453945e-03 329528 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 Bx1s Bx2s nu num Te diskfrac 
+185 9.249991e+02 1.452753e-03 332968 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 Bx1s Bx2s nu num Te diskfrac 
+186 9.299991e+02 1.451744e-03 336411 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 Bx1s Bx2s nu num Te diskfrac 
+187 9.349990e+02 1.450978e-03 339856 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 Bx1s Bx2s nu num Te diskfrac 
+188 9.399994e+02 1.450373e-03 343303 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 Bx1s Bx2s nu num Te diskfrac 
+189 9.449994e+02 1.449801e-03 346751 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 Bx1s Bx2s nu num Te diskfrac 
+190 9.499987e+02 1.449180e-03 350200 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 Bx1s Bx2s nu num Te diskfrac 
+191 9.549987e+02 1.448516e-03 353651 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 Bx1s Bx2s nu num Te diskfrac 
+192 9.599992e+02 1.447797e-03 357104 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 Bx1s Bx2s nu num Te diskfrac 
+193 9.649986e+02 1.447020e-03 360558 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 Bx1s Bx2s nu num Te diskfrac 
+194 9.699995e+02 1.446204e-03 364015 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 Bx1s Bx2s nu num Te diskfrac 
+195 9.749990e+02 1.445354e-03 367473 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 Bx1s Bx2s nu num Te diskfrac 
+196 9.800000e+02 1.444552e-03 370934 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 Bx1s Bx2s nu num Te diskfrac 
+197 9.849996e+02 1.443695e-03 374396 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 Bx1s Bx2s nu num Te diskfrac 
+198 9.899988e+02 1.442653e-03 377860 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 Bx1s Bx2s nu num Te diskfrac 
+199 9.949986e+02 1.441571e-03 381327 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 Bx1s Bx2s nu num Te diskfrac 
+200 1.000000e+03 1.144407e-03 384798 single_file little rho vx1 vx2 vx3 Bx1 Bx2 Bx3 prs tr1 Bx1s Bx2s nu num Te diskfrac 

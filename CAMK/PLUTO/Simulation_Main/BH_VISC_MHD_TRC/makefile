@@ -83,6 +83,7 @@ OBJ += update_stage.o
 OBJ += parabolic_update.o
 include $(SRC)/MHD/makefile
 include $(SRC)/Viscosity/makefile
+include $(SRC)/MHD/CT/makefile
 include $(SRC)/EOS/Ideal/makefile
 
 # ---------------------------------------------------------

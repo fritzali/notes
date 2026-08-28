@@ -21,8 +21,8 @@
                                            single transient infalling cell
                                            validating an ISCO-side bin) */
 
-#define ROTATION_THRESH_FAC    0.4      /* Midpoint fraction of local Keplerian velocity (e.g. 0.5 means v_phi = 0.5 * v_kep) */
-#define ROTATION_SIGMOID_WIDTH 0.05     /* Transition width for the rotation sigmoid */
+#define ROTATION_THRESH_FAC    0.5      /* Midpoint fraction of local Keplerian velocity (e.g. 0.5 means v_phi = 0.5 * v_kep) */
+#define ROTATION_SIGMOID_WIDTH 0.1     /* Transition width for the rotation sigmoid */
 
 double DiskFraction (double *v, double x1, double x2);
 

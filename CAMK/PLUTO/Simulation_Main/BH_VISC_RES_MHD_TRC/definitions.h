@@ -13,7 +13,7 @@
 
 #define  EOS                            IDEAL
 #define  ENTROPY_SWITCH                 NO
-#define  DIVB_CONTROL                   EIGHT_WAVES
+#define  DIVB_CONTROL                   CONSTRAINED_TRANSPORT
 #define  BACKGROUND_FIELD               NO
 #define  AMBIPOLAR_DIFFUSION            NO
 #define  RESISTIVITY                    EXPLICIT
