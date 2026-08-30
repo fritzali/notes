@@ -85,7 +85,7 @@ static int    g_profilesLive = 0;   /* update has run at least once to match ini
 static double InterpLogProfile (double *profile, double x1)
 /*!
  * Shared linear interpolation in logarithmic density and radius space of
- * a tabulated radial profile at input radius. Used for both the corona
+ * a tabulated radial profile at given radius. Used for both the corona
  * and disk reference profiles. Falls back to clamped edge bins outside
  * the tabulated range, within ghost zones just past the domain edge.
  *********************************************************************** */
@@ -98,9 +98,9 @@ static double InterpLogProfile (double *profile, double x1)
   lmin = g_rBinEdgesLog[0];
   lmax = g_rBinEdgesLog[NBINS_PROFILE];
   dl   = (lmax - lmin) / (double)NBINS_PROFILE;
-  lc0  = lmin + 0.5 * dl;                 /* center of first bin */
+  lc0  = lmin + 0.5 * dl;                 // center of first bin
  
-  s    = (lr - lc0) / dl;                 /* fractional bin coordinate */
+  s    = (lr - lc0) / dl;                 // fractional bin coordinates
   ib0  = (int)floor(s);
   frac = s - ib0;
   ib1  = ib0 + 1;
@@ -136,8 +136,8 @@ static double GetDiskRefDensity (double x1)
 /* ********************************************************************* */
 static double AnalyticCoronaDensity (double r)
 /*!
- * Static analytic corona density profile (RHOC*r^-1.5), used to seed the
- * corona reference profile and as a restart-safety fallback.
+ * Static analytic corona density profile, used to seed the
+ * corona reference profile and as a restart safety fallback.
  *********************************************************************** */
 {
   return g_inputParam[RHOC] * pow(r, -1.5);
@@ -146,9 +146,9 @@ static double AnalyticCoronaDensity (double r)
 /* ********************************************************************* */
 static double AnalyticDiskDensity (double r)
 /*!
- * Midplane (rcyl = r) analytic Keplerian-disk density, same construction
- * as the torus profile in Init(). Used to seed the disk reference profile
- * and as a restart-safety fallback.
+ * Midplane analytic disk density, same construction as the initial
+ * torus profile. Used to seed the disk reference profile and as a
+ * restart safety fallback.
  *********************************************************************** */
 {
   double eps2, coeff;
@@ -164,13 +164,11 @@ static double AnalyticDiskDensity (double r)
 static void PatchUnvalidatedDiskBins (void)
 /*!
  * Fill any bin that has never seen a meaningful amount of real disk
- * material (g_diskProfileValid[b] == 0) by copying the nearest already
- * validated bin's current g_rhoDiskProfile value. Searches outward
- * (increasing r) first, since real disk material first appears from
- * larger radii and spreads/settles inward (e.g. after ISCO truncation
- * at t=0), falling back to an inward search if nothing outward is valid
- * either. Leaves the bin's placeholder value untouched only if no bin
- * anywhere is validated yet (before any disk material exists at all).
+ * material by copying the nearest already validated current density
+ * value. Searches outward first, since real disk material appears
+ * from larger radii and settles inward, falling back to an inward
+ * search if nothing outward is valid either. Leaves the bin placeholder
+ * value untouched only if no bin anywhere is validated yet.
  *********************************************************************** */
 {
   int b, bb, src;
@@ -194,17 +192,10 @@ static void PatchUnvalidatedDiskBins (void)
 /* ********************************************************************* */
 void InitProfiles (Grid *grid)
 /*!
- * One time setup of the log radial bin edges spanning the global
+ * One time setup of the logarithmic radial bin edges spanning the global
  * radial domain. Seeds both reference profiles with their respective
- * original analytic values (corona: RHOC*r^-1.5; disk: the initial
- * Keplerian-disk density coeff^1.5 from Init(), evaluated on the
- * midplane where rcyl = r) so that DiskFraction() behaves sensibly
+ * original analytic values so that DiskFraction behaves sensibly
  * before the first multicore reduced averages are available.
- *
- * NOTE: g_domBeg[]/g_domEnd[] are assumed to hold the global physical
- * domain boundaries (set by PLUTO's grid setup from pluto.ini). If
- * your PLUTO version exposes these under different names, substitute
- * grid->xl_glob[IDIR][0] / grid->xr_glob[IDIR][grid->np_int_glob[IDIR]-1].
  *********************************************************************** */
 {
   int    b;
