@@ -23,4 +23,4 @@ Changes were made to the following files:
 
 
 
-> For more rigorous details, check the comments in the respective files themselves.
+> For more details, check the comments in the respective files themselves.

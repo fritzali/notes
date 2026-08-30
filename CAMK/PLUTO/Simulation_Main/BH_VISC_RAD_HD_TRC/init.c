@@ -48,79 +48,46 @@
 #endif
 
 /* ---------------------------------------------------------------------
- * Inner Boundary Condition Selector (X1_BEG)
+ * Inner Boundary Condition Selector
  * ---------------------------------------------------------------------
- * Select the desired inner boundary physics regime:
- *   BOUNDARY_STAR : Rotating conductive stellar surface
- *   BOUNDARY_BH   : Black hole event horizon absorbing diode boundary
+ * select the desired inner boundary physics regime:
+ *   BOUNDARY_STAR : rotating conductive stellar surface
+ *   BOUNDARY_BH   : black hole event horizon absorbing diode boundary
  * --------------------------------------------------------------------- */
 #define BOUNDARY_STAR 1
 #define BOUNDARY_BH   2
 
 #ifndef INNER_BOUNDARY
- #define INNER_BOUNDARY BOUNDARY_BH  /* Set to BOUNDARY_STAR or BOUNDARY_BH */
+ #define INNER_BOUNDARY BOUNDARY_BH   // set to BOUNDARY_STAR or BOUNDARY_BH
 #endif
 
 /* ---------------------------------------------------------------------
- * Radiation opacity call-site support (see file header note above)
- *
- * g_i_rad   : current radial grid index during the radiation implicit
- *             step; written by the (locally patched) rad_step.c, read
- *             only from UserDefOpacities() below. Meaningless outside
- *             that call path - default 0 is a safe but arbitrary value.
- * g_radGrid : grid pointer, set once from InitDomain(). Needed to turn
- *             g_i_rad and PLUTO's g_j into physical (x1,x2) coordinates
- *             for the DiskFraction() call inside UserDefOpacities().
+ * Radiation Opacity Call Support
  * --------------------------------------------------------------------- */
-int          g_i_rad  = 0;      /* [ADDED] */
-static Grid *g_radGrid = NULL;  /* [ADDED] */
+int          g_i_rad   = 0;      // current radial grid index written by patched radiation step for opacities
+static Grid *g_radGrid = NULL;   // grid pointer set once during domain initialization to get physical coordinates
 
 /* ---------------------------------------------------------------------
- * Adaptive disk versus corona classifier state
- *
- * g_rBinEdgesLog[]     : logarithmic edges of NBINS_PROFILE bins spanning the
- *                        global radial domain (fixed at InitDomain() call).
- * g_rhoCoronaProfile[] : temporally smoothed, multicore reduced average density
- *                        of corona weighted cells per radial bin.
- * g_rhoDiskProfile[]   : same, but for disk weighted cells - a running
- *                        estimate of "what disk density actually looks like
- *                        at radius r", tracked alongside the corona
- *                        reference so DiskFraction() can classify by where
- *                        the cell sits between the two evolving references,
- *                        instead of by a fixed multiplicative threshold on
- *                        the corona value alone. This lets the classifier
- *                        track a genuinely decaying inner disk instead of
- *                        drifting away from it.
- * g_profilesInit  : guards against use before InitProfiles()
- *                        has run (e.g. a restart path that skips
- *                        InitDomain() call); in this case DiskFraction()
- *                        falls back to the original static analytic profile
- *                        for the corona side, and the analytic Keplerian
- *                        disk profile for the disk side.
+ * Adaptive Disk Versus Corona Classifier State
+ * ---------------------------------------------------------------------
+ * tracks corona and disk density to account for evolving
+ * structure in deciding on classification
  * --------------------------------------------------------------------- */
-static double g_rBinEdgesLog[NBINS_PROFILE + 1];
-static double g_rhoCoronaProfile[NBINS_PROFILE];
-static double g_rhoDiskProfile[NBINS_PROFILE];
-static int    g_diskProfileValid[NBINS_PROFILE];  /* has bin b ever seen a
-                                                      meaningful amount of
-                                                      real disk material? */
-static int    g_profilesInit = 0;
-static int    g_profilesLive = 0;  /* has UpdateProfiles() run at least once
-                                      on real simulation data? Until then,
-                                      DiskFraction() returns the exact t=0
-                                      classification (see InitDiskCell()),
-                                      matching what the removed tr1 tracer
-                                      would have been, instead of using the
-                                      profile-based sigmoid. */
+static double g_rBinEdgesLog[NBINS_PROFILE + 1];   // logarithmic edges of profile bins along the global radial domain
+static double g_rhoCoronaProfile[NBINS_PROFILE];   // temporally smoothed, multicore reduced, corona weighted average density per bin
+static double g_rhoDiskProfile[NBINS_PROFILE];     // temporally smoothed, multicode reduced, disk weighted average density per bin
+static int    g_diskProfileValid[NBINS_PROFILE];   // check if meaningful amount of disk material has been in cell before extrapolating
+
+static int    g_profilesInit = 0;   /* falls back to exact initial profile instead of computed sigmoid until */
+static int    g_profilesLive = 0;   /* update has run at least once to match initial tracer behavior         */
  
 /* ********************************************************************* */
 static double InterpLogProfile (double *profile, double x1)
 /*!
- * Shared linear interpolation (in log density, log radius space) of a
- * tabulated radial profile at input radius. Used for both the corona and
- * disk reference profiles. Falls back to clamped edge bins outside the
- * tabulated range (e.g. within ghost zones just past the physical domain
- * edge).
+ * Shared linear interpolation in logarithmic density and radius space of
+ * a tabulated radial profile at input radius. Used for both the corona
+ * and disk reference profiles. Falls back to clamped edge bins outside
+ * the tabulated range, within ghost zones just past the domain edge.
  *********************************************************************** */
 {
   double lr, lmin, lmax, dl, lc0, s, frac;
