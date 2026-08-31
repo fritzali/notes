@@ -7,8 +7,8 @@ Both integrators share the same Dormand-Prince RK45 stepper machinery
 (fixed or adaptive step).  The only physics difference is the ``_derivatives``
 method:
 
-- ``RKNonrel``      — F = (q/m)(E + v × B), non-relativistic
-- ``RKRelativistic`` — dv/dt = (q/m)γ⁻¹(E + v × B − (v·E)v/c²)
+- ``RKNonrel``      — dv/dt = (q/m)(v × B), non-relativistic
+- ``RKRelativistic`` — dv/dt = (q/m)γ⁻¹(v × B)
 
 Dormand-Prince RK45 tableau
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -230,7 +230,7 @@ class RKNonrel(_RKBase):
     Equation of motion::
 
         dr/dt = v
-        dv/dt = (q/m) * (E + v × B)
+        dv/dt = (q/m)(v × B)
 
     Consolidates the ``DKP_mdipol.py`` RK4 approach and generalises
     the field model and step-size strategy.
@@ -259,10 +259,10 @@ class RKNonrel(_RKBase):
         super().__init__(state, field, dt, t_max, **kwargs)
 
     def _derivatives(self, r, v, t):
-        """dr/dt = v,  dv/dt = (q/m)(E + v×B)."""
-        B, E = self.field(r, t)   # each (N, 3)
+        """dr/dt = v,  dv/dt = (q/m)(v × B)."""
+        B = self.field(r, t)   # (N, 3)
         q_m = self.state.q[:, None] / self.state.m[:, None]   # (N, 1) broadcasts
-        dvdt = q_m * (E + np.cross(v, B))
+        dvdt = q_m * np.cross(v, B)
         return v.copy(), dvdt
 
 
@@ -271,17 +271,13 @@ class RKNonrel(_RKBase):
 class RKRelativistic(_RKBase):
     """Relativistic Runge-Kutta integrator (RK45, fixed or adaptive step).
 
-    Equation of motion (4-force projected onto 3-velocity)::
+    Equation of motion (4-force projected onto 3-velocity):
 
         dr/dt = v
-        dv/dt = (q/m) γ⁻¹ [ E + v × B − (v · E / c²) v ]
+        dv/dt = (q/m) γ⁻¹ [ v × B ]
 
     This is the standard relativistic EOM in terms of velocity (not
-    4-momentum), derived from d(γmv)/dt = q(E + v × B):
-
-        dv/dt = (q/mγ)(E + v×B) - (v·E q)/(mγc²) v
-
-    which is what ``REL_PUTANJE_RK4.py`` implements component-wise.
+    4-momentum), derived from d(γmv)/dt = q(v × B).
 
     Parameters
     ----------
@@ -294,17 +290,12 @@ class RKRelativistic(_RKBase):
 
     def _derivatives(self, r, v, t):
         """Relativistic Lorentz force equation."""
-        B, E = self.field(r, t)   # each (N, 3)
+        B = self.field(r, t)   # (N, 3)
 
         speed2 = np.sum(v**2, axis=1, keepdims=True)        # (N, 1)
         gamma_inv = np.sqrt(np.clip(1.0 - speed2 / C**2, 1e-30, 1.0))  # (N, 1)
 
-        # (v · E) scalar per particle, shape (N, 1)
-        vdotE = np.sum(v * E, axis=1, keepdims=True)
-
         q_m = self.state.q[:, None] / self.state.m[:, None]   # (N, 1)
 
-        dvdt = q_m * gamma_inv * (
-            E + np.cross(v, B) - (vdotE / C**2) * v
-        )
+        dvdt = q_m * gamma_inv * np.cross(v, B)
         return v.copy(), dvdt
