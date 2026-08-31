@@ -28,7 +28,8 @@
 
    <pre>rsync -avzP /<i>local</i>/<i>path</i>/<i>folder</i>/ <i>username</i>@<i>host</i>:/<i>remote</i>/<i>destination</i>/</pre>
 
-   When transferring from remote to local storage, simply swap the origin and destination order.
+   When transferring from remote to local storage, simply swap the origin and destination order. In case the connection via the hostname does not work,
+   run `curl ifconfig.me` on the remote to find its public address and use this for the host identifier.
 
 #### Screen Tool
 
