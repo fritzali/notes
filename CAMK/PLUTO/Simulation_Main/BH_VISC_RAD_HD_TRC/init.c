@@ -31,6 +31,67 @@
  #include <mpi.h>
 #endif
 
+#define T_FLOOR_KELVIN 10.0   // physical floor, Kelvin — carries actual meaning; adjust to sensible minimum for this problem
+
+/* ---------------------------------------------------------------------
+ * Composition and Unit-Temperature Support
+ * ---------------------------------------------------------------------
+ * X, Z (and derived Y) set the gas composition used both by the Kramers
+ * opacity coefficients below and by the mean molecular weight mu, which
+ * is needed to convert PLUTO's dimensionless code-unit temperature
+ * (returned by GetTemperature) into physical Kelvin for use in the
+ * CGS-calibrated opacity formulas.
+ * --------------------------------------------------------------------- */
+#define X_MASSFRAC 0.70    // hydrogen mass fraction
+#define Z_MASSFRAC 0.02    // metallicity
+#define Y_MASSFRAC (1.0 - X_MASSFRAC - Z_MASSFRAC)   // helium mass fraction, derived
+
+static double g_unitTemperature = -1.0;   // Kelvin per code-unit temperature; computed once on first use, see GetUnitTemperature()
+static double g_TFloorCode      = -1.0;   // T_FLOOR_KELVIN converted to code units; computed alongside g_unitTemperature
+
+/* ********************************************************************* */
+double MeanMolWeightNoCooling ()
+/*!
+ * Mean molecular weight for a fully ionized gas, no non-equilibrium
+ * chemistry/cooling tracked (matches PLUTO's own MeanMolecularWeight()
+ * under COOLING == NO, evaluated here from mass fractions rather than
+ * PLUTO's FRAC_He/FRAC_Z number-fraction macros, so it does not depend
+ * on those macros being defined in this build).
+ *********************************************************************** */
+{
+  return 1.0 / (2.0*X_MASSFRAC + 0.75*Y_MASSFRAC + 0.5*Z_MASSFRAC);
+}
+
+/* ********************************************************************* */
+double GetUnitTemperature ()
+/*!
+ * Return Kelvin per unit of PLUTO's dimensionless code-unit temperature,
+ * i.e. the factor GetTemperature()'s return value must be multiplied by
+ * to obtain physical Kelvin. Computed once (deterministically, so safe
+ * to recompute independently on every MPI rank with no communication)
+ * and cached in g_unitTemperature; also caches T_FLOOR_KELVIN converted
+ * to code units in g_TFloorCode.
+ *
+ * COOLING == NO (this problem's current configuration) uses the
+ * fully-ionized mu above. If COOLING is enabled in a future build,
+ * switch this to call PLUTO's own MeanMolecularWeight(v) so mu matches
+ * g_idealGasConst exactly as computed by that build's cooling module;
+ * that call needs a live primitive-variable array v, unlike the
+ * COOLING==NO case, so the call site will need updating accordingly.
+ *********************************************************************** */
+{
+  double mu;
+
+  if (g_unitTemperature > 0.0) return g_unitTemperature;
+
+  mu = MeanMolWeightNoCooling();
+
+  g_unitTemperature = UNIT_VELOCITY*UNIT_VELOCITY * mu * CONST_mp / CONST_kB;
+  g_TFloorCode      = T_FLOOR_KELVIN / g_unitTemperature;
+
+  return g_unitTemperature;
+}
+
 /* ---------------------------------------------------------------------
  * Inner Boundary Condition Selector
  * ---------------------------------------------------------------------
@@ -401,7 +462,13 @@ void Init (double *v, double x1, double x2, double x3)
 #endif /* PHYSICS == MHD */
 
   #if RADIATION
-  v[ENR] = Blackbody(MAX(GetTemperature(v[RHO],v[PRS]), T_FLOOR)) * DiskFraction(v, x1, x2) ;
+  /* Blackbody/GetTemperature both operate in PLUTO code units here
+     (g_radiationConst is itself normalized so Blackbody(T_code) returns
+     code-unit radiation energy density) — the floor must therefore also
+     be in code units, not Kelvin, so convert T_FLOOR_KELVIN via
+     GetUnitTemperature() rather than applying it directly. */
+  GetUnitTemperature();   /* ensure g_TFloorCode is populated */
+  v[ENR] = Blackbody(MAX(GetTemperature(v[RHO],v[PRS]), g_TFloorCode)) * DiskFraction(v, x1, x2) ;
   v[FR1] = 0.;
   v[FR2] = 0.;
   v[FR3] = 0.;
@@ -809,14 +876,10 @@ double BodyForcePotential(double x1, double x2, double x3)
         #define C_BF 4.34e25    // Kramer's law bound-free constant, CGS
         #define C_FF 3.68e22    // Kramer's law free-free constant,  CGS
 
-        #define X    0.7     // hydrogen mass fraction
-        #define Z    0.02    // metallicity
-
-    // scattering constants (CGS)
-    const double K_BF = C_BF * G_BF * Z * (1.0  + X) / T_FACTOR;
-    const double K_FF = C_FF * (1.0  - Z) * (1.0  + X);
-    const double K_ES = 0.2  * (1.0 + X);
-    const double T_FLOOR = 1.0; // adjust to sensible physical temperature minimum for problem at hand
+    // scattering constants (CGS); X_MASSFRAC/Z_MASSFRAC defined above
+    const double K_BF = C_BF * G_BF * Z_MASSFRAC * (1.0 + X_MASSFRAC) / T_FACTOR;
+    const double K_FF = C_FF * (1.0 - Z_MASSFRAC) * (1.0 + X_MASSFRAC);
+    const double K_ES = 0.2  * (1.0 + X_MASSFRAC);
 
 
 /* ********************************************************************* */
@@ -836,17 +899,46 @@ void UserDefOpacitiesAt(double *v, double x1, double x2, double *abs, double *sc
  * resistivity are, in place of the previous tracer.
  *********************************************************************** */
 {
-    double rho = v[RHO];
-    double T   = MAX(GetTemperature(v[RHO], v[PRS]), T_FLOOR);
+    /* K_BF, K_FF, K_ES are CGS-calibrated Kramers coefficients — rho and T
+       must be converted from PLUTO code units to CGS (g/cm^3, Kelvin)
+       before entering the opacity formulas. UNIT_DENSITY converts density
+       directly; temperature needs GetUnitTemperature() since PLUTO has no
+       fixed UNIT_TEMPERATURE macro (derived from UNIT_VELOCITY and the
+       mean molecular weight, not an independent normalization).
+
+       The resulting kappa_cgs [cm^2/g] must then be converted BACK to a
+       code-unit opacity before multiplying by rho_code: RadImplicitNR
+       (rad_step.c) uses abs_op/tot_op directly in expressions like
+       dt*rho0*g_reducedC*abs_op added to 1.0, i.e. it expects a code-unit
+       opacity coefficient consistent with code-unit rho and g_reducedC,
+       not a raw CGS cm^2/g value. Since kappa*rho*L is the dimensionless
+       optical depth, kappa_code = kappa_cgs * UNIT_DENSITY * UNIT_LENGTH
+       is the correct conversion so that kappa_code*rho_code reproduces
+       the same physical optical-depth-per-code-length as kappa_cgs*rho_cgs
+       does in physical cm. */
+    double unitTemperature = GetUnitTemperature();   /* cached after first call */
+
+    double rho_code = v[RHO];
+    double rho_cgs  = rho_code * UNIT_DENSITY;                                    // g/cm^3
+    double T_cgs    = MAX(GetTemperature(v[RHO], v[PRS]), g_TFloorCode) * unitTemperature;  // Kelvin
     double f;
 
-    double kappa_es   = K_ES;                                 // cm^2/g
-    double kappa_ffbf = (K_BF + K_FF) * rho * pow(T, -3.5) ;  // cm^2/g
+    double kappa_es_cgs   = K_ES;                                       // cm^2/g
+    double kappa_ffbf_cgs = (K_BF + K_FF) * pow(T_cgs, -3.5);           // cm^2/g (rho left out here deliberately — see rho_cgs note below)
+
+    /* Kramers free-free/bound-free opacity already has an explicit rho
+       dependence baked into the physical formula (kappa ~ rho * T^-3.5);
+       that physical rho must be rho_cgs, matching the CGS calibration of
+       C_BF/C_FF, before converting the whole coefficient to code units. */
+    kappa_ffbf_cgs *= rho_cgs;
+
+    double kappa_es_code   = kappa_es_cgs   * UNIT_DENSITY * UNIT_LENGTH;
+    double kappa_ffbf_code = kappa_ffbf_cgs * UNIT_DENSITY * UNIT_LENGTH;
 
     f = DiskFraction(v, x1, x2);
 
-    *scat = f * rho * kappa_es;        // Thomson scattering only
-    *abs  = f * rho * kappa_ffbf;      // True free-free + bound-free absorption
+    *scat = f * rho_code * kappa_es_code;        // Thomson scattering only
+    *abs  = f * rho_code * kappa_ffbf_code;      // True free-free + bound-free absorption
 }
 
 /* ********************************************************************* */
