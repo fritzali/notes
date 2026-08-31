@@ -41,7 +41,7 @@
     o sizeof (State)      = 128
     o sizeof (Sweep)      = 584
 
-> Local time:       Fri Aug 28 13:45:17 2026
+> Local time:       Mon Aug 31 13:35:14 2026
 
 > Cmd line args:    
 
@@ -997,7 +997,7 @@ step:31000; t = 2.5878e+02; dt = 8.2642e-03; 25.9 %
 step:31100; t = 2.5961e+02; dt = 8.2637e-03; 26.0 %
             [Mach = 57223.158106]
 > Writing file #52 (dbl) to disk...
-  [ 0.00 sec ]
+  [ 1.00 sec ]
 > Writing file #52 (vtk) to disk...
   [ 0.00 sec ]
 step:31200; t = 2.6043e+02; dt = 8.2633e-03; 26.0 %
@@ -1667,7 +1667,7 @@ step:56300; t = 4.6377e+02; dt = 7.8553e-03; 46.4 %
 step:56400; t = 4.6455e+02; dt = 7.8543e-03; 46.5 %
             [Mach = 43830.791377]
 > Writing file #93 (dbl) to disk...
-  [ 0.00 sec ]
+  [ 1.00 sec ]
 > Writing file #93 (vtk) to disk...
   [ 0.00 sec ]
 step:56500; t = 4.6534e+02; dt = 7.8531e-03; 46.5 %
@@ -3333,7 +3333,7 @@ step:119200; t = 9.7363e+02; dt = 8.3236e-03; 97.4 %
 step:119300; t = 9.7446e+02; dt = 8.2823e-03; 97.4 %
              [Mach = 36292.830770]
 > Writing file #195 (dbl) to disk...
-  [ 1.00 sec ]
+  [ 0.00 sec ]
 > Writing file #195 (vtk) to disk...
   [ 0.00 sec ]
 step:119400; t = 9.7529e+02; dt = 8.3186e-03; 97.5 %
@@ -3418,7 +3418,7 @@ step:122300; t = 9.9931e+02; dt = 8.2764e-03; 99.9 %
   [ 0.00 sec ]
 
 > Total allocated memory    1.11 Mb (proc #0)
-> Elapsed time              0d:0h:56m:30s
-> Average time/step         2.77e-02  (sec)  
-> Local time                Fri Aug 28 14:41:47 2026
+> Elapsed time              0d:0h:37m:39s
+> Average time/step         1.85e-02  (sec)  
+> Local time                Mon Aug 31 14:12:53 2026
 > Done
