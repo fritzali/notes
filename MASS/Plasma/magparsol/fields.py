@@ -1,5 +1,5 @@
 """
-plasma_box/fields.py
+magparsol/fields.py
 --------------------
 Electromagnetic field models.
 
@@ -28,7 +28,7 @@ and wrap it::
 
 import numpy as np
 from abc import ABC, abstractmethod
-from plasma_box.constants import (
+from magparsol.constants import (
     DIPOLE_MOMENT, DIPOLE_TILT_DEG,
 )
 

@@ -1,5 +1,5 @@
 """
-plasma_box/integrators/base.py
+magparsol/integrators/base.py
 ------------------------------
 Abstract base class for all particle integrators.
 
@@ -16,9 +16,9 @@ Subclasses only need to implement ``step()``.
 
 import numpy as np
 from abc import ABC, abstractmethod
-from plasma_box.particles import ParticleState
-from plasma_box.fields import FieldModel
-from plasma_box.diagnostics import TrajectoryHistory
+from magparsol.particles import ParticleState
+from magparsol.fields import FieldModel
+from magparsol.diagnostics import TrajectoryHistory
 
 
 class Integrator(ABC):
@@ -126,21 +126,21 @@ class Integrator(ABC):
         -------
         T_c : float [s]
         """
-        from plasma_box.diagnostics import gyroperiod
+        from magparsol.diagnostics import gyroperiod
         q = float(self.state.q[0])
         m = float(self.state.m[0])
         return gyroperiod(q, m, B_mag)
 
     def suggest_dt(self, B_mag: float, steps_per_gyration: float = 100.0) -> float:
         """Suggest a dt for the given field strength."""
-        from plasma_box.diagnostics import suggest_dt
+        from magparsol.diagnostics import suggest_dt
         q = float(self.state.q[0])
         m = float(self.state.m[0])
         return suggest_dt(q, m, B_mag, steps_per_gyration)
 
     def check_dt(self, B_mag: float, warn_threshold: float = 0.1) -> float:
         """Check current dt resolution against the gyro-period."""
-        from plasma_box.diagnostics import check_dt_resolution
+        from magparsol.diagnostics import check_dt_resolution
         q = float(self.state.q[0])
         m = float(self.state.m[0])
         return check_dt_resolution(self.dt, q, m, B_mag, warn_threshold)
@@ -148,19 +148,19 @@ class Integrator(ABC):
     # ── Plotting convenience methods ──────────────────────────────────────────
 
     def plot_trajectory_3d(self, history: TrajectoryHistory, **kwargs):
-        from plasma_box.plotting import plot_trajectory_3d
+        from magparsol.plotting import plot_trajectory_3d
         return plot_trajectory_3d(history, **kwargs)
 
     def plot_trajectory_2d(self, history: TrajectoryHistory, **kwargs):
-        from plasma_box.plotting import plot_trajectory_2d
+        from magparsol.plotting import plot_trajectory_2d
         return plot_trajectory_2d(history, **kwargs)
 
     def plot_energy(self, history: TrajectoryHistory, **kwargs):
-        from plasma_box.plotting import plot_energy
+        from magparsol.plotting import plot_energy
         return plot_energy(history, self.state.m, relativistic=self.relativistic, **kwargs)
 
     def plot_speed(self, history: TrajectoryHistory, **kwargs):
-        from plasma_box.plotting import plot_speed
+        from magparsol.plotting import plot_speed
         return plot_speed(history, relativistic=self.relativistic, **kwargs)
 
     # ── Representation ────────────────────────────────────────────────────────

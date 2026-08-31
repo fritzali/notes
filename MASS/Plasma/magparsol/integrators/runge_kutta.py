@@ -1,5 +1,5 @@
 """
-plasma_box/integrators/runge_kutta.py
+magparsol/integrators/runge_kutta.py
 --------------------------------------
 Runge-Kutta integrators for non-relativistic and relativistic particle motion.
 
@@ -32,8 +32,8 @@ for the adaptive controller is taken across all particles.
 """
 
 import numpy as np
-from plasma_box.integrators.base import Integrator
-from plasma_box.constants import C
+from magparsol.integrators.base import Integrator
+from magparsol.constants import C
 
 # ── Dormand-Prince RK45 Butcher tableau ──────────────────────────────────────
 # c nodes (fraction of dt)

@@ -1,5 +1,5 @@
 """
-plasma_box/radiation.py
+magparsol/radiation.py
 -----------------------
 Radiation spectra from single-particle (and ensemble) trajectories.
 
@@ -35,8 +35,8 @@ radiated_power :
 
 import warnings
 import numpy as np
-from plasma_box.diagnostics import TrajectoryHistory
-from plasma_box.constants import C, Q_E
+from magparsol.diagnostics import TrajectoryHistory
+from magparsol.constants import C, Q_E
 
 # ── Constants ──────────────────────────────────────────────────────────────────
 _EPS0 = 8.854_187_817e-12    # vacuum permittivity [F/m]

@@ -1,5 +1,5 @@
 """
-plasma_box/animation.py
+magparsol/animation.py
 -----------------------
 Overview panel (static multi-quantity summary figure) and GIF animation system.
 
@@ -35,8 +35,8 @@ import matplotlib.pyplot as plt
 import matplotlib.gridspec as gridspec
 from matplotlib.animation import FuncAnimation, PillowWriter
 
-from plasma_box.diagnostics import TrajectoryHistory, relative_energy_error
-from plasma_box.constants import C, R_EARTH
+from magparsol.diagnostics import TrajectoryHistory, relative_energy_error
+from magparsol.constants import C, R_EARTH
 
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
@@ -159,7 +159,7 @@ class _FieldPanel:
         self._t_series          = None   # time series for animation
 
     def build(self, ax, history=None, t_series=None, **kwargs):
-        from plasma_box.fieldlines import plot_field_lines
+        from magparsol.fieldlines import plot_field_lines
         h = history or self.history
         self._t_series = t_series
         # Draw initial field lines at t=0
@@ -184,7 +184,7 @@ class _FieldPanel:
             return []
         if k is not None and k % self.field_update_every != 0:
             return []
-        from plasma_box.fieldlines import plot_field_lines
+        from magparsol.fieldlines import plot_field_lines
         self._ax.cla()
         plot_field_lines(
             self.field, history=self._h,
@@ -218,7 +218,7 @@ class _SpectrumPanel:
         self._ref_freqs            = None
 
     def build(self, ax, history, **kwargs):
-        from plasma_box.radiation import (spectrum_fft, spectrum_retarded,
+        from magparsol.radiation import (spectrum_fft, spectrum_retarded,
                                           ensemble_spectrum, _check_spectrum_convergence)
         self._history = history
         self._ax      = ax
@@ -256,7 +256,7 @@ class _SpectrumPanel:
         return {"line_total": self._line_total}
 
     def update(self, artists, i, k=None):
-        from plasma_box.radiation import (spectrum_fft, ensemble_spectrum,
+        from magparsol.radiation import (spectrum_fft, ensemble_spectrum,
                                           _check_spectrum_convergence)
         if self.method == "retarded":
             return []   # static — already drawn in build()

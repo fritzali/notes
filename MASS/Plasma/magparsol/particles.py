@@ -1,5 +1,5 @@
 """
-plasma_box/particles.py
+magparsol/particles.py
 -----------------------
 Particle state container and initial-condition generators.
 
@@ -13,7 +13,7 @@ Scalar particle properties (q, m) use shape **(N,)** and broadcast against
 import numpy as np
 from dataclasses import dataclass, field
 from typing import Optional
-from plasma_box.constants import C, Q_E, M_P, M_E
+from magparsol.constants import C, Q_E, M_P, M_E
 
 
 @dataclass
@@ -212,7 +212,7 @@ def maxwellian_ensemble(
     -------
     ParticleState with N particles.
     """
-    from plasma_box.constants import C
+    from magparsol.constants import C
     k_B = 1.380_649e-23   # Boltzmann constant [J/K]
     rng  = np.random.default_rng(seed)
     sigma = np.sqrt(k_B * T / m)   # thermal velocity [m/s]
@@ -290,7 +290,7 @@ def dipole_initial_conditions(
 
     Override r0 and v0 to use different values.
     """
-    from plasma_box.constants import R_EARTH
+    from magparsol.constants import R_EARTH
     if r0 is None:
         r0 = [2.5 * R_EARTH, 0.0, 0.0]
     if v0 is None:

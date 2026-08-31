@@ -1,5 +1,5 @@
 """
-plasma_box/diagnostics.py
+magparsol/diagnostics.py
 -------------------------
 Trajectory storage and physical diagnostics.
 
@@ -18,7 +18,7 @@ Standalone functions that operate on a ``TrajectoryHistory`` or on raw
 
 import numpy as np
 import warnings
-from plasma_box.constants import C
+from magparsol.constants import C
 
 
 class TrajectoryHistory:

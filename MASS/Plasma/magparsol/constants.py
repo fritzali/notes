@@ -1,5 +1,5 @@
 """
-plasma_box/constants.py
+magparsol/constants.py
 -----------------------
 Physical constants in SI units and derived convenience values.
 All values follow CODATA 2018 recommendations where applicable.

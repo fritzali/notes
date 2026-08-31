@@ -1,5 +1,5 @@
 """
-plasma_box/integrators/boris.py
+magparsol/integrators/boris.py
 --------------------------------
 Relativistic Boris-family integrators.
 
@@ -53,8 +53,8 @@ Scalar particle properties q, m have shape (N,) and broadcast via [:, None].
 """
 
 import numpy as np
-from plasma_box.integrators.base import Integrator
-from plasma_box.constants import C, B_FLOOR
+from magparsol.integrators.base import Integrator
+from magparsol.constants import C, B_FLOOR
 
 
 # ── Shared rotation kernel (Boris-A and Boris-B) ──────────────────────────────
