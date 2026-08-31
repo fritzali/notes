@@ -1,5 +1,5 @@
 """
-magparsol/integrators/runge_kutta.py
+magparsol/integrators/rungekutta.py
 --------------------------------------
 Runge-Kutta integrators for non-relativistic and relativistic particle motion.
 

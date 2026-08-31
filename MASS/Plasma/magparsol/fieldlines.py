@@ -5,8 +5,8 @@ Field-line tracing and plotting for any FieldModel.
 
 Tracing
 ~~~~~~~
-Field lines satisfy  dr/ds = F(r)/|F(r)|  where F is B or E.
-Integration is a simple fixed-step RK4 on the unit-direction field.
+Field lines satisfy  dr/ds = F(r)/|F(r)| where F is B or E.
+Integration is a simple fixed step RK4 on the unit direction field.
 Both directions (+/−) are traced from each seed so closed lines (dipole
 loops) are drawn completely.
 

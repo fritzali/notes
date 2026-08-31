@@ -1,36 +1,37 @@
 """
 magparsol/animation.py
 -----------------------
-Overview panel (static multi-quantity summary figure) and GIF animation system.
+Overview panel (static multi quantity summary figure) and GIF animation system.
 
 Overview panel layout (2×3 gridspec)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-┌──────────────┬──────────────┬─────────────────┐
-│  X-Y position│  X-Z position│  Field lines     │
-├──────────────┼──────────────┼─────────────────┤
-│  X-Y velocity│  X-Z velocity│  Spectrum        │
-└──────────────┴──────────────┴─────────────────┘
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+┌────────────────┬────────────────┬─────────────────┐
+│  X-Y Position  │  X-Z Position  │  Field Lines    │
+├────────────────┼────────────────┼─────────────────┤
+│  X-Y Velocity  │  X-Z Velocity  │    Spectra      │
+└────────────────┴────────────────┴─────────────────┘
 
 Panel registry
 ~~~~~~~~~~~~~~
-Each panel is a small object with build(ax) → artists and
-update(artists, frame_idx) → artists.  This shared structure powers
-both standalone per-panel GIFs and the combined overview GIF from one
-code path.
+Each panel is a small object with "build(ax) → artists" and
+"update(artists, frame_idx) → artists" methods.  This shared structure
+powers both standalone per panel GIF outputs and the combined overview
+GIF from one code path.
 
 GIF generation
 ~~~~~~~~~~~~~~
-make_panel_gif  — single panel standalone GIF
-make_overview_gif — all (or selected) panels in the overview layout
+"make_panel_gif" for a single panel standalone GIF
+"make_overview_gif" for all (or selected) panels in the overview layout
 
-Adaptive-RK note: non-uniform time histories are resampled before FFT
-inside radiation.spectrum_fft; no special handling needed here.
+Note: Non uniform histories from adaptive time stepping are resampled
+before FFT inside "radiation.spectrum_fft" so that no special handling
+is needed here.
 """
 
 import warnings
 import numpy as np
 import matplotlib
-matplotlib.use("Agg")   # safe default; caller can switch before import
+matplotlib.use("Agg")   ### safe default, but caller can switch before import ###
 import matplotlib.pyplot as plt
 import matplotlib.gridspec as gridspec
 from matplotlib.animation import FuncAnimation, PillowWriter
@@ -39,7 +40,7 @@ from magparsol.diagnostics import TrajectoryHistory, relative_energy_error
 from magparsol.constants import C, R_EARTH
 
 
-# ── Helpers ───────────────────────────────────────────────────────────────────
+### Helpers ───────────────────────────────────────────────────────────────────
 
 def _auto_lim(a, b, margin=1.15):
     """Symmetric axis limit covering both arrays with a margin."""
@@ -53,7 +54,7 @@ def _trajectory_bbox(history):
     return r.min(axis=0), r.max(axis=0)
 
 
-# ── Per-panel classes ─────────────────────────────────────────────────────────
+### Per Panel Classes ─────────────────────────────────────────────────────────
 
 class _PositionPanel:
     """X-Y or X-Z trajectory projection."""
@@ -76,7 +77,8 @@ class _PositionPanel:
             ln, = ax.plot([], [], lw=0.8, alpha=0.7, color=colors[pid])
             pt, = ax.plot([], [], 'o', ms=4, color=colors[pid])
             lines.append(ln); dots.append(pt)
-        # axis limits from full trajectory
+
+        ### axis limits from full trajectory ###
         x_all  = r[:, :, 0].ravel() / lu
         c2_all = (r[:, :, 1] if self.plane == "xy" else r[:, :, 2]).ravel() / lu
         lim    = _auto_lim(x_all, c2_all)
@@ -144,7 +146,7 @@ class _VelocityPanel:
 
 
 class _FieldPanel:
-    """Field line / arrow panel (static or periodically refreshed)."""
+    """Field line or arrow panel (static or periodically refreshed)."""
 
     def __init__(self, field, history, length_unit=1.0, unit_label="m",
                  components=("B", "E"), density="low",
@@ -156,13 +158,13 @@ class _FieldPanel:
         self.components         = components
         self.density            = density
         self.field_update_every = field_update_every
-        self._t_series          = None   # time series for animation
+        self._t_series          = None   ### time series for animation ###
 
     def build(self, ax, history=None, t_series=None, **kwargs):
         from magparsol.fieldlines import plot_field_lines
         h = history or self.history
         self._t_series = t_series
-        # Draw initial field lines at t=0
+        ### draw initial field lines ###
         plot_field_lines(
             self.field, history=h,
             components=self.components,
@@ -176,10 +178,10 @@ class _FieldPanel:
         ax.set_title("Field config (B/E)")
         self._ax = ax
         self._h  = h
-        return {}   # artists managed internally by re-plot
+        return {}   ### artists managed internally by replot ###
 
     def update(self, artists, i, k=None, t_current=0.0):
-        """Re-draw field lines if field is time-dependent and on cadence."""
+        """Redraw field lines if field is timedependent and on cadence."""
         if self.field.is_static:
             return []
         if k is not None and k % self.field_update_every != 0:
@@ -201,7 +203,7 @@ class _FieldPanel:
 
 
 class _SpectrumPanel:
-    """Spectrum panel: animated FFT or static retarded integral."""
+    """Spectrum panel with animated FFT or static retarded integral."""
 
     def __init__(self, q, m, method="fft", spectrum_update_every=8,
                  show_individual=False, observer=None,
@@ -228,7 +230,8 @@ class _SpectrumPanel:
         ax.grid(True, alpha=0.3)
 
         if self.method == "retarded":
-            # Compute once from full trajectory
+
+            ### compute once from full trajectory ###
             N = history.r.shape[1]
             if N == 1:
                 f, p = spectrum_retarded(history, pid=0, observer=self.observer)
@@ -239,7 +242,7 @@ class _SpectrumPanel:
             ax.semilogy(f, p + 1e-40, color="steelblue", lw=1.2, label="Total")
             ax.legend(fontsize=7)
 
-        # Compute full reference spectrum for convergence checking
+        ### compute full reference spectrum for convergence checking ###
         N = history.r.shape[1]
         if N == 1:
             f_full, p_full = spectrum_fft(
@@ -259,7 +262,7 @@ class _SpectrumPanel:
         from magparsol.radiation import (spectrum_fft, ensemble_spectrum,
                                           _check_spectrum_convergence)
         if self.method == "retarded":
-            return []   # static — already drawn in build()
+            return []   ### static since already drawn in "build()" ###
 
         if self._converged:
             return []
@@ -276,13 +279,13 @@ class _SpectrumPanel:
                                          observer=self.observer,
                                          upto=i)
 
-        # Interpolate onto fixed reference frequency grid
+        ### interpolate onto fixed reference frequency grid ###
         if self._ref_freqs is not None and len(f) > 1:
             p_interp = np.interp(self._ref_freqs, f, p, left=0.0, right=0.0)
         else:
             p_interp = p
 
-        # Check convergence
+        ### check convergence ###
         converged = _check_spectrum_convergence(
             self._prev_spec, p_interp, self._ref_freqs)
         if converged:
@@ -299,11 +302,12 @@ class _SpectrumPanel:
         return [line] if line else []
 
 
-# ── LAYOUT definition ─────────────────────────────────────────────────────────
-# Maps panel name → (row, col) in the 2×3 gridspec
+### Layout Definition ─────────────────────────────────────────────────────────
+
+### maps panel name → (row, col) in the 2×3 gridspec ###
 LAYOUT = {
-    "position_xy": (0, 0),
-    "position_xz": (0, 1),
+    "position_xy":  (0, 0),
+    "position_xz":  (0, 1),
     "field":        (0, 2),
     "velocity_xy":  (1, 0),
     "velocity_xz":  (1, 1),
@@ -336,7 +340,7 @@ def _build_panel_registry(history, field, q, m,
     }
 
 
-# ── Static overview figure ────────────────────────────────────────────────────
+### Static Overview Figure ────────────────────────────────────────────────────
 
 def plot_overview(
     history: TrajectoryHistory,
@@ -346,7 +350,7 @@ def plot_overview(
     length_unit: float = 1.0,
     unit_label: str = "m",
     normalize_v: bool = False,
-    field_components=("B", "E"),
+    field_components = ("B"),
     field_density: str = "low",
     spectrum_method: str = "fft",
     show_individual: bool = False,
@@ -357,17 +361,17 @@ def plot_overview(
 
     Parameters
     ----------
-    history : TrajectoryHistory (finalized)
-    field : FieldModel
-    q, m : ndarray, shape (N,)
-    length_unit : float
-    unit_label : str
-    normalize_v : bool   — show velocity in units of c
-    field_components : tuple of "B" and/or "E"
-    field_density : "low" | "medium" | "high"
-    spectrum_method : "fft" | "retarded"
-    show_individual : bool   — overlay per-particle spectra (N>1)
-    store_dt_warn_period : float or None  — gyroperiod for Nyquist warning
+    history              : TrajectoryHistory (finalized)
+    field                : FieldModel
+    q, m                 : ndarray, shape (N,)
+    length_unit          : float
+    unit_label           : str
+    normalize_v          : bool (show velocity in units of c)
+    field_components     : tuple of "B"
+    field_density        : "low" | "medium" | "high"
+    spectrum_method      : "fft" | "retarded"
+    show_individual      : bool (overlay per particle spectra, N>1)
+    store_dt_warn_period : float or None (gyroperiod for Nyquist warning)
 
     Returns
     -------
@@ -399,7 +403,7 @@ def plot_overview(
     return fig
 
 
-# ── GIF generation ────────────────────────────────────────────────────────────
+### GIF Generation ────────────────────────────────────────────────────────────
 
 def make_panel_gif(
     history: TrajectoryHistory,
@@ -426,10 +430,9 @@ def make_panel_gif(
 
     Parameters
     ----------
-    panel_name : one of "position_xy", "position_xz", "velocity_xy",
-                 "velocity_xz", "field", "spectrum"
-    filename : output path.  Defaults to f"{panel_name}.gif"
-    writer : "gif" (Pillow).  Future: "mp4" (FFMpeg).
+    panel_name : one of "position_xy", "position_xz", "velocity_xy", "velocity_xz", "field", "spectrum"
+    filename   : output path, defaults to f"{panel_name}.gif"
+    writer     : "gif" (Pillow)
     (other params: same as make_overview_gif)
     """
     if panel_name not in LAYOUT:
@@ -462,7 +465,6 @@ def make_panel_gif(
     outfile = filename or f"{panel_name}.gif"
     if writer == "gif":
         anim.save(outfile, writer=PillowWriter(fps=fps))
-    # Future: elif writer == "mp4": anim.save(outfile, writer=FFMpegWriter(fps=fps))
     else:
         raise ValueError(f"Unknown writer '{writer}'. Use 'gif'.")
     plt.close(fig)
@@ -483,7 +485,7 @@ def make_overview_gif(
     length_unit: float = 1.0,
     unit_label: str = "m",
     normalize_v: bool = False,
-    field_components=("B", "E"),
+    field_components=("B"),
     field_density: str = "low",
     spectrum_method: str = "fft",
     spectrum_update_every: int = 8,
@@ -494,10 +496,9 @@ def make_overview_gif(
 
     Parameters
     ----------
-    panels : list of str or None
-        Subset of panel names to include.  None → all 6.
+    panels   : list of str or None, subset of panel names to include, None → all 6.
     filename : output path
-    writer : "gif".  Future: "mp4".
+    writer   : "gif"
     (other params same as make_panel_gif)
 
     Returns
@@ -545,7 +546,6 @@ def make_overview_gif(
     anim = FuncAnimation(fig, update, frames=len(frame_indices), blit=False)
     if writer == "gif":
         anim.save(filename, writer=PillowWriter(fps=fps))
-    # Future: elif writer == "mp4": anim.save(filename, writer=FFMpegWriter(fps=fps))
     else:
         raise ValueError(f"Unknown writer '{writer}'. Use 'gif'.")
     plt.close(fig)
