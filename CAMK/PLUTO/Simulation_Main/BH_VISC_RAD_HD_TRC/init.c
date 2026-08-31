@@ -401,7 +401,7 @@ void Init (double *v, double x1, double x2, double x3)
 #endif /* PHYSICS == MHD */
 
   #if RADIATION
-  v[ENR] = Blackbody(GetTemperature(v[RHO],v[PRS])) * DiskFraction(v, x1, x2) ;
+  v[ENR] = Blackbody(MAX(GetTemperature(v[RHO],v[PRS]), T_FLOOR)) * DiskFraction(v, x1, x2) ;
   v[FR1] = 0.;
   v[FR2] = 0.;
   v[FR3] = 0.;
@@ -809,13 +809,14 @@ double BodyForcePotential(double x1, double x2, double x3)
         #define C_BF 4.34e25    // Kramer's law bound-free constant, CGS
         #define C_FF 3.68e22    // Kramer's law free-free constant,  CGS
 
-        #define X     0.8    // hydrogen mass fraction
-        #define Z    0.00    // metallicity
+        #define X    0.7     // hydrogen mass fraction
+        #define Z    0.02    // metallicity
 
     // scattering constants (CGS)
-    const double K_BF = 1; // C_BF * G_BF * Z * (1.0  + X) / T_FACTOR;
-    const double K_FF = 1; // C_FF * (1.0  - Z) * (1.0  + X);
-    const double K_ES = 1; // 0.2  * (1.0 + X);
+    const double K_BF = C_BF * G_BF * Z * (1.0  + X) / T_FACTOR;
+    const double K_FF = C_FF * (1.0  - Z) * (1.0  + X);
+    const double K_ES = 0.2  * (1.0 + X);
+    const double T_FLOOR = 1.0; // adjust to sensible physical temperature minimum for problem at hand
 
 
 /* ********************************************************************* */
@@ -836,7 +837,7 @@ void UserDefOpacitiesAt(double *v, double x1, double x2, double *abs, double *sc
  *********************************************************************** */
 {
     double rho = v[RHO];
-    double T   = GetTemperature(v[RHO], v[PRS]);
+    double T   = MAX(GetTemperature(v[RHO], v[PRS]), T_FLOOR);
     double f;
 
     double kappa_es   = K_ES;                                 // cm^2/g
