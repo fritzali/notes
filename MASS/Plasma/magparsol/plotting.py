@@ -1,5 +1,5 @@
 """
-plasma_box/plotting.py
+magparsol/plotting.py
 ----------------------
 Plotting utilities for particle trajectory visualization and diagnostics.
 
@@ -19,8 +19,8 @@ LivePlotter           — Class for real-time animated 2-D display during runs
 import numpy as np
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D   # noqa: F401 (registers 3d projection)
-from plasma_box.constants import R_EARTH
-from plasma_box.diagnostics import TrajectoryHistory, relative_energy_error
+from magparsol.constants import R_EARTH
+from magparsol.diagnostics import TrajectoryHistory, relative_energy_error
 
 
 # ── 3-D trajectory ────────────────────────────────────────────────────────────
@@ -244,7 +244,7 @@ def plot_speed(
     -------
     fig, axes
     """
-    from plasma_box.constants import C
+    from magparsol.constants import C
     speed = history.speed()[:, pid]
     t = history.t
 
