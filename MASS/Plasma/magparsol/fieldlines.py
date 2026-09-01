@@ -5,8 +5,8 @@ Field-line tracing and plotting for any FieldModel.
 
 Tracing
 ~~~~~~~
-Field lines satisfy  dr/ds = F(r)/|F(r)| where F is B or E.
-Integration is a simple fixed step RK4 on the unit direction field.
+Field lines satisfy  dr/ds = F(r)/|F(r)|  where F is B or E.
+Integration is a simple fixed-step RK4 on the unit-direction field.
 Both directions (+/−) are traced from each seed so closed lines (dipole
 loops) are drawn completely.
 
@@ -135,7 +135,7 @@ def _trace_line(field, r0: np.ndarray, t: float, component: str,
     for _ in range(max_steps):
         # Evaluate field at current position
         r2d        = r[None, :]
-        B_val = field(r2d, t)
+        B_val, E_val = field(r2d, t)
         F          = B_val[0] if component == "B" else E_val[0]
         F_mag      = np.linalg.norm(F)
 
@@ -146,7 +146,7 @@ def _trace_line(field, r0: np.ndarray, t: float, component: str,
 
         # RK4 on dr/ds = f_hat(r)
         def drdp(pos):
-            b_ = field(pos[None, :], t)
+            b_, e_ = field(pos[None, :], t)
             fv     = b_[0] if component == "B" else e_[0]
             fm     = np.linalg.norm(fv)
             return direction * fv / fm if fm > np.sqrt(B_FLOOR) else np.zeros(3)
@@ -172,7 +172,7 @@ def _draw_uniform_arrows(ax, field, component: str, seeds: np.ndarray,
                           projection: str, label: str):
     """Draw short arrows for spatially uniform fields."""
     r_probe    = np.zeros((1, 3))
-    B_val = field(r_probe, t)
+    B_val, E_val = field(r_probe, t)
     F          = B_val[0] if component == "B" else E_val[0]
     F_mag      = np.linalg.norm(F)
     if F_mag < 1e-40:

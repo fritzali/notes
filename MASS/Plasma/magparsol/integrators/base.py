@@ -30,7 +30,7 @@ class Integrator(ABC):
         Initial particle state.  **Modified in-place** during ``run()``.
         Pass ``state.copy()`` if you need to preserve the original.
     field : FieldModel
-        Magnetic field callable.
+        Electromagnetic field callable.
     dt : float
         Time step [s].  For adaptive integrators this is the *initial*
         step size; it is updated after each accepted step.

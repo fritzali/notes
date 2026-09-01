@@ -130,7 +130,7 @@ def radiated_power(history: TrajectoryHistory,
     history : TrajectoryHistory (finalized)
     q : ndarray, shape (N,)
     m : ndarray, shape (N,)
-    field : FieldModel — used to evaluate B at stored positions
+    field : FieldModel — used to evaluate E, B at stored positions
     relativistic : bool
 
     Returns
@@ -145,7 +145,7 @@ def radiated_power(history: TrajectoryHistory,
         r_s = history.r[s]          # (N, 3)
         v_s = history.v[s]          # (N, 3)
         t_s = history.t[s]
-        B = field(r_s, t_s)         # (N, 3)
+        B, E = field(r_s, t_s)      # each (N, 3)
 
         speed2 = np.sum(v_s**2, axis=1)   # (N,)
 
@@ -154,14 +154,18 @@ def radiated_power(history: TrajectoryHistory,
             gamma  = 1.0 / np.sqrt(1.0 - beta2)            # (N,)
             gamma6 = gamma**6
             q_m    = q / m
-            a = (q_m * (1.0/gamma))[:, None] * np.cross(v_s, B) # (N, 3)
+            vdotE  = np.sum(v_s * E, axis=1)               # (N,)
+            a = (q_m * (1.0/gamma))[:, None] * (
+                E + np.cross(v_s, B)
+                - (vdotE / C**2)[:, None] * v_s
+            )   # (N, 3)
             vcross_a = np.cross(v_s, a)
             P[s] = (q**2 * gamma6 / (6 * np.pi * _EPS0 * C**3)) * (
                 np.sum(a**2, axis=1) - np.sum(vcross_a**2, axis=1) / C**2
             )
         else:
             q_m = q / m
-            a   = q_m[:, None] * np.cross(v_s, B)   # (N, 3)
+            a   = q_m[:, None] * (E + np.cross(v_s, B))   # (N, 3)
             P[s] = (q**2 / (6 * np.pi * _EPS0 * C**3)) * np.sum(a**2, axis=1)
 
     return P

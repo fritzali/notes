@@ -25,9 +25,9 @@ Quick start
 Public API
 ----------
 Constants : see ``magparsol.constants``
-Fields    : UniformB, EarthDipole, CustomField
+Fields    : UniformB, UniformEB, CyclotronWaveField, EarthDipole, CustomField
 Particles : ParticleState, single_particle, random_ensemble, dipole_initial_conditions
-Integrators: RKNonrel, RKRelativistic, BorisA, BorisB, BorisC
+Integrators: RKnonrel, RKrel, BorisA, BorisB, BorisC
 Diagnostics: TrajectoryHistory, relative_energy_error, gyroperiod, gyrofrequency,
              gyroradius, check_dt_resolution, suggest_dt
 Plotting  : plot_trajectory_3d, plot_trajectory_2d, plot_energy, plot_speed, LivePlotter
@@ -44,6 +44,8 @@ from magparsol.constants import (
 from magparsol.fields import (
     FieldModel,
     UniformB,
+    UniformEB,
+    CyclotronWaveField,
     EarthDipole,
     CustomField,
 )
@@ -60,8 +62,8 @@ from magparsol.particles import (
 
 # ── Integrators ───────────────────────────────────────────────────────────────
 from magparsol.integrators import (
-    RKNonrel,
-    RKRelativistic,
+    RKnonrel,
+    RKrel,
     BorisA,
     BorisB,
     BorisC,
@@ -106,21 +108,21 @@ from magparsol.animation import (
     make_overview_gif,
 )
 
-__version__ = "0.0.1"
+__version__ = "0.2.0"
 
 __all__ = [
     # constants
     "C", "Q_E", "M_E", "M_P",
     "R_EARTH", "DIPOLE_MOMENT", "DIPOLE_TILT_DEG", "B_FLOOR",
     # fields
-    "FieldModel", "UniformB",
+    "FieldModel", "UniformB", "UniformEB", "CyclotronWaveField",
     "EarthDipole", "CustomField",
     # particles
     "ParticleState", "single_particle", "random_ensemble",
     "maxwellian_ensemble", "relativistic_thermal_ensemble",
     "dipole_initial_conditions",
     # integrators
-    "RKNonrel", "RKRelativistic", "BorisA", "BorisB", "BorisC",
+    "RKnonrel", "RKrel", "BorisA", "BorisB", "BorisC",
     # diagnostics
     "TrajectoryHistory", "relative_energy_error",
     "gyrofrequency", "gyroperiod", "gyroradius",
