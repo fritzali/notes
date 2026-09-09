@@ -236,7 +236,7 @@ class _SpectrumPanel:
                 f, p, _ = ensemble_spectrum(history, method="retarded",
                                             observer=self.observer)
             self._ref_freqs = f
-            ax.semilogy(f, p + 1e-40, color="steelblue", lw=1.2, label="Total")
+            ax.semilogy(f, p, color="steelblue", lw=1.2, label="Total")
             ax.legend(fontsize=7)
 
         # Compute full reference spectrum for convergence checking
@@ -292,7 +292,7 @@ class _SpectrumPanel:
         line = artists.get("line_total")
         if line is not None and len(p_interp) > 0:
             line.set_alpha(0.9)
-            line.set_ydata(p_interp + 1e-40)
+            line.set_ydata(p_interp)
             self._ax.relim()
             self._ax.autoscale_view(scaley=True)
 
