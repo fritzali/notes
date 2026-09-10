@@ -1,4 +1,7 @@
-all: build/main build/flat
+all: plot build/main build/flat
+
+plot: plot.py
+	python plot.py
 
 build:
 	mkdir -p build
