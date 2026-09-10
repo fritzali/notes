@@ -46,3 +46,11 @@ binary assignments between disk and corona, preventing artifacts and false label
 
 ### Message Passing Interface
 
+When compiled for multiple cores, PLUTO uses the standard MPI library to split the simulation grid into pieces, a process called domain decomposition.
+Each subset of the domain as well as a border of ghost cells shared with other pieces for boundary conditions gets assigned to a parallelized process or
+rank, which has its own memory and no access to the whole grid. Since the radial profiles are constructed from averages across the entire domain, this
+has to be treated specially by the `DiskFrac` implementation.
+
+At each `DiskUpdate` all ranks compute from their local cells the local weighted radial profiles for density and volume. Next, these get reduced in
+a collective operation across all ranks to construct the global profile, which is then passed back to each rank. With this identical information,
+all individual ranks compute averages, smoothing, and classifications on their own, leading to a globally consistent update.
