@@ -26,7 +26,7 @@ Changes were made to the following files:
 The first is based on density. Rather than comparing against a rigid threshold or constructing histograms to separate distributions, a running
 logarithmic radial reference profile is maintained for the disk and corona, respectively, at analysis cadence, by feeding the previous
 classification back into the decision. This is achieved by `UpdateProfiles` using the current `diskfrac` to compute the weighted average
-density for each component, with weights `f` and `1 - f` for disk and corona, which for each radius are then temporally smoothed using an
+density for each component, with weights `f` and `1-f` for disk and corona, which for each radius are then temporally smoothed using an
 exponential moving average. In the case of disk bins, their values are only accepted if the weighted disk volume makes up some predefined
 fraction of the total bin volume. This way, bins that have never held significant amounts of disk material can copy from the nearest valid bin,
 looking outward first and then inward, instead of constructing noisy profiles from empty cells. Once updated profiles have been built, the new
