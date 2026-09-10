@@ -21,6 +21,36 @@ Changes were made to the following files:
 
 ### Conceptual Implementation
 
+`DiskFraction` replaces the tracer with a continuous `[0,1]` classifier built from two independent, multiplicatively combined logistic criteria:
+
+The first is based on density. Rather than comparing against a rigid threshold or constructing histograms to separate distributions, a running
+logarithmic radial reference profile is maintained for the disk and corona, respectively, at analysis cadence, by feeding the previous
+classification back into the decision. This is achieved by `UpdateProfiles` using the current `diskfrac` to compute the weighted average
+density for each component, with weights `f` and `1 - f` for disk and corona, which for each radius are then temporally smoothed using an
+exponential moving average. In the case of disk bins, their values are only accepted if the weighted disk volume makes up some predefined
+fraction of the total bin volume. This way, bins that have never held significant amounts of disk material can copy from the nearest valid bin,
+looking outward first and then inward, instead of constructing noisy profiles from empty cells. Once updated profiles have been built, the new
+classification is calculated in logarithmic density space based on a sigmoid function.
+
+The second criterion is rotational. It compares azimuthal velocity of each cell against that expected from Keplerian rotation in a Newtonian
+potential at its cylindrical radius, without correcting for the Paczyński–Wiita modification. Analogous to the previous case, parses this
+comparison through a sigmoid to arrive at an independent factor, which is useful especially for the exclusion of dense corona regions at
+high latitude. Multiplying both factors gives a reasonable approximation for the passive tracer that is advected within the flux calculation.
+
+At initialization, before any update has been computed, the classification artificially reproduces that of the native tracer exactly, with sharp
+binary assignments between disk and corona, preventing artifacts and false labels inside the inner disk regions.
+
 
 
 > For more details, check the comments in the respective files themselves.
+
+### Message Passing Interface
+
+When compiled for multiple cores, PLUTO uses the standard MPI library to split the simulation grid into pieces, a process called domain decomposition.
+Each subset of the domain as well as a border of ghost cells shared with other pieces for boundary conditions gets assigned to a parallelized process or
+rank, which has its own memory and no access to the whole grid. Since the radial profiles are constructed from averages across the entire domain, this
+has to be treated specially by the `DiskFrac` implementation.
+
+At each `DiskUpdate` all ranks compute from their local cells the local weighted radial profiles for density and volume. Next, these get reduced in
+a collective operation across all ranks to construct the global profile, which is then passed back to each rank. With this identical information,
+all individual ranks compute averages, smoothing, and classifications on their own, leading to a globally consistent update.
