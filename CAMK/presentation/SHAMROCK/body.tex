@@ -18,126 +18,146 @@
 		\titlepage
 	\end{frame}
 
+	\section{Progress Outline}
+
 	\begin{frame}
 		\frametitle{Completed Work}
 		\begin{itemize}
-			\item<2-> 
+			\item<2-> Modeled Schwarzschild BH in Viscous HD, MHD and Resistive MHD (Axial \& Equatorial Symmetry)
+			\begin{itemize}
+				\item<3-> Replaced Newtonian with Paczyński–Wiita Potential to Reproduce ISCO
+						  \begin{align*}\phi_N(r) \rightarrow \phi_{PW}(r) = -\frac{GM}{r - r_S}\end{align*}
+				\item<4-> Rescaled Code Units to Gravitational Radii and Timescales as Convention
+						  \begin{align*}&&&& r_G = GM / c^2 && \tau_G = GM / c^3 &&&&\end{align*}
+				\item<5-> Inner Boundary: Outflow with Backflow Preventing Diode Condition
+				\item<6-> Outer Boundary: Extrapolation with Van Leer Limited Slope, Coronal\break
+                          Backflow Guard and Injected Kluźniak-Kita Analytic Disk Solution
+			\end{itemize}
 		\end{itemize}
 	\end{frame}
 
-	\begin{frame}
-		\frametitle{Overview}
-		\bfseries{Background}\\[1.5pt]
-		\hspace*{3ex}\mdseries{Introduction}\\
-		\hspace*{3ex}\mdseries{Definitions}\\
-		\bfseries{Method}\\[1.5pt]
-		\hspace*{3ex}\mdseries{Implementation}\\
-		\hspace*{3ex}\mdseries{Results}\\
-		\hspace*{3ex}\mdseries{Outlook}\\[3.0pt]
+	\begin{frame}[noframenumbering]
+		\frametitle{Completed Work}
+		\begin{itemize}
+			\item<2-> Implemented Physically Motivated Replacement for Passive Tracer of Disk and Corona
+			\begin{itemize}
+				\item<3-> Advected Tracer Field as Switch for Viscosity, Resistivity, Opacity
+						  \begin{align*}\partial_t q + v \cdot \nabla q = 0\end{align*}
+				\item<4-> Native Implementation Fails if Radiation Physics Enabled
+				\item<5-> Fix?
+			\end{itemize}
+		\end{itemize}
+		\vspace{15.1ex}
 	\end{frame}
 
-	\section{Background}
-
-	\begin{frame}
-		\frametitle{Overview}
-		\bfseries{Background}\\[1.5pt]
-		\hspace*{3ex}\mdseries{Introduction}\\
- 		\only<1|handout:0>{
-		\hspace*{3ex}\mdseries{Definitions}\\
-		}
- 		\only<2-|handout:1>{
-		\transparent{0.25}
-		\hspace*{3ex}\mdseries{Definitions}\\
-		}
-		\transparent{0.25}
-		\bfseries{Method}\\[1.5pt]
-		\hspace*{3ex}\mdseries{Implementation}\\
-		\hspace*{3ex}\mdseries{Results}\\
-		\hspace*{3ex}\mdseries{Outlook}\\[3.0pt]
+	\begin{frame}[noframenumbering]
+		\frametitle{Completed Work}
+		\begin{itemize}
+			\item<1-> Implemented Physically Motivated Replacement for Passive Tracer of Disk and Corona
+			\begin{itemize}
+				\item<2-> Reconstruct Smooth Classifier $f \in [0,1]$ from Density and Rotation
+				\begin{itemize}
+					\item<3-> Calculate Adaptive Disk and Corona Weighted Mean Density Profiles
+					\item<4-> Compute Time Smoothed Radial Reference via Exponential Moving Average
+							  $$\rho_n \kern-0.5pt = \alpha \tilde{\rho}_n + (1 \kern-0.5pt - \alpha) \kern+0.5pt \rho_{n\kern+0.5pt-1}$$
+					\item<5-> Obtain Discriminator $f_\rho$ by Feeding Cell Density into Sigmoid
+					\item<6-> Similarly Find $f_\omega$ from Comparing Local Azimuthal to Keplerian Velocity
+					\item<7-> Multiply like $f = f_\rho \cdot f_\omega$ for Disk and $1 - f$ for Corona Weights
+					\item<8-> Account for Initial Conditions (Truncated Disk \& Hard Binary)
+				\end{itemize}
+				\item<9-> Parallelize with MPI Reduction Across Entire Domain and Feeding Back to All Ranks
+			\end{itemize}
+		\end{itemize}
 	\end{frame}
 
-	\subsection{Introduction}
-
-	\section{Background}
+	\section{Graphical Comparison}
 
 	\begin{frame}
-		\frametitle{Overview}
-		\bfseries{Background}\\[1.5pt]
-		\transparent{0.25}
-		\hspace*{3ex}\mdseries{Introduction}\\
-		\transparent{1.00}
-		\hspace*{3ex}\mdseries{Definitions}\\
-		\transparent{0.25}
-		\bfseries{Method}\\[1.5pt]
-		\hspace*{3ex}\mdseries{Implementation}\\
-		\hspace*{3ex}\mdseries{Results}\\
-		\hspace*{3ex}\mdseries{Outlook}\\[3.0pt]
+		\frametitle{Tracer Physics – Density}
+		\centering
+		\only<1|handout:0>{\includegraphics[height=0.95\textheight]{content/density_BH_VISC_HD_n0000_t0.jpg}}%
+		\only<2|handout:0>{\includegraphics[height=0.95\textheight]{content/density_BH_VISC_HD_n0050_t250.jpg}}%
+		\only<3>{\includegraphics[height=0.95\textheight]{content/density_BH_VISC_HD_n0100_t500.jpg}}%
+		\only<4|handout:0>{\includegraphics[height=0.95\textheight]{content/density_BH_VISC_HD_n0150_t750.jpg}}%
 	\end{frame}
-
-	\subsection{Defintions}
-
-	\section{Method}
 
 	\begin{frame}
-		\frametitle{Overview}
-		\transparent{0.25}
-		\bfseries{Background}\\[1.5pt]
-		\hspace*{3ex}\mdseries{Introduction}\\
-		\hspace*{3ex}\mdseries{Definitions}\\
-		\transparent{1.00}
-		\bfseries{Method}\\[1.5pt]
-		\hspace*{3ex}\mdseries{Implementation}\\
-		\only<1|handout:0>{
-		\hspace*{3ex}\mdseries{Results}\\
-		\hspace*{3ex}\mdseries{Outlook}\\[3.0pt]
-		}
-		\only<2-|handout:1>{
-		\transparent{0.25}
-		\hspace*{3ex}\mdseries{Results}\\
-		\hspace*{3ex}\mdseries{Outlook}\\[3.0pt]
-		}
+		\frametitle{Recovered Physics – Density}
+		\centering
+		\only<1|handout:0>{\includegraphics[height=0.95\textheight]{content/density_BH_VISC_HD_TRC_n0000_t0.jpg}}%
+		\only<2|handout:0>{\includegraphics[height=0.95\textheight]{content/density_BH_VISC_HD_TRC_n0050_t250.jpg}}%
+		\only<3>{\includegraphics[height=0.95\textheight]{content/density_BH_VISC_HD_TRC_n0100_t500.jpg}}%
+		\only<4|handout:0>{\includegraphics[height=0.95\textheight]{content/density_BH_VISC_HD_TRC_n0150_t750.jpg}}%
 	\end{frame}
-
-	\subsection{Implementation}
-
-	\section{Method}
 
 	\begin{frame}
-		\frametitle{Overview}
-		\transparent{0.25}
-		\bfseries{Background}\\[1.5pt]
-		\hspace*{3ex}\mdseries{Introduction}\\
-		\hspace*{3ex}\mdseries{Definitions}\\
-		\transparent{1.00}
-		\bfseries{Method}\\[1.5pt]
-		\transparent{0.25}
-		\hspace*{3ex}\mdseries{Implementation}\\
-		\transparent{1.00}
-		\hspace*{3ex}\mdseries{Results}\\
-		\transparent{0.25}
-		\hspace*{3ex}\mdseries{Outlook}\\[3.0pt]
+		\frametitle{Tracer Physics – Tracer}
+		\centering
+		\only<1|handout:0>{\includegraphics[height=0.95\textheight]{content/tracer_truth_BH_VISC_HD_n0000_t0.jpg}}%
+		\only<2|handout:0>{\includegraphics[height=0.95\textheight]{content/tracer_truth_BH_VISC_HD_n0050_t250.jpg}}%
+		\only<3>{\includegraphics[height=0.95\textheight]{content/tracer_truth_BH_VISC_HD_n0100_t500.jpg}}%
+		\only<4|handout:0>{\includegraphics[height=0.95\textheight]{content/tracer_truth_BH_VISC_HD_n0150_t750.jpg}}%
 	\end{frame}
-
-	\subsection{Results}
-
-	\section{Method}
 
 	\begin{frame}
-		\frametitle{Overview}
-		\transparent{0.25}
-		\bfseries{Background}\\[1.5pt]
-		\hspace*{3ex}\mdseries{Introduction}\\
-		\hspace*{3ex}\mdseries{Definitions}\\
-		\transparent{1.00}
-		\bfseries{Method}\\[1.5pt]
-		\transparent{0.25}
-		\hspace*{3ex}\mdseries{Implementation}\\
-		\hspace*{3ex}\mdseries{Results}\\
-		\transparent{1.00}
-		\hspace*{3ex}\mdseries{Outlook}\\[3.0pt]
+		\frametitle{Recovered Physics – Tracer}
+		\centering
+		\only<1|handout:0>{\includegraphics[height=0.95\textheight]{content/tracer_truth_BH_VISC_HD_TRC_n0000_t0.jpg}}%
+		\only<2|handout:0>{\includegraphics[height=0.95\textheight]{content/tracer_truth_BH_VISC_HD_TRC_n0050_t250.jpg}}%
+		\only<3>{\includegraphics[height=0.95\textheight]{content/tracer_truth_BH_VISC_HD_TRC_n0100_t500.jpg}}%
+		\only<4|handout:0>{\includegraphics[height=0.95\textheight]{content/tracer_truth_BH_VISC_HD_TRC_n0150_t750.jpg}}%
 	\end{frame}
 
-	\subsection{Outlook}
+	\begin{frame}
+		\frametitle{Recovered Physics – Recovered}
+		\centering
+		\only<1|handout:0>{\includegraphics[height=0.95\textheight]{content/tracer_recover_BH_VISC_HD_TRC_n0000_t0.jpg}}%
+		\only<2|handout:0>{\includegraphics[height=0.95\textheight]{content/tracer_recover_BH_VISC_HD_TRC_n0050_t250.jpg}}%
+		\only<3>{\includegraphics[height=0.95\textheight]{content/tracer_recover_BH_VISC_HD_TRC_n0100_t500.jpg}}%
+		\only<4|handout:0>{\includegraphics[height=0.95\textheight]{content/tracer_recover_BH_VISC_HD_TRC_n0150_t750.jpg}}%
+	\end{frame}
+
+	\begin{frame}
+		\frametitle{Radiation Enabled – Density}
+		\centering
+		\only<1|handout:0>{\includegraphics[height=0.95\textheight]{content/density_BH_VISC_RAD_HD_TRC_n0000_t0.jpg}}%
+		\only<2|handout:0>{\includegraphics[height=0.95\textheight]{content/density_BH_VISC_RAD_HD_TRC_n0050_t250.jpg}}%
+		\only<3>{\includegraphics[height=0.95\textheight]{content/density_BH_VISC_RAD_HD_TRC_n0100_t500.jpg}}%
+		\only<4|handout:0>{\includegraphics[height=0.95\textheight]{content/density_BH_VISC_RAD_HD_TRC_n0150_t750.jpg}}%
+	\end{frame}
+
+	\begin{frame}
+		\frametitle{Radiation Enabled – Tracer}
+		\centering
+		\only<1|handout:0>{\includegraphics[height=0.95\textheight]{content/tracer_truth_BH_VISC_RAD_HD_TRC_n0000_t0.jpg}}%
+		\only<2|handout:0>{\includegraphics[height=0.95\textheight]{content/tracer_truth_BH_VISC_RAD_HD_TRC_n0050_t250.jpg}}%
+		\only<3>{\includegraphics[height=0.95\textheight]{content/tracer_truth_BH_VISC_RAD_HD_TRC_n0100_t500.jpg}}%
+		\only<4|handout:0>{\includegraphics[height=0.95\textheight]{content/tracer_truth_BH_VISC_RAD_HD_TRC_n0150_t750.jpg}}%
+	\end{frame}
+
+	\begin{frame}
+		\frametitle{Radiation Enabled – Recovered}
+		\centering
+		\only<1|handout:0>{\includegraphics[height=0.95\textheight]{content/tracer_recover_BH_VISC_RAD_HD_TRC_n0000_t0.jpg}}%
+		\only<2|handout:0>{\includegraphics[height=0.95\textheight]{content/tracer_recover_BH_VISC_RAD_HD_TRC_n0050_t250.jpg}}%
+		\only<3>{\includegraphics[height=0.95\textheight]{content/tracer_recover_BH_VISC_RAD_HD_TRC_n0100_t500.jpg}}%
+		\only<4|handout:0>{\includegraphics[height=0.95\textheight]{content/tracer_recover_BH_VISC_RAD_HD_TRC_n0150_t750.jpg}}%
+	\end{frame}
+
+	\section{Future Work}
+
+	\begin{frame}
+		\frametitle{Next Steps}
+		\begin{itemize}
+			\item<2-> Verify Correct Physical Units and Blackbody Radiation Field
+					  \begin{align*}&&&& \kappa_\text{\bfseries{scat}} = f \cdot \rho \cdot \kappa_\text{\itshape\bfseries{es}} &&
+									\kappa_\text{\bfseries{abs}} = f \cdot \rho \cdot (\kappa_\text{\itshape\bfseries{bf}} +
+									\kappa_\text{\itshape\bfseries{ff}}\kern+0.5pt) &&&&\end{align*}
+			\item<3-> Implement SMBH Scaling and Quantify Radiative Transfer Effects
+			\item<4-> Enable Ideal or Resistive MHD Solver and Test Magnetic Field Interactions
+			\item<5-> Extend 2.5D to 3D Simulations and Apply Radiation Setup in Different Scenarios
+		\end{itemize}
+	\end{frame}
 
 	\section{Bibliography}
 

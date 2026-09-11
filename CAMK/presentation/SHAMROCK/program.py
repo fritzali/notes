@@ -108,6 +108,47 @@ def compute_flux_function(D):
     return Psi
 
 
+_GLOBAL_LIMITS_CACHE = {}
+
+
+def _global_rho_limits(path):
+    key = (path, 'rho')
+    if key in _GLOBAL_LIMITS_CACHE:
+        return _GLOBAL_LIMITS_CACHE[key]
+
+    D_last = pp.Load(nout='last', path=path)
+    _, _, X, Z = _grid_xz(D_last)
+    mask = _mask(X, Z)
+
+    vmin = np.inf
+    vmax = -np.inf
+    for frame in D_last.outlist:
+        Di = pp.Load(nout=frame, path=path)
+        rho = np.where(mask, Di.rho, np.nan)
+        vmin = min(vmin, np.nanmin(rho))
+        vmax = max(vmax, np.nanmax(rho))
+
+    _GLOBAL_LIMITS_CACHE[key] = (vmin, vmax)
+    return vmin, vmax
+
+
+def _global_flux_limit(path):
+    key = (path, 'flux')
+    if key in _GLOBAL_LIMITS_CACHE:
+        return _GLOBAL_LIMITS_CACHE[key]
+
+    D_last = pp.Load(nout='last', path=path)
+
+    absmax = -np.inf
+    for frame in D_last.outlist:
+        Di = pp.Load(nout=frame, path=path)
+        Psi = compute_flux_function(Di)
+        absmax = max(absmax, np.nanmax(np.abs(Psi)))
+
+    _GLOBAL_LIMITS_CACHE[key] = absmax
+    return absmax
+
+
 def plot_density(path, nout=None, time=None, dpi=300, outdir='content/'):
     frame, frame_time, D_last, _ = resolve_frame(path, nout=nout, time=time)
     Di = pp.Load(nout=frame, path=path)
@@ -116,13 +157,15 @@ def plot_density(path, nout=None, time=None, dpi=300, outdir='content/'):
     mask = _mask(X, Z)
     rho = np.where(mask, Di.rho, np.nan)
 
+    vmin, vmax = _global_rho_limits(path)
+
     fig, ax = plt.subplots(figsize=[6, 8])
     ax.set_facecolor('k')
 
     im = ax.pcolormesh(
         X, Z, rho,
         cmap='magma',
-        norm=LogNorm(vmin=np.nanmin(rho), vmax=np.nanmax(rho)),
+        norm=LogNorm(vmin=vmin, vmax=vmax),
         shading='auto'
     )
 
@@ -153,6 +196,8 @@ def plot_velocity(path, nout=None, time=None, dpi=300, outdir='content/',
 
     rho = np.where(mask, Di.rho, np.nan)
 
+    vmin, vmax = _global_rho_limits(path)
+
     vr = Di.vx1
     vth = Di.vx2
     vx = vr * np.sin(Theta) + vth * np.cos(Theta)
@@ -167,7 +212,7 @@ def plot_velocity(path, nout=None, time=None, dpi=300, outdir='content/',
     im = ax.pcolormesh(
         X, Z, rho,
         cmap='gray',
-        norm=LogNorm(vmin=np.nanmin(rho), vmax=np.nanmax(rho)),
+        norm=LogNorm(vmin=vmin, vmax=vmax),
         shading='auto'
     )
 
@@ -212,7 +257,8 @@ def plot_field(path, nout=None, time=None, dpi=300, outdir='content/'):
     rho = np.where(mask, Di.rho, np.nan)
     Psi = compute_flux_function(Di)
 
-    absmax = np.nanmax(np.abs(Psi))
+    vmin, vmax = _global_rho_limits(path)
+    absmax = _global_flux_limit(path)
     levels_pos = np.linspace(0, absmax, 100)
     levels_neg = -levels_pos[::-1]
 
@@ -222,7 +268,7 @@ def plot_field(path, nout=None, time=None, dpi=300, outdir='content/'):
     im = ax.pcolormesh(
         X, Z, rho,
         cmap='gray',
-        norm=LogNorm(vmin=np.nanmin(rho), vmax=np.nanmax(rho)),
+        norm=LogNorm(vmin=vmin, vmax=vmax),
         shading='auto'
     )
 
@@ -247,40 +293,9 @@ def plot_field(path, nout=None, time=None, dpi=300, outdir='content/'):
 
 
 def plot_tracer(path, nout=None, time=None, dpi=300, outdir='content/',
-                 mode='truth', compare=False, panel=False):
+                 mode='truth', compare=False):
     frame, frame_time, D_last, _ = resolve_frame(path, nout=nout, time=time)
     Di = pp.Load(nout=frame, path=path)
-
-    if panel:
-        abs_diff = np.abs(Di.diskfrac - Di.tr1)
-        n_theta = abs_diff.shape[1]
-        disagreement = np.sum(abs_diff, axis=1) / n_theta
-
-        x1 = D_last.x1
-        n1 = D_last.rho.shape[0]
-        disagreement_pct = disagreement * 100.0
-        total_disagreement_pct = (np.sum(disagreement) / n1) * 100.0
-        total_agreement_pct = 100.0 - total_disagreement_pct
-
-        fig, ax = plt.subplots(figsize=[7, 4])
-        ax.fill_between(x1, disagreement_pct, -5, color='m', alpha=1 / 4, linewidth=0)
-        ax.set_xscale('log')
-        ax.set_xticks([2, 4, 6, 8, 10, 20, 30])
-        ax.xaxis.set_major_formatter(ScalarFormatter())
-        ax.minorticks_off()
-        ax.xaxis.set_minor_formatter(plt.NullFormatter())
-        ax.set_yticks([0, 5, 10, 15, 20])
-        ax.set_xlabel('R')
-        ax.set_ylabel('|A – B| %')
-        ax.set_ylim(-5, 20)
-
-        ax.plot([], [], ' ', label=f't = {_time_label(path, frame_time)}')
-        ax.legend(loc='upper right')
-
-        ax.text(0.5, 0.05, f'1 – |A – B| = {total_agreement_pct:.1f} %',
-                 transform=ax.transAxes, ha='center', va='bottom', fontsize=10)
-
-        return _save_jpg(fig, outdir, f'tracer_comparison_{_frame_stub(path, frame, frame_time)}.jpg', dpi)
 
     _, _, X, Z = _grid_xz(D_last)
     mask = _mask(X, Z)

@@ -10,6 +10,16 @@ plot_density('../../PLUTO/Simulation_Main/BH_VISC_HD_TRC/', time=250.0)
 plot_density('../../PLUTO/Simulation_Main/BH_VISC_HD_TRC/', time=500.0)
 plot_density('../../PLUTO/Simulation_Main/BH_VISC_HD_TRC/', time=750.0)
 
+plot_velocity('../../PLUTO/Simulation_Main/BH_VISC_HD/', time=0.0)
+plot_velocity('../../PLUTO/Simulation_Main/BH_VISC_HD/', time=250.0)
+plot_velocity('../../PLUTO/Simulation_Main/BH_VISC_HD/', time=500.0)
+plot_velocity('../../PLUTO/Simulation_Main/BH_VISC_HD/', time=750.0)
+
+plot_velocity('../../PLUTO/Simulation_Main/BH_VISC_HD_TRC/', time=0.0)
+plot_velocity('../../PLUTO/Simulation_Main/BH_VISC_HD_TRC/', time=250.0)
+plot_velocity('../../PLUTO/Simulation_Main/BH_VISC_HD_TRC/', time=500.0)
+plot_velocity('../../PLUTO/Simulation_Main/BH_VISC_HD_TRC/', time=750.0)
+
 plot_tracer('../../PLUTO/Simulation_Main/BH_VISC_HD/', time=0.0, mode='truth')
 plot_tracer('../../PLUTO/Simulation_Main/BH_VISC_HD/', time=250.0, mode='truth')
 plot_tracer('../../PLUTO/Simulation_Main/BH_VISC_HD/', time=500.0, mode='truth')
@@ -29,6 +39,16 @@ plot_tracer('../../PLUTO/Simulation_Main/BH_VISC_HD_TRC/', time=0.0, compare=Tru
 plot_tracer('../../PLUTO/Simulation_Main/BH_VISC_HD_TRC/', time=250.0, compare=True)
 plot_tracer('../../PLUTO/Simulation_Main/BH_VISC_HD_TRC/', time=500.0, compare=True)
 plot_tracer('../../PLUTO/Simulation_Main/BH_VISC_HD_TRC/', time=750.0, compare=True)
+
+plot_density('../../PLUTO/Simulation_Main/BH_VISC_RAD_HD_TRC/', time=0.0)
+plot_density('../../PLUTO/Simulation_Main/BH_VISC_RAD_HD_TRC/', time=250.0)
+plot_density('../../PLUTO/Simulation_Main/BH_VISC_RAD_HD_TRC/', time=500.0)
+plot_density('../../PLUTO/Simulation_Main/BH_VISC_RAD_HD_TRC/', time=750.0)
+
+plot_velocity('../../PLUTO/Simulation_Main/BH_VISC_RAD_HD_TRC/', time=0.0)
+plot_velocity('../../PLUTO/Simulation_Main/BH_VISC_RAD_HD_TRC/', time=250.0)
+plot_velocity('../../PLUTO/Simulation_Main/BH_VISC_RAD_HD_TRC/', time=500.0)
+plot_velocity('../../PLUTO/Simulation_Main/BH_VISC_RAD_HD_TRC/', time=750.0)
 
 plot_tracer('../../PLUTO/Simulation_Main/BH_VISC_RAD_HD_TRC/', time=0.0, mode='truth')
 plot_tracer('../../PLUTO/Simulation_Main/BH_VISC_RAD_HD_TRC/', time=250.0, mode='truth')
