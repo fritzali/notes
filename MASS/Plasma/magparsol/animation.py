@@ -84,7 +84,7 @@ class _PositionPanel:
         ax.set_aspect("equal")
         ax.set_xlabel(f"x [{self.unit_label}]")
         ax.set_ylabel(f"{'y' if self.plane=='xy' else 'z'} [{self.unit_label}]")
-        ax.set_title(f"X-{'Y' if self.plane=='xy' else 'Z'} position")
+        ax.set_title(f"X-{'Y' if self.plane=='xy' else 'Z'} Position")
         ax.grid(True, alpha=0.3)
         self._history = history
         return {"lines": lines, "dots": dots}
@@ -125,9 +125,9 @@ class _VelocityPanel:
         lim     = _auto_lim(vx_all, c2_all)
         ax.set_xlim(-lim, lim); ax.set_ylim(-lim, lim)
         ax.set_aspect("equal")
-        ax.set_xlabel(f"v_x [{label}]")
-        ax.set_ylabel(f"{'v_y' if self.plane=='xy' else 'v_z'} [{label}]")
-        ax.set_title(f"V hodograph X-{'Y' if self.plane=='xy' else 'Z'}")
+        ax.set_xlabel(f"$v_x$ [{label}]")
+        ax.set_ylabel(f"{'$v_y$' if self.plane=='xy' else '$v_z$'} [{label}]")
+        ax.set_title(f"X-{'Y' if self.plane=='xy' else 'Z'} Velocity Hodograph")
         ax.grid(True, alpha=0.3)
         self._history = history
         self._scale   = scale
@@ -173,7 +173,7 @@ class _FieldPanel:
             projection="xy",
             ax=ax,
         )
-        ax.set_title("Field config (B/E)")
+        ax.set_title("Field Configuration (B/E)")
         self._ax = ax
         self._h  = h
         return {}   # artists managed internally by re-plot
@@ -196,7 +196,7 @@ class _FieldPanel:
             projection="xy",
             ax=self._ax,
         )
-        self._ax.set_title(f"Field config (t={t_current:.3g}s)")
+        self._ax.set_title(f"Field Configuration (t={t_current:.3g}s)")
         return []
 
 
@@ -222,8 +222,8 @@ class _SpectrumPanel:
                                           ensemble_spectrum, _check_spectrum_convergence)
         self._history = history
         self._ax      = ax
-        ax.set_xlabel("Frequency [Hz]")
-        ax.set_ylabel("Power [arb.]")
+        ax.set_xlabel(r"$\nu$ [Hz]")
+        ax.set_ylabel("Power [arbitrary]")
         ax.set_title("Spectrum")
         ax.grid(True, alpha=0.3)
 
@@ -350,7 +350,7 @@ def plot_overview(
     field_density: str = "low",
     spectrum_method: str = "fft",
     show_individual: bool = False,
-    title: str = "Simulation overview",
+    title: str = "Simulation Overview",
     store_dt_warn_period: float = None,
 ):
     """Static 2×3 overview panel.

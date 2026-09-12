@@ -33,7 +33,7 @@ def plot_trajectory_3d(
     ax_lim: float = 70.0,
     earth_sphere: bool = False,
     color: str = "green",
-    title: str = "Particle trajectory",
+    title: str = "Particle Trajectory",
     ax=None,
 ):
     """Plot a 3-D particle trajectory.
@@ -110,7 +110,7 @@ def plot_trajectory_2d(
     unit_label: str = "m",
     ax_lim: float = None,
     shared_limits: bool = False,
-    title: str = "Particle trajectory (projections)",
+    title: str = "Particle Trajectory (Projections)",
 ):
     """Plot X-Y and X-Z projections side by side.
 
@@ -145,13 +145,13 @@ def plot_trajectory_2d(
     ax1.plot(x, y, "b.", markersize=1)
     ax1.set_xlabel(f"x [{unit_label}]")
     ax1.set_ylabel(f"y [{unit_label}]")
-    ax1.set_title("X-Y plane")
+    ax1.set_title("X-Y Plane")
     ax1.set_aspect("equal")
 
     ax2.plot(x, z, "r.", markersize=1)
     ax2.set_xlabel(f"x [{unit_label}]")
     ax2.set_ylabel(f"z [{unit_label}]")
-    ax2.set_title("X-Z plane")
+    ax2.set_title("X-Z Plane")
     ax2.set_aspect("equal")
 
     if ax_lim is not None:
@@ -190,7 +190,7 @@ def plot_energy(
     m: np.ndarray,
     pid: int = 0,
     relativistic: bool = True,
-    title: str = "Energy conservation",
+    title: str = "Energy Conservation",
 ):
     """Plot kinetic energy and relative energy error over time.
 
@@ -215,8 +215,8 @@ def plot_energy(
 
     fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(10, 8), sharex=True)
 
-    ax1.plot(t, K / 1e6 / 1.602_176_634e-13, color="steelblue")  # convert J → MeV
-    ax1.set_ylabel("Kinetic energy [MeV]")
+    ax1.plot(t, K / 1.602_176_634e-13, color="steelblue")  # convert J → MeV
+    ax1.set_ylabel("Kinetic Energy [eV]")
     ax1.set_title(title)
     ax1.grid(True, alpha=0.4)
 
@@ -236,7 +236,7 @@ def plot_speed(
     history: TrajectoryHistory,
     pid: int = 0,
     relativistic: bool = True,
-    title: str = "Speed over time",
+    title: str = "Speed",
 ):
     """Plot particle speed (and γ for relativistic) over time.
 
