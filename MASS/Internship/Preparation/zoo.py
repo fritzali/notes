@@ -1,57 +1,58 @@
 """
-galaxy_zoo_sph.py
+zoo.py
 
-Self-contained generator for a small "zoo" of toy galaxies with different
-morphologies (spirals, barred spiral, lenticular, ellipticals, an
-interacting pair, a merger remnant, and a dwarf irregular), rendered as
-SPH-style particle datasets via yt, plus a uniform grid and a 3D pseudo-AMR
-representation of the same particles.
+Toy galaxy zoo rendered with yt: spirals, barred spiral, lenticular,
+ellipticals, interacting pair, merger remnant and dwarf irregular. Each
+galaxy is shown as three representations built from the same 3D particle set
+(SPH, uniform grid, 3D pseudo-AMR), face-on and edge-on, as midplane slices
+("slic") and as projections ("proj").
 
-Physics summary
-----------------
-Disk-type galaxies (spirals / barred spiral / lenticular / dwarf) are built
-by integrating test-particle orbits in a 2D gravitational potential:
-    - an axisymmetric term giving a flat rotation curve
-    - zero or more rotating Fourier ("spiral" or "bar") perturbation terms
-Spiral arms / bars are NOT painted onto the density -- they emerge from
-genuine orbit crowding as particles respond to the (weak, rotating)
-non-axisymmetric potential term. See the "2D vs 3D" note at the bottom of
-this file for exactly what is and isn't simulated in 3D.
+Models
+------
+Disk types (spirals, bar, lenticular, dwarf):
+    Test particles integrated in a 2D potential: flat rotation curve plus
+    rotating Fourier perturbations (spiral / bar terms). Arms and bars emerge
+    from orbit crowding, they are not painted on.
+Ellipticals:
+    Sampled directly from a triaxial Plummer sphere (no dynamics).
+Interacting pair / merger remnant:
+    Restricted Toomre-type encounter. The two centres follow a softened
+    2-body orbit; each disk feels its own potential plus a Plummer tidal term
+    from the other galaxy.
+Dwarf irregular:
+    Dynamical density times a fractal noise texture (visual only).
 
-Elliptical galaxies are not integrated dynamically (they are pressure- /
-dispersion-supported, not organized by a coherent rotating perturbation);
-instead their particles are sampled directly from a triaxial Plummer-sphere
-equilibrium density profile.
+2D vs 3D
+--------
+- Disk types, mergers, dwarf: orbits are 2D (x, y). z is drawn independently
+  from a sech^2 profile, so there are no vertical oscillations, warps or
+  disk heating.
+- Ellipticals: genuine 3D positions, but static.
+- All three representations share the same particles and the same cubic box.
 
-The interacting pair and merger remnant use a simplified (Toomre & Toomre
--style) restricted encounter: two galaxy centers move under their own
-mutual Plummer-softened gravity (a genuine, if tiny, 2-body integration),
-and each galaxy's disk particles feel the sum of their own galaxy's
-potential (centered on that moving center) plus a Plummer tidal term from
-the other galaxy. Tidal bridges/tails emerge from this, they are not
-hand-drawn.
+Pseudo-AMR
+----------
+Octree-style patch hierarchy with cubic cells. Blocks outside a central
+ellipsoid stay at level 0; everything inside is refined at least once. Deeper
+levels follow an oblate ellipsoid around each nucleus (scaled to the disk
+scale height) or a density threshold, so arms, bars and tidal features keep
+their resolution. One extra central level resolves the nuclei by mass-
+conserving prolongation from the actual particles.
 
-The dwarf irregular additionally multiplies the dynamically-computed
-density by a fractal (multi-octave smoothed noise) texture, purely as a
-post-hoc visual "clumpiness" layer -- this part is NOT dynamical.
+Caching
+-------
+The particle simulation is cached in a pickle (--cache) and the rendered image
+arrays in a second one (--frb-cache), so re-rendering and re-laying-out the
+montages never re-runs the integrators.
 
-Pseudo-AMR (3D): the grid is a true 3D octree-style patch hierarchy with
-cubic cells. Only blocks outside a central ellipsoid stay at the coarsest level;
-everything inside it is refined at least once, and deeper levels follow an
-oblate-ellipsoid region around each nucleus OR a density threshold, so
-spiral arms / bars / tidal features keep their resolution. The vertical
-extent of the refinement follows the disk scale height rather than a
-sphere. One extra central level (finer than the uniform grid by ~20x)
-resolves each nucleus via a mass-conserving prolongation informed by the
-actual particles.
+Notebook use
+------------
+    results = pickle.load(open("zoo_cache.pkl", "rb"))
+    g = prepare_galaxy("4_barred_spiral", results["4_barred_spiral"])
+    ds, info = build_ds(g, "amr")            # "sph" | "uniform" | "amr"
+    yt_plot(ds, "z", "slic")                 # or "proj"; renders inline
 
-All three representations (SPH, uniform grid, pseudo-AMR) are built from
-the same 3D particle set in the same box and are rendered face-on and
-edge-on; the script writes two montages (zoo_montage_faceon.png,
-zoo_montage_edgeon.png). The particle simulation is cached in a pickle so
-re-rendering never re-runs the integrators.
-
-Requires: numpy, scipy, yt.
+Requires: numpy, scipy, matplotlib, yt.
 """
 
 import argparse
@@ -67,27 +68,20 @@ yt.set_log_level(50)
 
 rng = np.random.default_rng(7)
 
-# Physical unit calibration, shared by every representation (SPH, uniform
-# grid, AMR) so "the same galaxy" means the same physical scale everywhere.
-# These are arbitrary but astrophysically reasonable choices: 1 code length
-# unit = 10 kpc (so a disk with rd=0.35 code units is a 3.5 kpc scale
-# length, and the box radius of 1.0 code unit is 10 kpc -- both sensible
-# for a spiral disk), and each simulation particle stands in for a clump of
-# stars/gas totalling 1e6 Msun (so a 60,000-particle galaxy has a total
-# mass of 6e10 Msun, also a sensible spiral-galaxy mass).
+# Unit calibration shared by all representations:
+# 1 code length = 10 kpc (box half-width 1.0 = 10 kpc, disk scale length
+# rd = 0.35 = 3.5 kpc); 1 particle = 1e6 Msun (60k particles = 6e10 Msun).
 LENGTH_SCALE_KPC = 10.0
 MASS_PER_PARTICLE_MSUN = 1.0e6
 
 
 # =====================================================================
-# Fractal noise texture (used for the dwarf-irregular's clumpiness and as
-# a mild texture on the grid-based fields)
+# Fractal noise
 # =====================================================================
 
 def fractal_noise(shape, rng, octaves=4, base_sigma=6.0, persistence=0.6):
-    """Cheap multi-octave 'value noise': white noise Gaussian-filtered at a
-    ladder of scales and summed. A lightweight stand-in for Perlin/simplex
-    noise that needs nothing beyond numpy + scipy. Works for any ndim."""
+    """Multi-octave smoothed noise: white noise filtered at a ladder of
+    scales and summed. Any ndim."""
     noise = np.zeros(shape)
     amp = 1.0
     amp_sum = 0.0
@@ -108,7 +102,8 @@ def fractal_noise(shape, rng, octaves=4, base_sigma=6.0, persistence=0.6):
 # =====================================================================
 
 def make_components(specs):
-    """specs: list of dicts with keys m, pitch_deg, amp, r_peak, r_width, omega_p"""
+    """Perturbation specs -> internal dicts. Spec keys: m, pitch_deg, amp,
+    r_peak, r_width, omega_p."""
     comps = []
     for s in specs:
         comps.append(dict(
@@ -137,9 +132,9 @@ def phi_components(r, theta, t, comps, V0, r0_ref=0.08):
 
 
 def accel_disk(x, y, t, comps, V0, RC, c_other=None, GM_other=0.0, eps_other=0.3):
-    """Acceleration for a disk centered at the origin (caller offsets by the
-    galaxy's own moving center before calling), optionally with a Plummer
-    tidal perturber at c_other=(xo,yo) with mass parameter GM_other."""
+    """Acceleration for a disk centred on the origin (callers subtract the
+    galaxy's own centre first). Optional Plummer tidal perturber at c_other
+    with mass parameter GM_other."""
     h = 1e-4
 
     def phi_xy(xx, yy):
@@ -158,6 +153,7 @@ def accel_disk(x, y, t, comps, V0, RC, c_other=None, GM_other=0.0, eps_other=0.3
 
 
 def sample_exponential_disk(n, rd, r0_max, rng):
+    """Radii from an exponential surface-density disk (rejection sampling)."""
     r0 = np.empty(0)
     while r0.shape[0] < n:
         cand = rng.uniform(0.02, r0_max, size=n)
@@ -172,9 +168,9 @@ def simulate_disk_galaxy(
     V0=1.0, RC=0.08, rd=0.35, r0_max=3.0, r_kill=4.0,
     vdisp=0.02, vphi_scatter=0.04,
 ):
-    """Integrate a disk of n test particles in the axisymmetric + spiral/bar
-    potential defined by `specs`. Returns real (dynamically evolved) x, y
-    positions (2D only -- see module docstring)."""
+    """Leapfrog-integrate n test particles in the axisymmetric + `specs`
+    potential. Perturbation amplitudes ramp up linearly over fade_time.
+    Returns the (x, y) of particles that end inside r_kill."""
     comps = make_components(specs)
     r0 = sample_exponential_disk(n, rd, r0_max, rng)
     theta0 = rng.uniform(0, 2 * np.pi, size=n)
@@ -207,13 +203,12 @@ def simulate_disk_galaxy(
 
 
 # =====================================================================
-# Elliptical galaxies: direct equilibrium (Plummer-sphere) sampling
+# Ellipticals: direct Plummer-sphere sampling
 # =====================================================================
 
 def simulate_elliptical(n=40000, a=0.35, qx=1.0, qy=1.0, qz=0.7, r_cap_factor=6.0, rng=rng):
-    """Sample n points from a Plummer-sphere density profile, scaled by axis
-    ratios (qx, qy, qz) for a triaxial/flattened shape. This is a genuinely
-    3D distribution (unlike the disk galaxies -- see module docstring)."""
+    """Sample n points from a Plummer profile (scale a), stretched by the
+    axis ratios (qx, qy, qz). Radii are capped at r_cap_factor * a."""
     u = rng.uniform(0, 0.995, size=n)
     r = a / np.sqrt(u ** (-2.0 / 3.0) - 1.0)
     r = np.minimum(r, a * r_cap_factor)
@@ -227,13 +222,12 @@ def simulate_elliptical(n=40000, a=0.35, qx=1.0, qy=1.0, qz=0.7, r_cap_factor=6.
 
 
 # =====================================================================
-# Mergers: two disks on a mutual-gravity (Plummer-softened) encounter
+# Mergers: two disks on a mutual-gravity encounter
 # =====================================================================
 
 def two_body_trajectory(GM_tot, r12_init, v12_init, t_total, dt, eps=0.3):
-    """Integrate the relative separation r12 = c2 - c1 of two point masses
-    (Plummer-softened) under their mutual gravity. Returns the trajectory
-    array (nsteps+1, 2)."""
+    """Leapfrog-integrate the relative separation r12 = c2 - c1 of two
+    Plummer-softened point masses. Returns an (nsteps + 1, 2) array."""
     nsteps = int(t_total / dt)
     r = np.array(r12_init, dtype=float)
     v = np.array(v12_init, dtype=float)
@@ -260,25 +254,19 @@ def simulate_merger(
     GM_tot=3.0, r12_init=(-4.5, 1.0), v12_init=(0.95, -0.05), eps_gal=0.35,
     m1_frac=0.5, spin1=1.0, spin2=1.0,
 ):
-    """Two disk galaxies (specs1, specs2), each with its own potential,
-    size (rd1/rd2, r0_max1/r0_max2), particle count (n1/n2), and spin sense
-    (spin1/spin2 = +-1), centered on a moving center -- interacting via
-    mutual gravity (their centers) plus a Plummer tidal term (felt by each
-    other's disk particles). Different sizes/shapes/spins make the two
-    galaxies look like genuinely different objects rather than mirror
-    images of each other, and prograde vs retrograde spin (relative to the
-    orbit) gives the classic asymmetric tidal response real interacting
-    pairs show -- one galaxy raises a much stronger tail than the other.
-    Returns the combined (x, y) of surviving particles from both galaxies.
-    """
+    """Two disks, each with its own potential, size, particle count and spin
+    sense (spin = +-1), centred on moving centres. The centres follow a
+    mutual 2-body orbit; each disk also feels a Plummer tidal term from the
+    other. Prograde vs retrograde spin gives the asymmetric tidal response of
+    real pairs. Returns the (x, y) of surviving particles from both disks."""
     comps1 = make_components(specs1)
     comps2 = make_components(specs2)
     GM1 = GM_tot * m1_frac
     GM2 = GM_tot * (1 - m1_frac)
 
     traj = two_body_trajectory(GM_tot, r12_init, v12_init, t_total, dt, eps=eps_gal)
-    c1_traj = -(1 - m1_frac) * traj  # c1 = COM - (M2/Mtot)*r12 ; COM fixed at origin
-    c2_traj = m1_frac * traj         # c2 = COM + (M1/Mtot)*r12
+    c1_traj = -(1 - m1_frac) * traj  # centre of mass fixed at the origin
+    c2_traj = m1_frac * traj
 
     v12_now = np.array(v12_init, dtype=float)
     v_c1_init = -(1 - m1_frac) * v12_now
@@ -347,17 +335,15 @@ def simulate_merger(
 
 
 # =====================================================================
-# SPH rendering: add a vertical coordinate, compute kNN smoothing
-# length + density, hand off to yt's generic SPH particle loader
+# SPH representation
 # =====================================================================
 
-H_VERT = 0.035  # vertical scale height used for disk-type galaxies
+H_VERT = 0.035  # disk vertical scale height (code units, for a half-width of 1)
 
 
 def add_z_disk(x, y, h=H_VERT, zlim=None, rng=rng):
-    """Sample a vertical coordinate from a sech^2(z/h) profile (inverse-CDF
-    sampling). This is NOT dynamically coupled to the (x, y) orbit
-    integration -- see the "2D vs 3D" note below."""
+    """Draw z from a sech^2(z/h) profile (inverse-CDF sampling), independent
+    of (x, y)."""
     n = x.shape[0]
     u = rng.uniform(1e-4, 1 - 1e-4, size=n)
     z = h * np.arctanh(2 * u - 1)
@@ -367,8 +353,7 @@ def add_z_disk(x, y, h=H_VERT, zlim=None, rng=rng):
 
 
 def particles_to_sph(x, y, z, k=32):
-    """Real 3D kNN smoothing length + SPH density estimate from the full
-    3D particle positions."""
+    """3D kNN smoothing length and SPH density from the particle positions."""
     pos = np.column_stack([x, y, z])
     tree = cKDTree(pos)
     dists, _ = tree.query(pos, k=min(k, pos.shape[0] - 1))
@@ -379,10 +364,8 @@ def particles_to_sph(x, y, z, k=32):
 
 
 def z_half_extent(hw, spheroid):
-    """Half-thickness of the vertical box, shared by ALL three
-    representations: always a cube (same as the in-plane half-width), for
-    disks and spheroids alike, so face-on and edge-on views have the same
-    layout. (`spheroid` is kept for API compatibility.)"""
+    """Vertical half-extent of the box. Always a cube (= in-plane half-width)
+    for every galaxy type, so all views share one layout."""
     return hw
 
 
@@ -390,17 +373,13 @@ DENS = ("gas", "density")
 
 
 def build_sph_ds(x, y, z, xlim, ylim, zlim, weight=None):
-    """Build a yt SPH particle dataset.
+    """yt SPH particle dataset.
 
-    x, y, z may extend beyond (xlim, ylim, zlim) -- e.g. the disk galaxies
-    are seeded out to a radius well past the visible box (see
-    simulate_disk_galaxy's r0_max), so that particles near the edge of the
-    plotted view still have real neighbors just outside it. Smoothing
-    length / density are computed from the FULL particle set for exactly
-    that reason; only the subset that actually falls inside (xlim, ylim,
-    zlim) is then handed to yt (which requires every particle to lie
-    within the declared bounding box).
-    """
+    Smoothing lengths and densities use the full particle set, including
+    particles outside the box, so edge particles keep their neighbours. Only
+    particles inside (xlim, ylim, zlim) are passed on, since yt requires all
+    particles to lie within the bounding box. Optional per-particle `weight`
+    multiplies the density."""
     pos, mass, hsml, density = particles_to_sph(x, y, z)
     if weight is not None:
         density = density * weight
@@ -429,21 +408,17 @@ def build_sph_ds(x, y, z, xlim, ylim, zlim, weight=None):
 
 
 # =====================================================================
-# Shared machinery for the two grid-based representations (uniform grid
-# and pseudo-AMR): a single smoothed+denoised "master" density field,
-# converted to physical units via exact block-summation so that a coarser
-# cell's value is always the true sum of the finer cells it replaces
-# (mass-conserving downsampling, not just a resample).
+# Grid-based representations: shared density field
 # =====================================================================
+# Both grids start from one smoothed "master" count field. Coarser cells
+# are exact block sums of finer ones, so mass is conserved across levels.
 
 def deposit_adaptive(x, y, z, hsml, xlim, ylim, zlim, shape, weights=None,
                      sigma_frac=0.5, min_sigma=0.7, bins_per_octave=2):
-    """Adaptive-kernel deposit: every particle is spread as an isotropic
-    Gaussian with sigma = sigma_frac * hsml (its own kNN smoothing length,
-    the SAME length the SPH representation uses), so grid fields inherit
-    SPH's resolution: sharp where particles are dense, smooth where they
-    are sparse. Done efficiently by grouping particles into log-spaced
-    sigma bins, histogramming each group and filtering it once."""
+    """Deposit each particle as an isotropic Gaussian with
+    sigma = sigma_frac * hsml (the same kNN length the SPH path uses), so the
+    grid inherits SPH's adaptive resolution. Particles are grouped into
+    log-spaced sigma bins; each bin is histogrammed and filtered once."""
     cell = (xlim[1] - xlim[0]) / shape[0]
     sig = np.maximum(sigma_frac * hsml / cell, min_sigma)  # in cells
     key = np.round(np.log2(sig) * bins_per_octave).astype(int)
@@ -462,25 +437,15 @@ def compute_smooth_field_3d(
     sigma_coarse_frac=0.14, coarse_weight=0.6, z_sigma_coarse=None,
     noise_amp=0.15, noise_octaves=4, noise_base_sigma=8.0, rng=rng, hsml=None,
 ):
-    """Real (x, y, z) particle histogram -> blended fine+coarse Gaussian
-    smoothing -> correlated noise -> renormalisation. Returns a 3D field
-    whose SUM equals the (weighted) number of particles in the box, so
-    that sums over any region are a mass-like proxy that later gets
-    divided by a cell's physical volume to get a real density.
+    """Particles -> smooth 3D count field whose sum equals the (weighted)
+    particle number. Later divided by cell volume to get a density.
 
-    The blended smoothing is what keeps sparse regions from looking like
-    scattered dots: a narrow pass preserves real structure (arms, bar,
-    tidal features) while a much wider pass (a sizeable fraction of the
-    box) turns sparse outskirts into a smooth, continuous background.
-    Applied isotropically in a thin disk the wide pass would puff the
-    disk up vertically, so z_sigma_coarse (in cells) caps its vertical
-    width (pass ~ one scale height for disks; None = isotropic, which is
-    right for spheroids). The final rescale removes the ~1.6x extra mass
-    that summing the two smoothing passes (weight 1 + coarse_weight)
-    would otherwise inject."""
+    With `hsml` (used by the pipeline): adaptive SPH-matched deposit, plus a
+    small floor. Without it: fixed fine + coarse Gaussian blend with
+    correlated noise. The coarse pass fills sparse outskirts; z_sigma_coarse
+    (in cells) caps its vertical width so thin disks do not puff up (None =
+    isotropic, for spheroids)."""
     if hsml is not None:
-        # adaptive (SPH-matched) smoothing: replaces the fixed fine+coarse blend
-        # and the noise texture, which would wash out inter-arm contrast
         field = deposit_adaptive(x, y, z, hsml, xlim, ylim, zlim, shape, weights)
         tot = field.sum()
         field = field + field.max() * 3e-4
@@ -495,18 +460,17 @@ def compute_smooth_field_3d(
     del H_fine, H_coarse
 
     noise = fractal_noise(shape, rng, octaves=noise_octaves,
-                           base_sigma=noise_base_sigma, persistence=0.55)
+                          base_sigma=noise_base_sigma, persistence=0.55)
     field = field * np.exp(noise_amp * noise)
     del noise
     field = np.clip(field, 0, None)
     field = field + field.max() * 3e-4
-    return field * (H.sum() / field.sum())
+    return field * (H.sum() / field.sum())  # renormalise to the particle count
 
 
 def block_reduce_sum(field, factor):
-    """Downsample an N-d field by an integer factor, summing each
-    factor^ndim block. Requires every dimension to be exactly divisible by
-    factor (guaranteed by construction everywhere this is used)."""
+    """Downsample an N-d array by summing factor^ndim blocks. All dimensions
+    must be divisible by factor."""
     shp = []
     for n in field.shape:
         shp += [n // factor, factor]
@@ -514,8 +478,7 @@ def block_reduce_sum(field, factor):
 
 
 def counts_to_density_3d(count_field3d, left_edge, right_edge):
-    """Cell 'particle count' -> physical density: cell mass / cell volume,
-    in Msun/kpc**3."""
+    """Cell particle count -> density (cell mass / cell volume), Msun/kpc**3."""
     nx, ny, nz = count_field3d.shape
     vol_kpc3 = 1.0
     for n, lo, hi in zip((nx, ny, nz), left_edge, right_edge):
@@ -524,25 +487,16 @@ def counts_to_density_3d(count_field3d, left_edge, right_edge):
 
 
 # =====================================================================
-# Fixed-resolution uniform grid (NOT adaptive/AMR) built from the same
-# particles, for a "what would a different, grid-based code's snapshot
-# of this same galaxy look like" comparison. Genuinely 3D with cubic
-# cells, so ellipticals are round and disks have a real vertical profile
-# (taken from the particles' z, not an imposed analytic sech^2).
+# Uniform-grid representation
 # =====================================================================
 
 def build_uniform_ds(
     x, y, z, xlim, ylim, zlim, n_cells=56, supersample=4, h_vert=H_VERT,
     spheroid=False, weights=None, rng=rng, hsml=None, **smooth_kwargs,
 ):
-    """Bin particles onto a single fixed-resolution uniform grid (no
-    refinement at all -- every cell is the same size, and deliberately
-    modest in count so the cells themselves are visible, like a real
-    coarse-ish grid-code run). n_cells is the count across x and y; the
-    vertical count follows from cubic cells. The field is computed smooth
-    at a finer working resolution first (supersample x) and then block-
-    summed down, keeping the smooth, non-dotty properties while still
-    giving a visibly blocky final image."""
+    """Fixed-resolution uniform grid with cubic cells. n_cells is the count
+    across x and y; the z count follows from the cubic cells. The field is
+    computed at `supersample` times the resolution and block-summed down."""
     dx = (xlim[1] - xlim[0]) / n_cells
     nz = int(round((zlim[1] - zlim[0]) / dx))
     shape = (n_cells * supersample, n_cells * supersample, nz * supersample)
@@ -559,13 +513,19 @@ def build_uniform_ds(
 
 
 # =====================================================================
-# yt output helpers: labelled PNGs (optional) and raw slice arrays for
-# the montages. Face-on = slice normal to z; edge-on = slice normal to y
-# (through the midplane).
+# yt output helpers
 # =====================================================================
+# kind: "slic" = midplane slice (Msun/kpc**3), "proj" = line-of-sight
+# projection without weight field, i.e. column density (Msun/kpc**2).
+# Face-on = normal to z; edge-on = normal to y.
 
-def _style(p, title, unit="Msun/kpc**3", grids=False):
-    p.set_unit(DENS, unit)
+KINDS = ("slic", "proj")
+UNITS = {"slic": "Msun/kpc**3", "proj": "Msun/kpc**2"}
+KIND_LABELS = {"slic": "midplane density slices", "proj": "projected density"}
+
+
+def _style(p, title, kind="slic", grids=False):
+    p.set_unit(DENS, UNITS[kind])
     p.set_axes_unit("kpc")
     p.set_cmap(DENS, "viridis")
     p.annotate_title(title)
@@ -573,74 +533,65 @@ def _style(p, title, unit="Msun/kpc**3", grids=False):
         p.annotate_grids(periodic=False)
 
 
-def save_yt_plots(ds, base, title, grids=False):
-    """Write {base}_faceon.png and {base}_edgeon.png (labelled yt slices)."""
+def yt_plot(ds, axis="z", kind="slic", title=None, grids=False):
+    """Styled native yt plot (SlicePlot or ProjectionPlot). In a notebook,
+    leave it as the last expression of a cell (or call .show()) to render it
+    inline; .save(), .zoom() and the other yt plot methods work as usual."""
+    cls = yt.SlicePlot if kind == "slic" else yt.ProjectionPlot
+    p = cls(ds, axis, DENS)
+    _style(p, title or "", kind=kind, grids=grids)
+    return p
+
+
+def save_yt_plots(ds, base, title, grids=False, kind="slic"):
+    """Write {base}_faceon_{kind}.png and {base}_edgeon_{kind}.png."""
     for axis, tag in (("z", "faceon"), ("y", "edgeon")):
-        p = yt.SlicePlot(ds, axis, DENS)
-        _style(p, title, grids=grids)
-        p.save(f"{base}_{tag}.png")
+        yt_plot(ds, axis, kind, title, grids).save(f"{base}_{tag}_{kind}.png")
 
 
-def slice_arrays(ds, hw, zhalf, res=512):
-    """Midplane slices as plain arrays in Msun/kpc**3, oriented for
-    imshow(origin='lower'): face-on has x horizontal / y vertical; edge-on
-    has x horizontal / z vertical (galaxy lying flat). Face-on is res x res;
-    edge-on is res wide and res*zhalf/hw tall (cubic pixels)."""
+def image_arrays(ds, hw, zhalf, res=512, kind="slic"):
+    """Face-on and edge-on images as plain arrays for imshow(origin="lower").
+    Face-on: res x res, x horizontal / y vertical. Edge-on: res wide and
+    res * zhalf / hw tall (cubic pixels), x horizontal / z vertical."""
     q = lambda v: ds.quan(v, "code_length")
     nz_res = max(8, int(round(res * zhalf / hw)))
-    face = ds.slice("z", 0.0).to_frb(q(2 * hw), res)[DENS].to("Msun/kpc**3").d
-    # yt's image axes for a y-normal slice are (horizontal = z, vertical = x),
-    # and frb arrays are indexed [vertical, horizontal]; transpose so the
-    # galaxy lies flat (x horizontal, z vertical).
-    edge = ds.slice("y", 0.0).to_frb(q(2 * zhalf), (nz_res, res), height=q(2 * hw))[DENS].to("Msun/kpc**3").d
+    unit = UNITS[kind]
+    src = (lambda ax: ds.slice(ax, 0.0)) if kind == "slic" else (lambda ax: ds.proj(DENS, ax))
+    face = src("z").to_frb(q(2 * hw), res)[DENS].to(unit).d
+    # a y-normal image has axes (horizontal = z, vertical = x) and frb arrays
+    # are [vertical, horizontal]; transpose so the galaxy lies flat
+    edge = src("y").to_frb(q(2 * zhalf), (nz_res, res), height=q(2 * hw))[DENS].to(unit).d
     return np.ascontiguousarray(face), np.ascontiguousarray(edge.T)
 
+
 # =====================================================================
-# 3D pseudo-AMR: cubic cells, refine_by=2 in x, y AND z.
-#
-# Refinement rules (a block at level L is split into level L+1 if...):
-#   L = 0 : its center lies inside an ellipsoid around the box center.
-#           Only blocks OUTSIDE that ellipsoid stay at the coarsest level,
-#           so the coarse region is an ellipsoidal shell, not a box frame.
-#   L >= 1: its center lies inside an OBLATE ELLIPSOID around any
-#           identified nucleus (semi-axes R_L in the disk plane and
-#           Z_L = min(R_L, z_extent_h * h_vert) vertically), OR its mean
-#           density exceeds density_frac[L-1] * (peak fine-cell density).
-#   L = max_level : (central level) inside a small oblate ellipsoid around
-#           each nucleus, split once more by conservative prolongation.
-#
-# Why not a sphere? A disk with scale height h << R is ~30x thinner than it
-# is wide. A sphere of radius R would spend almost all of its fine cells on
-# empty space above/below the disk. The oblate region hugs the disk, and
-# the density criterion follows arms / bars / tidal tails wherever they
-# are, so detail is kept where there is actually structure. Spheroidal
-# galaxies (ellipticals) set spherical=True and get a sphere in a cubic box.
+# 3D pseudo-AMR
 # =====================================================================
+# Cubic cells, refine_by = 2 in x, y and z. A block at level L is split into
+# level L + 1 if:
+#   L = 0:  its centre lies inside an ellipsoid around the box centre (blocks
+#           outside stay coarse, giving an ellipsoidal coarse shell).
+#   L >= 1: its centre lies inside an oblate ellipsoid around a nucleus
+#           (semi-axes R_L in the plane, Z_L = min(R_L, z_extent_h * h_vert)
+#           vertically), or its mean density exceeds
+#           density_frac[L-1] * peak fine-cell density.
+#   L = max_level (central level): inside a small oblate ellipsoid around a
+#           nucleus; split once more by conservative prolongation.
+# The oblate region follows the thin disk instead of wasting cells above and
+# below it; the density criterion follows arms, bars and tidal tails.
+# Spheroids use spherical=True (sphere inside a cubic box).
 
 def find_centers(
     x, y, xlim, ylim, n_centers=1, resolution=48, smooth_sigma=3.0,
     min_sep_frac=0.2, min_prominence=0.08,
 ):
-    """Locate up to n_centers density peaks (e.g. galaxy nuclei) from the
-    particle distribution.
+    """Up to n_centers density peaks (galaxy nuclei), strongest first.
 
-    Two things make this robust against the obvious failure modes:
-      - a minimum peak PROMINENCE (relative to the global max) so small
-        noise-driven local maxima never count as a peak
-      - a minimum SEPARATION between accepted centers, scaled to the box
-        size, so a galaxy with a clumpy/double nucleus (e.g. the twin
-        star-forming knots at the center of the barred spiral) is never
-        mistaken for two different galaxies -- the separation floor is
-        comfortably larger than any such sub-galaxy clump spacing, but
-        well below the actual galaxy-galaxy separation in the merger
-        cases, so real pairs are still found as two centers.
-    Peaks are returned strongest-first, deduplicated by the separation
-    rule, so the result is always well-separated and never contains two
-    (near-)identical centers -- which matters downstream, since a
-    pseudo-AMR refinement region built around two coincident centers
-    could otherwise produce degenerate, near-zero-area patches that
-    break yt's slicing/ray logic.
-    """
+    A minimum prominence (relative to the global maximum) rejects noise
+    peaks. A minimum separation (fraction of the box width) merges clumpy
+    double nuclei into one centre while still resolving real galaxy pairs, and
+    guarantees no two centres coincide (which would give degenerate AMR
+    patches)."""
     H, _, _ = np.histogram2d(x, y, bins=resolution, range=[xlim, ylim])
     Hs = gaussian_filter(H, sigma=smooth_sigma)
 
@@ -679,37 +630,26 @@ def build_amr_patches_3d(
 ):
     """Build the list of 3D patches (root + nested refined blocks).
 
-    fine_field must have shape (N, N, Nz) with N = base_res * refine_by**max_level
-    and Nz = base_nz * refine_by**max_level, and the cells must be cubic
-    (zlim spans exactly base_nz root cells). Patches for levels 0..max_level
-    are carved out of fine_field by exact integer block-summation, in
-    pixel-index space throughout the recursion, so every patch lands exactly
-    on its parent's cell edges (yt's AMR loader requires that) and mass is
-    conserved across levels.
+    fine_field has shape (N, N, Nz) with N = base_res * refine_by**max_level
+    and Nz = base_nz * refine_by**max_level (cubic cells). Patches are carved
+    out of it by exact integer block sums in pixel-index space, so each patch
+    sits on its parent's cell edges (required by yt) and mass is conserved.
 
-    block0 : block size (in root cells) used for the level-0 -> 1 split only.
-        Small (1) so the ellipsoid boundary is smooth rather than a coarse staircase.
+    block0 : block size (root cells) for the level 0 -> 1 split; 1 gives a
+        smooth ellipsoid boundary.
     envelope_axes_frac : semi-axes (fractions of the half-width) of the
-        ELLIPSOID around the box center inside which level-0 blocks are
-        refined; blocks outside it stay coarse, so the coarsest level is an
-        ellipsoidal shell (elliptical in every coordinate plane), never the
-        box faces. Default (0.9, 0.9, 0.9) for spheroids, oblate
+        level-0 refinement ellipsoid. Default (0.9, 0.9, 0.9) for spheroids,
         (0.9, 0.9, 0.5) for disks.
-    radii_frac / density_frac : per-level (L = 1, 2, 3, ...) nucleus-region
-        radius (fraction of half-width) and density threshold (fraction of
-        the peak fine-cell value). The last entry is reused for deeper levels.
-    z_extent_h : vertical half-thickness of the refinement ellipsoid in
-        scale heights (ignored when spherical=True).
-    central_radius_frac : if `particles` (an (n, 3) array) is given, ONE
-        extra level (max_level + 1) is added inside this (oblate) radius of
-        each nucleus. fine_field has no resolution beyond max_level, so the
-        extra level is a CONSERVATIVE PROLONGATION: every parent cell's mass
-        is split among its children in proportion to a lightly smoothed
-        (central_sigma, in child cells) histogram of the actual particles in
-        that region. Children therefore sum exactly to their parent (mass
-        conserved, no seams between levels) while the sub-cell structure is
-        real particle information rather than interpolation. Set to None to
-        disable.
+    radii_frac, density_frac : per-level nucleus-region radius (fraction of
+        the half-width) and density threshold (fraction of the peak fine-cell
+        value). The last entry is reused for deeper levels.
+    z_extent_h : vertical half-thickness of the refinement ellipsoid in scale
+        heights (ignored if spherical).
+    central_radius_frac : if `particles` (n, 3) is given, one extra level
+        (max_level + 1) is added inside this radius of each nucleus. It is a
+        conservative prolongation: each parent cell's mass is split among its
+        children in proportion to a lightly smoothed (central_sigma, in child
+        cells) particle histogram. None disables it.
     """
     R = refine_by
     master = (base_res * R**max_level, base_res * R**max_level, base_nz * R**max_level)
@@ -775,7 +715,7 @@ def build_amr_patches_3d(
         nb = nchild + 2 * pad
         H, _ = np.histogramdd(particles[m], bins=(nb, nb, nb), range=list(zip(lo, hi)))
         S = gaussian_filter(H, sigma=central_sigma)[pad:-pad, pad:-pad, pad:-pad]
-        S = S + 0.1 * S.mean() + 1e-12  # a little floor: empty regions split evenly
+        S = S + 0.1 * S.mean() + 1e-12  # floor: empty regions split evenly
         S6 = S.reshape(block, R, block, R, block, R)
         w = S6 / S6.sum(axis=(1, 3, 5), keepdims=True)
         child = w * parent[:, None, :, None, :, None]
@@ -795,7 +735,7 @@ def build_amr_patches_3d(
                             continue
                         child_factor = R ** (max_level - level - 1)
                         dchild = block_reduce_sum(fine_field[pi0:pi1, pj0:pj1, pk0:pk1], child_factor)
-                    else:  # level == max_level: central prolongation level
+                    else:  # central prolongation level
                         if not in_central(pi0, pi1, pj0, pj1, pk0, pk1):
                             continue
                         dchild = prolong(pi0, pi1, pj0, pj1, pk0, pk1)
@@ -816,13 +756,11 @@ def build_amr_ds(
     max_level=4, h_vert=H_VERT, spherical=False, z_sigma_h=1.0, weights=None,
     rng=rng, hsml=None, **crit_kwargs,
 ):
-    """Deposit particles on a 3D pseudo-AMR hierarchy and return
-    (yt dataset, info). Levels 0..max_level come from the smoothed master
-    field; one more central level (see build_amr_patches_3d) resolves the
-    nuclei beyond it.
+    """Particles -> 3D pseudo-AMR yt dataset. Returns (ds, info).
 
-    Box: xlim x ylim in the plane; vertically the box is base_nz root cells
-    thick (cubic cells): a cube for every galaxy type (see z_half_extent)."""
+    Levels 0..max_level come from the smoothed master field; one more central
+    level resolves the nuclei (see build_amr_patches_3d). The box is a cube:
+    base_nz = base_res root cells in z."""
     R = refine_by
     dx0 = (xlim[1] - xlim[0]) / base_res
     base_nz = base_res
@@ -865,7 +803,7 @@ def build_amr_ds(
 
 
 # =====================================================================
-# The 10-galaxy zoo definitions
+# Galaxy definitions
 # =====================================================================
 
 DISK_SPECS = {
@@ -903,11 +841,8 @@ MERGER_SPEC_BARRED_SMALL = [
 ]
 
 MERGERS = {
-    # bigger grand-design primary + smaller, faster-rotating flocculent-ish
-    # secondary on a RETROGRADE spin -- prograde/retrograde asymmetry means
-    # the two galaxies respond very differently to the same encounter, one
-    # raising a much stronger tidal feature than the other (as in real
-    # interacting pairs, e.g. the Mice Galaxies)
+    # grand-design primary + smaller, faster secondary on a retrograde spin:
+    # the two galaxies respond differently, one raising a much stronger tail
     "8_interacting_pair": dict(
         specs1=MERGER_SPEC_BIG, specs2=MERGER_SPEC_SMALL,
         rd1=0.32, rd2=0.15, r0_max1=1.5, r0_max2=0.85,
@@ -915,8 +850,8 @@ MERGERS = {
         t_total=3.6, GM_tot=4.5, r12_init=(-4.5, 1.2), v12_init=(0.95, -0.75),
         lim=3,
     ),
-    # bigger primary + smaller barred secondary, both prograde (drives a
-    # deeper, more disruptive encounter toward coalescence)
+    # primary + smaller barred secondary, both prograde: deeper, more
+    # disruptive encounter toward coalescence
     "9_merger_remnant": dict(
         specs1=MERGER_SPEC_BIG, specs2=MERGER_SPEC_BARRED_SMALL,
         rd1=0.3, rd2=0.13, r0_max1=1.4, r0_max2=0.7,
@@ -947,9 +882,8 @@ ORDER = [
 
 
 def generate_all(n_disk=60000, n_ellip=40000, only=None):
-    """Run the dynamics/sampling for all 10 galaxies (or just those named in
-    `only`). Returns a dict keyed by galaxy name -> dict(x, y, [z], xlim,
-    ylim, n_centers, [dwarf])."""
+    """Run the dynamics / sampling for all galaxies, or only those in `only`.
+    Returns {name: dict(x, y, [z], xlim, ylim, n_centers, [dwarf])}."""
     want = lambda name: only is None or name in only
     results = {}
 
@@ -984,100 +918,129 @@ def generate_all(n_disk=60000, n_ellip=40000, only=None):
     return results
 
 
+# =====================================================================
+# Rendering
+# =====================================================================
+
 METHODS = ("sph", "uniform", "amr")
 METHOD_LABELS = {"sph": "SPH", "uniform": "Uniform grid", "amr": "Pseudo-AMR"}
 
 
-def render_galaxy(name, d, outdir=".", individual=False, grids=False, amr_kwargs=None, res=512):
-    """Render one galaxy three ways (SPH, uniform grid, 3D pseudo-AMR), each
-    face-on and edge-on. All three share the same particles (x, y from the
-    saved simulation, one z per particle) and the same physical box (see
-    z_half_extent). Returns {method: {"face": img, "edge": img}, "hw", "zhalf",
-    "amr_info"} with images as Msun/kpc**3 midplane-slice arrays.
-
-    Randomness (vertical coordinate, noise textures) is seeded from the
-    galaxy name, so re-rendering from the saved particles is reproducible."""
+def prepare_galaxy(name, d):
+    """Cached simulation result -> full 3D particle set (z added, dwarf
+    weights) plus box info, for build_ds(). Seeded from the galaxy name, so
+    repeated calls give identical particles."""
     xlim, ylim = d["xlim"], d["ylim"]
     hw = 0.5 * (xlim[1] - xlim[0])
     spheroid = "z" in d
     zhalf = z_half_extent(hw, spheroid)
     zlim = (-zhalf, zhalf)
-    h_vert = H_VERT * hw  # scale vertical thickness with box size
+    h_vert = H_VERT * hw  # vertical thickness scales with the box
     seed = zlib.crc32(name.encode())
     zrng = np.random.default_rng(seed)
 
     x, y = d["x"], d["y"]
-    z = d["z"] if spheroid else add_z_disk(x, y, h=h_vert, rng=zrng)  # unclipped
+    z = d["z"] if spheroid else add_z_disk(x, y, h=h_vert, rng=zrng)
 
     weight = None
-    if d.get("dwarf"):  # visual clumpiness layer, applied identically in every method
+    if d.get("dwarf"):  # clumpiness texture, identical in all three methods
         nres = 220
         noise = fractal_noise((nres, nres), zrng, octaves=4, base_sigma=6.0, persistence=0.6)
         xi = np.clip(((x - xlim[0]) / (xlim[1] - xlim[0]) * nres).astype(int), 0, nres - 1)
         yi = np.clip(((y - ylim[0]) / (ylim[1] - ylim[0]) * nres).astype(int), 0, nres - 1)
         weight = np.exp(0.9 * noise[xi, yi])
 
-    title = TITLES[name]
-    out = dict(hw=hw, zhalf=zhalf)
+    return dict(name=name, d=d, x=x, y=y, z=z, weight=weight, xlim=xlim, ylim=ylim,
+                zlim=zlim, hw=hw, zhalf=zhalf, h_vert=h_vert, spheroid=spheroid,
+                seed=seed, title=TITLES[name], _hg=None)
 
-    ds = build_sph_ds(x, y, z, xlim, ylim, zlim, weight=weight)
-    out["sph"] = dict(zip(("face", "edge"), slice_arrays(ds, hw, zhalf, res)))
-    if individual:
-        save_yt_plots(ds, f"{outdir}/zoo_{name}_sph", title + " (SPH)")
-    del ds
 
-    # grid-based representations only need particles inside the visible box
+def build_ds(g, method, amr_kwargs=None):
+    """yt dataset for one representation ("sph", "uniform", "amr") of a
+    prepared galaxy. Returns (ds, info); info is the AMR summary for "amr",
+    else None."""
+    x, y, z, weight = g["x"], g["y"], g["z"], g["weight"]
+    xlim, ylim, zlim = g["xlim"], g["ylim"], g["zlim"]
+    if method == "sph":
+        return build_sph_ds(x, y, z, xlim, ylim, zlim, weight=weight), None
+
+    # grids only need the particles inside the visible box
     inside = (x > xlim[0]) & (x < xlim[1]) & (y > ylim[0]) & (y < ylim[1])
     xg, yg, zg = x[inside], y[inside], z[inside]
     wg = None if weight is None else weight[inside]
-    hg = particles_to_sph(x, y, z)[2][inside]  # SPH kNN smoothing lengths
+    if g["_hg"] is None:  # kNN smoothing lengths from the full set, computed once
+        g["_hg"] = particles_to_sph(x, y, z)[2][inside]
+    hg = g["_hg"]
 
-    ds = build_uniform_ds(xg, yg, zg, xlim, ylim, zlim, h_vert=h_vert, spheroid=spheroid,
-                          weights=wg, hsml=hg, rng=np.random.default_rng(seed + 1))
-    out["uniform"] = dict(zip(("face", "edge"), slice_arrays(ds, hw, zhalf, res)))
-    if individual:
-        save_yt_plots(ds, f"{outdir}/zoo_{name}_uniform", title + " (uniform grid)")
-    del ds
+    if method == "uniform":
+        ds = build_uniform_ds(xg, yg, zg, xlim, ylim, zlim, h_vert=g["h_vert"],
+                              spheroid=g["spheroid"], weights=wg, hsml=hg,
+                              rng=np.random.default_rng(g["seed"] + 1))
+        return ds, None
 
     kw = dict(amr_kwargs or {})
-    if spheroid:
-        kw.setdefault("max_level", 3)  # cubic box: keep the 3D master field small
-    ds, info = build_amr_ds(xg, yg, zg, xlim, ylim, n_centers=d.get("n_centers", 1),
-                            h_vert=h_vert, spherical=spheroid, weights=wg, hsml=hg,
-                            rng=np.random.default_rng(seed + 2), **kw)
-    out["amr"] = dict(zip(("face", "edge"), slice_arrays(ds, hw, zhalf, res)))
-    out["amr_info"] = info
-    if individual:
-        save_yt_plots(ds, f"{outdir}/zoo_{name}_amr", title + " (pseudo-AMR)", grids=grids)
-    del ds
+    if g["spheroid"]:
+        kw.setdefault("max_level", 3)  # keeps the 3D master field small
+    return build_amr_ds(xg, yg, zg, xlim, ylim, n_centers=g["d"].get("n_centers", 1),
+                        h_vert=g["h_vert"], spherical=g["spheroid"], weights=wg, hsml=hg,
+                        rng=np.random.default_rng(g["seed"] + 2), **kw)
+
+
+def render_galaxy(name, d, outdir=".", individual=False, grids=False, amr_kwargs=None,
+                  res=512, kind="slic"):
+    """Render one galaxy in all three representations, face-on and edge-on,
+    as both slices and projections (one dataset build serves both).
+
+    Returns {method: {"face_slic", "edge_slic", "face_proj", "edge_proj"},
+    "hw", "zhalf", "amr_info"}; slices in Msun/kpc**3, projections in
+    Msun/kpc**2. `kind` selects which one the per-galaxy yt PNGs
+    (individual=True) use."""
+    g = prepare_galaxy(name, d)
+    out = dict(hw=g["hw"], zhalf=g["zhalf"])
+    for method in METHODS:
+        ds, info = build_ds(g, method, amr_kwargs)
+        arrs = {}
+        for k in KINDS:
+            arrs[f"face_{k}"], arrs[f"edge_{k}"] = image_arrays(ds, g["hw"], g["zhalf"], res, k)
+        out[method] = arrs
+        if info is not None:
+            out["amr_info"] = info
+        if individual:
+            save_yt_plots(ds, f"{outdir}/zoo_{name}_{method}",
+                          f"{g['title']} ({METHOD_LABELS[method]})",
+                          grids=grids and method == "amr", kind=kind)
+        del ds
     return out
 
 
-def make_montages(frames, outdir=".", dyn_range=3.0):
-    """Write zoo_montage_faceon.png and zoo_montage_edgeon.png, both with the
-    same layout: rows = SPH / uniform / AMR, two blocks of five galaxies.
-    Log color scale with a fixed dynamic range (dyn_range dex), shared by
-    the three methods for each galaxy and view."""
+def make_montages(frames, outdir=".", dyn_range=3.0, kind="slic", show=False):
+    """Write zoo_montage_faceon_{kind}.png and zoo_montage_edgeon_{kind}.png.
+
+    Rows = SPH / uniform / AMR, in blocks of five galaxies. Log colour scale
+    spanning dyn_range dex, shared by the three methods for each galaxy and
+    view. Returns {"faceon": fig, "edgeon": fig}; show=True keeps the figures
+    open for inline display, otherwise they are closed."""
     import matplotlib
-    matplotlib.use("Agg")
     import matplotlib.pyplot as plt
     from matplotlib.colors import LogNorm
 
     names = [n for n in ORDER if n in frames]
     L = LENGTH_SCALE_KPC
     cmap = matplotlib.colormaps["viridis"].copy()
-    cmap.set_bad(cmap(0.0))    # empty SPH pixels (zero density) -> floor colour
+    cmap.set_bad(cmap(0.0))    # empty SPH pixels -> floor colour
     cmap.set_under(cmap(0.0))
 
     def norm(f, key):
-        # ONE normalisation per galaxy and view, shared by SPH / uniform / AMR,
-        # so the three methods are directly comparable: vmax is the largest
-        # 99.9th percentile among them, vmin is dyn_range dex below it.
+        # vmax = largest 99.9th percentile among the methods, vmin = dyn_range dex below
         vmax = max(np.percentile(f[m][key], 99.9) for m in METHODS)
         return LogNorm(vmin=vmax / 10**dyn_range, vmax=vmax)
 
+    views = {"face": ("faceon", "face-on (z = 0)", "face-on (along z)"),
+             "edge": ("edgeon", "edge-on (y = 0)", "edge-on (along y)")}
     blocks = [names[i:i + 5] for i in range(0, len(names), 5)]
-    for key, label in (("face", "faceon"), ("edge", "edgeon")):
+    figs = {}
+    for view, (label, what_slic, what_proj) in views.items():
+        key = f"{view}_{kind}"
         fig, axes = plt.subplots(3 * len(blocks), 5, figsize=(16, 3.25 * 3 * len(blocks)),
                                  squeeze=False)
         for b, block in enumerate(blocks):
@@ -1090,34 +1053,41 @@ def make_montages(frames, outdir=".", dyn_range=3.0):
                         ax.axis("off")
                         continue
                     f = frames[block[c]]
-                    img = f[method][key]
                     e, ez = f["hw"] * L, f["zhalf"] * L
-                    ax.imshow(img, origin="lower", extent=[-e, e, -ez, ez], cmap=cmap,
-                              norm=norm(f, key), interpolation="nearest")
+                    ax.imshow(f[method][key], origin="lower", extent=[-e, e, -ez, ez],
+                              cmap=cmap, norm=norm(f, key), interpolation="nearest")
                     if m == 0:
                         ax.set_title(f"{TITLES[block[c]]}  ({2 * e:.0f} kpc)", fontsize=10)
                     if c == 0:
                         ax.set_ylabel(METHOD_LABELS[method], fontsize=11)
-        what = "face-on (z = 0)" if key == "face" else "edge-on (y = 0)"
-        fig.suptitle(f"Galaxy zoo, {what} midplane density slices", fontsize=14)
+        what = what_slic if kind == "slic" else what_proj
+        fig.suptitle(f"Galaxy zoo, {what} {KIND_LABELS[kind]}", fontsize=14)
         fig.tight_layout(rect=(0, 0, 1, 0.985))
-        fig.savefig(f"{outdir}/zoo_montage_{label}.png", dpi=110)
-        plt.close(fig)
+        fig.savefig(f"{outdir}/zoo_montage_{label}_{kind}.png", dpi=110)
+        figs[label] = fig
+        if not show:
+            plt.close(fig)
+    return figs
 
 
 if __name__ == "__main__":
+    import matplotlib
+    matplotlib.use("Agg")  # script mode only; notebooks keep their own backend
+
     ap = argparse.ArgumentParser()
     ap.add_argument("--outdir", default=".")
     ap.add_argument("--cache", default="zoo_cache.pkl",
-                    help="pickle of the simulated particles; reused if it exists (integrators are skipped)")
+                    help="pickle of the simulated particles; reused if present (skips the integrators)")
     ap.add_argument("--frb-cache", default="zoo_frames.pkl",
-                    help="pickle of rendered slice arrays; lets you re-lay-out montages instantly")
-    ap.add_argument("--only", nargs="*", help="galaxy names to (re)generate/render")
+                    help="pickle of the rendered image arrays (re-layout montages without re-rendering)")
+    ap.add_argument("--only", nargs="*", help="galaxy names to (re)generate / render")
     ap.add_argument("--n-disk", type=int, default=60000)
-    ap.add_argument("--redo", action="store_true", help="ignore the rendered-slice cache")
+    ap.add_argument("--redo", action="store_true", help="ignore the rendered-image cache")
     ap.add_argument("--individual", action="store_true", help="also save labelled per-galaxy yt PNGs")
     ap.add_argument("--grids", action="store_true", help="with --individual: AMR grid outlines")
     ap.add_argument("--res", type=int, default=512)
+    ap.add_argument("--mode", choices=(*KINDS, "both"), default="slic",
+                    help="montage content: midplane slices (slic), projections (proj), or both")
     args = ap.parse_args()
 
     try:
@@ -1137,33 +1107,20 @@ if __name__ == "__main__":
     except (FileNotFoundError, EOFError):
         frames = {}
 
+    kinds = KINDS if args.mode == "both" else (args.mode,)
     for name in ORDER:
         if name not in results or (args.only and name not in args.only):
             continue
-        if name in frames and not args.individual:
+        # frames from an older cache layout lack the *_slic / *_proj keys
+        if name in frames and not args.individual and "face_slic" in frames[name]["sph"]:
             continue
         frames[name] = render_galaxy(name, results[name], outdir=args.outdir,
-                                     individual=args.individual, grids=args.grids, res=args.res)
+                                     individual=args.individual, grids=args.grids, res=args.res,
+                                     kind=kinds[0])
         print(name, "AMR:", frames[name]["amr_info"], flush=True)
         with open(args.frb_cache, "wb") as f:  # incremental: a crash keeps progress
             pickle.dump(frames, f)
 
-    make_montages(frames, outdir=args.outdir)
+    for k in kinds:
+        make_montages(frames, outdir=args.outdir, kind=k)
     print("wrote montages to", args.outdir)
-
-
-# =====================================================================
-# 2D vs 3D: what is and isn't simulated in 3D
-# =====================================================================
-# - Disk-type galaxies, mergers, dwarf: orbits are integrated in 2D (x, y)
-#   only. The vertical coordinate z is drawn independently from a sech^2
-#   profile (add_z_disk) and is NOT dynamically coupled to the in-plane
-#   motion -- no vertical oscillations, warps, or disk heating.
-# - Ellipticals: genuinely 3D positions (triaxial Plummer sampling), but
-#   static -- no orbits are integrated.
-# - Dwarf irregular: the fractal-noise weighting is a visual texture only
-#   (applied identically in all three representations).
-# - All three representations (SPH, uniform grid, pseudo-AMR) are built from
-#   the same 3D particle set inside the same box, so edge-on views of disks
-#   show the imposed sech^2 thickness, and ellipticals are round.
-# =====================================================================
