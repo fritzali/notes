@@ -147,7 +147,12 @@ def plot_trajectory_2d(
     y = history.r[:, pid, 1] / length_unit
     z = history.r[:, pid, 2] / length_unit
 
-    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 5))
+    # Panel widths follow the data aspect ratios so equal-scale panels fill
+    # the figure instead of leaving gaps
+    asp = [max(np.ptp(x), 1e-12) / max(np.ptp(c), 1e-12) for c in (y, z)]
+    asp = [min(max(a, 0.2), 5.0) for a in asp]
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(min(4.6 * sum(asp) + 1.5, 13), 5),
+                                   gridspec_kw={"width_ratios": asp})
     r = style.raster(len(x))
 
     ax1.plot(x, y, color="steelblue", lw=0.8, rasterized=r)
