@@ -593,8 +593,10 @@ def plot_field_lines(
             elif orbit_trail:
                 FadingTrail(ax, orbit_trail).set_data(r[:, pid] @ e1, r[:, pid] @ e2)
             else:
+                # Below the opaque Earth disk (zorder 5): the orbit is hidden
+                # where its projection passes behind the planet
                 ax.plot(r[:, pid] @ e1, r[:, pid] @ e2, color=style.ORBIT_COLOR,
-                        lw=0.5, alpha=orbit_alpha, zorder=6,
+                        lw=0.5, alpha=orbit_alpha, zorder=4.5,
                         rasterized=style.raster(len(r)))
 
     if is3d:
