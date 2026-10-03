@@ -60,6 +60,13 @@ def format_time(t, t_total=None):
     return f"{1e3 * t:.0f} ms"
 
 
+def format_time_pair(t, t_total):
+    """"t / total unit" with both values in the same integer unit."""
+    if t_total >= 10:
+        return f"{t:.0f} / {t_total:.0f} s"
+    return f"{1e3 * t:.0f} / {1e3 * t_total:.0f} ms"
+
+
 def raster(n_points):
     """True if a line with ``n_points`` should be rasterised in vector output."""
     return n_points > RASTER_THRESHOLD
@@ -78,7 +85,7 @@ def colors(n):
     return [CYCLE[i % len(CYCLE)] for i in range(n)]
 
 
-def use(dpi=110, savefig_dpi=200):
+def use(dpi=110, savefig_dpi=250):
     """Apply the package style to matplotlib's rcParams."""
     mpl.rcParams.update({
         "axes.prop_cycle":   cycler(color=CYCLE),

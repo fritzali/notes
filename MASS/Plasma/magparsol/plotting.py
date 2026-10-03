@@ -372,8 +372,7 @@ class LivePlotter:
         z = float(state.r[pid, 2]) / d
 
         if t_max is not None:
-            self.fig.suptitle(f"$t$ = {style.format_time(state.t, t_max)}  of  "
-                              f"{style.format_time(t_max, t_max)}")
+            self.fig.suptitle(f"$t$ = {style.format_time_pair(state.t, t_max)}")
 
         self.ax1.plot(x, y, ".", color="steelblue", markersize=2)
         self.ax2.plot(x, z, ".", color="firebrick", markersize=2)
