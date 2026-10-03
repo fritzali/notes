@@ -197,19 +197,25 @@ def _add_direction_arrow(ax, pts2d, color, frac=0.5, size=11):
 def draw_earth_2d(ax, length_unit, zorder=5):
     """Filled Earth disk of radius R_E (in display units)."""
     ax.add_patch(Circle((0, 0), R_EARTH / length_unit,
-                        facecolor=to_rgba(style.EARTH_FACE, style.EARTH_ALPHA),
-                        edgecolor="black", lw=0.6, zorder=zorder))
+                        facecolor=style.earth_fill(), edgecolor="black",
+                        lw=0.6, zorder=zorder))
 
 
 def _draw_earth_2d(ax, field, e1, e2, length_unit, extent):
     """Earth disk, rotation axis (dotted) and magnetic axis (dashed)."""
     draw_earth_2d(ax, length_unit)
+    axes = []
     for vec, ls, lbl in ((np.array([0.0, 0.0, 1.0]), ":", "Rotation Axis"),
                          (field.axis, "--", "Magnetic Axis")):
         p = np.array([vec @ e1, vec @ e2])
         if np.linalg.norm(p) < 0.2:
             continue   # axis (nearly) normal to the viewing plane
-        p = p / np.linalg.norm(p) * extent
+        axes.append((p / np.linalg.norm(p), ls, lbl))
+    if len(axes) == 2 and abs(axes[0][0] @ axes[1][0]) > np.cos(np.radians(0.5)):
+        # Both axes project onto the same line: draw and label it once
+        axes = [(axes[1][0], "--", "Rotation and Magnetic Axis")]
+    for p, ls, lbl in axes:
+        p = p * extent
         ax.plot([-p[0], p[0]], [-p[1], p[1]], ls, color=style.AXIS_COLOR,
                 lw=0.8, zorder=4, label=lbl)
 
@@ -462,7 +468,7 @@ def plot_field_lines(
     # ── Axes ──────────────────────────────────────────────────────────────────
     own_fig = ax is None
     if own_fig:
-        fig = plt.figure(figsize=(7, 6.5))
+        fig = plt.figure(figsize=(6, 5.5))
         ax  = fig.add_subplot(111, projection="3d" if is3d else None)
     else:
         fig = ax.get_figure()
@@ -587,8 +593,10 @@ def plot_field_lines(
             elif orbit_trail:
                 FadingTrail(ax, orbit_trail).set_data(r[:, pid] @ e1, r[:, pid] @ e2)
             else:
+                # Below the opaque Earth disk (zorder 5): the orbit is hidden
+                # where its projection passes behind the planet
                 ax.plot(r[:, pid] @ e1, r[:, pid] @ e2, color=style.ORBIT_COLOR,
-                        lw=0.5, alpha=orbit_alpha, zorder=6,
+                        lw=0.5, alpha=orbit_alpha, zorder=4.5,
                         rasterized=style.raster(len(r)))
 
     if is3d:

@@ -253,7 +253,8 @@ class _SpectrumPanel:
 
     def __init__(self, q, m, field=None, method="fft", spectrum_update_every=5,
                  show_individual=False, observer=None,
-                 store_dt_warn_period=None, f_norm=None, f_max_norm=6.0):
+                 store_dt_warn_period=None, f_norm=None, f_max_norm=6.0,
+                 final_only=False):
         self.q                     = q
         self.m                     = m
         self.field                 = field
@@ -264,6 +265,7 @@ class _SpectrumPanel:
         self.store_dt_warn_period  = store_dt_warn_period
         self.f_norm                = f_norm
         self.f_max_norm            = f_max_norm
+        self.final_only            = final_only   # static figure: no live line
 
     def _spectrum(self, upto=None, method="fft"):
         from magparsol.radiation import spectrum_fft, spectrum_retarded, ensemble_spectrum
@@ -291,12 +293,12 @@ class _SpectrumPanel:
             for pi in ind:
                 ax.semilogy(x, np.where(pi > 0, pi, np.nan), color="grey",
                             lw=0.5, alpha=0.3)
-        static = self.method == "retarded"
+        static = self.method == "retarded" or self.final_only
         ax.semilogy(x, np.where(p > 0, p, np.nan),
                     color="steelblue" if static else style.REF_COLOR,
                     lw=1.2 if static else 0.9,
-                    label="Retarded" if static else "Final")
-        live, = ax.semilogy([], [], color="firebrick", lw=1.2, label="Up to $t$")
+                    label="Retarded" if self.method == "retarded" else "Final")
+        live, = ax.semilogy([], [], color="firebrick", lw=1.2, label="Current")
         info  = ax.text(0.97, 0.95, "", transform=ax.transAxes, ha="right",
                         va="top", fontsize=8,
                         bbox=dict(boxstyle="square", fc="white", ec="black",
@@ -318,20 +320,18 @@ class _SpectrumPanel:
             ax.axvline(1.0, color="black", lw=0.6, ls="--", alpha=0.6)
         ax.set_xlabel(xlabel)
         ax.set_ylabel("Power [arb. units]")
-        ax.set_title("Spectrum" + (" (Retarded)" if static else ""))
-        style.legend(ax, fontsize=8, loc="upper left")
+        ax.set_title("Spectrum" + (" (Retarded)" if self.method == "retarded" else ""))
+        if not static:
+            style.legend(ax, fontsize=8, loc="upper left")
         self._f_c = f_c
         return {"live": live, "info": info}
 
     def update(self, artists, i, k=None, **kwargs):
-        if self.method == "retarded":
-            return []
         live, info = artists["live"], artists["info"]
-        t = float(self._history.t[i] - self._history.t[0])
-        if self._f_c:
-            info.set_text(f"$t$ = {t:.3g} s\n{t * self._f_c:.0f} Gyrations")
-        else:
-            info.set_text(f"$t$ = {t:.3g} s")
+        t0, t_end = float(self._history.t[0]), float(self._history.t[-1])
+        info.set_text(f"$t$ = {style.format_time(self._history.t[i] - t0, t_end - t0)}")
+        if self.method == "retarded" or self.final_only:
+            return [info]
         last = i == len(self._history.t) - 1
         if k is not None and k % self.spectrum_update_every != 0 and not last:
             return [info]
@@ -366,7 +366,8 @@ def _build_panel_registry(history, field, q, m,
                           field_update_every=10,
                           store_dt_warn_period=None,
                           field_projection="auto",
-                          field_trail=None) -> dict:
+                          field_trail=None,
+                          final_spectrum_only=False) -> dict:
     """Instantiate one panel object per panel name."""
     earth = _is_dipole(field)
     # Hodograph trail ≈ 3 gyrations when the run covers many more than that
@@ -387,7 +388,8 @@ def _build_panel_registry(history, field, q, m,
                                    field_trail),
         "spectrum":    _SpectrumPanel(q, m, field, spectrum_method,
                                       spectrum_update_every, show_individual,
-                                      store_dt_warn_period=store_dt_warn_period),
+                                      store_dt_warn_period=store_dt_warn_period,
+                                      final_only=final_spectrum_only),
     }
 
 
@@ -438,9 +440,9 @@ def plot_overview(
     -------
     fig
     """
-    fig = plt.figure(figsize=(15, 9.5))
-    gs  = gridspec.GridSpec(2, 3, figure=fig, hspace=0.32, wspace=0.3)
-    fig.suptitle(title, fontsize=14)
+    fig = plt.figure(figsize=(12.75, 8.1))
+    gs  = gridspec.GridSpec(2, 3, figure=fig, hspace=0.36, wspace=0.34)
+    fig.suptitle(title, fontsize=13)
 
     registry = _build_panel_registry(
         history, field, q, m, length_unit, unit_label, normalize_v,
@@ -448,6 +450,7 @@ def plot_overview(
         show_individual=show_individual,
         store_dt_warn_period=store_dt_warn_period,
         field_projection=field_projection, field_trail=field_trail,
+        final_spectrum_only=True,
     )
     i = len(history.t) - 1
     for name, (row, col) in LAYOUT.items():
@@ -544,7 +547,7 @@ def make_panel_gif(
     )
     panel = registry[panel_name]
 
-    fig, ax = plt.subplots(figsize=(6.5, 5.5), dpi=dpi)
+    fig, ax = plt.subplots(figsize=(5.5, 4.7), dpi=dpi)
     artists = panel.build(ax, history)
     fig.tight_layout()
     frames  = np.round(np.linspace(0, len(history.t) - 1, n_frames)).astype(int)
@@ -607,9 +610,9 @@ def make_overview_gif(
         field_projection=field_projection, field_trail=field_trail,
     )
 
-    fig = plt.figure(figsize=(15, 9.5), dpi=dpi)
-    gs  = gridspec.GridSpec(2, 3, figure=fig, hspace=0.32, wspace=0.3)
-    sup = fig.suptitle(title, fontsize=14)
+    fig = plt.figure(figsize=(12.75, 8.1), dpi=dpi)
+    gs  = gridspec.GridSpec(2, 3, figure=fig, hspace=0.36, wspace=0.34)
+    fig.suptitle(title, fontsize=13)
     artists_map = {}
     for name in panels:
         row, col = LAYOUT[name]
@@ -620,8 +623,7 @@ def make_overview_gif(
 
     def update(k):
         i = frames[k]
-        sup.set_text(f"{title}      $t$ = {history.t[i]:.3g} s")
-        out = [sup]
+        out = []
         for name in panels:
             out += _update_panel(registry[name], artists_map[name], i, k, history)
         return out

@@ -14,6 +14,7 @@ Call :func:`use` once (e.g. at the top of a notebook) to apply the matching
 rcParams: colour cycle, thin black legend frame, high-resolution output.
 """
 
+import numpy as np
 import matplotlib as mpl
 from cycler import cycler
 
@@ -22,7 +23,7 @@ B_COLOR     = "steelblue"       # magnetic field
 E_COLOR     = "firebrick"       # electric field
 ORBIT_COLOR = "black"           # particle trajectories over fields
 EARTH_FACE  = "steelblue"
-EARTH_ALPHA = 0.25
+EARTH_ALPHA = 0.25              # tint of the opaque Earth fill (mixed into white)
 AXIS_COLOR  = "dimgrey"
 REF_COLOR   = "darkgrey"        # reference curves / final spectra
 
@@ -32,7 +33,7 @@ CYCLE = ["steelblue", "firebrick", "olivedrab", "goldenrod", "rebeccapurple"]
 RASTER_THRESHOLD = 4000
 
 LEGEND_KW = dict(frameon=True, fancybox=False, edgecolor="black",
-                 framealpha=0.92, borderpad=0.5)
+                 framealpha=1.0, borderpad=0.5)
 
 
 def legend(ax, *args, **kwargs):
@@ -41,6 +42,22 @@ def legend(ax, *args, **kwargs):
     leg = ax.legend(*args, **kw)
     leg.get_frame().set_linewidth(0.6)
     return leg
+
+
+def earth_fill():
+    """Opaque Earth colour: steelblue mixed into white (hides lines behind it)."""
+    from matplotlib.colors import to_rgb
+    c = np.array(to_rgb(EARTH_FACE))
+    return tuple(EARTH_ALPHA * c + (1 - EARTH_ALPHA) * np.ones(3))
+
+
+def format_time(t, t_total=None):
+    """Time label rounded to an integer: seconds for runs of at least 10 s,
+    milliseconds for shorter ones (so sub-second runs do not read "0 s")."""
+    ref = t_total if t_total is not None else t
+    if ref >= 10:
+        return f"{t:.0f} s"
+    return f"{1e3 * t:.0f} ms"
 
 
 def raster(n_points):
