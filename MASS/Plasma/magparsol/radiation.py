@@ -36,11 +36,10 @@ radiated_power :
 import warnings
 import numpy as np
 from magparsol.diagnostics import TrajectoryHistory
-from magparsol.constants import C, Q_E
+from magparsol.constants import C, EPS0
 
-# ── Constants ──────────────────────────────────────────────────────────────────
-_EPS0 = 8.854_187_817e-12    # vacuum permittivity [F/m]
-_PREFACTOR = Q_E**2 / (6 * np.pi * _EPS0 * C**3)   # Larmor prefactor [W·s²/m²]
+# np.trapz was removed in NumPy 2.0 in favour of np.trapezoid
+_trapezoid = getattr(np, "trapezoid", None) or np.trapz
 
 # Resampling cap: maximum number of uniform grid points for FFT
 _N_RESAMPLE_MAX = 2**18   # ~262 144
@@ -160,13 +159,13 @@ def radiated_power(history: TrajectoryHistory,
                 - (vdotE / C**2)[:, None] * v_s
             )   # (N, 3)
             vcross_a = np.cross(v_s, a)
-            P[s] = (q**2 * gamma6 / (6 * np.pi * _EPS0 * C**3)) * (
+            P[s] = (q**2 * gamma6 / (6 * np.pi * EPS0 * C**3)) * (
                 np.sum(a**2, axis=1) - np.sum(vcross_a**2, axis=1) / C**2
             )
         else:
             q_m = q / m
             a   = q_m[:, None] * (E + np.cross(v_s, B))   # (N, 3)
-            P[s] = (q**2 / (6 * np.pi * _EPS0 * C**3)) * np.sum(a**2, axis=1)
+            P[s] = (q**2 / (6 * np.pi * EPS0 * C**3)) * np.sum(a**2, axis=1)
 
     return P
 
@@ -181,7 +180,7 @@ def total_radiated_energy(history: TrajectoryHistory,
     W : ndarray, shape (N,)   [J]
     """
     P = radiated_power(history, q, m, field, relativistic)
-    return np.trapz(P, history.t, axis=0)
+    return _trapezoid(P, history.t, axis=0)
 
 
 # ── FFT-based spectrum ────────────────────────────────────────────────────────
@@ -359,7 +358,7 @@ def spectrum_retarded(history: TrajectoryHistory,
     for k, omega in enumerate(omega_array):
         phase      = omega * (t - r_dot_n / C)          # (S,)
         integrand  = v_perp * np.exp(1j * phase)[:, None]   # (S, 3)
-        integral   = np.trapz(integrand, t, axis=0)     # (3,)
+        integral   = _trapezoid(integrand, t, axis=0)     # (3,)
         power[k]   = float(np.real(np.dot(integral, np.conj(integral))))
 
     return freqs, power

@@ -138,13 +138,8 @@ class _RKBase(Integrator):
         r_out = r0 + h * (_B5[0]*dr1 + _B5[2]*dr3 + _B5[3]*dr4 + _B5[4]*dr5 + _B5[5]*dr6)
         v_out = v0 + h * (_B5[0]*dv1 + _B5[2]*dv3 + _B5[3]*dv4 + _B5[4]*dv5 + _B5[5]*dv6)
 
-        # 4th-order solution for error estimate
-        r4_out = r0 + h * (_B4[0]*dr1 + _B4[2]*dr3 + _B4[3]*dr4 + _B4[4]*dr5 + _B4[5]*dr6 + _B4[6]*r_out)  # noqa
-        v4_out = v0 + h * (_B4[0]*dv1 + _B4[2]*dv3 + _B4[3]*dv4 + _B4[4]*dv5 + _B4[5]*dv6 + _B4[6]*v_out)  # noqa
-
-        # Correct 4th order: recompute properly without the recursive term
-        # (b4[6] multiplies the 7th stage which IS r_out / v_out itself;
-        #  simplest and correct: use e = b5 - b4 directly on the stage derivatives)
+        # Embedded error estimate e = b5 - b4 applied to the stage
+        # derivatives (stage 7 is the FSAL evaluation at the new point)
         dr7, dv7 = self._derivatives(r_out, v_out, t0 + h)
 
         # Error vector = h * sum_i e_i * k_i
@@ -206,19 +201,22 @@ class _RKBase(Integrator):
             else:
                 # Reject step, try smaller h
                 h = h_new
-                if h < self.dt_min:
-                    # Cannot satisfy tolerance — accept anyway with a warning
+                if h <= self.dt_min:
+                    # Cannot satisfy tolerance — take one dt_min step anyway
                     import warnings
+                    h = self.dt_min
+                    r5, v5, er, ev = self._rk45_step(r0, v0, t0, h)
+                    err = self._error_norm(r0, v0, r5, v5, er, ev)
                     warnings.warn(
-                        f"Adaptive RK: step size {h:.3e} hit minimum {self.dt_min:.3e}. "
-                        "Accepting step with err={err:.3e}.",
+                        f"Adaptive RK: step size hit minimum {h:.3e} s. "
+                        f"Accepting step with err={err:.3e}.",
                         RuntimeWarning,
                         stacklevel=3,
                     )
                     self.state.r = r5
                     self.state.v = v5
                     self.state.t = t0 + h
-                    self.dt = self.dt_min
+                    self.dt = h
                     return
 
 

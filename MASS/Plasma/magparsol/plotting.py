@@ -19,7 +19,7 @@ LivePlotter           — Class for real-time animated 2-D display during runs
 import numpy as np
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D   # noqa: F401 (registers 3d projection)
-from magparsol.constants import R_EARTH
+from magparsol.constants import R_EARTH, Q_E
 from magparsol.diagnostics import TrajectoryHistory, relative_energy_error
 
 
@@ -215,8 +215,12 @@ def plot_energy(
 
     fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(10, 8), sharex=True)
 
-    ax1.plot(t, K / 1.602_176_634e-13, color="steelblue")  # convert J → MeV
-    ax1.set_ylabel("Kinetic Energy [eV]")
+    K_eV = K / Q_E
+    k_max = float(np.max(np.abs(K_eV))) if len(K_eV) else 0.0
+    exp3, prefix = next(((e, p) for e, p in ((9, "G"), (6, "M"), (3, "k"))
+                         if k_max >= 10**e), (0, ""))
+    ax1.plot(t, K_eV / 10**exp3, color="steelblue")
+    ax1.set_ylabel(f"Kinetic energy [{prefix}eV]")
     ax1.set_title(title)
     ax1.grid(True, alpha=0.4)
 

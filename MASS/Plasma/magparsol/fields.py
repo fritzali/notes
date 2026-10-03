@@ -170,7 +170,10 @@ class EarthDipole(FieldModel):
         B_y = -M * (3yz cosφ + (2y²-x²-z²) sinφ) / r^5
         B_z = -M * ((2z²-x²-y²) cosφ + 3zy sinφ) / r^5
 
-    where M = DIPOLE_MOMENT, φ = tilt angle, r = |position|.
+    where M = DIPOLE_MOMENT, φ = tilt angle, r = |position|.  This is
+    B = -M [3(m̂·r)r − m̂ r²] / r⁵ with the axis m̂ = (0, sin φ, cos φ)
+    tilted from the rotation axis ẑ towards ŷ (the minus sign makes B point
+    northward at the equator, as for the real geomagnetic field).
 
     Parameters
     ----------
@@ -178,6 +181,12 @@ class EarthDipole(FieldModel):
         Angle between magnetic axis and Earth's rotation axis [degrees].
     moment : float
         Dipole moment coefficient [T·m³].
+
+    Attributes
+    ----------
+    axis : ndarray, shape (3,)
+        Unit vector m̂ of the (tilted) dipole axis.
+    tilt_deg : float
     """
 
     is_uniform = False
@@ -185,9 +194,15 @@ class EarthDipole(FieldModel):
 
     def __init__(self, tilt_deg: float = DIPOLE_TILT_DEG, moment: float = DIPOLE_MOMENT):
         phi = np.deg2rad(tilt_deg)
+        self.tilt_deg = float(tilt_deg)
         self._sin_phi = np.sin(phi)
         self._cos_phi = np.cos(phi)
         self._M = float(moment)
+        self.axis = np.array([0.0, self._sin_phi, self._cos_phi])
+
+    def B_equator(self, r: float) -> float:
+        """Field magnitude on the magnetic equator at distance r [T]."""
+        return abs(self._M) / r**3
 
     def evaluate(self, r: np.ndarray, t: float):
         x = r[:, 0]

@@ -42,6 +42,7 @@ class TrajectoryHistory:
         self._v: list = []
         self.store_dt = store_dt
         self._last_stored_t: float = -np.inf
+        self._next_store_t: float = -np.inf
         self._finalized: bool = False
 
         # Arrays populated after finalize()
@@ -63,8 +64,17 @@ class TrajectoryHistory:
         """
         if self._finalized:
             raise RuntimeError("Cannot record into a finalized TrajectoryHistory.")
-        elapsed = state.t - self._last_stored_t
-        if force or self.store_dt is None or elapsed >= self.store_dt:
+        if force or self.store_dt is None:
+            store = True
+            self._next_store_t = state.t + (self.store_dt or 0.0)
+        else:
+            # Scheduled sampling on the grid t0 + k·store_dt (the tolerance
+            # absorbs float round-off in the accumulated simulation time)
+            store = state.t >= self._next_store_t - 1e-6 * self.store_dt
+            if store:
+                while self._next_store_t <= state.t + 1e-6 * self.store_dt:
+                    self._next_store_t += self.store_dt
+        if store:
             self._t.append(state.t)
             self._r.append(state.r.copy())   # (N, 3)
             self._v.append(state.v.copy())   # (N, 3)
