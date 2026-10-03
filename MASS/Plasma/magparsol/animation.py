@@ -196,7 +196,7 @@ class _FieldPanel:
             self.field, components=comps or ("B",), density=self.density,
             t=t, length_unit=self.length_unit, unit_label=self.unit_label,
             ax_lim=self._lim, projection=self.projection, ax=ax,
-            ref_times=self._t_all, title="Field and Orbit",
+            ref_times=self._t_all, title="Field & Orbit",
             L_shells=self._L_shells,
         )
 
@@ -299,10 +299,12 @@ class _SpectrumPanel:
                     lw=1.2 if static else 0.9,
                     label="Retarded" if self.method == "retarded" else "Final")
         live, = ax.semilogy([], [], color="firebrick", lw=1.2, label="Current")
-        info  = ax.text(0.97, 0.95, "", transform=ax.transAxes, ha="right",
-                        va="top", fontsize=8,
-                        bbox=dict(boxstyle="square", fc="white", ec="black",
-                                  lw=0.6, alpha=0.92))
+        # Time label in the empty top right corner (the y axis keeps two
+        # decades of headroom above the peak; the legend sits top left)
+        info  = ax.text(0.97, 0.96, "", transform=ax.transAxes, ha="right",
+                        va="top", fontsize=8, zorder=10,
+                        bbox=dict(boxstyle="square,pad=0.3", fc="white",
+                                  ec="none", alpha=1.0))
 
         # x range: up to where the final spectrum has fallen 6 decades below
         # its peak (with margin), capped at f_max_norm
@@ -319,7 +321,7 @@ class _SpectrumPanel:
         if f_c:
             ax.axvline(1.0, color="black", lw=0.6, ls="--", alpha=0.6)
         ax.set_xlabel(xlabel)
-        ax.set_ylabel("Power [arb. units]")
+        ax.set_ylabel("Power [Arbitrary Units]")
         ax.set_title("Spectrum" + (" (Retarded)" if self.method == "retarded" else ""))
         if not static:
             style.legend(ax, fontsize=8, loc="upper left")

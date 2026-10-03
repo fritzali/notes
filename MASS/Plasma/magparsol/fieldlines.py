@@ -213,7 +213,7 @@ def _draw_earth_2d(ax, field, e1, e2, length_unit, extent):
         axes.append((p / np.linalg.norm(p), ls, lbl))
     if len(axes) == 2 and abs(axes[0][0] @ axes[1][0]) > np.cos(np.radians(0.5)):
         # Both axes project onto the same line: draw and label it once
-        axes = [(axes[1][0], "--", "Rotation and Magnetic Axis")]
+        axes = [(axes[1][0], "--", "Rotation & Magnetic Axis")]
     for p, ls, lbl in axes:
         p = p * extent
         ax.plot([-p[0], p[0]], [-p[1], p[1]], ls, color=style.AXIS_COLOR,
