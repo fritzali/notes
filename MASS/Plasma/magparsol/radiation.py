@@ -190,12 +190,16 @@ def spectrum_fft(history: TrajectoryHistory,
                  observer: np.ndarray = None,
                  upto: int = None,
                  interp_method: str = "linear",
-                 store_dt_warn_period: float = None) -> tuple:
+                 store_dt_warn_period: float = None,
+                 weighting: str = "acceleration") -> tuple:
     """FFT-based single-particle radiated power spectrum.
 
     Computes the power spectral density of the observer-projected transverse
-    velocity (proportional to radiated power spectrum for non-relativistic
-    and mildly relativistic cases).
+    velocity v⊥(ω).  With ``weighting="acceleration"`` (default) it is
+    multiplied by ω², i.e. the spectrum of the transverse acceleration,
+    which is proportional to the emitted dipole radiation dI/dω for non- and
+    mildly relativistic motion.  Retardation (beaming, harmonics) is
+    neglected — use :func:`spectrum_retarded` for that.
 
     Parameters
     ----------
@@ -211,6 +215,9 @@ def spectrum_fft(history: TrajectoryHistory,
         Interpolation for non-uniform time grids (adaptive RK).
     store_dt_warn_period : float or None
         Gyroperiod for Nyquist check.  If store_dt > gyroperiod/2, warn.
+    weighting : "acceleration" | "velocity"
+        "acceleration" → ω²|v⊥(ω)|² (radiated spectrum);
+        "velocity" → |v⊥(ω)|² (plain velocity PSD).
 
     Returns
     -------
@@ -266,6 +273,9 @@ def spectrum_fft(history: TrajectoryHistory,
         fft_c  = np.fft.rfft(sig * win)
         power += (np.abs(fft_c)**2) / n
 
+    if weighting == "acceleration":
+        power *= (2 * np.pi * freqs)**2
+
     # Only positive frequencies
     mask = freqs > 0
     return freqs[mask], power[mask]
@@ -301,10 +311,14 @@ def spectrum_retarded(history: TrajectoryHistory,
                        pid: int = 0,
                        omega_array: np.ndarray = None,
                        observer: np.ndarray = None,
-                       n_omega: int = 512) -> tuple:
-    """Retarded-time Fourier integral spectrum (Jackson Ch. 14).
+                       n_omega: int = 512,
+                       window: str = "hann") -> tuple:
+    """Retarded-time Fourier integral spectrum (Jackson Eq. 14.67).
 
-    dI/dω ∝ |∫ n̂×(n̂×v) exp[iω(t − n̂·r/c)] dt|²
+    d²I/dω dΩ ∝ ω² |∫ n̂×(n̂×β) exp[iω(t − n̂·r/c)] dt|²
+
+    The retardation phase n̂·r/c produces the relativistic harmonics and
+    beaming that the plain FFT misses.
 
     Accurate for high harmonics and strongly relativistic beaming,
     but O(S × n_ω).  Always computed from the full trajectory.
@@ -315,11 +329,15 @@ def spectrum_retarded(history: TrajectoryHistory,
     pid : int
     omega_array : ndarray or None
         Angular frequencies [rad/s] at which to evaluate.
-        None → auto-range from 0 to 10× estimated gyrofrequency.
+        None → from 0 to the Nyquist frequency of the stored samples.
     observer : ndarray, shape (3,) or None
         Observer direction n̂.  None → (0, 0, 1).
     n_omega : int
         Number of frequency points when omega_array is None.
+    window : "hann" | None
+        Taper applied to the finite observation interval.  A Hann window
+        suppresses the sinc side-lobes (leakage) of the abrupt start/end of
+        the trajectory; None gives the bare truncated integral.
 
     Returns
     -------
@@ -344,6 +362,10 @@ def spectrum_retarded(history: TrajectoryHistory,
     # Retardation phase: n̂·r/c
     r_dot_n  = np.sum(r * n_hat, axis=1)   # (S,)
 
+    if window == "hann":
+        tau     = (t - t[0]) / (t[-1] - t[0])
+        v_perp  = v_perp * (0.5 - 0.5 * np.cos(2 * np.pi * tau))[:, None]
+
     if omega_array is None:
         # Auto-estimate frequency range from velocity oscillation
         is_uni, dt = _check_uniform(t)
@@ -359,7 +381,7 @@ def spectrum_retarded(history: TrajectoryHistory,
         phase      = omega * (t - r_dot_n / C)          # (S,)
         integrand  = v_perp * np.exp(1j * phase)[:, None]   # (S, 3)
         integral   = _trapezoid(integrand, t, axis=0)     # (3,)
-        power[k]   = float(np.real(np.dot(integral, np.conj(integral))))
+        power[k]   = omega**2 * float(np.real(np.dot(integral, np.conj(integral))))
 
     return freqs, power
 

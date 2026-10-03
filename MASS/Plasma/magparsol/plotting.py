@@ -142,13 +142,13 @@ def plot_trajectory_2d(
 
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(14, 6))
 
-    ax1.plot(x, y, "b.", markersize=1)
+    ax1.plot(x, y, color="#1f5fa8", lw=0.8)
     ax1.set_xlabel(f"x [{unit_label}]")
     ax1.set_ylabel(f"y [{unit_label}]")
     ax1.set_title("X-Y Plane")
     ax1.set_aspect("equal")
 
-    ax2.plot(x, z, "r.", markersize=1)
+    ax2.plot(x, z, color="#d1495b", lw=0.8)
     ax2.set_xlabel(f"x [{unit_label}]")
     ax2.set_ylabel(f"z [{unit_label}]")
     ax2.set_title("X-Z Plane")
@@ -327,7 +327,7 @@ class LivePlotter:
         self._init_figure()
 
     def _init_figure(self):
-        self.fig, (self.ax1, self.ax2) = plt.subplots(1, 2, figsize=(18, 8))
+        self.fig, (self.ax1, self.ax2) = plt.subplots(1, 2, figsize=(13, 6))
         for ax in (self.ax1, self.ax2):
             ax.set_aspect("equal")
             ax.set_xlim(-self._ax_lim, self._ax_lim)
