@@ -34,7 +34,7 @@ Projections
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.lines import Line2D
-from matplotlib.patches import Circle
+from matplotlib.patches import Circle, Polygon
 from matplotlib.collections import LineCollection
 from matplotlib.colors import to_rgba
 from mpl_toolkits.mplot3d import Axes3D   # noqa: F401
@@ -178,18 +178,31 @@ def _trace_both(field, seed, t, comp, ds, max_steps, r_max, r_min):
     return np.vstack([bwd[::-1], fwd[1:]])
 
 
-def _add_direction_arrow(ax, pts2d, color, frac=0.5, size=11):
-    """Put one arrowhead at fraction ``frac`` of a 2-D polyline's arc length."""
+def _add_direction_arrow(ax, pts2d, color, head_len, frac=0.5, width=0.6):
+    """Filled arrowhead lying on a 2-D polyline at fraction ``frac`` of its length.
+
+    The tip and the centre of the base are both points *on* the curve,
+    separated by ``head_len`` of arc length, so the head follows the line
+    even where it bends (a straight annotation arrow along a tiny chord
+    sticks out of curved lines).  ``head_len`` is in data units; field line
+    plots use equal aspect, so the head keeps its shape on screen.
+    """
     if len(pts2d) < 3:
         return
     seg = np.linalg.norm(np.diff(pts2d, axis=0), axis=1)
     s   = np.concatenate([[0.0], np.cumsum(seg)])
-    if s[-1] <= 0:
+    if s[-1] < 2 * head_len:
         return
-    i = int(np.clip(np.searchsorted(s, frac * s[-1]), 1, len(pts2d) - 2))
-    ax.annotate("", xy=pts2d[i+1], xytext=pts2d[i-1],
-                arrowprops=dict(arrowstyle="-|>", color=color, lw=0,
-                                mutation_scale=size, shrinkA=0, shrinkB=0))
+    s0   = np.clip(frac * s[-1], head_len / 2, s[-1] - head_len / 2)
+    base = np.array([np.interp(s0 - head_len / 2, s, pts2d[:, k]) for k in (0, 1)])
+    tip  = np.array([np.interp(s0 + head_len / 2, s, pts2d[:, k]) for k in (0, 1)])
+    d = tip - base
+    n = np.linalg.norm(d)
+    if n == 0:
+        return
+    perp = np.array([-d[1], d[0]]) / n * (width * head_len / 2)
+    ax.add_patch(Polygon([tip, base + perp, base - perp], closed=True,
+                         facecolor=color, edgecolor="none", zorder=style.Z_FIELD))
 
 
 # ── Decorations ───────────────────────────────────────────────────────────────
@@ -464,6 +477,7 @@ def plot_field_lines(
         else:
             ax_lim = 1.0
     ax_lim = float(ax_lim) if ax_lim > 0 else 1.0
+    head_len = 0.07 * ax_lim          # arrowhead length: 3.5 % of the plot span
 
     # ── Axes ──────────────────────────────────────────────────────────────────
     own_fig = ax is None
@@ -521,7 +535,7 @@ def plot_field_lines(
                     p2 = np.column_stack([pts @ e1, pts @ e2])
                     ax.plot(p2[:, 0], p2[:, 1], color=col, lw=1.0, zorder=style.Z_FIELD)
                     if arrows:
-                        _add_direction_arrow(ax, p2, col)
+                        _add_direction_arrow(ax, p2, col, head_len)
             handles.append(Line2D([], [], color=col, label=r"$\mathbf{B}$"))
             continue
 
@@ -573,7 +587,7 @@ def plot_field_lines(
                 p2 = np.column_stack([pts @ e1, pts @ e2])
                 ax.plot(p2[:, 0], p2[:, 1], color=col, lw=0.9)
                 if arrows:
-                    _add_direction_arrow(ax, p2, col)
+                    _add_direction_arrow(ax, p2, col, head_len)
         handles.append(Line2D([], [], color=col, label=f"$\\mathbf{{{comp}}}$"))
 
     # ── Earth, trajectory, formatting ─────────────────────────────────────────
