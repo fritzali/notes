@@ -596,6 +596,7 @@ def plot_field_lines(
         ax.set_ylim3d(-ax_lim, ax_lim)
         ax.set_zlim3d(-ax_lim, ax_lim)
         ax.set_box_aspect((1, 1, 1))
+        style.style_3d(ax)
         ax.set_xlabel(f"$x$ [{unit_label}]")
         ax.set_ylabel(f"$y$ [{unit_label}]")
         ax.set_zlabel(f"$z$ [{unit_label}]")

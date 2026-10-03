@@ -36,6 +36,7 @@ def plot_trajectory_3d(
     color: str = "black",
     title: str = "Trajectory",
     ax=None,
+    z_ratio: float = 1.0,
 ):
     """Plot a 3-D particle trajectory.
 
@@ -59,6 +60,9 @@ def plot_trajectory_3d(
         Figure title.
     ax : Axes3D or None
         Existing axes to draw into.  If None, a new figure is created.
+    z_ratio : float
+        Vertical extent relative to the horizontal one; the box aspect is
+        adjusted so that the scale stays equal (the Earth stays round).
 
     Returns
     -------
@@ -95,13 +99,11 @@ def plot_trajectory_3d(
 
     ax.set_xlim3d(-ax_lim, ax_lim)
     ax.set_ylim3d(-ax_lim, ax_lim)
-    ax.set_zlim3d(-ax_lim, ax_lim)
-    # Force cubic bounding box so Earth sphere always renders as a sphere
-    ax.set_box_aspect((1, 1, 1))
+    ax.set_zlim3d(-ax_lim * z_ratio, ax_lim * z_ratio)
+    # Equal scale on all axes so the Earth renders as a sphere
+    ax.set_box_aspect((1, 1, z_ratio))
     ax.set_title(title)
-    for a in (ax.xaxis, ax.yaxis, ax.zaxis):
-        a.pane.set_facecolor((1, 1, 1, 0))
-        a.pane.set_edgecolor("lightgrey")
+    style.style_3d(ax)
     plt.tight_layout()
     return fig, ax
 
@@ -188,11 +190,11 @@ def _auto_lim(a, b, margin=1.15):
 
 
 def _fit_box(ax, a, b, margin=0.08):
-    """Data-centred limits with a common half-width (for equal aspect)."""
-    ca, cb = 0.5*(a.max() + a.min()), 0.5*(b.max() + b.min())
-    h = 0.5 * max(np.ptp(a), np.ptp(b), 1e-12) * (1 + 2*margin)
-    ax.set_xlim(ca - h, ca + h)
-    ax.set_ylim(cb - h, cb + h)
+    """Data limits with a margin; equal scale, the box shrinks to fit."""
+    pad = margin * max(np.ptp(a), np.ptp(b), 1e-12)
+    ax.set_xlim(a.min() - pad, a.max() + pad)
+    ax.set_ylim(b.min() - pad, b.max() + pad)
+    ax.set_aspect("equal", adjustable="box")
 
 
 # ── Energy diagnostics ────────────────────────────────────────────────────────

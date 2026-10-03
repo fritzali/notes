@@ -48,6 +48,14 @@ def raster(n_points):
     return n_points > RASTER_THRESHOLD
 
 
+def style_3d(ax):
+    """Light panes and grid lines for 3D axes."""
+    for a in (ax.xaxis, ax.yaxis, ax.zaxis):
+        a.pane.set_facecolor((1, 1, 1, 0))
+        a.pane.set_edgecolor("lightgrey")
+        a._axinfo["grid"].update(color=(0.5, 0.5, 0.5, 0.25), linewidth=0.5)
+
+
 def colors(n):
     """``n`` palette colours (cycled)."""
     return [CYCLE[i % len(CYCLE)] for i in range(n)]
@@ -62,6 +70,7 @@ def use(dpi=110, savefig_dpi=200):
         "font.size":         10,
         "axes.titlesize":    11,
         "axes.grid":         True,
+        "axes.xmargin":      0.0,
         "grid.alpha":        0.3,
         "grid.color":        "grey",
         "axes.spines.top":   False,

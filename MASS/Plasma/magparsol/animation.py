@@ -33,7 +33,6 @@ inside ``radiation.spectrum_fft``; no special handling is needed here.
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.gridspec as gridspec
-from matplotlib.animation import FuncAnimation, PillowWriter
 
 from magparsol.diagnostics import TrajectoryHistory
 from magparsol.constants import C, R_EARTH
@@ -366,7 +365,8 @@ def _build_panel_registry(history, field, q, m,
                           show_individual=False,
                           field_update_every=10,
                           store_dt_warn_period=None,
-                          field_projection="auto") -> dict:
+                          field_projection="auto",
+                          field_trail=None) -> dict:
     """Instantiate one panel object per panel name."""
     earth = _is_dipole(field)
     # Hodograph trail ≈ 3 gyrations when the run covers many more than that
@@ -383,7 +383,8 @@ def _build_panel_registry(history, field, q, m,
         "velocity_xz": _VelocityPanel("xz", normalize_v, trail),
         "field":       _FieldPanel(field, length_unit, unit_label,
                                    field_components, field_density,
-                                   field_update_every, field_projection),
+                                   field_update_every, field_projection,
+                                   field_trail),
         "spectrum":    _SpectrumPanel(q, m, field, spectrum_method,
                                       spectrum_update_every, show_individual,
                                       store_dt_warn_period=store_dt_warn_period),
@@ -411,6 +412,7 @@ def plot_overview(
     title: str = "Overview",
     store_dt_warn_period: float = None,
     field_projection: str = "auto",
+    field_trail: int = None,
 ):
     """Static 2×3 overview panel of a finished run.
 
@@ -428,6 +430,9 @@ def plot_overview(
     show_individual : bool   — overlay per-particle spectra (N>1)
     store_dt_warn_period : float or None  — gyroperiod for Nyquist warning
     field_projection : "auto" | "xy" | "xz" | "yz"
+    field_trail : int or None
+        Length (in stored samples) of the fading orbit trail drawn over the
+        field panel.  None → one tenth of the run.
 
     Returns
     -------
@@ -442,7 +447,7 @@ def plot_overview(
         field_components, field_density, spectrum_method,
         show_individual=show_individual,
         store_dt_warn_period=store_dt_warn_period,
-        field_projection=field_projection,
+        field_projection=field_projection, field_trail=field_trail,
     )
     i = len(history.t) - 1
     for name, (row, col) in LAYOUT.items():
@@ -454,12 +459,38 @@ def plot_overview(
 
 # ── GIF generation ────────────────────────────────────────────────────────────
 
-def _save(fig, update, n_frames, filename, fps, writer):
+def _save(fig, update, n_frames, filename, fps, writer, n_colors=128):
+    """Render every frame and write a compact GIF.
+
+    All frames share one palette and are quantised without dithering, so
+    pixels that do not change between frames stay identical and the GIF
+    encoder only stores the changed region of each frame.  (Per-frame
+    adaptive palettes with dithering make every pixel flicker and inflate
+    the file by an order of magnitude.)
+    """
+    from PIL import Image
+    from matplotlib.backends.backend_agg import FigureCanvasAgg
     if writer != "gif":
         raise ValueError(f"Unknown writer '{writer}'. Use 'gif'.")
-    anim = FuncAnimation(fig, update, frames=n_frames, blit=False)
-    anim.save(filename, writer=PillowWriter(fps=fps))
+    canvas = FigureCanvasAgg(fig)
+    frames = []
+    for k in range(n_frames):
+        update(k)
+        canvas.draw()
+        frames.append(Image.fromarray(np.asarray(canvas.buffer_rgba())[..., :3].copy()))
     plt.close(fig)
+
+    # One palette from a mosaic of evenly spaced frames
+    pick = np.unique(np.linspace(0, n_frames - 1, min(8, n_frames)).astype(int))
+    w, h = frames[0].size
+    mosaic = Image.new("RGB", (w, h * len(pick)))
+    for j, i in enumerate(pick):
+        mosaic.paste(frames[i], (0, h * j))
+    pal = mosaic.quantize(colors=n_colors, method=Image.Quantize.MEDIANCUT,
+                          dither=Image.Dither.NONE)
+    q = [f.quantize(palette=pal, dither=Image.Dither.NONE) for f in frames]
+    q[0].save(filename, save_all=True, append_images=q[1:], loop=0,
+              duration=int(round(1000 / fps)), disposal=1, optimize=False)
     print(f"Saved: {filename}")
     return filename
 
@@ -484,6 +515,7 @@ def make_panel_gif(
     field_update_every: int = 10,
     store_dt_warn_period: float = None,
     field_projection: str = "auto",
+    field_trail: int = None,
     dpi: int = 90,
 ):
     """Generate a GIF for a single panel.
@@ -508,7 +540,7 @@ def make_panel_gif(
         field_components, field_density, spectrum_method,
         spectrum_update_every, field_update_every=field_update_every,
         store_dt_warn_period=store_dt_warn_period,
-        field_projection=field_projection,
+        field_projection=field_projection, field_trail=field_trail,
     )
     panel = registry[panel_name]
 
@@ -544,6 +576,7 @@ def make_overview_gif(
     field_update_every: int = 10,
     store_dt_warn_period: float = None,
     field_projection: str = "auto",
+    field_trail: int = None,
     title: str = "Overview",
     dpi: int = 70,
 ):
@@ -571,7 +604,7 @@ def make_overview_gif(
         field_components, field_density, spectrum_method,
         spectrum_update_every, field_update_every=field_update_every,
         store_dt_warn_period=store_dt_warn_period,
-        field_projection=field_projection,
+        field_projection=field_projection, field_trail=field_trail,
     )
 
     fig = plt.figure(figsize=(15, 9.5), dpi=dpi)
