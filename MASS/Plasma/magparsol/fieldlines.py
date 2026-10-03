@@ -35,10 +35,13 @@ import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.lines import Line2D
 from matplotlib.patches import Circle
+from matplotlib.collections import LineCollection
+from matplotlib.colors import to_rgba
 from mpl_toolkits.mplot3d import Axes3D   # noqa: F401
 from magparsol.constants import R_EARTH, B_FLOOR
+from magparsol import style
 
-_DEFAULT_COLORS = {"B": "#1f5fa8", "E": "#d1495b"}
+_DEFAULT_COLORS = {"B": style.B_COLOR, "E": style.E_COLOR}
 
 _PLANES = {
     "xy": (np.array([1.0, 0.0, 0.0]), np.array([0.0, 1.0, 0.0]), ("x", "y")),
@@ -191,26 +194,76 @@ def _add_direction_arrow(ax, pts2d, color, frac=0.5, size=11):
 
 # ── Decorations ───────────────────────────────────────────────────────────────
 
+def draw_earth_2d(ax, length_unit, zorder=5):
+    """Filled Earth disk of radius R_E (in display units)."""
+    ax.add_patch(Circle((0, 0), R_EARTH / length_unit,
+                        facecolor=to_rgba(style.EARTH_FACE, style.EARTH_ALPHA),
+                        edgecolor="black", lw=0.6, zorder=zorder))
+
+
 def _draw_earth_2d(ax, field, e1, e2, length_unit, extent):
     """Earth disk, rotation axis (dotted) and magnetic axis (dashed)."""
-    R = R_EARTH / length_unit
-    ax.add_patch(Circle((0, 0), R, facecolor="#9cc3e6", edgecolor="#2b4a6f",
-                        lw=0.8, zorder=5))
-    for vec, ls, lbl in ((np.array([0.0, 0.0, 1.0]), ":", "rotation axis"),
-                         (field.axis, "--", "magnetic axis")):
+    draw_earth_2d(ax, length_unit)
+    for vec, ls, lbl in ((np.array([0.0, 0.0, 1.0]), ":", "Rotation Axis"),
+                         (field.axis, "--", "Magnetic Axis")):
         p = np.array([vec @ e1, vec @ e2])
         if np.linalg.norm(p) < 0.2:
             continue   # axis (nearly) normal to the viewing plane
         p = p / np.linalg.norm(p) * extent
-        ax.plot([-p[0], p[0]], [-p[1], p[1]], ls, color="0.35", lw=0.8,
-                zorder=4, label=lbl)
+        ax.plot([-p[0], p[0]], [-p[1], p[1]], ls, color=style.AXIS_COLOR,
+                lw=0.8, zorder=4, label=lbl)
 
 
 def _draw_earth_3d(ax, length_unit):
     R = R_EARTH / length_unit
     u, v = np.mgrid[0:2*np.pi:40j, 0:np.pi:20j]
     ax.plot_surface(R*np.cos(u)*np.sin(v), R*np.sin(u)*np.sin(v), R*np.cos(v),
-                    color="#9cc3e6", alpha=0.5, linewidth=0, shade=True)
+                    color=style.EARTH_FACE, alpha=0.45, linewidth=0, shade=True)
+
+
+# ── Fading orbit trail (static and animated) ──────────────────────────────────
+
+class FadingTrail:
+    """A line whose opacity ramps from 0 (oldest) to ``alpha`` (newest).
+
+    Only the last ``length`` points are drawn, so an orbit plotted over a
+    field configuration does not hide the field.  Call :meth:`set_data` with
+    the full path up to the current point.
+    """
+
+    def __init__(self, ax, length=200, color=style.ORBIT_COLOR, alpha=0.8,
+                 lw=1.0, zorder=6):
+        self.length = int(length)
+        self.rgba   = np.array(to_rgba(color))
+        self.alpha  = alpha
+        self.lc     = LineCollection([], linewidths=lw, zorder=zorder,
+                                     capstyle="round")
+        ax.add_collection(self.lc)
+
+    def set_data(self, x, y):
+        x, y = np.asarray(x)[-self.length:], np.asarray(y)[-self.length:]
+        if len(x) < 2:
+            self.lc.set_segments([])
+            return self.lc
+        pts  = np.column_stack([x, y])
+        segs = np.stack([pts[:-1], pts[1:]], axis=1)
+        c    = np.tile(self.rgba, (len(segs), 1))
+        c[:, 3] = self.alpha * np.linspace(0.0, 1.0, len(segs))**1.5
+        self.lc.set_segments(segs)
+        self.lc.set_color(c)
+        return self.lc
+
+
+def field_legend(ax, handles, n_cols=None):
+    """Legend in a row above the axes (never covers the field)."""
+    if not handles:
+        return None
+    leg = style.legend(ax, handles=handles, loc="lower center",
+                       bbox_to_anchor=(0.5, 1.01),
+                       ncol=n_cols or min(len(handles), 4), fontsize=8,
+                       handlelength=1.6, columnspacing=1.0, borderpad=0.35)
+    ax.set_title(ax.get_title(), pad=26)
+    return leg
 
 
 # ── Uniform-field arrow grids (re-usable by the animation module) ─────────────
@@ -224,7 +277,7 @@ class UniformFieldArrows:
     """
 
     def __init__(self, ax, field, comp, t, e1, e2, lim, n_grid=7,
-                 offset=0.0, color="k", ref_mag=None):
+                 offset=0.0, color="black", ref_mag=None):
         self.ax, self.field, self.comp = ax, field, comp
         self.e1, self.e2, self.n = e1, e2, np.cross(e1, e2)
         spacing = 2 * lim / n_grid
@@ -317,6 +370,8 @@ def plot_field_lines(
     arrows: bool = True,
     legend: bool = True,
     ref_times=None,
+    orbit_alpha: float = 0.35,
+    orbit_trail: int = None,
 ):
     """Trace and plot field lines (or arrow grids) for any FieldModel.
 
@@ -363,6 +418,12 @@ def plot_field_lines(
         Times used to fix the arrow length scale of a time-dependent
         uniform field (arrow length ∝ |F(t)| / max |F(ref_times)|).
         None → one wave period if the field has ``omega_c``, else just t.
+    orbit_alpha : float
+        Opacity of the overlaid ``history`` orbit (kept low so the field
+        stays visible).
+    orbit_trail : int or None
+        If given (2-D only), draw only the last ``orbit_trail`` samples of the
+        orbit as a trail that fades out towards its tail.
 
     Returns
     -------
@@ -413,7 +474,7 @@ def plot_field_lines(
     # ── Draw each component ───────────────────────────────────────────────────
     ax._mps_uniform_arrows = []
     for k, comp in enumerate(components):
-        col = color.get(comp, "gray")
+        col = color.get(comp, "grey")
         if field.is_uniform:
             if is3d:
                 _uniform_3d(ax, field, comp, t, ax_lim, col, n=(3, 4, 5)[dens])
@@ -455,14 +516,6 @@ def plot_field_lines(
                     ax.plot(p2[:, 0], p2[:, 1], color=col, lw=1.0, zorder=2)
                     if arrows:
                         _add_direction_arrow(ax, p2, col)
-            if not is3d:
-                # Label L values on one side of the equator
-                for L in L_shells:
-                    s, _ = _seeds_dipole_lshells(field, (L,), (az[0],))
-                    p = s[0] / length_unit
-                    ax.text(p @ e1, p @ e2, f"  L={L:g}", fontsize=7,
-                            color="0.25", va="center", ha="left",
-                            rotation=90, rotation_mode="anchor", zorder=6)
             handles.append(Line2D([], [], color=col, label=r"$\mathbf{B}$"))
             continue
 
@@ -529,35 +582,40 @@ def plot_field_lines(
         for pid in range(r.shape[1]):
             if is3d:
                 ax.plot(r[:, pid, 0], r[:, pid, 1], r[:, pid, 2],
-                        color="k", lw=0.6, alpha=0.7)
+                        color=style.ORBIT_COLOR, lw=0.5, alpha=orbit_alpha,
+                        rasterized=style.raster(len(r)))
+            elif orbit_trail:
+                FadingTrail(ax, orbit_trail).set_data(r[:, pid] @ e1, r[:, pid] @ e2)
             else:
-                ax.plot(r[:, pid] @ e1, r[:, pid] @ e2, color="k", lw=0.6,
-                        alpha=0.7, zorder=3)
+                ax.plot(r[:, pid] @ e1, r[:, pid] @ e2, color=style.ORBIT_COLOR,
+                        lw=0.5, alpha=orbit_alpha, zorder=6,
+                        rasterized=style.raster(len(r)))
 
     if is3d:
         ax.set_xlim3d(-ax_lim, ax_lim)
         ax.set_ylim3d(-ax_lim, ax_lim)
         ax.set_zlim3d(-ax_lim, ax_lim)
         ax.set_box_aspect((1, 1, 1))
-        ax.set_xlabel(f"x [{unit_label}]")
-        ax.set_ylabel(f"y [{unit_label}]")
-        ax.set_zlabel(f"z [{unit_label}]")
+        ax.set_xlabel(f"$x$ [{unit_label}]")
+        ax.set_ylabel(f"$y$ [{unit_label}]")
+        ax.set_zlabel(f"$z$ [{unit_label}]")
     else:
         ax.set_xlim(-ax_lim, ax_lim)
         ax.set_ylim(-ax_lim, ax_lim)
         ax.set_aspect("equal")
-        ax.set_xlabel(f"{labels[0]} [{unit_label}]")
-        ax.set_ylabel(f"{labels[1]} [{unit_label}]")
+        ax.set_xlabel(f"${labels[0]}$ [{unit_label}]")
+        ax.set_ylabel(f"${labels[1]}$ [{unit_label}]")
 
     if title is None:
-        title = f"{type(field).__name__} — " + \
-                " & ".join(f"$\\mathbf{{{c}}}$" for c in components)
+        title = getattr(field, "display_name", "Field")
     ax.set_title(title)
 
     if legend and (len(handles) > 1 or (earth_sphere and not is3d)):
-        extra = [h for h in ax.get_legend_handles_labels()[0]]
-        ax.legend(handles=handles + extra, loc="upper right", fontsize=7,
-                  framealpha=0.85)
+        extra = ax.get_legend_handles_labels()[0]
+        if is3d:
+            style.legend(ax, handles=handles + extra, loc="upper right", fontsize=8)
+        else:
+            field_legend(ax, handles + extra)
 
     if own_fig:
         fig.tight_layout()

@@ -34,10 +34,10 @@ import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.gridspec as gridspec
 from matplotlib.animation import FuncAnimation, PillowWriter
-from matplotlib.patches import Circle
 
 from magparsol.diagnostics import TrajectoryHistory
 from magparsol.constants import C, R_EARTH
+from magparsol import style
 
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
@@ -54,7 +54,7 @@ def _is_dipole(field):
 
 
 def _colors(N):
-    return plt.cm.viridis(np.linspace(0.1, 0.85, N)) if N > 1 else ["#2a9d8f"]
+    return style.colors(N)
 
 
 def mean_gyrofrequency(history, q, m, field):
@@ -97,20 +97,20 @@ class _PositionPanel:
         N  = r.shape[1]
         lines, dots = [], []
         for pid, col in zip(range(N), _colors(N)):
-            ln, = ax.plot([], [], lw=0.8, alpha=0.8, color=col)
-            pt, = ax.plot([], [], "o", ms=4, color=col, mec="k", mew=0.4, zorder=5)
+            ln, = ax.plot([], [], lw=0.7, alpha=0.85, color=col,
+                          rasterized=style.raster(len(r)))
+            pt, = ax.plot([], [], "o", ms=4, color=col, mec="black", mew=0.5, zorder=5)
             lines.append(ln); dots.append(pt)
         lim = _auto_lim(r[..., 0], self._c2(r))
         if self.earth:
-            ax.add_patch(Circle((0, 0), R_EARTH / lu, facecolor="#9cc3e6",
-                                edgecolor="#2b4a6f", lw=0.8, zorder=1))
+            from magparsol.fieldlines import draw_earth_2d
+            draw_earth_2d(ax, lu, zorder=1)
             lim = max(lim, 1.3 * R_EARTH / lu)
         ax.set_xlim(-lim, lim); ax.set_ylim(-lim, lim)
         ax.set_aspect("equal")
-        ax.set_xlabel(f"x [{self.unit_label}]")
-        ax.set_ylabel(f"{'y' if self.plane == 'xy' else 'z'} [{self.unit_label}]")
-        ax.set_title(f"Position ({self.plane[0]}-{self.plane[1]})")
-        ax.grid(True, alpha=0.3)
+        ax.set_xlabel(f"$x$ [{self.unit_label}]")
+        ax.set_ylabel(f"${self.plane[1]}$ [{self.unit_label}]")
+        ax.set_title(f"Position (${self.plane}$)")
         self._r = r
         return {"lines": lines, "dots": dots}
 
@@ -137,24 +137,24 @@ class _VelocityPanel:
 
     def build(self, ax, history, **kwargs):
         scale = C if self.normalize_v else 1.0
-        unit  = "c" if self.normalize_v else "m/s"
+        unit  = "$c$" if self.normalize_v else "m/s"
         v     = history.v / scale
         N     = v.shape[1]
         c2    = v[..., 1] if self.plane == "xy" else v[..., 2]
         lines, dots = [], []
         for pid, col in zip(range(N), _colors(N)):
             if self.trail is not None:
-                ax.plot(v[:, pid, 0], c2[:, pid], lw=0.3, color="0.85", zorder=1)
-            ln, = ax.plot([], [], lw=0.8, alpha=0.8, color=col)
-            pt, = ax.plot([], [], "o", ms=4, color=col, mec="k", mew=0.4, zorder=5)
+                ax.plot(v[:, pid, 0], c2[:, pid], lw=0.3, color="lightgrey", zorder=1,
+                        rasterized=style.raster(len(v)))
+            ln, = ax.plot([], [], lw=0.8, alpha=0.85, color=col)
+            pt, = ax.plot([], [], "o", ms=4, color=col, mec="black", mew=0.5, zorder=5)
             lines.append(ln); dots.append(pt)
         lim = _auto_lim(v[..., 0], c2)
         ax.set_xlim(-lim, lim); ax.set_ylim(-lim, lim)
         ax.set_aspect("equal")
         ax.set_xlabel(f"$v_x$ [{unit}]")
         ax.set_ylabel(f"$v_{self.plane[1]}$ [{unit}]")
-        ax.set_title(f"Velocity hodograph ({self.plane[0]}-{self.plane[1]})")
-        ax.grid(True, alpha=0.3)
+        ax.set_title(f"Velocity (${self.plane}$)")
         self._v, self._c2 = v, c2
         return {"lines": lines, "dots": dots}
 
@@ -177,7 +177,7 @@ class _FieldPanel:
 
     def __init__(self, field, length_unit=1.0, unit_label="m",
                  components=("B", "E"), density="low", field_update_every=10,
-                 projection="auto"):
+                 projection="auto", trail=None):
         self.field              = field
         self.length_unit        = length_unit
         self.unit_label         = unit_label
@@ -187,6 +187,7 @@ class _FieldPanel:
         if projection == "auto":
             projection = "xz" if _is_dipole(field) else "xy"
         self.projection         = projection
+        self.trail              = trail
 
     def _draw(self, ax, t):
         from magparsol.fieldlines import plot_field_lines
@@ -196,7 +197,7 @@ class _FieldPanel:
             self.field, components=comps or ("B",), density=self.density,
             t=t, length_unit=self.length_unit, unit_label=self.unit_label,
             ax_lim=self._lim, projection=self.projection, ax=ax,
-            ref_times=self._t_all, title="Field & orbit",
+            ref_times=self._t_all, title="Field and Orbit",
             L_shells=self._L_shells,
         )
 
@@ -216,34 +217,35 @@ class _FieldPanel:
         self._t_all = history.t
         self._ax    = ax
         self._draw(ax, float(history.t[0]))
+        from magparsol.fieldlines import FadingTrail
         N = r.shape[1]
+        # Trail ≈ 1/10 of the run (at least 30 samples) so the field stays visible
+        n_trail = self.trail or max(30, len(history.t) // 10)
         lines, dots = [], []
         for pid, col in zip(range(N), _colors(N)):
-            ln, = ax.plot([], [], lw=0.7, color="k", alpha=0.75, zorder=6)
-            pt, = ax.plot([], [], "o", ms=4, color=col, mec="k", mew=0.4, zorder=7)
-            lines.append(ln); dots.append(pt)
+            lines.append(FadingTrail(ax, n_trail, color=style.ORBIT_COLOR,
+                                     alpha=0.75, lw=0.9, zorder=6))
+            pt, = ax.plot([], [], "o", ms=4.5, color=col, mec="black", mew=0.5, zorder=7)
+            dots.append(pt)
         return {"lines": lines, "dots": dots}
 
     def update(self, artists, i, k=None, t_current=0.0, **kwargs):
         out = []
-        for pid, (ln, pt) in enumerate(zip(artists["lines"], artists["dots"])):
-            ln.set_data(self._p1[:i+1, pid], self._p2[:i+1, pid])
+        for pid, (tr, pt) in enumerate(zip(artists["lines"], artists["dots"])):
+            out.append(tr.set_data(self._p1[:i+1, pid], self._p2[:i+1, pid]))
             pt.set_data([self._p1[i, pid]], [self._p2[i, pid]])
-            out += [ln, pt]
+            out.append(pt)
         if self.field.is_static:
             return out
         arrows = getattr(self._ax, "_mps_uniform_arrows", [])
         if arrows:
             for arr in arrows:
                 out += arr.update(t_current)
-            self._ax.set_title(f"Field & orbit  (t = {t_current:.3g} s)")
         elif k is None or k % self.field_update_every == 0:
-            keep = [(ln.get_data(), pt.get_data()) for ln, pt in
-                    zip(artists["lines"], artists["dots"])]
             self._ax.cla()
             self._draw(self._ax, t_current)
-            for (ln, pt), (dl, dp) in zip(zip(artists["lines"], artists["dots"]), keep):
-                self._ax.add_line(ln); self._ax.add_line(pt)
+            for tr, pt in zip(artists["lines"], artists["dots"]):
+                self._ax.add_collection(tr.lc); self._ax.add_line(pt)
         return out
 
 
@@ -252,7 +254,7 @@ class _SpectrumPanel:
 
     def __init__(self, q, m, field=None, method="fft", spectrum_update_every=5,
                  show_individual=False, observer=None,
-                 store_dt_warn_period=None, f_norm=None, f_max_norm=5.0):
+                 store_dt_warn_period=None, f_norm=None, f_max_norm=6.0):
         self.q                     = q
         self.m                     = m
         self.field                 = field
@@ -288,31 +290,37 @@ class _SpectrumPanel:
         x = f / self._fn
         if self.show_individual:
             for pi in ind:
-                ax.semilogy(x, np.where(pi > 0, pi, np.nan), color="0.6",
+                ax.semilogy(x, np.where(pi > 0, pi, np.nan), color="grey",
                             lw=0.5, alpha=0.3)
         static = self.method == "retarded"
         ax.semilogy(x, np.where(p > 0, p, np.nan),
-                    color="#1f5fa8" if static else "0.65",
-                    lw=1.3 if static else 1.0,
-                    label="retarded integral" if static else "final (full run)")
-        live, = ax.semilogy([], [], color="#d1495b", lw=1.3, label="up to t")
+                    color="steelblue" if static else style.REF_COLOR,
+                    lw=1.2 if static else 0.9,
+                    label="Retarded" if static else "Final")
+        live, = ax.semilogy([], [], color="firebrick", lw=1.2, label="Up to $t$")
         info  = ax.text(0.97, 0.95, "", transform=ax.transAxes, ha="right",
                         va="top", fontsize=8,
-                        bbox=dict(boxstyle="round", fc="w", ec="0.8", alpha=0.9))
+                        bbox=dict(boxstyle="square", fc="white", ec="black",
+                                  lw=0.6, alpha=0.92))
 
-        x_max = self.f_max_norm if f_c else x.max()
-        x_max = min(x_max, x.max())
-        sel   = (x > 0) & (x <= x_max) & (p > 0)
-        p_top = float(p[sel].max()) if np.any(sel) else 1.0
-        ax.set_xlim(0, x_max)
-        ax.set_ylim(p_top * 1e-6, p_top * 5)
+        # x range: up to where the final spectrum has fallen 6 decades below
+        # its peak (with margin), capped at f_max_norm
+        pos   = (x > 0) & (p > 0)
+        p_top = float(p[pos].max()) if np.any(pos) else 1.0
+        above = np.where(pos & (p > p_top * 1e-6))[0]
+        x_max = x[above[-1]] * 1.15 if len(above) else x.max()
         if f_c:
-            ax.axvline(1.0, color="k", lw=0.7, ls="--", alpha=0.6)
+            x_max = min(max(x_max, 1.5), self.f_max_norm)
+        x_max = min(x_max, x.max())
+        ax.set_xlim(0, x_max)
+        # Two decades of headroom keep the legend and time box off the data
+        ax.set_ylim(p_top * 1e-6, p_top * 300)
+        if f_c:
+            ax.axvline(1.0, color="black", lw=0.6, ls="--", alpha=0.6)
         ax.set_xlabel(xlabel)
-        ax.set_ylabel("Power [arb.]")
-        ax.set_title("Emission spectrum" + (" (retarded)" if static else " (FFT)"))
-        ax.grid(True, alpha=0.3)
-        ax.legend(fontsize=7, loc="upper left")
+        ax.set_ylabel("Power [arb. units]")
+        ax.set_title("Spectrum" + (" (Retarded)" if static else ""))
+        style.legend(ax, fontsize=8, loc="upper left")
         self._f_c = f_c
         return {"live": live, "info": info}
 
@@ -322,9 +330,9 @@ class _SpectrumPanel:
         live, info = artists["live"], artists["info"]
         t = float(self._history.t[i] - self._history.t[0])
         if self._f_c:
-            info.set_text(f"t = {t:.3g} s\n≈ {t * self._f_c:.1f} gyrations")
+            info.set_text(f"$t$ = {t:.3g} s\n{t * self._f_c:.0f} Gyrations")
         else:
-            info.set_text(f"t = {t:.3g} s")
+            info.set_text(f"$t$ = {t:.3g} s")
         last = i == len(self._history.t) - 1
         if k is not None and k % self.spectrum_update_every != 0 and not last:
             return [info]
@@ -400,7 +408,7 @@ def plot_overview(
     field_density: str = "low",
     spectrum_method: str = "fft",
     show_individual: bool = False,
-    title: str = "Simulation Overview",
+    title: str = "Overview",
     store_dt_warn_period: float = None,
     field_projection: str = "auto",
 ):
@@ -536,7 +544,7 @@ def make_overview_gif(
     field_update_every: int = 10,
     store_dt_warn_period: float = None,
     field_projection: str = "auto",
-    title: str = "Simulation Overview",
+    title: str = "Overview",
     dpi: int = 70,
 ):
     """Generate a combined overview GIF with up to 6 panels.
@@ -579,7 +587,7 @@ def make_overview_gif(
 
     def update(k):
         i = frames[k]
-        sup.set_text(f"{title}   —   t = {history.t[i]:.3g} s")
+        sup.set_text(f"{title}      $t$ = {history.t[i]:.3g} s")
         out = [sup]
         for name in panels:
             out += _update_panel(registry[name], artists_map[name], i, k, history)
