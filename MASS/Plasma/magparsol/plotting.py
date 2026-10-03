@@ -21,6 +21,7 @@ import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D   # noqa: F401 (registers 3d projection)
 from magparsol.constants import R_EARTH, Q_E
 from magparsol.diagnostics import TrajectoryHistory, relative_energy_error
+from magparsol import style
 
 
 # ── 3-D trajectory ────────────────────────────────────────────────────────────
@@ -32,9 +33,10 @@ def plot_trajectory_3d(
     unit_label: str = r"$R_E$",
     ax_lim: float = 70.0,
     earth_sphere: bool = False,
-    color: str = "green",
-    title: str = "Particle Trajectory",
+    color: str = "black",
+    title: str = "Trajectory",
     ax=None,
+    z_ratio: float = 1.0,
 ):
     """Plot a 3-D particle trajectory.
 
@@ -58,6 +60,9 @@ def plot_trajectory_3d(
         Figure title.
     ax : Axes3D or None
         Existing axes to draw into.  If None, a new figure is created.
+    z_ratio : float
+        Vertical extent relative to the horizontal one; the box aspect is
+        adjusted so that the scale stays equal (the Earth stays round).
 
     Returns
     -------
@@ -78,12 +83,14 @@ def plot_trajectory_3d(
         xs = np.cos(u) * np.sin(v)
         ys = np.sin(u) * np.sin(v)
         zs = np.cos(v)
-        ax.plot_wireframe(xs, ys, zs, color="royalblue", alpha=0.3, linewidth=0.5)
+        ax.plot_surface(xs, ys, zs, color=style.EARTH_FACE, alpha=0.4,
+                        linewidth=0, shade=True)
 
-    ax.plot(x, y, z, color=color, linewidth=0.8)
-    ax.set_xlabel(f"x [{unit_label}]")
-    ax.set_ylabel(f"y [{unit_label}]")
-    ax.set_zlabel(f"z [{unit_label}]")
+    ax.plot(x, y, z, color=color, linewidth=0.6, alpha=0.85,
+            rasterized=style.raster(len(x)))
+    ax.set_xlabel(f"$x$ [{unit_label}]")
+    ax.set_ylabel(f"$y$ [{unit_label}]")
+    ax.set_zlabel(f"$z$ [{unit_label}]")
 
     # Auto ax_lim from data when not specified
     if ax_lim == "auto" or ax_lim is None:
@@ -92,11 +99,11 @@ def plot_trajectory_3d(
 
     ax.set_xlim3d(-ax_lim, ax_lim)
     ax.set_ylim3d(-ax_lim, ax_lim)
-    ax.set_zlim3d(-ax_lim, ax_lim)
-    # Force cubic bounding box so Earth sphere always renders as a sphere
-    ax.set_box_aspect((1, 1, 1))
+    ax.set_zlim3d(-ax_lim * z_ratio, ax_lim * z_ratio)
+    # Equal scale on all axes so the Earth renders as a sphere
+    ax.set_box_aspect((1, 1, z_ratio))
     ax.set_title(title)
-    ax.grid(False)
+    style.style_3d(ax)
     plt.tight_layout()
     return fig, ax
 
@@ -110,7 +117,7 @@ def plot_trajectory_2d(
     unit_label: str = "m",
     ax_lim: float = None,
     shared_limits: bool = False,
-    title: str = "Particle Trajectory (Projections)",
+    title: str = "Trajectory",
 ):
     """Plot X-Y and X-Z projections side by side.
 
@@ -125,7 +132,7 @@ def plot_trajectory_2d(
         Axis label unit string.
     ax_lim : float or None
         Explicit symmetric limit applied to both subplots.
-        None → each subplot auto-scales independently (default, prevents squishing).
+        None → each subplot is fitted to its own data with equal aspect.
     shared_limits : bool
         If True, both subplots share the same numeric limits (useful when
         comparing absolute orbit extent between planes).  Ignored when ax_lim
@@ -140,18 +147,24 @@ def plot_trajectory_2d(
     y = history.r[:, pid, 1] / length_unit
     z = history.r[:, pid, 2] / length_unit
 
-    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(14, 6))
+    # Panel widths follow the data aspect ratios so equal-scale panels fill
+    # the figure instead of leaving gaps
+    asp = [max(np.ptp(x), 1e-12) / max(np.ptp(c), 1e-12) for c in (y, z)]
+    asp = [min(max(a, 0.2), 5.0) for a in asp]
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(min(4.6 * sum(asp) + 1.5, 13), 5),
+                                   gridspec_kw={"width_ratios": asp})
+    r = style.raster(len(x))
 
-    ax1.plot(x, y, color="#1f5fa8", lw=0.8)
-    ax1.set_xlabel(f"x [{unit_label}]")
-    ax1.set_ylabel(f"y [{unit_label}]")
-    ax1.set_title("X-Y Plane")
+    ax1.plot(x, y, color="steelblue", lw=0.8, rasterized=r)
+    ax1.set_xlabel(f"$x$ [{unit_label}]")
+    ax1.set_ylabel(f"$y$ [{unit_label}]")
+    ax1.set_title("$xy$ Plane")
     ax1.set_aspect("equal")
 
-    ax2.plot(x, z, color="#d1495b", lw=0.8)
-    ax2.set_xlabel(f"x [{unit_label}]")
-    ax2.set_ylabel(f"z [{unit_label}]")
-    ax2.set_title("X-Z Plane")
+    ax2.plot(x, z, color="firebrick", lw=0.8, rasterized=r)
+    ax2.set_xlabel(f"$x$ [{unit_label}]")
+    ax2.set_ylabel(f"$z$ [{unit_label}]")
+    ax2.set_title("$xz$ Plane")
     ax2.set_aspect("equal")
 
     if ax_lim is not None:
@@ -166,11 +179,9 @@ def plot_trajectory_2d(
             ax.set_xlim(-lim, lim)
             ax.set_ylim(-lim, lim)
     else:
-        # Independent auto-scaling per subplot (default — prevents squishing)
-        lim_xy = _auto_lim(x, y)
-        lim_xz = _auto_lim(x, z)
-        ax1.set_xlim(-lim_xy, lim_xy); ax1.set_ylim(-lim_xy, lim_xy)
-        ax2.set_xlim(-lim_xz, lim_xz); ax2.set_ylim(-lim_xz, lim_xz)
+        # Fit each panel to its data (centred, equal aspect, 8% margin)
+        for ax, a, b in ((ax1, x, y), (ax2, x, z)):
+            _fit_box(ax, a, b)
 
     fig.suptitle(title)
     plt.tight_layout()
@@ -183,6 +194,14 @@ def _auto_lim(a, b, margin=1.15):
     return max(m, 1e-10)
 
 
+def _fit_box(ax, a, b, margin=0.08):
+    """Data limits with a margin; equal scale, the box shrinks to fit."""
+    pad = margin * max(np.ptp(a), np.ptp(b), 1e-12)
+    ax.set_xlim(a.min() - pad, a.max() + pad)
+    ax.set_ylim(b.min() - pad, b.max() + pad)
+    ax.set_aspect("equal", adjustable="box")
+
+
 # ── Energy diagnostics ────────────────────────────────────────────────────────
 
 def plot_energy(
@@ -190,7 +209,7 @@ def plot_energy(
     m: np.ndarray,
     pid: int = 0,
     relativistic: bool = True,
-    title: str = "Energy Conservation",
+    title: str = "Energy",
 ):
     """Plot kinetic energy and relative energy error over time.
 
@@ -213,22 +232,20 @@ def plot_energy(
     err = relative_energy_error(history, m, relativistic=relativistic)[:, pid]  # (S,)
     t = history.t
 
-    fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(10, 8), sharex=True)
+    fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(9, 6), sharex=True)
 
     K_eV = K / Q_E
     k_max = float(np.max(np.abs(K_eV))) if len(K_eV) else 0.0
     exp3, prefix = next(((e, p) for e, p in ((9, "G"), (6, "M"), (3, "k"))
                          if k_max >= 10**e), (0, ""))
     ax1.plot(t, K_eV / 10**exp3, color="steelblue")
-    ax1.set_ylabel(f"Kinetic energy [{prefix}eV]")
+    ax1.set_ylabel(f"$K$ [{prefix}eV]")
     ax1.set_title(title)
-    ax1.grid(True, alpha=0.4)
 
-    ax2.plot(t, err * 100.0, color="crimson")
-    ax2.set_ylabel(r"$\Delta\varepsilon\,/\,\varepsilon_0$ [%]")
-    ax2.set_xlabel("Time [s]")
-    ax2.axhline(0, color="k", linewidth=0.8, linestyle="--")
-    ax2.grid(True, alpha=0.4)
+    ax2.plot(t, err, color="firebrick")
+    ax2.set_ylabel(r"$\Delta K\,/\,K_0$")
+    ax2.set_xlabel("$t$ [s]")
+    ax2.axhline(0, color="black", linewidth=0.6, linestyle="--")
 
     plt.tight_layout()
     return fig, (ax1, ax2)
@@ -253,27 +270,24 @@ def plot_speed(
     t = history.t
 
     if relativistic:
-        fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(10, 7), sharex=True)
+        fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(9, 6), sharex=True)
         gamma = history.gamma()[:, pid]
         ax1.plot(t, speed / C, color="steelblue")
         ax1.set_ylabel(r"$|\mathbf{v}|\,/\,c$")
         ax1.set_title(title)
-        ax1.grid(True, alpha=0.4)
 
-        ax2.plot(t, gamma, color="darkorange")
+        ax2.plot(t, gamma, color="goldenrod")
         ax2.set_ylabel(r"$\gamma$")
-        ax2.set_xlabel("Time [s]")
-        ax2.grid(True, alpha=0.4)
+        ax2.set_xlabel("$t$ [s]")
 
         plt.tight_layout()
         return fig, (ax1, ax2)
     else:
-        fig, ax = plt.subplots(figsize=(10, 4))
+        fig, ax = plt.subplots(figsize=(9, 3.5))
         ax.plot(t, speed, color="steelblue")
         ax.set_ylabel(r"$|\mathbf{v}|$ [m/s]")
-        ax.set_xlabel("Time [s]")
+        ax.set_xlabel("$t$ [s]")
         ax.set_title(title)
-        ax.grid(True, alpha=0.4)
         plt.tight_layout()
         return fig, ax
 
@@ -332,10 +346,12 @@ class LivePlotter:
             ax.set_aspect("equal")
             ax.set_xlim(-self._ax_lim, self._ax_lim)
             ax.set_ylim(-self._ax_lim, self._ax_lim)
-        self.ax1.set_xlabel(f"x [{self.unit_label}]")
-        self.ax1.set_ylabel(f"y [{self.unit_label}]")
-        self.ax2.set_xlabel(f"x [{self.unit_label}]")
-        self.ax2.set_ylabel(f"z [{self.unit_label}]")
+        self.ax1.set_xlabel(f"$x$ [{self.unit_label}]")
+        self.ax1.set_ylabel(f"$y$ [{self.unit_label}]")
+        self.ax2.set_xlabel(f"$x$ [{self.unit_label}]")
+        self.ax2.set_ylabel(f"$z$ [{self.unit_label}]")
+        self.ax1.set_title("$xy$ Plane")
+        self.ax2.set_title("$xz$ Plane")
         plt.ion()
         plt.tight_layout()
         plt.show()
@@ -356,11 +372,10 @@ class LivePlotter:
         z = float(state.r[pid, 2]) / d
 
         if t_max is not None:
-            s = f"T = {state.t:8.3f} / {t_max:8.3f} [s]"
-            self.ax1.set_title(s)
+            self.fig.suptitle(f"$t$ = {state.t:.3f} s  of  {t_max:.3f} s")
 
-        self.ax1.plot(x, y, "b.", markersize=2)
-        self.ax2.plot(x, z, "r.", markersize=2)
+        self.ax1.plot(x, y, ".", color="steelblue", markersize=2)
+        self.ax2.plot(x, z, ".", color="firebrick", markersize=2)
         if self._notebook_mode:
             from IPython.display import display, clear_output
             clear_output(wait=True)

@@ -37,6 +37,7 @@ Radiation   : radiated_power, total_radiated_energy, spectrum_fft,
 Field lines : plot_field_lines
 Animation   : plot_overview, make_panel_gif, make_overview_gif,
               mean_gyrofrequency
+Style       : style.use() applies the package look (palette, legends, dpi)
 """
 
 # ── Constants ─────────────────────────────────────────────────────────────────
@@ -115,7 +116,9 @@ from magparsol.animation import (
     mean_gyrofrequency,
 )
 
-__version__ = "0.3.0"
+from magparsol import style
+
+__version__ = "0.4.0"
 
 __all__ = [
     # constants
@@ -145,4 +148,6 @@ __all__ = [
     # animation
     "plot_overview", "make_panel_gif", "make_overview_gif",
     "mean_gyrofrequency",
+    # style
+    "style",
 ]

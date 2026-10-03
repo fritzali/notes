@@ -55,6 +55,7 @@ class FieldModel(ABC):
 
     is_uniform: bool = False
     is_static:  bool = True
+    display_name: str = "Field"      # human-readable name used in plot titles
 
     @abstractmethod
     def evaluate(self, r: np.ndarray, t: float):
@@ -77,6 +78,7 @@ class UniformB(FieldModel):
 
     is_uniform = True
     is_static  = True
+    display_name = r"Uniform $\mathbf{B}$"
 
     def __init__(self, B=(0.0, 0.0, 3e-10)):
         self._B = np.asarray(B, dtype=float)  # shape (3,)
@@ -101,6 +103,7 @@ class UniformEB(FieldModel):
 
     is_uniform = True
     is_static  = True
+    display_name = "Crossed Fields"
 
     def __init__(self, B=(0.0, 0.0, 3e-10), E=None):
         self._B = np.asarray(B, dtype=float)
@@ -138,6 +141,7 @@ class CyclotronWaveField(FieldModel):
 
     is_uniform = True
     is_static  = False
+    display_name = "Cyclotron Wave"
 
     def __init__(
         self,
@@ -191,6 +195,7 @@ class EarthDipole(FieldModel):
 
     is_uniform = False
     is_static  = True
+    display_name = "Earth Dipole"
 
     def __init__(self, tilt_deg: float = DIPOLE_TILT_DEG, moment: float = DIPOLE_MOMENT):
         phi = np.deg2rad(tilt_deg)
@@ -244,10 +249,19 @@ class CustomField(FieldModel):
     vector_api : bool
         True → func uses the (r, t) → (B, E) convention.
         False → func uses the (x, y, z, t) → 6-tuple scalar convention.
+    is_uniform, is_static : bool
+        Hints for the plotting routines (arrow grid / animation).
+    name : str or None
+        Display name used in plot titles.
     """
 
+    display_name = "Custom Field"
+
     def __init__(self, func, vector_api: bool = False,
-                 is_uniform: bool = False, is_static: bool = True):
+                 is_uniform: bool = False, is_static: bool = True,
+                 name: str = None):
+        if name is not None:
+            self.display_name = name
         self._func = func
         self._vector_api = vector_api
         self.is_uniform = is_uniform
