@@ -73,7 +73,7 @@ def plot_trajectory_3d(
     z = history.r[:, pid, 2] / length_unit
 
     if ax is None:
-        fig = plt.figure(figsize=(9, 8))
+        fig = plt.figure(figsize=(7.6, 6.8))
         ax = fig.add_subplot(111, projection="3d")
     else:
         fig = ax.get_figure()
@@ -151,7 +151,7 @@ def plot_trajectory_2d(
     # the figure instead of leaving gaps
     asp = [max(np.ptp(x), 1e-12) / max(np.ptp(c), 1e-12) for c in (y, z)]
     asp = [min(max(a, 0.2), 5.0) for a in asp]
-    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(min(4.6 * sum(asp) + 1.5, 13), 5),
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(min(3.9 * sum(asp) + 1.3, 11), 4.25),
                                    gridspec_kw={"width_ratios": asp})
     r = style.raster(len(x))
 
@@ -232,7 +232,7 @@ def plot_energy(
     err = relative_energy_error(history, m, relativistic=relativistic)[:, pid]  # (S,)
     t = history.t
 
-    fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(9, 6), sharex=True)
+    fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(7.6, 5.1), sharex=True)
 
     K_eV = K / Q_E
     k_max = float(np.max(np.abs(K_eV))) if len(K_eV) else 0.0
@@ -270,7 +270,7 @@ def plot_speed(
     t = history.t
 
     if relativistic:
-        fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(9, 6), sharex=True)
+        fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(7.6, 5.1), sharex=True)
         gamma = history.gamma()[:, pid]
         ax1.plot(t, speed / C, color="steelblue")
         ax1.set_ylabel(r"$|\mathbf{v}|\,/\,c$")
@@ -283,7 +283,7 @@ def plot_speed(
         plt.tight_layout()
         return fig, (ax1, ax2)
     else:
-        fig, ax = plt.subplots(figsize=(9, 3.5))
+        fig, ax = plt.subplots(figsize=(7.6, 3.0))
         ax.plot(t, speed, color="steelblue")
         ax.set_ylabel(r"$|\mathbf{v}|$ [m/s]")
         ax.set_xlabel("$t$ [s]")
@@ -341,7 +341,7 @@ class LivePlotter:
         self._init_figure()
 
     def _init_figure(self):
-        self.fig, (self.ax1, self.ax2) = plt.subplots(1, 2, figsize=(13, 6))
+        self.fig, (self.ax1, self.ax2) = plt.subplots(1, 2, figsize=(11, 5.1))
         for ax in (self.ax1, self.ax2):
             ax.set_aspect("equal")
             ax.set_xlim(-self._ax_lim, self._ax_lim)
@@ -372,7 +372,8 @@ class LivePlotter:
         z = float(state.r[pid, 2]) / d
 
         if t_max is not None:
-            self.fig.suptitle(f"$t$ = {state.t:.3f} s  of  {t_max:.3f} s")
+            self.fig.suptitle(f"$t$ = {style.format_time(state.t, t_max)}  of  "
+                              f"{style.format_time(t_max, t_max)}")
 
         self.ax1.plot(x, y, ".", color="steelblue", markersize=2)
         self.ax2.plot(x, z, ".", color="firebrick", markersize=2)
