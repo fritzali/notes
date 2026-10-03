@@ -3,198 +3,291 @@ magparsol/fieldlines.py
 ------------------------
 Field-line tracing and plotting for any FieldModel.
 
-Tracing
-~~~~~~~
-Field lines satisfy  dr/ds = F(r)/|F(r)|  where F is B or E.
-Integration is a simple fixed-step RK4 on the unit-direction field.
-Both directions (+/−) are traced from each seed so closed lines (dipole
-loops) are drawn completely.
+Rendering strategy (chosen automatically from the field type)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+EarthDipole
+    Field lines are traced from their magnetic-equator crossings at the
+    requested L-shells, in the magnetic meridian plane(s), down to the
+    Earth's surface.  Because the meridian plane contains the (tilted)
+    dipole axis, every line is an exact closed loop  r = L cos²λ.
+    The Earth disk, the rotation axis and the magnetic axis are drawn.
 
-Seeding strategies
-~~~~~~~~~~~~~~~~~~
-auto        — bounding-box aspect ratio decides sphere vs box
-sphere      — seeds on a sphere of given radius around origin
-box         — seeds on a regular grid within a bounding box
-dipole_Lshells — (EarthDipole only) seeds at standard L-shell crossing
-                  points in the magnetic equatorial plane
+Spatially uniform fields (``is_uniform=True``)
+    A regular grid of equal-length arrows (``quiver``).  Field components
+    normal to the viewing plane are shown as ⊙ (out of the plane) and
+    ⊗ (into the plane).  With both B and E, the E grid is offset by half
+    a cell so the two families never overlap.
 
-Uniform-field handling
-~~~~~~~~~~~~~~~~~~~~~~
-Spatially uniform fields (is_uniform=True) skip streamline tracing and
-instead draw short representative arrow segments at the seed locations.
-This is cheaper and avoids meaningless parallel-line clutter.
+Other non-uniform fields
+    2-D projections use ``streamplot`` of the in-plane components;
+    3-D views (or explicit ``seed_points``) use RK4 line tracing.
 
-B and E
-~~~~~~~
-Pass components=("B",), ("E",), or ("B","E").  Colors default to
-steel-blue for B and orange-red for E.  A legend is added when both
-components are shown.
+Field lines satisfy  dr/ds = F(r)/|F(r)|  with F = B or E.  Tracing is a
+fixed-step RK4 on the unit direction field, both ways from every seed,
+stopping at ``r_min`` (planet surface), ``r_max`` or ``max_steps``.
+
+Projections
+~~~~~~~~~~~
+"xy", "xz", "yz" (2-D)  or  "3d".
 """
 
-import warnings
 import numpy as np
 import matplotlib.pyplot as plt
+from matplotlib.lines import Line2D
+from matplotlib.patches import Circle
 from mpl_toolkits.mplot3d import Axes3D   # noqa: F401
 from magparsol.constants import R_EARTH, B_FLOOR
+
+_DEFAULT_COLORS = {"B": "#1f5fa8", "E": "#d1495b"}
+
+_PLANES = {
+    "xy": (np.array([1.0, 0.0, 0.0]), np.array([0.0, 1.0, 0.0]), ("x", "y")),
+    "xz": (np.array([1.0, 0.0, 0.0]), np.array([0.0, 0.0, 1.0]), ("x", "z")),
+    "yz": (np.array([0.0, 1.0, 0.0]), np.array([0.0, 0.0, 1.0]), ("y", "z")),
+}
+
+
+def _plane(projection):
+    """Return (e1, e2, n, axis labels) of a 2-D projection plane."""
+    if projection not in _PLANES:
+        raise ValueError(f"Unknown projection '{projection}'. "
+                         f"Choose from {list(_PLANES) + ['3d']}.")
+    e1, e2, labels = _PLANES[projection]
+    return e1, e2, np.cross(e1, e2), labels
+
+
+def _is_dipole(field):
+    from magparsol.fields import EarthDipole
+    return isinstance(field, EarthDipole)
+
+
+def _component(field, r, t, comp):
+    B, E = field(r, t)
+    return B if comp == "B" else E
 
 
 # ── Seeding helpers ───────────────────────────────────────────────────────────
 
 def _seeds_sphere(n: int, radius: float) -> np.ndarray:
-    """n seeds distributed roughly uniformly on a sphere of given radius."""
-    # Fibonacci / golden-ratio spiral for near-uniform coverage
+    """n seeds distributed roughly uniformly on a sphere (Fibonacci spiral)."""
     golden = np.pi * (3.0 - np.sqrt(5.0))
     i      = np.arange(n)
     y      = 1.0 - 2.0 * i / (n - 1) if n > 1 else np.array([0.0])
     r_xy   = np.sqrt(np.clip(1.0 - y**2, 0, 1))
     theta  = golden * i
-    x      = r_xy * np.cos(theta)
-    z      = r_xy * np.sin(theta)
-    return radius * np.stack([x, y, z], axis=1)   # (n, 3)
+    return radius * np.stack([r_xy*np.cos(theta), y, r_xy*np.sin(theta)], axis=1)
 
 
 def _seeds_box(n: int, bbox_min: np.ndarray, bbox_max: np.ndarray) -> np.ndarray:
-    """n seeds on a regular grid spanning the bounding box."""
+    """About n seeds on a regular grid spanning the bounding box."""
     n_side = max(2, int(round(n ** (1.0/3.0))))
     axes   = [np.linspace(bbox_min[i], bbox_max[i], n_side) for i in range(3)]
     grid   = np.array(np.meshgrid(*axes, indexing="ij")).reshape(3, -1).T
-    # subsample to exactly n if grid is larger
     if len(grid) > n:
         idx  = np.round(np.linspace(0, len(grid)-1, n)).astype(int)
         grid = grid[idx]
     return grid
 
 
-def _seeds_dipole_lshells(L_shells=(2, 3, 4, 5, 6, 8),
-                            n_phi: int = 1,
-                            unit: float = R_EARTH) -> np.ndarray:
-    """Seeds at L-shell equatorial crossings in the noon-midnight meridian.
+def _seeds_dipole_lshells(field, L_shells=(2, 3, 4, 5, 6, 8),
+                          azimuths=(0.0, np.pi), unit: float = R_EARTH):
+    """Seeds on the magnetic equator at radius L·R_E.
 
-    For each L value, place n_phi seeds evenly in azimuth.
-    Default n_phi=1 gives the noon meridian only (x-z plane).
+    The equator is the plane perpendicular to ``field.axis``.  Azimuth ψ is
+    measured from x̂ towards ``axis × x̂`` (the in-equator direction lying in
+    the y-z plane), so ψ = 0, π gives the meridian containing x̂ and
+    ψ = ±π/2 the meridian lying in the y-z plane.
+
+    Returns
+    -------
+    seeds : ndarray (n, 3)  [m]
+    L_of_seed : ndarray (n,)
     """
-    seeds = []
-    phis  = np.linspace(0, 2*np.pi, n_phi, endpoint=False)
+    e_a = np.array([1.0, 0.0, 0.0])
+    e_b = np.cross(field.axis, e_a)
+    e_b /= np.linalg.norm(e_b)
+    seeds, Ls = [], []
     for L in L_shells:
-        r = L * unit
-        for phi in phis:
-            seeds.append([r * np.cos(phi), r * np.sin(phi), 0.0])
-    return np.array(seeds)
-
-
-def _auto_strategy(field, history=None) -> str:
-    """Choose 'sphere' or 'box' based on bounding-box aspect ratio."""
-    from magparsol.fields import EarthDipole
-    if isinstance(field, EarthDipole):
-        return "sphere"
-    if history is not None:
-        r = history.r.reshape(-1, 3)
-        extents = r.max(axis=0) - r.min(axis=0)
-        extents = np.where(extents > 0, extents, 1.0)
-        ratio   = extents.max() / extents.min()
-        return "box" if ratio > 3.0 else "sphere"
-    return "sphere"
-
-
-def _auto_radius(field, history=None) -> float:
-    """Estimate a sensible seed radius from trajectory or a default."""
-    if history is not None:
-        r_mag = np.linalg.norm(history.r.reshape(-1, 3), axis=1)
-        return float(r_mag.mean())
-    return R_EARTH * 5.0
+        for psi in azimuths:
+            d = np.cos(psi) * e_a + np.sin(psi) * e_b
+            seeds.append(L * unit * d)
+            Ls.append(L)
+    return np.array(seeds), np.array(Ls, dtype=float)
 
 
 def _auto_bbox(history) -> tuple:
     """Bounding box of the trajectory with 20% margin."""
-    r    = history.r.reshape(-1, 3)
-    bmin = r.min(axis=0) * 1.2
-    bmax = r.max(axis=0) * 1.2
-    return bmin, bmax
+    r = history.r.reshape(-1, 3)
+    return r.min(axis=0) * 1.2, r.max(axis=0) * 1.2
 
 
 # ── Single field-line trace (RK4 on unit direction) ──────────────────────────
 
-def _trace_line(field, r0: np.ndarray, t: float, component: str,
-                ds: float, max_steps: int, r_max: float,
-                direction: int = 1) -> np.ndarray:
-    """Trace one field line from r0 in the given direction (+1 or -1).
+def _trace_line(field, r0, t: float, component: str, ds: float,
+                max_steps: int, r_max=None, direction: int = 1,
+                r_min=None) -> np.ndarray:
+    """Trace one field line from r0 along (+1) or against (-1) the field.
 
-    Parameters
-    ----------
-    component : "B" | "E"
-    direction : +1 (along field) | -1 (against field)
+    Stops at a null point, when |r| < r_min (the last point is placed on the
+    sphere |r| = r_min), when |r| > r_max, or after max_steps.
 
     Returns
     -------
-    points : ndarray, shape (n_points, 3)
+    points : ndarray, shape (n_points, 3)  [m]
     """
+    floor = np.sqrt(B_FLOOR)
+
+    def f_hat(pos):
+        fv = _component(field, pos[None, :], t, component)[0]
+        fm = np.linalg.norm(fv)
+        return direction * fv / fm if fm > floor else None
+
     r      = np.asarray(r0, dtype=float).copy()
     points = [r.copy()]
-    warned = False
-
     for _ in range(max_steps):
-        # Evaluate field at current position
-        r2d        = r[None, :]
-        B_val, E_val = field(r2d, t)
-        F          = B_val[0] if component == "B" else E_val[0]
-        F_mag      = np.linalg.norm(F)
+        k1 = f_hat(r)
+        if k1 is None:
+            break
+        k2 = f_hat(r + 0.5*ds*k1)
+        k3 = f_hat(r + 0.5*ds*k2) if k2 is not None else None
+        k4 = f_hat(r + ds*k3) if k3 is not None else None
+        if k4 is None:
+            break
+        r_new = r + (ds/6.0) * (k1 + 2*k2 + 2*k3 + k4)
 
-        if F_mag < np.sqrt(B_FLOOR):
-            break   # null point — stop tracing
-
-        f_hat = direction * F / F_mag
-
-        # RK4 on dr/ds = f_hat(r)
-        def drdp(pos):
-            b_, e_ = field(pos[None, :], t)
-            fv     = b_[0] if component == "B" else e_[0]
-            fm     = np.linalg.norm(fv)
-            return direction * fv / fm if fm > np.sqrt(B_FLOOR) else np.zeros(3)
-
-        k1 = drdp(r)
-        k2 = drdp(r + 0.5*ds*k1)
-        k3 = drdp(r + 0.5*ds*k2)
-        k4 = drdp(r + ds*k3)
-        r  = r + (ds/6.0) * (k1 + 2*k2 + 2*k3 + k4)
-
+        if r_min is not None and np.linalg.norm(r_new) < r_min:
+            # Linear interpolation onto the surface |r| = r_min
+            a, b = np.linalg.norm(r), np.linalg.norm(r_new)
+            s = (a - r_min) / (a - b) if a != b else 1.0
+            points.append(r + s * (r_new - r))
+            break
+        r = r_new
         points.append(r.copy())
-
         if r_max is not None and np.linalg.norm(r) > r_max:
             break
-
     return np.array(points)
 
 
-# ── Uniform-field arrow drawing ───────────────────────────────────────────────
+def _trace_both(field, seed, t, comp, ds, max_steps, r_max, r_min):
+    """Trace both ways and join into one line running along the field."""
+    fwd = _trace_line(field, seed, t, comp, ds, max_steps, r_max, +1, r_min)
+    bwd = _trace_line(field, seed, t, comp, ds, max_steps, r_max, -1, r_min)
+    return np.vstack([bwd[::-1], fwd[1:]])
 
-def _draw_uniform_arrows(ax, field, component: str, seeds: np.ndarray,
-                          t: float, color: str, length_unit: float,
-                          projection: str, label: str):
-    """Draw short arrows for spatially uniform fields."""
-    r_probe    = np.zeros((1, 3))
-    B_val, E_val = field(r_probe, t)
-    F          = B_val[0] if component == "B" else E_val[0]
-    F_mag      = np.linalg.norm(F)
-    if F_mag < 1e-40:
-        return   # truly zero field
 
-    # Arrow length: 15% of the seed spread, or a fixed scale
-    spread = np.ptp(seeds, axis=0)
-    scale  = float(np.max(spread)) * 0.15 if np.max(spread) > 0 else length_unit
-    f_hat  = F / F_mag * scale / length_unit
+def _add_direction_arrow(ax, pts2d, color, frac=0.5, size=11):
+    """Put one arrowhead at fraction ``frac`` of a 2-D polyline's arc length."""
+    if len(pts2d) < 3:
+        return
+    seg = np.linalg.norm(np.diff(pts2d, axis=0), axis=1)
+    s   = np.concatenate([[0.0], np.cumsum(seg)])
+    if s[-1] <= 0:
+        return
+    i = int(np.clip(np.searchsorted(s, frac * s[-1]), 1, len(pts2d) - 2))
+    ax.annotate("", xy=pts2d[i+1], xytext=pts2d[i-1],
+                arrowprops=dict(arrowstyle="-|>", color=color, lw=0,
+                                mutation_scale=size, shrinkA=0, shrinkB=0))
 
-    for seed in seeds:
-        s = seed / length_unit
-        if projection == "3d":
-            ax.quiver(s[0], s[1], s[2], f_hat[0], f_hat[1], f_hat[2],
-                      color=color, alpha=0.8, label=label)
-        elif projection == "xy":
-            ax.annotate("", xy=(s[0]+f_hat[0], s[1]+f_hat[1]), xytext=(s[0], s[1]),
-                        arrowprops=dict(arrowstyle="->", color=color))
-        else:  # xz
-            ax.annotate("", xy=(s[0]+f_hat[0], s[2]+f_hat[2]), xytext=(s[0], s[2]),
-                        arrowprops=dict(arrowstyle="->", color=color))
-        label = None   # only label the first arrow
+
+# ── Decorations ───────────────────────────────────────────────────────────────
+
+def _draw_earth_2d(ax, field, e1, e2, length_unit, extent):
+    """Earth disk, rotation axis (dotted) and magnetic axis (dashed)."""
+    R = R_EARTH / length_unit
+    ax.add_patch(Circle((0, 0), R, facecolor="#9cc3e6", edgecolor="#2b4a6f",
+                        lw=0.8, zorder=5))
+    for vec, ls, lbl in ((np.array([0.0, 0.0, 1.0]), ":", "rotation axis"),
+                         (field.axis, "--", "magnetic axis")):
+        p = np.array([vec @ e1, vec @ e2])
+        if np.linalg.norm(p) < 0.2:
+            continue   # axis (nearly) normal to the viewing plane
+        p = p / np.linalg.norm(p) * extent
+        ax.plot([-p[0], p[0]], [-p[1], p[1]], ls, color="0.35", lw=0.8,
+                zorder=4, label=lbl)
+
+
+def _draw_earth_3d(ax, length_unit):
+    R = R_EARTH / length_unit
+    u, v = np.mgrid[0:2*np.pi:40j, 0:np.pi:20j]
+    ax.plot_surface(R*np.cos(u)*np.sin(v), R*np.sin(u)*np.sin(v), R*np.cos(v),
+                    color="#9cc3e6", alpha=0.5, linewidth=0, shade=True)
+
+
+# ── Uniform-field arrow grids (re-usable by the animation module) ─────────────
+
+class UniformFieldArrows:
+    """Quiver grid (+ ⊙/⊗ markers) for one component of a uniform field.
+
+    Arrow length is proportional to |F_in-plane| / ``ref_mag`` so a
+    time-dependent field (e.g. ``CyclotronWaveField``) can be animated with
+    :meth:`update` while keeping a fixed length scale.
+    """
+
+    def __init__(self, ax, field, comp, t, e1, e2, lim, n_grid=7,
+                 offset=0.0, color="k", ref_mag=None):
+        self.ax, self.field, self.comp = ax, field, comp
+        self.e1, self.e2, self.n = e1, e2, np.cross(e1, e2)
+        spacing = 2 * lim / n_grid
+        g = -lim + spacing * (np.arange(n_grid) + 0.5 + offset)
+        g = g[np.abs(g) < lim]
+        self.X, self.Y = np.meshgrid(g, g)
+        self.arrow_len = 0.75 * spacing
+        F0 = _component(field, np.zeros((1, 3)), t, comp)[0]
+        self.ref_mag = ref_mag if ref_mag else max(np.linalg.norm(F0), 1e-300)
+        zeros = np.zeros_like(self.X)
+        self.quiver = ax.quiver(self.X, self.Y, zeros, zeros, color=color,
+                                angles="xy", scale_units="xy", scale=1.0,
+                                width=0.005, headwidth=4, headlength=5,
+                                pivot="middle", zorder=3)
+        kw = dict(ls="none", color=color, mfc="none", ms=8, mew=1.1, zorder=3)
+        self.ring,  = ax.plot([], [], marker="o", **kw)
+        self.dot,   = ax.plot([], [], marker=".", **{**kw, "ms": 4})
+        self.cross, = ax.plot([], [], marker="x", **{**kw, "ms": 5})
+        self.update(t)
+
+    def update(self, t):
+        F = _component(self.field, np.zeros((1, 3)), t, self.comp)[0]
+        mag = np.linalg.norm(F)
+        f1, f2, fn = F @ self.e1, F @ self.e2, F @ self.n
+        s = self.arrow_len / self.ref_mag
+        U = np.full_like(self.X, f1 * s)
+        V = np.full_like(self.Y, f2 * s)
+        self.quiver.set_UVC(U, V)
+        # Out-of-plane symbol when the normal component is significant
+        show = mag > 0 and abs(fn) > 0.05 * mag and np.hypot(f1, f2) < 0.95 * mag
+        x, y = (self.X.ravel(), self.Y.ravel()) if show else ([], [])
+        self.ring.set_data(x, y)
+        self.dot.set_data(x if fn > 0 else [], y if fn > 0 else [])
+        self.cross.set_data(x if fn < 0 else [], y if fn < 0 else [])
+        return [self.quiver, self.ring, self.dot, self.cross]
+
+
+def _ref_magnitude(field, comp, t, ref_times=None):
+    """Largest |F| over ``ref_times`` (for a fixed arrow scale), or None."""
+    if field.is_static:
+        return None
+    if ref_times is None:
+        w = getattr(field, "omega_c", None)
+        ref_times = t + np.linspace(0, 2*np.pi / w, 33) if w else [t]
+    ts = np.asarray(ref_times, dtype=float)
+    if len(ts) > 200:
+        ts = ts[np.linspace(0, len(ts) - 1, 200).astype(int)]
+    mags = [np.linalg.norm(_component(field, np.zeros((1, 3)), tt, comp)[0])
+            for tt in ts]
+    return max(mags) or None
+
+
+def _uniform_3d(ax, field, comp, t, lim, color, n=4):
+    F = _component(field, np.zeros((1, 3)), t, comp)[0]
+    mag = np.linalg.norm(F)
+    if mag == 0:
+        return
+    g = np.linspace(-lim, lim, n) * 0.8
+    X, Y, Z = np.meshgrid(g, g, g)
+    L = 0.6 * (g[1] - g[0])
+    f = F / mag * L
+    ax.quiver(X, Y, Z, f[0], f[1], f[2], color=color, alpha=0.8,
+              arrow_length_ratio=0.3, pivot="middle", linewidth=0.9)
 
 
 # ── Main public function ──────────────────────────────────────────────────────
@@ -209,177 +302,264 @@ def plot_field_lines(
     n_seeds: int = None,
     t: float = 0.0,
     ds: float = None,
-    max_steps: int = 2000,
+    max_steps: int = 4000,
     r_max: float = None,
+    r_min: float = None,
     length_unit: float = 1.0,
     unit_label: str = "m",
     ax_lim=None,
     projection: str = "3d",
-    earth_sphere: bool = False,
+    earth_sphere=None,
     color=None,
     ax=None,
-    title: str = "Field lines",
+    title: str = None,
+    L_shells=(2, 3, 4, 6, 8),
+    arrows: bool = True,
+    legend: bool = True,
+    ref_times=None,
 ):
-    """Trace and plot field lines for any FieldModel.
+    """Trace and plot field lines (or arrow grids) for any FieldModel.
 
     Parameters
     ----------
     field : FieldModel
     history : TrajectoryHistory or None
-        Used for auto-seeding and auto axis limits.
+        Used for automatic axis limits / seeding and overlaid if given.
     components : tuple of "B" and/or "E"
     density : "low" | "medium" | "high" | "auto"
-        Controls default n_seeds: low=4, medium=10, high=24, auto=medium.
+        Number of seeds / arrows / streamline density.
     seed_points : array-like (n, 3) or None
-        Explicit seed positions [m].  Overrides seed_strategy/n_seeds.
+        Explicit seed positions [m] (forces RK4 line tracing).
     seed_strategy : "auto" | "sphere" | "box" | "dipole_Lshells"
+        Only used for non-uniform fields in 3-D or with explicit tracing.
     n_seeds : int or None
-        Override density-derived seed count.
+        Override the density-derived seed count (sphere / box seeding).
     t : float
-        Time snapshot for field evaluation [s].
+        Time at which the field is evaluated [s].
     ds : float or None
-        Arc-length step for tracing.  Auto-estimated if None.
+        Arc-length step for tracing [m].  Auto-estimated if None.
     max_steps : int
-    r_max : float or None
-        Stop tracing when |r| > r_max.  None → rely on max_steps only.
+    r_max, r_min : float or None
+        Outer / inner tracing boundary [m].  For EarthDipole r_min defaults
+        to R_EARTH (lines end on the surface) and r_max to 1.5·max(L)·R_E.
     length_unit : float
-        Divisor for display units.
+        Divisor for display units (e.g. R_EARTH).
     unit_label : str
     ax_lim : float or None
-    projection : "3d" | "xy" | "xz"
-    earth_sphere : bool
-    color : str or dict or None
-        None → auto (B: steelblue, E: darkorange).
-        Dict: {"B": "...", "E": "..."}.
+        Symmetric axis limit in display units.
+    projection : "3d" | "xy" | "xz" | "yz"
+    earth_sphere : bool or None
+        Draw the Earth.  None → True for EarthDipole.
+    color : str, dict or None
+        None → B blue, E red.  Dict: {"B": ..., "E": ...}.
     ax : matplotlib Axes or None
-    title : str
+    title : str or None
+    L_shells : tuple of float
+        L values for dipole lines.
+    arrows : bool
+        Add direction arrowheads to traced lines.
+    legend : bool
+    ref_times : array-like or None
+        Times used to fix the arrow length scale of a time-dependent
+        uniform field (arrow length ∝ |F(t)| / max |F(ref_times)|).
+        None → one wave period if the field has ``omega_c``, else just t.
 
     Returns
     -------
     fig, ax
     """
-    # ── Density → n_seeds ────────────────────────────────────────────────────
-    _density_map = {"low": 4, "medium": 10, "high": 24, "auto": 10}
+    dens = {"low": 0, "medium": 1, "high": 2, "auto": 1}.get(density, 1)
     if n_seeds is None:
-        n_seeds = _density_map.get(density, 10)
-
-    # ── Color defaults ────────────────────────────────────────────────────────
+        n_seeds = (6, 12, 24)[dens]
     if color is None:
-        color = {"B": "steelblue", "E": "darkorange"}
+        color = dict(_DEFAULT_COLORS)
     elif isinstance(color, str):
         color = {c: color for c in components}
+    is_dipole = _is_dipole(field)
+    if earth_sphere is None:
+        earth_sphere = is_dipole
+    if is_dipole:
+        r_min = R_EARTH if r_min is None else r_min
+        if r_max is None:
+            r_max = 1.5 * max(L_shells) * R_EARTH
 
-    # ── Build seeds ───────────────────────────────────────────────────────────
-    if seed_points is not None:
-        seeds = np.asarray(seed_points, dtype=float)
-    else:
-        strategy = seed_strategy
-        if strategy == "auto":
-            strategy = _auto_strategy(field, history)
+    is3d = projection == "3d"
 
-        if strategy == "dipole_Lshells":
-            seeds = _seeds_dipole_lshells()
-        elif strategy == "sphere":
-            radius = _auto_radius(field, history)
-            seeds  = _seeds_sphere(n_seeds, radius)
-        else:   # box
-            if history is not None:
-                bmin, bmax = _auto_bbox(history)
-            else:
-                s = _auto_radius(field, None)
-                bmin, bmax = -s*np.ones(3), s*np.ones(3)
-            seeds = _seeds_box(n_seeds, bmin, bmax)
+    # ── Axis limit in display units ───────────────────────────────────────────
+    if ax_lim is None:
+        if history is not None:
+            r_flat = history.r.reshape(-1, 3) / length_unit
+            ax_lim = float(np.max(np.abs(r_flat))) * 1.15
+        elif is_dipole:
+            ax_lim = 1.1 * max(L_shells) * R_EARTH / length_unit
+        elif seed_points is not None:
+            ax_lim = float(np.max(np.abs(seed_points))) * 1.2 / length_unit
+        else:
+            ax_lim = 1.0
+    ax_lim = float(ax_lim) if ax_lim > 0 else 1.0
 
-    # ── Auto ds ───────────────────────────────────────────────────────────────
-    if ds is None:
-        seed_spread = float(np.max(np.ptp(seeds, axis=0)))
-        ds = seed_spread / 500.0 if seed_spread > 0 else R_EARTH * 0.01
-
-    # ── Create axes ───────────────────────────────────────────────────────────
+    # ── Axes ──────────────────────────────────────────────────────────────────
     own_fig = ax is None
     if own_fig:
-        fig = plt.figure(figsize=(8, 7))
-        if projection == "3d":
-            ax = fig.add_subplot(111, projection="3d")
-        else:
-            ax = fig.add_subplot(111)
+        fig = plt.figure(figsize=(7, 6.5))
+        ax  = fig.add_subplot(111, projection="3d" if is3d else None)
     else:
         fig = ax.get_figure()
 
-    # ── Earth sphere ──────────────────────────────────────────────────────────
-    if earth_sphere and projection == "3d":
-        u_e, v_e = np.mgrid[0:2*np.pi:30j, 0:np.pi:30j]
-        xs = (R_EARTH/length_unit) * np.cos(u_e) * np.sin(v_e)
-        ys = (R_EARTH/length_unit) * np.sin(u_e) * np.sin(v_e)
-        zs = (R_EARTH/length_unit) * np.cos(v_e)
-        ax.plot_wireframe(xs, ys, zs, color="royalblue", alpha=0.25, linewidth=0.4)
+    if not is3d:
+        e1, e2, n_hat, labels = _plane(projection)
+    handles = []
 
-    # ── Warn once if r_max is None ────────────────────────────────────────────
-    if r_max is None and not field.is_uniform:
-        warnings.warn(
-            "r_max is not set. Field-line traces stop only at max_steps. "
-            "Set r_max to avoid incomplete or very long traces.",
-            UserWarning, stacklevel=2,
-        )
-
-    # ── Trace and plot for each component ────────────────────────────────────
-    for comp in components:
-        col   = color.get(comp, "gray")
-        label = f"$\\mathbf{{{'B' if comp=='B' else 'E'}}}$ field"
-
+    # ── Draw each component ───────────────────────────────────────────────────
+    ax._mps_uniform_arrows = []
+    for k, comp in enumerate(components):
+        col = color.get(comp, "gray")
         if field.is_uniform:
-            _draw_uniform_arrows(ax, field, comp, seeds, t, col,
-                                 length_unit, projection, label)
+            if is3d:
+                _uniform_3d(ax, field, comp, t, ax_lim, col, n=(3, 4, 5)[dens])
+            else:
+                arr = UniformFieldArrows(
+                    ax, field, comp, t, e1, e2, ax_lim,
+                    n_grid=(5, 7, 9)[dens],
+                    offset=0.5 * k if len(components) > 1 else 0.0,
+                    color=col,
+                    ref_mag=_ref_magnitude(field, comp, t, ref_times))
+                ax._mps_uniform_arrows.append(arr)
+            handles.append(Line2D([], [], color=col, marker=r"$\rightarrow$",
+                                  ms=12, ls="none", label=f"$\\mathbf{{{comp}}}$"))
+            continue
+
+        if is_dipole and comp == "E":
+            continue   # dipole has no electric field
+
+        if is_dipole and seed_points is None:
+            if is3d:
+                # Offset so no meridian is seen edge-on from the default view
+                az = np.linspace(0, 2*np.pi, (4, 6, 8)[dens], endpoint=False) \
+                    + np.pi / 9
+            elif projection == "yz":
+                az = (np.pi/2, -np.pi/2)
+            else:   # xz (true meridian ⊃ x̂) or xy (top view)
+                az = (0.0, np.pi) if projection == "xz" else \
+                     np.linspace(0, 2*np.pi, 8, endpoint=False)
+            seeds, Ls = _seeds_dipole_lshells(field, L_shells, az)
+            for seed, L in zip(seeds, Ls):
+                step = ds if ds is not None else 0.01 * L * R_EARTH
+                pts  = _trace_both(field, seed, t, comp, step, max_steps,
+                                   r_max, r_min) / length_unit
+                if is3d:
+                    ax.plot(pts[:, 0], pts[:, 1], pts[:, 2], color=col,
+                            lw=0.9, alpha=0.8)
+                else:
+                    p2 = np.column_stack([pts @ e1, pts @ e2])
+                    ax.plot(p2[:, 0], p2[:, 1], color=col, lw=1.0, zorder=2)
+                    if arrows:
+                        _add_direction_arrow(ax, p2, col)
+            if not is3d:
+                # Label L values on one side of the equator
+                for L in L_shells:
+                    s, _ = _seeds_dipole_lshells(field, (L,), (az[0],))
+                    p = s[0] / length_unit
+                    ax.text(p @ e1, p @ e2, f"  L={L:g}", fontsize=7,
+                            color="0.25", va="center", ha="left",
+                            rotation=90, rotation_mode="anchor", zorder=6)
+            handles.append(Line2D([], [], color=col, label=r"$\mathbf{B}$"))
+            continue
+
+        if not is3d and seed_points is None:
+            # Generic 2-D view: streamlines of the in-plane components
+            n_g = 60
+            g = np.linspace(-ax_lim, ax_lim, n_g)
+            X, Y = np.meshgrid(g, g)
+            P = (X.ravel()[:, None] * e1 + Y.ravel()[:, None] * e2) * length_unit
+            F = _component(field, P, t, comp)
+            U = (F @ e1).reshape(X.shape)
+            V = (F @ e2).reshape(X.shape)
+            mag = np.hypot(U, V)
+            if r_min is not None:
+                inside = np.linalg.norm(P, axis=1).reshape(X.shape) < r_min
+                U = np.ma.array(U, mask=inside)
+                V = np.ma.array(V, mask=inside)
+            if np.nanmax(mag) > 0:
+                ax.streamplot(X, Y, U, V, color=col, density=(0.7, 1.1, 1.6)[dens],
+                              linewidth=0.9, arrowsize=1.0, zorder=2)
+                handles.append(Line2D([], [], color=col,
+                                      label=f"$\\mathbf{{{comp}}}$"))
+            continue
+
+        # Generic RK4 tracing (3-D, or explicit seeds)
+        if seed_points is not None:
+            seeds = np.asarray(seed_points, dtype=float)
         else:
-            first_line = True
-            for seed in seeds:
-                for direction in (+1, -1):
-                    pts = _trace_line(field, seed, t, comp,
-                                      ds, max_steps, r_max, direction)
-                    if len(pts) < 2:
-                        continue
-                    pts_d = pts / length_unit
-                    lbl = label if first_line else None
-                    if projection == "3d":
-                        ax.plot(pts_d[:,0], pts_d[:,1], pts_d[:,2],
-                                color=col, lw=0.8, alpha=0.7, label=lbl)
-                    elif projection == "xy":
-                        ax.plot(pts_d[:,0], pts_d[:,1],
-                                color=col, lw=0.8, alpha=0.7, label=lbl)
-                    else:   # xz
-                        ax.plot(pts_d[:,0], pts_d[:,2],
-                                color=col, lw=0.8, alpha=0.7, label=lbl)
-                    first_line = False
+            strategy = "sphere" if seed_strategy == "auto" else seed_strategy
+            if strategy == "box":
+                if history is not None:
+                    bmin, bmax = _auto_bbox(history)
+                else:
+                    s = ax_lim * length_unit
+                    bmin, bmax = -s*np.ones(3), s*np.ones(3)
+                seeds = _seeds_box(n_seeds, bmin, bmax)
+            else:
+                seeds = _seeds_sphere(n_seeds, 0.5 * ax_lim * length_unit)
+        step = ds if ds is not None else \
+            max(float(np.max(np.ptp(seeds, axis=0))), ax_lim*length_unit) / 300.0
+        rmax = r_max if r_max is not None else 1.8 * ax_lim * length_unit
+        for seed in seeds:
+            pts = _trace_both(field, seed, t, comp, step, max_steps, rmax,
+                              r_min) / length_unit
+            if is3d:
+                ax.plot(pts[:, 0], pts[:, 1], pts[:, 2], color=col, lw=0.8,
+                        alpha=0.8)
+            else:
+                p2 = np.column_stack([pts @ e1, pts @ e2])
+                ax.plot(p2[:, 0], p2[:, 1], color=col, lw=0.9)
+                if arrows:
+                    _add_direction_arrow(ax, p2, col)
+        handles.append(Line2D([], [], color=col, label=f"$\\mathbf{{{comp}}}$"))
 
-    # ── Axis formatting ───────────────────────────────────────────────────────
-    if ax_lim is None and history is not None:
-        r_flat = history.r.reshape(-1, 3) / length_unit
-        ax_lim = float(np.max(np.abs(r_flat))) * 1.2
-
-    if ax_lim is not None:
-        if projection == "3d":
-            ax.set_xlim3d(-ax_lim, ax_lim)
-            ax.set_ylim3d(-ax_lim, ax_lim)
-            ax.set_zlim3d(-ax_lim, ax_lim)
-            ax.set_box_aspect((1, 1, 1))
-            ax.set_xlabel(f"x [{unit_label}]")
-            ax.set_ylabel(f"y [{unit_label}]")
-            ax.set_zlabel(f"z [{unit_label}]")
-        elif projection == "xy":
-            ax.set_xlim(-ax_lim, ax_lim); ax.set_ylim(-ax_lim, ax_lim)
-            ax.set_xlabel(f"x [{unit_label}]"); ax.set_ylabel(f"y [{unit_label}]")
-            ax.set_aspect("equal")
+    # ── Earth, trajectory, formatting ─────────────────────────────────────────
+    if earth_sphere:
+        if is3d:
+            _draw_earth_3d(ax, length_unit)
         else:
-            ax.set_xlim(-ax_lim, ax_lim); ax.set_ylim(-ax_lim, ax_lim)
-            ax.set_xlabel(f"x [{unit_label}]"); ax.set_ylabel(f"z [{unit_label}]")
-            ax.set_aspect("equal")
+            _draw_earth_2d(ax, field, e1, e2, length_unit, ax_lim)
 
+    if history is not None:
+        r = history.r / length_unit
+        for pid in range(r.shape[1]):
+            if is3d:
+                ax.plot(r[:, pid, 0], r[:, pid, 1], r[:, pid, 2],
+                        color="k", lw=0.6, alpha=0.7)
+            else:
+                ax.plot(r[:, pid] @ e1, r[:, pid] @ e2, color="k", lw=0.6,
+                        alpha=0.7, zorder=3)
+
+    if is3d:
+        ax.set_xlim3d(-ax_lim, ax_lim)
+        ax.set_ylim3d(-ax_lim, ax_lim)
+        ax.set_zlim3d(-ax_lim, ax_lim)
+        ax.set_box_aspect((1, 1, 1))
+        ax.set_xlabel(f"x [{unit_label}]")
+        ax.set_ylabel(f"y [{unit_label}]")
+        ax.set_zlabel(f"z [{unit_label}]")
+    else:
+        ax.set_xlim(-ax_lim, ax_lim)
+        ax.set_ylim(-ax_lim, ax_lim)
+        ax.set_aspect("equal")
+        ax.set_xlabel(f"{labels[0]} [{unit_label}]")
+        ax.set_ylabel(f"{labels[1]} [{unit_label}]")
+
+    if title is None:
+        title = f"{type(field).__name__} — " + \
+                " & ".join(f"$\\mathbf{{{c}}}$" for c in components)
     ax.set_title(title)
-    if len(components) > 1:
-        handles, labels = ax.get_legend_handles_labels()
-        if handles:
-            ax.legend(handles, labels, loc="upper right", fontsize=8)
+
+    if legend and (len(handles) > 1 or (earth_sphere and not is3d)):
+        extra = [h for h in ax.get_legend_handles_labels()[0]]
+        ax.legend(handles=handles + extra, loc="upper right", fontsize=7,
+                  framealpha=0.85)
 
     if own_fig:
-        plt.tight_layout()
+        fig.tight_layout()
     return fig, ax
+

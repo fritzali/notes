@@ -212,8 +212,7 @@ def maxwellian_ensemble(
     -------
     ParticleState with N particles.
     """
-    from magparsol.constants import C
-    k_B = 1.380_649e-23   # Boltzmann constant [J/K]
+    from magparsol.constants import K_B as k_B
     rng  = np.random.default_rng(seed)
     sigma = np.sqrt(k_B * T / m)   # thermal velocity [m/s]
     v    = rng.normal(0.0, sigma, size=(N, 3))

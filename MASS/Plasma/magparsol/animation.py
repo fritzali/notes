@@ -6,36 +6,37 @@ Overview panel (static multi-quantity summary figure) and GIF animation system.
 Overview panel layout (2×3 gridspec)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ┌────────────────┬────────────────┬───────────────┐
-│  X-Y Position  │  X-Z Position  │  Field Lines  │
+│  X-Y Position  │  X-Z Position  │  Field + orbit│
 ├────────────────┼────────────────┼───────────────┤
-│  X-Y Velocity  │  X-Z Velocity  │    Spectra    │
+│  X-Y Velocity  │  X-Z Velocity  │    Spectrum   │
 └────────────────┴────────────────┴───────────────┘
 
 Panel registry
 ~~~~~~~~~~~~~~
-Each panel is a small object with build(ax) → artists and
-update(artists, frame_idx) → artists.  This shared structure powers
-both standalone per-panel GIFs and the combined overview GIF from one
-code path.
+Each panel is a small object with ``build(ax, history)`` → artists and
+``update(artists, i, k, t)`` → artists.  This shared structure powers the
+static overview, standalone per-panel GIFs and the combined overview GIF
+from one code path.
 
-GIF generation
-~~~~~~~~~~~~~~
-make_panel_gif  — single panel standalone GIF
-make_overview_gif — all (or selected) panels in the overview layout
+Spectrum animation
+~~~~~~~~~~~~~~~~~~
+The FFT panel shows the final spectrum as a faint grey reference and, on
+top, the spectrum of the trajectory *up to the current frame*.  As the
+observation window grows the cyclotron line narrows (Δf ≈ 1/T_window) and
+rises out of the window side-lobes.  The retarded-time integral spectrum
+is expensive and always shown as the final result only.
 
-Adaptive-RK note: non-uniform time histories are resampled before FFT
-inside radiation.spectrum_fft; no special handling needed here.
+Adaptive-RK note: non-uniform time histories are resampled before the FFT
+inside ``radiation.spectrum_fft``; no special handling is needed here.
 """
 
-import warnings
 import numpy as np
-import matplotlib
-matplotlib.use("Agg")   # safe default; caller can switch before import
 import matplotlib.pyplot as plt
 import matplotlib.gridspec as gridspec
 from matplotlib.animation import FuncAnimation, PillowWriter
+from matplotlib.patches import Circle
 
-from magparsol.diagnostics import TrajectoryHistory, relative_energy_error
+from magparsol.diagnostics import TrajectoryHistory
 from magparsol.constants import C, R_EARTH
 
 
@@ -47,256 +48,292 @@ def _auto_lim(a, b, margin=1.15):
     return m if m > 0 else 1.0
 
 
-def _trajectory_bbox(history):
-    """Combined bounding box across all particles."""
-    r = history.r.reshape(-1, 3)
-    return r.min(axis=0), r.max(axis=0)
+def _is_dipole(field):
+    from magparsol.fields import EarthDipole
+    return isinstance(field, EarthDipole)
+
+
+def _colors(N):
+    return plt.cm.viridis(np.linspace(0.1, 0.85, N)) if N > 1 else ["#2a9d8f"]
+
+
+def mean_gyrofrequency(history, q, m, field):
+    """Trajectory-averaged relativistic gyrofrequency f_c = |q|B / (2π γ m) [Hz].
+
+    Used to normalise spectrum axes.  Returns None if no field is given.
+    """
+    if field is None or q is None or m is None:
+        return None
+    S, N, _ = history.r.shape
+    idx = np.unique(np.linspace(0, S - 1, min(S, 400)).astype(int))
+    f = []
+    for s in idx:
+        B, _ = field(history.r[s], float(history.t[s]))
+        Bm = np.linalg.norm(B, axis=1)
+        beta2 = np.clip(np.sum(history.v[s]**2, axis=1) / C**2, 0, 1 - 1e-15)
+        gamma = 1.0 / np.sqrt(1.0 - beta2)
+        f.append(np.abs(q) * Bm / (2*np.pi * gamma * m))
+    f_c = float(np.mean(f))
+    return f_c if f_c > 0 else None
 
 
 # ── Per-panel classes ─────────────────────────────────────────────────────────
 
 class _PositionPanel:
-    """X-Y or X-Z trajectory projection."""
+    """X-Y or X-Z trajectory projection with a growing trail."""
 
-    def __init__(self, plane="xy", length_unit=1.0, unit_label="m",
-                 normalize_v=False):
+    def __init__(self, plane="xy", length_unit=1.0, unit_label="m", earth=False):
         self.plane       = plane
         self.length_unit = length_unit
         self.unit_label  = unit_label
+        self.earth       = earth
+
+    def _c2(self, r):
+        return r[..., 1] if self.plane == "xy" else r[..., 2]
 
     def build(self, ax, history, **kwargs):
         lu = self.length_unit
-        r  = history.r
+        r  = history.r / lu
         N  = r.shape[1]
         lines, dots = [], []
-        colors = plt.cm.tab10(np.linspace(0, 1, N))
-        for pid in range(N):
-            x = r[:, pid, 0] / lu
-            c2 = r[:, pid, 1] / lu if self.plane == "xy" else r[:, pid, 2] / lu
-            ln, = ax.plot([], [], lw=0.8, alpha=0.7, color=colors[pid])
-            pt, = ax.plot([], [], 'o', ms=4, color=colors[pid])
+        for pid, col in zip(range(N), _colors(N)):
+            ln, = ax.plot([], [], lw=0.8, alpha=0.8, color=col)
+            pt, = ax.plot([], [], "o", ms=4, color=col, mec="k", mew=0.4, zorder=5)
             lines.append(ln); dots.append(pt)
-        # axis limits from full trajectory
-        x_all  = r[:, :, 0].ravel() / lu
-        c2_all = (r[:, :, 1] if self.plane == "xy" else r[:, :, 2]).ravel() / lu
-        lim    = _auto_lim(x_all, c2_all)
+        lim = _auto_lim(r[..., 0], self._c2(r))
+        if self.earth:
+            ax.add_patch(Circle((0, 0), R_EARTH / lu, facecolor="#9cc3e6",
+                                edgecolor="#2b4a6f", lw=0.8, zorder=1))
+            lim = max(lim, 1.3 * R_EARTH / lu)
         ax.set_xlim(-lim, lim); ax.set_ylim(-lim, lim)
         ax.set_aspect("equal")
         ax.set_xlabel(f"x [{self.unit_label}]")
-        ax.set_ylabel(f"{'y' if self.plane=='xy' else 'z'} [{self.unit_label}]")
-        ax.set_title(f"X-{'Y' if self.plane=='xy' else 'Z'} Position")
+        ax.set_ylabel(f"{'y' if self.plane == 'xy' else 'z'} [{self.unit_label}]")
+        ax.set_title(f"Position ({self.plane[0]}-{self.plane[1]})")
         ax.grid(True, alpha=0.3)
-        self._history = history
+        self._r = r
         return {"lines": lines, "dots": dots}
 
-    def update(self, artists, i):
-        lu = self.length_unit
-        r  = self._history.r
+    def update(self, artists, i, **kwargs):
+        r = self._r
         for pid, (ln, pt) in enumerate(zip(artists["lines"], artists["dots"])):
-            x  = r[:i+1, pid, 0] / lu
-            c2 = (r[:i+1, pid, 1] if self.plane == "xy" else r[:i+1, pid, 2]) / lu
+            x, c2 = r[:i+1, pid, 0], self._c2(r[:i+1, pid])
             ln.set_data(x, c2)
             pt.set_data([x[-1]], [c2[-1]])
         return list(artists["lines"]) + list(artists["dots"])
 
 
 class _VelocityPanel:
-    """X-Y or X-Z velocity hodograph."""
+    """X-Y or X-Z velocity hodograph.
 
-    def __init__(self, plane="xy", normalize_v=False):
+    The full hodograph is drawn faintly; the highlighted trail shows only the
+    last ``trail`` samples (≈ a few gyrations) so long runs stay readable.
+    """
+
+    def __init__(self, plane="xy", normalize_v=False, trail=None):
         self.plane       = plane
         self.normalize_v = normalize_v
+        self.trail       = trail
 
     def build(self, ax, history, **kwargs):
-        N      = history.v.shape[1]
-        scale  = C if self.normalize_v else 1.0
-        label  = "v/c" if self.normalize_v else "m/s"
-        colors = plt.cm.tab10(np.linspace(0, 1, N))
-        lines  = []
-        for pid in range(N):
-            vx = history.v[:, pid, 0] / scale
-            c2 = (history.v[:, pid, 1] if self.plane == "xy"
-                  else history.v[:, pid, 2]) / scale
-            ln, = ax.plot([], [], lw=0.6, alpha=0.5, color=colors[pid])
-            lines.append(ln)
-        vx_all  = history.v[:, :, 0].ravel() / scale
-        c2_all  = (history.v[:, :, 1] if self.plane == "xy"
-                   else history.v[:, :, 2]).ravel() / scale
-        lim     = _auto_lim(vx_all, c2_all)
+        scale = C if self.normalize_v else 1.0
+        unit  = "c" if self.normalize_v else "m/s"
+        v     = history.v / scale
+        N     = v.shape[1]
+        c2    = v[..., 1] if self.plane == "xy" else v[..., 2]
+        lines, dots = [], []
+        for pid, col in zip(range(N), _colors(N)):
+            if self.trail is not None:
+                ax.plot(v[:, pid, 0], c2[:, pid], lw=0.3, color="0.85", zorder=1)
+            ln, = ax.plot([], [], lw=0.8, alpha=0.8, color=col)
+            pt, = ax.plot([], [], "o", ms=4, color=col, mec="k", mew=0.4, zorder=5)
+            lines.append(ln); dots.append(pt)
+        lim = _auto_lim(v[..., 0], c2)
         ax.set_xlim(-lim, lim); ax.set_ylim(-lim, lim)
         ax.set_aspect("equal")
-        ax.set_xlabel(f"$v_x$ [{label}]")
-        ax.set_ylabel(f"{'$v_y$' if self.plane=='xy' else '$v_z$'} [{label}]")
-        ax.set_title(f"X-{'Y' if self.plane=='xy' else 'Z'} Velocity Hodograph")
+        ax.set_xlabel(f"$v_x$ [{unit}]")
+        ax.set_ylabel(f"$v_{self.plane[1]}$ [{unit}]")
+        ax.set_title(f"Velocity hodograph ({self.plane[0]}-{self.plane[1]})")
         ax.grid(True, alpha=0.3)
-        self._history = history
-        self._scale   = scale
-        return {"lines": lines}
+        self._v, self._c2 = v, c2
+        return {"lines": lines, "dots": dots}
 
-    def update(self, artists, i):
-        s = self._scale
-        for pid, ln in enumerate(artists["lines"]):
-            vx = self._history.v[:i+1, pid, 0] / s
-            c2 = (self._history.v[:i+1, pid, 1] if self.plane == "xy"
-                  else self._history.v[:i+1, pid, 2]) / s
+    def update(self, artists, i, **kwargs):
+        i0 = 0 if self.trail is None else max(0, i + 1 - self.trail)
+        for pid, (ln, pt) in enumerate(zip(artists["lines"], artists["dots"])):
+            vx, c2 = self._v[i0:i+1, pid, 0], self._c2[i0:i+1, pid]
             ln.set_data(vx, c2)
-        return list(artists["lines"])
+            pt.set_data([vx[-1]], [c2[-1]])
+        return list(artists["lines"]) + list(artists["dots"])
 
 
 class _FieldPanel:
-    """Field line / arrow panel (static or periodically refreshed)."""
+    """Field lines / arrow grid with the particle orbit overlaid.
 
-    def __init__(self, field, history, length_unit=1.0, unit_label="m",
-                 components=("B", "E"), density="low",
-                 field_update_every=10):
+    Spatially uniform, time-dependent fields (e.g. ``CyclotronWaveField``)
+    are animated by updating the arrow vectors.  Non-uniform time-dependent
+    fields are re-traced every ``field_update_every`` frames.
+    """
+
+    def __init__(self, field, length_unit=1.0, unit_label="m",
+                 components=("B", "E"), density="low", field_update_every=10,
+                 projection="auto"):
         self.field              = field
-        self.history            = history
         self.length_unit        = length_unit
         self.unit_label         = unit_label
         self.components         = components
         self.density            = density
         self.field_update_every = field_update_every
-        self._t_series          = None   # time series for animation
+        if projection == "auto":
+            projection = "xz" if _is_dipole(field) else "xy"
+        self.projection         = projection
 
-    def build(self, ax, history=None, t_series=None, **kwargs):
+    def _draw(self, ax, t):
         from magparsol.fieldlines import plot_field_lines
-        h = history or self.history
-        self._t_series = t_series
-        # Draw initial field lines at t=0
+        comps = tuple(c for c in self.components
+                      if not (_is_dipole(self.field) and c == "E"))
         plot_field_lines(
-            self.field, history=h,
-            components=self.components,
-            density=self.density,
-            t=0.0,
-            length_unit=self.length_unit,
-            unit_label=self.unit_label,
-            projection="xy",
-            ax=ax,
+            self.field, components=comps or ("B",), density=self.density,
+            t=t, length_unit=self.length_unit, unit_label=self.unit_label,
+            ax_lim=self._lim, projection=self.projection, ax=ax,
+            ref_times=self._t_all, title="Field & orbit",
+            L_shells=self._L_shells,
         )
-        ax.set_title("Field Configuration (B/E)")
-        self._ax = ax
-        self._h  = h
-        return {}   # artists managed internally by re-plot
 
-    def update(self, artists, i, k=None, t_current=0.0):
-        """Re-draw field lines if field is time-dependent and on cadence."""
+    def build(self, ax, history, **kwargs):
+        from magparsol.fieldlines import _plane
+        e1, e2, _, _ = _plane(self.projection)
+        r = history.r / self.length_unit
+        self._p1, self._p2 = r @ e1, r @ e2
+        self._lim = _auto_lim(self._p1, self._p2)
+        self._L_shells = (2, 3, 4, 6, 8)
+        if _is_dipole(self.field):
+            self._lim = max(self._lim, 1.3 * R_EARTH / self.length_unit)
+            # L-shells that fit inside the panel
+            lim_RE = self._lim * self.length_unit / R_EARTH
+            self._L_shells = tuple(L for L in (1.5, 2, 3, 4, 5, 6, 8, 10, 12)
+                                   if L <= 0.95 * lim_RE) or (1.5,)
+        self._t_all = history.t
+        self._ax    = ax
+        self._draw(ax, float(history.t[0]))
+        N = r.shape[1]
+        lines, dots = [], []
+        for pid, col in zip(range(N), _colors(N)):
+            ln, = ax.plot([], [], lw=0.7, color="k", alpha=0.75, zorder=6)
+            pt, = ax.plot([], [], "o", ms=4, color=col, mec="k", mew=0.4, zorder=7)
+            lines.append(ln); dots.append(pt)
+        return {"lines": lines, "dots": dots}
+
+    def update(self, artists, i, k=None, t_current=0.0, **kwargs):
+        out = []
+        for pid, (ln, pt) in enumerate(zip(artists["lines"], artists["dots"])):
+            ln.set_data(self._p1[:i+1, pid], self._p2[:i+1, pid])
+            pt.set_data([self._p1[i, pid]], [self._p2[i, pid]])
+            out += [ln, pt]
         if self.field.is_static:
-            return []
-        if k is not None and k % self.field_update_every != 0:
-            return []
-        from magparsol.fieldlines import plot_field_lines
-        self._ax.cla()
-        plot_field_lines(
-            self.field, history=self._h,
-            components=self.components,
-            density=self.density,
-            t=t_current,
-            length_unit=self.length_unit,
-            unit_label=self.unit_label,
-            projection="xy",
-            ax=self._ax,
-        )
-        self._ax.set_title(f"Field Configuration (t={t_current:.3g}s)")
-        return []
+            return out
+        arrows = getattr(self._ax, "_mps_uniform_arrows", [])
+        if arrows:
+            for arr in arrows:
+                out += arr.update(t_current)
+            self._ax.set_title(f"Field & orbit  (t = {t_current:.3g} s)")
+        elif k is None or k % self.field_update_every == 0:
+            keep = [(ln.get_data(), pt.get_data()) for ln, pt in
+                    zip(artists["lines"], artists["dots"])]
+            self._ax.cla()
+            self._draw(self._ax, t_current)
+            for (ln, pt), (dl, dp) in zip(zip(artists["lines"], artists["dots"]), keep):
+                self._ax.add_line(ln); self._ax.add_line(pt)
+        return out
 
 
 class _SpectrumPanel:
-    """Spectrum panel: animated FFT or static retarded integral."""
+    """Spectrum panel: FFT that builds up in time, or static retarded integral."""
 
-    def __init__(self, q, m, method="fft", spectrum_update_every=8,
+    def __init__(self, q, m, field=None, method="fft", spectrum_update_every=5,
                  show_individual=False, observer=None,
-                 store_dt_warn_period=None):
+                 store_dt_warn_period=None, f_norm=None, f_max_norm=5.0):
         self.q                     = q
         self.m                     = m
+        self.field                 = field
         self.method                = method
         self.spectrum_update_every = spectrum_update_every
         self.show_individual       = show_individual
         self.observer              = observer
         self.store_dt_warn_period  = store_dt_warn_period
-        self._prev_spec            = None
-        self._converged            = False
-        self._ref_freqs            = None
+        self.f_norm                = f_norm
+        self.f_max_norm            = f_max_norm
+
+    def _spectrum(self, upto=None, method="fft"):
+        from magparsol.radiation import spectrum_fft, spectrum_retarded, ensemble_spectrum
+        h = self._history
+        if h.r.shape[1] == 1:
+            if method == "retarded":
+                f, p = spectrum_retarded(h, pid=0, observer=self.observer)
+            else:
+                f, p = spectrum_fft(h, pid=0, upto=upto, observer=self.observer,
+                                    store_dt_warn_period=self.store_dt_warn_period)
+            return f, p, []
+        kw = {} if method == "retarded" else {"upto": upto}
+        return ensemble_spectrum(h, method=method, observer=self.observer, **kw)
 
     def build(self, ax, history, **kwargs):
-        from magparsol.radiation import (spectrum_fft, spectrum_retarded,
-                                          ensemble_spectrum, _check_spectrum_convergence)
         self._history = history
         self._ax      = ax
-        ax.set_xlabel(r"$\nu$ [Hz]")
-        ax.set_ylabel("Power [arbitrary]")
-        ax.set_title("Spectrum")
+        f_c = self.f_norm or mean_gyrofrequency(history, self.q, self.m, self.field)
+        self._fn = f_c or 1.0
+        xlabel = r"$f\,/\,\langle f_c\rangle$" if f_c else r"$f$ [Hz]"
+
+        f, p, ind = self._spectrum(method=self.method)
+        x = f / self._fn
+        if self.show_individual:
+            for pi in ind:
+                ax.semilogy(x, np.where(pi > 0, pi, np.nan), color="0.6",
+                            lw=0.5, alpha=0.3)
+        static = self.method == "retarded"
+        ax.semilogy(x, np.where(p > 0, p, np.nan),
+                    color="#1f5fa8" if static else "0.65",
+                    lw=1.3 if static else 1.0,
+                    label="retarded integral" if static else "final (full run)")
+        live, = ax.semilogy([], [], color="#d1495b", lw=1.3, label="up to t")
+        info  = ax.text(0.97, 0.95, "", transform=ax.transAxes, ha="right",
+                        va="top", fontsize=8,
+                        bbox=dict(boxstyle="round", fc="w", ec="0.8", alpha=0.9))
+
+        x_max = self.f_max_norm if f_c else x.max()
+        x_max = min(x_max, x.max())
+        sel   = (x > 0) & (x <= x_max) & (p > 0)
+        p_top = float(p[sel].max()) if np.any(sel) else 1.0
+        ax.set_xlim(0, x_max)
+        ax.set_ylim(p_top * 1e-6, p_top * 5)
+        if f_c:
+            ax.axvline(1.0, color="k", lw=0.7, ls="--", alpha=0.6)
+        ax.set_xlabel(xlabel)
+        ax.set_ylabel("Power [arb.]")
+        ax.set_title("Emission spectrum" + (" (retarded)" if static else " (FFT)"))
         ax.grid(True, alpha=0.3)
+        ax.legend(fontsize=7, loc="upper left")
+        self._f_c = f_c
+        return {"live": live, "info": info}
 
+    def update(self, artists, i, k=None, **kwargs):
         if self.method == "retarded":
-            # Compute once from full trajectory
-            N = history.r.shape[1]
-            if N == 1:
-                f, p = spectrum_retarded(history, pid=0, observer=self.observer)
-            else:
-                f, p, _ = ensemble_spectrum(history, method="retarded",
-                                            observer=self.observer)
-            self._ref_freqs = f
-            ax.semilogy(f, p, color="steelblue", lw=1.2, label="Total")
-            ax.legend(fontsize=7)
-
-        # Compute full reference spectrum for convergence checking
-        N = history.r.shape[1]
-        if N == 1:
-            f_full, p_full = spectrum_fft(
-                history, pid=0, observer=self.observer,
-                store_dt_warn_period=self.store_dt_warn_period)
-        else:
-            f_full, p_full, _ = ensemble_spectrum(
-                history, method="fft", observer=self.observer)
-        self._ref_freqs  = f_full
-        self._full_spec  = p_full
-        self._line_total, = ax.semilogy(f_full, p_full + 1e-40,
-                                         color="steelblue", lw=1.2, label="Total",
-                                         alpha=0.0 if self.method == "fft" else 1.0)
-        return {"line_total": self._line_total}
-
-    def update(self, artists, i, k=None):
-        from magparsol.radiation import (spectrum_fft, ensemble_spectrum,
-                                          _check_spectrum_convergence)
-        if self.method == "retarded":
-            return []   # static — already drawn in build()
-
-        if self._converged:
             return []
-        if k is not None and k % self.spectrum_update_every != 0:
-            return []
-
-        N = self._history.r.shape[1]
-        if N == 1:
-            f, p = spectrum_fft(self._history, pid=0, upto=i,
-                                 observer=self.observer,
-                                 store_dt_warn_period=self.store_dt_warn_period)
+        live, info = artists["live"], artists["info"]
+        t = float(self._history.t[i] - self._history.t[0])
+        if self._f_c:
+            info.set_text(f"t = {t:.3g} s\n≈ {t * self._f_c:.1f} gyrations")
         else:
-            f, p, _ = ensemble_spectrum(self._history, method="fft",
-                                         observer=self.observer,
-                                         upto=i)
-
-        # Interpolate onto fixed reference frequency grid
-        if self._ref_freqs is not None and len(f) > 1:
-            p_interp = np.interp(self._ref_freqs, f, p, left=0.0, right=0.0)
-        else:
-            p_interp = p
-
-        # Check convergence
-        converged = _check_spectrum_convergence(
-            self._prev_spec, p_interp, self._ref_freqs)
-        if converged:
-            self._converged = True
-        self._prev_spec = p_interp.copy() if p_interp is not None else None
-
-        line = artists.get("line_total")
-        if line is not None and len(p_interp) > 0:
-            line.set_alpha(0.9)
-            line.set_ydata(p_interp)
-            self._ax.relim()
-            self._ax.autoscale_view(scaley=True)
-
-        return [line] if line else []
+            info.set_text(f"t = {t:.3g} s")
+        last = i == len(self._history.t) - 1
+        if k is not None and k % self.spectrum_update_every != 0 and not last:
+            return [info]
+        if i < 8:
+            live.set_data([], [])
+            return [live, info]
+        f, p, _ = self._spectrum(upto=i + 1)
+        live.set_data(f / self._fn, np.where(p > 0, p, np.nan))
+        return [live, info]
 
 
 # ── LAYOUT definition ─────────────────────────────────────────────────────────
@@ -312,28 +349,41 @@ LAYOUT = {
 
 
 def _build_panel_registry(history, field, q, m,
-                           length_unit=1.0, unit_label="m",
-                           normalize_v=False,
-                           field_components=("B", "E"),
-                           field_density="low",
-                           spectrum_method="fft",
-                           spectrum_update_every=8,
-                           show_individual=False,
-                           field_update_every=10,
-                           store_dt_warn_period=None) -> dict:
+                          length_unit=1.0, unit_label="m",
+                          normalize_v=False,
+                          field_components=("B", "E"),
+                          field_density="low",
+                          spectrum_method="fft",
+                          spectrum_update_every=5,
+                          show_individual=False,
+                          field_update_every=10,
+                          store_dt_warn_period=None,
+                          field_projection="auto") -> dict:
     """Instantiate one panel object per panel name."""
+    earth = _is_dipole(field)
+    # Hodograph trail ≈ 3 gyrations when the run covers many more than that
+    trail = None
+    f_c = mean_gyrofrequency(history, q, m, field)
+    if f_c and len(history.t) > 1:
+        n_gyr = f_c * float(history.t[-1] - history.t[0])
+        if n_gyr > 10:
+            trail = max(10, int(round(3 * len(history.t) / n_gyr)))
     return {
-        "position_xy": _PositionPanel("xy", length_unit, unit_label),
-        "position_xz": _PositionPanel("xz", length_unit, unit_label),
-        "velocity_xy": _VelocityPanel("xy", normalize_v),
-        "velocity_xz": _VelocityPanel("xz", normalize_v),
-        "field":       _FieldPanel(field, history, length_unit, unit_label,
-                                    field_components, field_density,
-                                    field_update_every),
-        "spectrum":    _SpectrumPanel(q, m, spectrum_method,
-                                       spectrum_update_every, show_individual,
-                                       store_dt_warn_period=store_dt_warn_period),
+        "position_xy": _PositionPanel("xy", length_unit, unit_label, earth),
+        "position_xz": _PositionPanel("xz", length_unit, unit_label, earth),
+        "velocity_xy": _VelocityPanel("xy", normalize_v, trail),
+        "velocity_xz": _VelocityPanel("xz", normalize_v, trail),
+        "field":       _FieldPanel(field, length_unit, unit_label,
+                                   field_components, field_density,
+                                   field_update_every, field_projection),
+        "spectrum":    _SpectrumPanel(q, m, field, spectrum_method,
+                                      spectrum_update_every, show_individual,
+                                      store_dt_warn_period=store_dt_warn_period),
     }
+
+
+def _update_panel(panel, artists, i, k, history):
+    return panel.update(artists, i, k=k, t_current=float(history.t[i]))
 
 
 # ── Static overview figure ────────────────────────────────────────────────────
@@ -352,8 +402,9 @@ def plot_overview(
     show_individual: bool = False,
     title: str = "Simulation Overview",
     store_dt_warn_period: float = None,
+    field_projection: str = "auto",
 ):
-    """Static 2×3 overview panel.
+    """Static 2×3 overview panel of a finished run.
 
     Parameters
     ----------
@@ -368,38 +419,42 @@ def plot_overview(
     spectrum_method : "fft" | "retarded"
     show_individual : bool   — overlay per-particle spectra (N>1)
     store_dt_warn_period : float or None  — gyroperiod for Nyquist warning
+    field_projection : "auto" | "xy" | "xz" | "yz"
 
     Returns
     -------
     fig
     """
-    fig = plt.figure(figsize=(16, 9))
-    gs  = gridspec.GridSpec(2, 3, figure=fig, hspace=0.4, wspace=0.35)
-    fig.suptitle(title, fontsize=13)
+    fig = plt.figure(figsize=(15, 9.5))
+    gs  = gridspec.GridSpec(2, 3, figure=fig, hspace=0.32, wspace=0.3)
+    fig.suptitle(title, fontsize=14)
 
     registry = _build_panel_registry(
         history, field, q, m, length_unit, unit_label, normalize_v,
         field_components, field_density, spectrum_method,
+        show_individual=show_individual,
         store_dt_warn_period=store_dt_warn_period,
+        field_projection=field_projection,
     )
-
-    S = len(history.t)
+    i = len(history.t) - 1
     for name, (row, col) in LAYOUT.items():
-        ax  = fig.add_subplot(gs[row, col])
+        ax    = fig.add_subplot(gs[row, col])
         panel = registry[name]
-        artists = panel.build(ax, history)
-        i = S - 1
-        if name == "field":
-            panel.update(artists, i, k=0, t_current=float(history.t[i]))
-        elif name == "spectrum":
-            panel.update(artists, i, k=0)
-        else:
-            panel.update(artists, i)
-
+        _update_panel(panel, panel.build(ax, history), i, None, history)
     return fig
 
 
 # ── GIF generation ────────────────────────────────────────────────────────────
+
+def _save(fig, update, n_frames, filename, fps, writer):
+    if writer != "gif":
+        raise ValueError(f"Unknown writer '{writer}'. Use 'gif'.")
+    anim = FuncAnimation(fig, update, frames=n_frames, blit=False)
+    anim.save(filename, writer=PillowWriter(fps=fps))
+    plt.close(fig)
+    print(f"Saved: {filename}")
+    return filename
+
 
 def make_panel_gif(
     history: TrajectoryHistory,
@@ -417,10 +472,11 @@ def make_panel_gif(
     field_components=("B", "E"),
     field_density: str = "low",
     spectrum_method: str = "fft",
-    spectrum_update_every: int = 8,
+    spectrum_update_every: int = 3,
     field_update_every: int = 10,
     store_dt_warn_period: float = None,
-    **panel_kwargs,
+    field_projection: str = "auto",
+    dpi: int = 90,
 ):
     """Generate a GIF for a single panel.
 
@@ -429,8 +485,12 @@ def make_panel_gif(
     panel_name : one of "position_xy", "position_xz", "velocity_xy",
                  "velocity_xz", "field", "spectrum"
     filename : output path.  Defaults to f"{panel_name}.gif"
-    writer : "gif" (Pillow).  Future: "mp4" (FFMpeg).
+    writer : "gif" (Pillow).
     (other params: same as make_overview_gif)
+
+    Returns
+    -------
+    filename : str
     """
     if panel_name not in LAYOUT:
         raise ValueError(f"Unknown panel '{panel_name}'. Choose from: {list(LAYOUT)}")
@@ -440,34 +500,20 @@ def make_panel_gif(
         field_components, field_density, spectrum_method,
         spectrum_update_every, field_update_every=field_update_every,
         store_dt_warn_period=store_dt_warn_period,
+        field_projection=field_projection,
     )
     panel = registry[panel_name]
 
-    fig, ax = plt.subplots(figsize=(7, 6))
-    artists  = panel.build(ax, history)
-    frame_indices = np.round(
-        np.linspace(0, len(history.t) - 1, n_frames)).astype(int)
+    fig, ax = plt.subplots(figsize=(6.5, 5.5), dpi=dpi)
+    artists = panel.build(ax, history)
+    fig.tight_layout()
+    frames  = np.round(np.linspace(0, len(history.t) - 1, n_frames)).astype(int)
 
     def update(k):
-        i          = frame_indices[k]
-        t_current  = float(history.t[i])
-        if panel_name == "field":
-            return panel.update(artists, i, k=k, t_current=t_current)
-        elif panel_name == "spectrum":
-            return panel.update(artists, i, k=k)
-        else:
-            return panel.update(artists, i)
+        return _update_panel(panel, artists, frames[k], k, history)
 
-    anim = FuncAnimation(fig, update, frames=len(frame_indices), blit=False)
-    outfile = filename or f"{panel_name}.gif"
-    if writer == "gif":
-        anim.save(outfile, writer=PillowWriter(fps=fps))
-    # Future: elif writer == "mp4": anim.save(outfile, writer=FFMpegWriter(fps=fps))
-    else:
-        raise ValueError(f"Unknown writer '{writer}'. Use 'gif'.")
-    plt.close(fig)
-    print(f"Saved: {outfile}")
-    return outfile
+    return _save(fig, update, len(frames), filename or f"{panel_name}.gif",
+                 fps, writer)
 
 
 def make_overview_gif(
@@ -486,9 +532,12 @@ def make_overview_gif(
     field_components=("B", "E"),
     field_density: str = "low",
     spectrum_method: str = "fft",
-    spectrum_update_every: int = 8,
+    spectrum_update_every: int = 3,
     field_update_every: int = 10,
     store_dt_warn_period: float = None,
+    field_projection: str = "auto",
+    title: str = "Simulation Overview",
+    dpi: int = 70,
 ):
     """Generate a combined overview GIF with up to 6 panels.
 
@@ -497,8 +546,11 @@ def make_overview_gif(
     panels : list of str or None
         Subset of panel names to include.  None → all 6.
     filename : output path
-    writer : "gif".  Future: "mp4".
-    (other params same as make_panel_gif)
+    n_frames : number of GIF frames (evenly spaced over the stored history)
+    spectrum_update_every : recompute the FFT every this many frames
+    field_update_every : re-trace time-dependent non-uniform fields every
+        this many frames (uniform fields update every frame)
+    writer : "gif".
 
     Returns
     -------
@@ -511,43 +563,26 @@ def make_overview_gif(
         field_components, field_density, spectrum_method,
         spectrum_update_every, field_update_every=field_update_every,
         store_dt_warn_period=store_dt_warn_period,
+        field_projection=field_projection,
     )
 
-    fig = plt.figure(figsize=(16, 9))
-    gs  = gridspec.GridSpec(2, 3, figure=fig, hspace=0.4, wspace=0.35)
-    axes_map    = {}
+    fig = plt.figure(figsize=(15, 9.5), dpi=dpi)
+    gs  = gridspec.GridSpec(2, 3, figure=fig, hspace=0.32, wspace=0.3)
+    sup = fig.suptitle(title, fontsize=14)
     artists_map = {}
-
     for name in panels:
         row, col = LAYOUT[name]
-        ax = fig.add_subplot(gs[row, col])
-        axes_map[name]    = ax
-        artists_map[name] = registry[name].build(ax, history)
+        artists_map[name] = registry[name].build(fig.add_subplot(gs[row, col]),
+                                                 history)
 
-    frame_indices = np.round(
-        np.linspace(0, len(history.t) - 1, n_frames)).astype(int)
+    frames = np.round(np.linspace(0, len(history.t) - 1, n_frames)).astype(int)
 
     def update(k):
-        i         = frame_indices[k]
-        t_current = float(history.t[i])
-        updated   = []
+        i = frames[k]
+        sup.set_text(f"{title}   —   t = {history.t[i]:.3g} s")
+        out = [sup]
         for name in panels:
-            panel = registry[name]
-            if name == "field":
-                updated += panel.update(artists_map[name], i,
-                                         k=k, t_current=t_current)
-            elif name == "spectrum":
-                updated += panel.update(artists_map[name], i, k=k)
-            else:
-                updated += panel.update(artists_map[name], i)
-        return updated
+            out += _update_panel(registry[name], artists_map[name], i, k, history)
+        return out
 
-    anim = FuncAnimation(fig, update, frames=len(frame_indices), blit=False)
-    if writer == "gif":
-        anim.save(filename, writer=PillowWriter(fps=fps))
-    # Future: elif writer == "mp4": anim.save(filename, writer=FFMpegWriter(fps=fps))
-    else:
-        raise ValueError(f"Unknown writer '{writer}'. Use 'gif'.")
-    plt.close(fig)
-    print(f"Saved: {filename}")
-    return filename
+    return _save(fig, update, len(frames), filename, fps, writer)
