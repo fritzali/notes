@@ -78,7 +78,7 @@ def use(dpi=110, savefig_dpi=200):
         "legend.fontsize":   9,
         "legend.fancybox":   False,
         "legend.edgecolor":  "black",
-        "legend.framealpha": 0.92,
-        "legend.linewidth":  0.6,
+        "legend.framealpha": 1.0,
+        "patch.linewidth":  0.6,
         "image.cmap":        "Greys",
     })
