@@ -96,14 +96,15 @@ class _PositionPanel:
         N  = r.shape[1]
         lines, dots = [], []
         for pid, col in zip(range(N), _colors(N)):
-            ln, = ax.plot([], [], lw=0.7, alpha=0.85, color=col,
+            ln, = ax.plot([], [], lw=0.7, alpha=0.85, color=col, zorder=style.Z_TRACK,
                           rasterized=style.raster(len(r)))
-            pt, = ax.plot([], [], "o", ms=4, color=col, mec="black", mew=0.5, zorder=5)
+            pt, = ax.plot([], [], "o", ms=4, color=col, mec="black", mew=0.5,
+                          zorder=style.Z_MARKER)
             lines.append(ln); dots.append(pt)
         lim = _auto_lim(r[..., 0], self._c2(r))
         if self.earth:
             from magparsol.fieldlines import draw_earth_2d
-            draw_earth_2d(ax, lu, zorder=1)
+            draw_earth_2d(ax, lu)
             lim = max(lim, 1.3 * R_EARTH / lu)
         ax.set_xlim(-lim, lim); ax.set_ylim(-lim, lim)
         ax.set_aspect("equal")
@@ -223,8 +224,9 @@ class _FieldPanel:
         lines, dots = [], []
         for pid, col in zip(range(N), _colors(N)):
             lines.append(FadingTrail(ax, n_trail, color=style.ORBIT_COLOR,
-                                     alpha=0.75, lw=0.9, zorder=6))
-            pt, = ax.plot([], [], "o", ms=4.5, color=col, mec="black", mew=0.5, zorder=7)
+                                     alpha=0.75, lw=0.9, zorder=style.Z_TRACK))
+            pt, = ax.plot([], [], "o", ms=4.5, color=col, mec="black", mew=0.5,
+                          zorder=style.Z_MARKER)
             dots.append(pt)
         return {"lines": lines, "dots": dots}
 
@@ -302,7 +304,7 @@ class _SpectrumPanel:
         # Time label in the empty top right corner (the y axis keeps two
         # decades of headroom above the peak; the legend sits top left)
         info  = ax.text(0.97, 0.96, "", transform=ax.transAxes, ha="right",
-                        va="top", fontsize=8, zorder=10,
+                        va="top", fontsize=8, zorder=style.Z_LABEL,
                         bbox=dict(boxstyle="square,pad=0.3", fc="white",
                                   ec="none", alpha=1.0))
 

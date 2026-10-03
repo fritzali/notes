@@ -27,6 +27,14 @@ EARTH_ALPHA = 0.25              # tint of the opaque Earth fill (mixed into whit
 AXIS_COLOR  = "dimgrey"
 REF_COLOR   = "darkgrey"        # reference curves / final spectra
 
+# Drawing order (zorder); the grid sits at matplotlib's 1.5, below all of these
+Z_FIELD  = 2      # field lines, arrows, symbols
+Z_AXIS   = 3      # rotation and magnetic axis lines
+Z_EARTH  = 4      # opaque Earth disk: above grid and field, below tracks
+Z_TRACK  = 5      # particle orbits and trails
+Z_MARKER = 6      # current particle position
+Z_LABEL  = 10     # text boxes
+
 CYCLE = ["steelblue", "firebrick", "olivedrab", "goldenrod", "rebeccapurple"]
 
 # Artists with more points than this are rasterised inside vector output

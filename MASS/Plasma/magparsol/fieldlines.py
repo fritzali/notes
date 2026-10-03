@@ -194,7 +194,7 @@ def _add_direction_arrow(ax, pts2d, color, frac=0.5, size=11):
 
 # ── Decorations ───────────────────────────────────────────────────────────────
 
-def draw_earth_2d(ax, length_unit, zorder=5):
+def draw_earth_2d(ax, length_unit, zorder=style.Z_EARTH):
     """Filled Earth disk of radius R_E (in display units)."""
     ax.add_patch(Circle((0, 0), R_EARTH / length_unit,
                         facecolor=style.earth_fill(), edgecolor="black",
@@ -217,7 +217,7 @@ def _draw_earth_2d(ax, field, e1, e2, length_unit, extent):
     for p, ls, lbl in axes:
         p = p * extent
         ax.plot([-p[0], p[0]], [-p[1], p[1]], ls, color=style.AXIS_COLOR,
-                lw=0.8, zorder=4, label=lbl)
+                lw=0.8, zorder=style.Z_AXIS, label=lbl)
 
 
 def _draw_earth_3d(ax, length_unit):
@@ -238,7 +238,7 @@ class FadingTrail:
     """
 
     def __init__(self, ax, length=200, color=style.ORBIT_COLOR, alpha=0.8,
-                 lw=1.0, zorder=6):
+                 lw=1.0, zorder=style.Z_TRACK):
         self.length = int(length)
         self.rgba   = np.array(to_rgba(color))
         self.alpha  = alpha
@@ -297,8 +297,8 @@ class UniformFieldArrows:
         self.quiver = ax.quiver(self.X, self.Y, zeros, zeros, color=color,
                                 angles="xy", scale_units="xy", scale=1.0,
                                 width=0.005, headwidth=4, headlength=5,
-                                pivot="middle", zorder=3)
-        kw = dict(ls="none", color=color, mfc="none", ms=8, mew=1.1, zorder=3)
+                                pivot="middle", zorder=style.Z_FIELD)
+        kw = dict(ls="none", color=color, mfc="none", ms=8, mew=1.1, zorder=style.Z_FIELD)
         self.ring,  = ax.plot([], [], marker="o", **kw)
         self.dot,   = ax.plot([], [], marker=".", **{**kw, "ms": 4})
         self.cross, = ax.plot([], [], marker="x", **{**kw, "ms": 5})
@@ -519,7 +519,7 @@ def plot_field_lines(
                             lw=0.9, alpha=0.8)
                 else:
                     p2 = np.column_stack([pts @ e1, pts @ e2])
-                    ax.plot(p2[:, 0], p2[:, 1], color=col, lw=1.0, zorder=2)
+                    ax.plot(p2[:, 0], p2[:, 1], color=col, lw=1.0, zorder=style.Z_FIELD)
                     if arrows:
                         _add_direction_arrow(ax, p2, col)
             handles.append(Line2D([], [], color=col, label=r"$\mathbf{B}$"))
@@ -541,7 +541,7 @@ def plot_field_lines(
                 V = np.ma.array(V, mask=inside)
             if np.nanmax(mag) > 0:
                 ax.streamplot(X, Y, U, V, color=col, density=(0.7, 1.1, 1.6)[dens],
-                              linewidth=0.9, arrowsize=1.0, zorder=2)
+                              linewidth=0.9, arrowsize=1.0, zorder=style.Z_FIELD)
                 handles.append(Line2D([], [], color=col,
                                       label=f"$\\mathbf{{{comp}}}$"))
             continue
@@ -593,10 +593,8 @@ def plot_field_lines(
             elif orbit_trail:
                 FadingTrail(ax, orbit_trail).set_data(r[:, pid] @ e1, r[:, pid] @ e2)
             else:
-                # Below the opaque Earth disk (zorder 5): the orbit is hidden
-                # where its projection passes behind the planet
                 ax.plot(r[:, pid] @ e1, r[:, pid] @ e2, color=style.ORBIT_COLOR,
-                        lw=0.5, alpha=orbit_alpha, zorder=4.5,
+                        lw=0.5, alpha=orbit_alpha, zorder=style.Z_TRACK,
                         rasterized=style.raster(len(r)))
 
     if is3d:
