@@ -4,7 +4,7 @@ zoo.py
 Toy galaxy zoo rendered with yt: spirals, barred spiral, lenticular,
 ellipticals, interacting pair, merger remnant and dwarf irregular. Each
 galaxy is shown as three representations built from the same 3D particle set
-(SPH, uniform grid, 3D pseudo-AMR), face-on and edge-on, as midplane slices
+(SPH, fixed uniform grid FIX, pseudo-AMR), face-on and edge-on, as midplane slices
 ("slic") and as projections ("proj").
 
 Models
@@ -84,8 +84,8 @@ montages never re-runs the integrators. Caches written by an older version
 Notebook use
 ------------
     results = load_or_generate("zoo_cache.pkl")
-    g = prepare_galaxy("1_grand_design", results["1_grand_design"])
-    ds, info = build_ds(g, "amr")            # "sph" | "uniform" | "amr"
+    g = prepare_galaxy("01_grand_design", results["01_grand_design"])
+    ds, info = build_ds(g, "amr")            # "sph" | "fix" | "amr"
     yt_plot(ds, "z", "slic", field="temperature")   # renders inline
     imgs = field_images(ds, g, "slic")       # density, pressure, |v|, T arrays
     prof = radial_profiles(ds, g)            # scaled radial profiles
@@ -106,7 +106,7 @@ yt.set_log_level(50)
 
 rng = np.random.default_rng(7)
 
-CACHE_VERSION = 4
+CACHE_VERSION = 5
 
 # =====================================================================
 # Physical constants and unit systems
@@ -124,15 +124,15 @@ S2_FLOOR = T_FLOOR / K_PER_KMS2
 # (km/s), or M (Msun) for ellipticals, where V = sqrt(G M / L); f_disk: disk
 # share of V0^2 at 2.2 r_d; h_kpc: sech^2 scale height z0 of the disk.
 PHYS = {
-    "1_grand_design": dict(L=10.0, V=220.0, f_disk=0.5, h_kpc=0.35),
-    "2_tightly_wound": dict(L=10.0, V=250.0, f_disk=0.55, h_kpc=0.3),
-    "3_flocculent": dict(L=8.0, V=170.0, f_disk=0.4, h_kpc=0.35),
-    "4_barred_spiral": dict(L=10.0, V=220.0, f_disk=0.55, h_kpc=0.35),
-    "5_lenticular": dict(L=8.0, V=230.0, f_disk=0.6, h_kpc=0.5),
-    "6_elliptical_E0": dict(L=10.0, M=1.5e11),
-    "7_elliptical_E5": dict(L=10.0, M=8.0e10),
-    "8_interacting_pair": dict(L=10.0, V=220.0, f_disk=0.5, h_kpc=0.35),
-    "9_merger_remnant": dict(L=10.0, V=220.0, f_disk=0.5, h_kpc=0.35),
+    "01_grand_design": dict(L=10.0, V=220.0, f_disk=0.5, h_kpc=0.35),
+    "02_tightly_wound": dict(L=10.0, V=250.0, f_disk=0.55, h_kpc=0.3),
+    "03_flocculent": dict(L=8.0, V=170.0, f_disk=0.4, h_kpc=0.35),
+    "04_barred_spiral": dict(L=10.0, V=220.0, f_disk=0.55, h_kpc=0.35),
+    "05_lenticular": dict(L=8.0, V=230.0, f_disk=0.6, h_kpc=0.5),
+    "06_elliptical_e0": dict(L=10.0, M=1.5e11),
+    "07_elliptical_e5": dict(L=10.0, M=8.0e10),
+    "08_interacting_pair": dict(L=10.0, V=220.0, f_disk=0.5, h_kpc=0.35),
+    "09_merger_remnant": dict(L=10.0, V=220.0, f_disk=0.5, h_kpc=0.35),
     "10_dwarf_irregular": dict(L=5.0, V=120.0, f_disk=0.2, h_kpc=0.4),
 }
 
@@ -738,24 +738,36 @@ KINDS = ("slic", "proj")
 # grid, where the cell lookup is ambiguous and AMR slices show seams
 SLICE_EPS = 1e-6
 UNITS = {"slic": "Msun/kpc**3", "proj": "Msun/kpc**2"}
-KIND_LABELS = {"slic": "midplane density slices", "proj": "projected density"}
+KIND_LABELS = {"slic": "Slices", "proj": "Projections"}
+VIEW_LABELS = {"face": "Face-On", "edge": "Edge-On"}
 
 FIELDS = ("density", "pressure", "velocity_magnitude", "temperature")
 FIELD_STYLE = {
-    "density": dict(label="density", unit={"slic": "Msun/pc**3", "proj": "Msun/pc**2"},
-                    tex={"slic": r"$\rho$ [M$_\odot$ pc$^{-3}$]",
-                         "proj": r"$\Sigma$ [M$_\odot$ pc$^{-2}$]"},
+    "density": dict(unit={"slic": "Msun/pc**3", "proj": "Msun/pc**2"},
+                    tex={"slic": r"$\rho$ / M$_\odot$ pc$^{-3}$",
+                         "proj": r"$\Sigma$ / M$_\odot$ pc$^{-2}$"},
                     cmap="viridis", log=True, dex=4.0, weight=None),
-    "pressure": dict(label="pressure", unit={"slic": "dyn/cm**2", "proj": "dyn/cm**2"},
-                     tex={"slic": r"P [dyn cm$^{-2}$]", "proj": r"$\langle P\rangle_\rho$ [dyn cm$^{-2}$]"},
+    "pressure": dict(unit={"slic": "dyn/cm**2", "proj": "dyn/cm**2"},
+                     tex={"slic": r"$P$ / dyn cm$^{-2}$", "proj": r"$P$ / dyn cm$^{-2}$"},
                      cmap="magma", log=True, dex=5.0, weight=DENS),
-    "velocity_magnitude": dict(label="|v|", unit={"slic": "km/s", "proj": "km/s"},
-                               tex={"slic": "|v| [km/s]", "proj": r"$\langle|v|\rangle_\rho$ [km/s]"},
+    "velocity_magnitude": dict(unit={"slic": "km/s", "proj": "km/s"},
+                               tex={"slic": r"$|v|$ / km s$^{-1}$", "proj": r"$|v|$ / km s$^{-1}$"},
                                cmap="plasma", log=False, dex=None, weight=DENS),
-    "temperature": dict(label="temperature", unit={"slic": "K", "proj": "K"},
-                        tex={"slic": "T [K]", "proj": r"$\langle T\rangle_\rho$ [K]"},
+    "temperature": dict(unit={"slic": "K", "proj": "K"},
+                        tex={"slic": r"$T$ / K", "proj": r"$T$ / K"},
                         cmap="inferno", log=True, dex=3.0, weight=DENS),
 }
+AXIS_LABELS = {a: rf"${a}$ / kpc" for a in "xyz"}
+
+
+def clean_axes(ax, legend=False):
+    """No grid; optional legend with a thin square black frame and an
+    opaque white fill."""
+    ax.grid(False)
+    if legend:
+        leg = ax.legend(fancybox=False, framealpha=1.0, facecolor="white", edgecolor="black")
+        leg.get_frame().set_linewidth(0.6)
+    return ax
 
 
 def _style(p, title, kind="slic", grids=False):
@@ -768,12 +780,10 @@ def _style(p, title, kind="slic", grids=False):
 
 
 def yt_plot(ds, axis="z", kind="slic", title=None, grids=False, field="density",
-            velocity=False):
-    """Styled native yt plot (SlicePlot or ProjectionPlot) of one of FIELDS.
-    In a notebook, leave it as the last expression of a cell (or call
-    .show()) to render it inline; .save(), .zoom() and the other yt plot
-    methods work as usual. Edge-on (axis "y") plots are swapped so the disk
-    lies flat. velocity=True overlays in-plane velocity arrows."""
+            velocity=False, size=5.0):
+    """Styled native yt plot (SlicePlot or ProjectionPlot) of one of FIELDS,
+    `size` inches wide. Edge-on (axis "y") plots are swapped so the disk lies
+    flat. velocity=True overlays in-plane velocity arrows."""
     st = FIELD_STYLE[field]
     f = ("gas", field)
     if kind == "slic":
@@ -784,6 +794,8 @@ def yt_plot(ds, axis="z", kind="slic", title=None, grids=False, field="density",
     p.set_log(f, st["log"])
     p.set_cmap(f, st["cmap"])
     p.set_axes_unit("kpc")
+    p.set_figure_size(size)
+    p.set_font_size(11)
     if title:
         p.annotate_title(title)
     if grids:
@@ -792,13 +804,17 @@ def yt_plot(ds, axis="z", kind="slic", title=None, grids=False, field="density",
         p.annotate_velocity(factor=24, normalize=True)
     if axis == "y":
         p.swap_axes()
+    h, v = {"z": ("x", "y"), "y": ("x", "z"), "x": ("y", "z")}[axis]
+    p.set_xlabel(AXIS_LABELS[h])
+    p.set_ylabel(AXIS_LABELS[v])
+    p.set_colorbar_label(f, st["tex"][kind])
     return p
 
 
 def save_yt_plots(ds, base, title, grids=False, kind="slic"):
-    """Write {base}_faceon_{kind}.png and {base}_edgeon_{kind}.png (density,
-    in the montage units)."""
-    for axis, tag in (("z", "faceon"), ("y", "edgeon")):
+    """Write {base}_face_{kind}.png and {base}_edge_{kind}.png (density, in
+    the montage units)."""
+    for axis, tag in (("z", "face"), ("y", "edge")):
         if kind == "slic":
             p = yt.SlicePlot(ds, axis, DENS, center=ds.arr([SLICE_EPS] * 3, "code_length"))
         else:
@@ -838,9 +854,8 @@ def field_images(ds, g, kind="slic", fields=FIELDS, res=384):
 
 def plot_field_grid(images, g, view="face", kind="slic", fields=FIELDS, methods=None,
                     figsize_per=3.4):
-    """Rows = representations, columns = fields. `images` is
-    {method: field_images(...)}; view is "face" or "edge". Each column shares
-    one colour scale across the representations. Returns the figure."""
+    """Rows = methods, columns = fields; each column shares one colour
+    scale. `images` is {method: field_images(...)}, view "face" or "edge"."""
     import matplotlib
     import matplotlib.pyplot as plt
     from matplotlib.colors import LogNorm, Normalize
@@ -866,19 +881,16 @@ def plot_field_grid(images, g, view="face", kind="slic", fields=FIELDS, methods=
             im = ax.imshow(a, origin="lower", extent=[-e, e, -ez, ez], cmap=cmap, norm=norm,
                            interpolation="nearest")
             if c == 0:
-                ax.set_ylabel(f"{METHOD_LABELS[m]}\n{'y' if view == 'face' else 'z'} [kpc]")
+                ax.set_ylabel(f"{METHOD_LABELS[m]}\n{AXIS_LABELS['y' if view == 'face' else 'z']}")
             else:
                 ax.set_yticklabels([])
             if r == len(methods) - 1:
-                ax.set_xlabel("x [kpc]")
+                ax.set_xlabel(AXIS_LABELS["x"])
             else:
                 ax.set_xticklabels([])
         fig.colorbar(im, ax=axes[:, c], location="top", shrink=0.9, aspect=25,
                      label=st["tex"][kind])
-    what = {"slic": "midplane slices" if view == "face" else "y = 0 slices",
-            "proj": "projections (density-weighted)"}[kind]
-    fig.suptitle(f"{g['title']}, {'face-on' if view == 'face' else 'edge-on'} {what}",
-                 fontsize=13)
+    fig.suptitle(f"{g['title']} {VIEW_LABELS[view]} {KIND_LABELS[kind]}", fontsize=13)
     return fig
 
 
@@ -905,9 +917,7 @@ def profile_targets(g):
     out = []
     for c in centers:
         i = int(np.argmin([np.hypot(c[0] - p[0], c[1] - p[1]) for p in d["pair"]["centers"]]))
-        out.append((c, d["r_scale_pair"][i] * g["L"],
-                    f"around the {('primary', 'secondary')[i]} nucleus "
-                    f"({c[0] * g['L']:.0f}, {c[1] * g['L']:.0f}) kpc"))
+        out.append((c, d["r_scale_pair"][i] * g["L"], ("Primary", "Secondary")[i] + " Nucleus"))
     return out
 
 
@@ -979,63 +989,36 @@ def radial_profiles(ds, g, center=None, nbins=32, rmin_frac=0.05, rmax=None, r_s
     return out
 
 
-def dynamical_mass_profile(g, r_kpc):
-    """Total (dynamical) mass enclosed within r in the model potential:
-    logarithmic potential for disks, the Plummer sphere itself for
-    ellipticals; None for the mergers (two moving potentials)."""
-    d = g["d"]
-    u = d["units"]
-    r = np.asarray(r_kpc) / u["L_kpc"]
-    if g["spheroid"]:
-        a = d["a"]
-        return u["M_Msun"] * r**3 / (r**2 + a**2) ** 1.5
-    if "V0" in d:
-        return u["M_Msun"] * mdyn_log_code(r, d["V0"])
-    return None
-
-
 def plot_profiles(profiles, g, label=""):
-    """3 x 2 panel of radial profiles, one line per representation:
-    density, temperature, pressure, |v|, rotation (or radial) velocity and
-    enclosed mass (with the model's dynamical mass for comparison). x axis
-    is r / r_scale, with kpc on the top axes. `profiles` is {method: dict}
-    from radial_profiles. Returns the figure."""
+    """2 x 3 panel of radial profiles, one line per method: density,
+    temperature, pressure, |v|, rotation (or radial) velocity and enclosed
+    mass, against r / r_d (disks) or r / R_e (ellipticals). `profiles` is
+    {method: dict} from radial_profiles. Returns the figure."""
     import matplotlib.pyplot as plt
 
-    rs = next(iter(profiles.values()))["r_scale_kpc"]
     sph = g["spheroid"]
     vkey = "vr" if sph else "vrot"
+    kms = r" / km s$^{-1}$"
     panels = [
-        ("rho", r"$\rho$ [M$_\odot$ pc$^{-3}$]", True),
-        ("T", "T [K] (mass-weighted)", True),
-        ("P", r"P [dyn cm$^{-2}$] (mass-weighted)", True),
-        ("vmag", "|v| [km/s] (mass-weighted)", False),
-        (vkey, ("v$_r$" if sph else r"v$_\phi$") + " [km/s] (mass-weighted)", False),
-        ("menc", r"M(<r) [M$_\odot$]", True),
+        ("rho", r"$\rho$ / M$_\odot$ pc$^{-3}$", True),
+        ("T", r"$T$ / K", True),
+        ("P", r"$P$ / dyn cm$^{-2}$", True),
+        ("vmag", r"$|v|$" + kms, False),
+        (vkey, (r"$v_r$" if sph else r"$v_\phi$") + kms, False),
+        ("menc", r"$M$ / M$_\odot$", True),
     ]
-    fig, axes = plt.subplots(2, 3, figsize=(15, 8.2))
-    styles = {"sph": "-", "uniform": "--", "amr": ":"}
+    xlabel = r"$r / R_\mathrm{e}$" if sph else r"$r / r_\mathrm{d}$"
+    fig, axes = plt.subplots(2, 3, figsize=(13, 7.5), layout="constrained")
     for ax, (key, ylabel, logy) in zip(axes.flat, panels):
         for m, p in profiles.items():
-            ax.plot(p["x"], p[key], styles.get(m, "-"), lw=2, label=METHOD_LABELS[m])
-        if key == "menc":
-            any_p = next(iter(profiles.values()))
-            mdyn = dynamical_mass_profile(g, any_p["r_kpc"])
-            if mdyn is not None:
-                ax.plot(any_p["x"], mdyn, "k-", lw=1, alpha=0.6, label="dynamical (model)")
+            ax.plot(p["x"], p[key], "-", lw=1.8, color=METHOD_COLORS[m], label=METHOD_LABELS[m])
         ax.set_xscale("log")
         if logy:
             ax.set_yscale("log")
         ax.set_ylabel(ylabel)
-        ax.set_xlabel(f"r / r_scale  (r_scale = {rs:.2f} kpc, "
-                      f"{'R_e' if sph else 'r_d'}; {'spherical' if sph else 'cylindrical'})")
-        top = ax.secondary_xaxis("top", functions=(lambda x: x * rs, lambda r: r / rs))
-        top.set_xlabel("r [kpc]")
-        ax.grid(alpha=0.3, which="both")
-    axes.flat[0].legend()
-    axes.flat[-1].legend()
-    fig.suptitle(f"{g['title']} radial profiles {label}".strip(), fontsize=13)
-    fig.tight_layout()
+        ax.set_xlabel(xlabel)
+        clean_axes(ax, legend=ax is axes.flat[0])
+    fig.suptitle(f"{g['title']} {label}".strip(), fontsize=13)
     return fig
 
 
@@ -1297,26 +1280,26 @@ def build_amr_ds(
 # =====================================================================
 
 DISK_SPECS = {
-    "1_grand_design": dict(
+    "01_grand_design": dict(
         specs=[dict(m=2, pitch_deg=18, amp=0.55, r_peak=0.5, r_width=1.2, omega_p=0.55)],
         kw=dict(),
     ),
-    "2_tightly_wound": dict(
+    "02_tightly_wound": dict(
         specs=[dict(m=2, pitch_deg=8, amp=0.55, r_peak=0.5, r_width=1.2, omega_p=0.55)],
         kw=dict(),
     ),
-    "3_flocculent": dict(
+    "03_flocculent": dict(
         specs=[dict(m=6, pitch_deg=25, amp=0.35, r_peak=0.5, r_width=1.0, omega_p=0.55)],
         kw=dict(vdisp=0.05, vphi_scatter=0.08),
     ),
-    "4_barred_spiral": dict(
+    "04_barred_spiral": dict(
         specs=[
             dict(m=2, pitch_deg=87, amp=0.45, r_peak=0.22, r_width=0.32, omega_p=0.6),
             dict(m=2, pitch_deg=20, amp=0.3, r_peak=0.75, r_width=1.0, omega_p=0.35),
         ],
         kw=dict(fade_time=3.0),
     ),
-    "5_lenticular": dict(specs=[], kw=dict()),
+    "05_lenticular": dict(specs=[], kw=dict()),
     "10_dwarf_irregular": dict(
         specs=[], kw=dict(rd=0.15, r0_max=0.5, V0=0.5, vdisp=0.05, vphi_scatter=0.15),
         n=25000, dwarf=True,
@@ -1324,8 +1307,8 @@ DISK_SPECS = {
 }
 
 ELLIPTICALS = {
-    "6_elliptical_E0": dict(a=0.3, qx=1.0, qy=1.0, qz=0.8),
-    "7_elliptical_E5": dict(a=0.3, qx=1.0, qy=0.45, qz=0.6),
+    "06_elliptical_e0": dict(a=0.3, qx=1.0, qy=1.0, qz=0.8),
+    "07_elliptical_e5": dict(a=0.3, qx=1.0, qy=0.45, qz=0.6),
 }
 
 MERGER_SPEC_BIG = [dict(m=2, pitch_deg=20, amp=0.4, r_peak=0.4, r_width=0.6, omega_p=0.6)]
@@ -1337,7 +1320,7 @@ MERGER_SPEC_BARRED_SMALL = [
 MERGERS = {
     # grand-design primary + smaller, faster secondary on a retrograde spin:
     # the two galaxies respond differently, one raising a much stronger tail
-    "8_interacting_pair": dict(
+    "08_interacting_pair": dict(
         specs1=MERGER_SPEC_BIG, specs2=MERGER_SPEC_SMALL,
         rd1=0.32, rd2=0.15, r0_max1=1.5, r0_max2=0.85,
         n1=18000, n2=9000, spin1=1.0, spin2=-1.0, m1_frac=0.65,
@@ -1346,7 +1329,7 @@ MERGERS = {
     ),
     # primary + smaller barred secondary, both prograde: deeper, more
     # disruptive encounter toward coalescence
-    "9_merger_remnant": dict(
+    "09_merger_remnant": dict(
         specs1=MERGER_SPEC_BIG, specs2=MERGER_SPEC_BARRED_SMALL,
         rd1=0.3, rd2=0.13, r0_max1=1.4, r0_max2=0.7,
         n1=17000, n2=8000, spin1=1.0, spin2=1.0, m1_frac=0.68,
@@ -1356,21 +1339,21 @@ MERGERS = {
 }
 
 TITLES = {
-    "1_grand_design": "Grand-design spiral",
-    "2_tightly_wound": "Tightly-wound spiral",
-    "3_flocculent": "Flocculent spiral",
-    "4_barred_spiral": "Barred spiral",
-    "5_lenticular": "Lenticular (S0)",
-    "6_elliptical_E0": "Elliptical E0",
-    "7_elliptical_E5": "Elliptical E5",
-    "8_interacting_pair": "Interacting pair (bridge)",
-    "9_merger_remnant": "Merger remnant (irregular)",
-    "10_dwarf_irregular": "Dwarf irregular",
+    "01_grand_design": "Grand Design Spiral",
+    "02_tightly_wound": "Tightly Wound Spiral",
+    "03_flocculent": "Flocculent Spiral",
+    "04_barred_spiral": "Barred Spiral",
+    "05_lenticular": "Lenticular",
+    "06_elliptical_e0": "Elliptical E0",
+    "07_elliptical_e5": "Elliptical E5",
+    "08_interacting_pair": "Interacting Pair",
+    "09_merger_remnant": "Merger Remnant",
+    "10_dwarf_irregular": "Dwarf Irregular",
 }
 
 ORDER = [
-    "1_grand_design", "2_tightly_wound", "3_flocculent", "4_barred_spiral", "5_lenticular",
-    "6_elliptical_E0", "7_elliptical_E5", "8_interacting_pair", "9_merger_remnant",
+    "01_grand_design", "02_tightly_wound", "03_flocculent", "04_barred_spiral", "05_lenticular",
+    "06_elliptical_e0", "07_elliptical_e5", "08_interacting_pair", "09_merger_remnant",
     "10_dwarf_irregular",
 ]
 
@@ -1451,7 +1434,8 @@ def load_or_generate(path, only=None, n_disk=60000):
             results = pickle.load(f)
     except (FileNotFoundError, EOFError):
         results = {}
-    results = {k: v for k, v in results.items() if v.get("version") == CACHE_VERSION}
+    results = {k: v for k, v in results.items()
+               if k in ORDER and v.get("version") == CACHE_VERSION}
     wanted = only if only else ORDER
     missing = [n for n in wanted if n not in results]
     if missing:
@@ -1486,25 +1470,19 @@ def mass_budget(results):
 
 
 def print_mass_budget(rows):
-    hdr = (f"{'galaxy':<20}{'box':>6}{'V':>6}{'t_u':>6}{'N':>7}{'m_part':>9}{'M_bary':>9}"
-           f"{'M_dyn':>9}{'(<r)':>6}{'f_b':>6}{'z0':>6}{'r_s':>6}{'age':>6}")
-    print(hdr)
-    print(f"{'':<20}{'kpc':>6}{'km/s':>6}{'Myr':>6}{'':>7}{'Msun':>9}{'Msun':>9}"
-          f"{'Msun':>9}{'kpc':>6}{'':>6}{'pc':>6}{'kpc':>6}{'Myr':>6}")
+    print(f"{'Galaxy':<20}{'Box / kpc':>11}{'V / km/s':>10}{'M_b / Msun':>12}"
+          f"{'M_dyn / Msun':>14}{'f_b':>6}")
     for r in rows:
-        rd = "all" if not np.isfinite(r["r_dyn_kpc"]) else f"{r['r_dyn_kpc']:.0f}"
-        h = "-" if not np.isfinite(r["h_pc"]) else f"{r['h_pc']:.0f}"
-        print(f"{r['name']:<20}{r['box_kpc']:>6.0f}{r['V_kms']:>6.0f}{r['t_unit_Myr']:>6.0f}"
-              f"{r['N']:>7d}{r['m_part']:>9.2e}{r['M_baryon']:>9.2e}{r['M_dyn']:>9.2e}"
-              f"{rd:>6}{r['f_b']:>6.2f}{h:>6}{r['r_scale_kpc']:>6.2f}{r['age_Myr']:>6.0f}")
-
+        print(f"{r['name']:<20}{r['box_kpc']:>11.0f}{r['V_kms']:>10.0f}{r['M_baryon']:>12.2e}"
+              f"{r['M_dyn']:>14.2e}{r['f_b']:>6.2f}")
 
 # =====================================================================
 # Rendering
 # =====================================================================
 
-METHODS = ("sph", "uniform", "amr")
-METHOD_LABELS = {"sph": "SPH", "uniform": "Uniform grid", "amr": "Pseudo-AMR"}
+METHODS = ("sph", "fix", "amr")
+METHOD_LABELS = {"sph": "SPH", "fix": "FIX", "amr": "AMR"}
+METHOD_COLORS = {"sph": "goldenrod", "fix": "olivedrab", "amr": "steelblue"}
 
 
 def prepare_galaxy(name, d):
@@ -1568,7 +1546,7 @@ def prepare_galaxy(name, d):
 
 
 def build_ds(g, method, fields="all", amr_kwargs=None):
-    """yt dataset for one representation ("sph", "uniform", "amr") of a
+    """yt dataset for one representation ("sph", "fix", "amr") of a
     prepared galaxy. fields="all" gives density, velocity, temperature and
     pressure; "density" only the density (faster, used by the montages).
     Returns (ds, info); info is the AMR summary for "amr", else None."""
@@ -1583,7 +1561,7 @@ def build_ds(g, method, fields="all", amr_kwargs=None):
     hsml = particle_sph(g)[0][inside]  # kNN lengths from the full set
     ext = extensive_weights(g, inside, fields)
 
-    if method == "uniform":
+    if method == "fix":
         return build_uniform_ds(pos[inside], hsml, ext, xlim, ylim, zlim, g["units"]), None
 
     kw = dict(amr_kwargs or {})
@@ -1614,19 +1592,19 @@ def render_galaxy(name, d, outdir=".", individual=False, grids=False, amr_kwargs
         if info is not None:
             out["amr_info"] = info
         if individual:
-            save_yt_plots(ds, f"{outdir}/zoo_{name}_{method}",
-                          f"{g['title']} ({METHOD_LABELS[method]})",
+            save_yt_plots(ds, f"{outdir}/{name}_{method}",
+                          f"{g['title']} {METHOD_LABELS[method]}",
                           grids=grids and method == "amr", kind=kind)
         del ds
     return out
 
 
 def make_montages(frames, outdir=".", dyn_range=3.0, kind="slic", show=False):
-    """Write zoo_montage_faceon_{kind}.png and zoo_montage_edgeon_{kind}.png.
+    """Write montage_face_{kind}.png and montage_edge_{kind}.png.
 
-    Rows = SPH / uniform / AMR, in blocks of five galaxies. Log colour scale
+    Rows = SPH / FIX / AMR, in blocks of five galaxies. Log colour scale
     spanning dyn_range dex, shared by the three methods for each galaxy and
-    view. Returns {"faceon": fig, "edgeon": fig}; show=True keeps the figures
+    view. Returns {"face": fig, "edge": fig}; show=True keeps the figures
     open for inline display, otherwise they are closed."""
     import matplotlib
     import matplotlib.pyplot as plt
@@ -1642,11 +1620,9 @@ def make_montages(frames, outdir=".", dyn_range=3.0, kind="slic", show=False):
         vmax = max(np.percentile(f[m][key], 99.9) for m in METHODS)
         return LogNorm(vmin=vmax / 10**dyn_range, vmax=vmax)
 
-    views = {"face": ("faceon", "face-on (z = 0)", "face-on (along z)"),
-             "edge": ("edgeon", "edge-on (y = 0)", "edge-on (along y)")}
     blocks = [names[i:i + 5] for i in range(0, len(names), 5)]
     figs = {}
-    for view, (label, what_slic, what_proj) in views.items():
+    for view in ("face", "edge"):
         key = f"{view}_{kind}"
         fig, axes = plt.subplots(3 * len(blocks), 5, figsize=(16, 3.25 * 3 * len(blocks)),
                                  squeeze=False)
@@ -1665,14 +1641,13 @@ def make_montages(frames, outdir=".", dyn_range=3.0, kind="slic", show=False):
                     ax.imshow(f[method][key], origin="lower", extent=[-e, e, -ez, ez],
                               cmap=cmap, norm=norm(f, key), interpolation="nearest")
                     if m == 0:
-                        ax.set_title(f"{TITLES[block[c]]}  ({2 * e:.0f} kpc)", fontsize=10)
+                        ax.set_title(TITLES[block[c]], fontsize=11)
                     if c == 0:
                         ax.set_ylabel(METHOD_LABELS[method], fontsize=11)
-        what = what_slic if kind == "slic" else what_proj
-        fig.suptitle(f"Galaxy zoo, {what} {KIND_LABELS[kind]}", fontsize=14)
+        fig.suptitle(f"{VIEW_LABELS[view]} {KIND_LABELS[kind]}", fontsize=14)
         fig.tight_layout(rect=(0, 0, 1, 0.985))
-        fig.savefig(f"{outdir}/zoo_montage_{label}_{kind}.png", dpi=110)
-        figs[label] = fig
+        fig.savefig(f"{outdir}/montage_{view}_{kind}.png", dpi=110)
+        figs[view] = fig
         if not show:
             plt.close(fig)
     return figs
