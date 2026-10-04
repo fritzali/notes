@@ -24,7 +24,7 @@ Dwarf irregular:
     Dynamical disk whose particle masses carry a fractal noise texture
     (visual only, total mass unchanged).
 
-Physical units
+Physical Units
 --------------
 Every galaxy has its own unit system (PHYS): a length unit L (kpc) and a
 velocity unit V (km/s). With G = 1 in code units this fixes the time unit
@@ -39,7 +39,7 @@ masses follow from the dynamics:
   2-body orbit, V0_i = sqrt(G M_i / (2 r0_max_i)); disk masses as above.
 Disk scale heights are physical (h_kpc), not tied to the box size.
 
-Kinematics and thermodynamics
+Kinematics and Thermodynamics
 -----------------------------
 All particles carry 3D velocities. Disk orbits are 2D (x, y); z is drawn
 from a sech^2(z / z0) profile. The strong spiral / bar forcing that makes the
@@ -57,7 +57,7 @@ linear flow fit (bulk motion, rotation and shear), then
     T = mu m_p sigma^2 / k_B   (mu = 0.6),   P = rho sigma^2,
 so P = rho k_B T / (mu m_p) holds exactly. A floor of T_FLOOR applies.
 
-Native yt fields
+Native yt Fields
 ----------------
 All three representations carry ("gas", ...) density, velocity_x/y/z
 (hence velocity_magnitude, velocity_cylindrical_theta, ...), temperature and
@@ -81,8 +81,8 @@ arrays in a second one (--frb-cache), so re-rendering and re-laying-out the
 montages never re-runs the integrators. Caches written by an older version
 (CACHE_VERSION) are regenerated.
 
-Notebook use
-------------
+Notebook Usage
+--------------
     results = load_or_generate("zoo_cache.pkl")
     g = prepare_galaxy("01_grand_design", results["01_grand_design"])
     ds, info = build_ds(g, "amr")            # "sph" | "fix" | "amr"
