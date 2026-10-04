@@ -1,29 +1,14 @@
 """
-magparsol/fields.py
---------------------
 Electromagnetic field models.
 
-Every FieldModel subclass implements:
+A field model is called as ``field(r, t)`` with positions ``r`` of shape
+(N, 3) in metres and a scalar time ``t`` in seconds, and returns ``(B, E)``,
+two (N, 3) arrays in tesla and volt per metre. Subclasses implement
+:meth:`FieldModel.evaluate`.
 
-    evaluate(r, t) -> (B, E)
-
-where r is an (N, 3) position array and t is a scalar time,
-and the return values B, E are (N, 3) arrays in SI units (Tesla, V/m).
-
-A CustomField adapter lets users supply a legacy scalar-signature function::
-
-    def my_field(x, y, z, t):
-        return Bx, By, Bz, Ex, Ey, Ez          # scalars or length-N arrays
-
-or a modern vector-signature function::
-
-    def my_field(r, t):                         # r shape (N,3)
-        return B, E                              # each shape (N,3)
-
-and wrap it::
-
-    field = CustomField(my_func, vector_api=False)   # legacy
-    field = CustomField(my_func, vector_api=True)    # modern
+Any other field can be wrapped with :class:`CustomField`, either from a
+scalar function ``f(x, y, z, t) -> (Bx, By, Bz, Ex, Ey, Ez)`` or from a
+vector function ``f(r, t) -> (B, E)``.
 """
 
 import numpy as np
@@ -34,46 +19,40 @@ from magparsol.constants import (
 )
 
 
-# ── Abstract base ─────────────────────────────────────────────────────────────
-
 class FieldModel(ABC):
-    """Abstract electromagnetic field model.
+    """Base class of all field models.
 
-    Subclasses implement :meth:`evaluate`.  Calling the instance directly
-    is equivalent to calling :meth:`evaluate`.
-
-    Class attributes
-    ----------------
+    Attributes
+    ----------
     is_uniform : bool
-        True if the field is spatially uniform (E and B constant in space).
-        Used by field-line plotters to skip streamline tracing and draw
-        representative arrows instead.
+        The field does not depend on position. Field line plots then draw
+        a grid of arrows instead of tracing lines.
     is_static : bool
-        True if the field does not depend on time.
-        Used by animation drivers to avoid redundant re-tracing.
+        The field does not depend on time. Animations only redraw the field
+        of time dependent models.
+    display_name : str
+        Name used in default plot titles.
     """
 
     is_uniform: bool = False
     is_static:  bool = True
-    display_name: str = "Field"      # human-readable name used in plot titles
+    display_name: str = "Field"
 
     @abstractmethod
     def evaluate(self, r: np.ndarray, t: float):
-        """Return (B, E) arrays of shape (N, 3) at positions r (N, 3), time t."""
+        """Return ``(B, E)``, each of shape (N, 3), at positions ``r`` (N, 3)."""
 
     def __call__(self, r: np.ndarray, t: float):
         return self.evaluate(np.atleast_2d(r), float(t))
 
 
-# ── Concrete fields ───────────────────────────────────────────────────────────
-
 class UniformB(FieldModel):
-    """Homogeneous, static magnetic field; zero electric field.
+    """Constant magnetic field, no electric field.
 
     Parameters
     ----------
-    B : array-like, shape (3,)
-        Magnetic field vector [T].  Default = (0, 0, 3e-10) T (3 µG along z).
+    B : array_like, shape (3,)
+        Field vector [T]. The default, 3e-10 T along z, is 3 µG.
     """
 
     is_uniform = True
@@ -81,7 +60,7 @@ class UniformB(FieldModel):
     display_name = r"Uniform $\mathbf{B}$"
 
     def __init__(self, B=(0.0, 0.0, 3e-10)):
-        self._B = np.asarray(B, dtype=float)  # shape (3,)
+        self._B = np.asarray(B, dtype=float)
 
     def evaluate(self, r: np.ndarray, t: float):
         N = r.shape[0]
@@ -91,14 +70,15 @@ class UniformB(FieldModel):
 
 
 class UniformEB(FieldModel):
-    """Homogeneous, static magnetic and electric field.
+    """Constant magnetic and electric field.
 
     Parameters
     ----------
-    B : array-like, shape (3,)
-        Magnetic field vector [T].
-    E : array-like, shape (3,)
-        Electric field vector [V/m].
+    B : array_like, shape (3,)
+        Magnetic field [T].
+    E : array_like, shape (3,) or None
+        Electric field [V/m]. By default E = B_z (1, 1, 0) × 10⁴ m/s, which
+        gives an E×B drift of √2 × 10⁴ m/s.
     """
 
     is_uniform = True
@@ -108,7 +88,6 @@ class UniformEB(FieldModel):
     def __init__(self, B=(0.0, 0.0, 3e-10), E=None):
         self._B = np.asarray(B, dtype=float)
         Bz = self._B[2]
-        # Default E matches const_EB from source: Ex=Ey=Bz*1e4, Ez=0
         self._E = np.asarray(E if E is not None else [Bz * 1e4, Bz * 1e4, 0.0],
                              dtype=float)
 
@@ -120,23 +99,27 @@ class UniformEB(FieldModel):
 
 
 class CyclotronWaveField(FieldModel):
-    """Static uniform B plus a sinusoidal E wave at the cyclotron frequency.
+    """Constant B plus a uniform electric field oscillating at the gyrofrequency.
 
-    The resonance condition ω_wave = ω_c = qB/m is enforced automatically.
-    B is spatially uniform and static; E is spatially uniform but time-varying.
+    E points along one axis, E = E_amp sin(ω_c t), with the nonrelativistic
+    gyrofrequency ω_c = |q| B / m of the given particle species. The wave is
+    therefore resonant with particles of that species as long as v ≪ c.
 
     Parameters
     ----------
-    B : array-like, shape (3,)
-        Background magnetic field vector [T].
-    q : float
-        Particle charge [C].  Used to compute ω_c.
-    m : float
-        Particle mass [kg].  Used to compute ω_c.
+    B : array_like, shape (3,)
+        Background magnetic field [T].
+    q, m : float
+        Charge [C] and mass [kg] that set ω_c.
     E_amp : float
-        Amplitude of the oscillating electric field [V/m].
+        Amplitude of the electric field [V/m].
     E_axis : int
-        Axis index (0=x, 1=y, 2=z) along which the wave oscillates.
+        Direction of E: 0, 1 or 2 for x, y or z.
+
+    Attributes
+    ----------
+    omega_c : float
+        Wave angular frequency [rad/s].
     """
 
     is_uniform = True
@@ -153,7 +136,7 @@ class CyclotronWaveField(FieldModel):
     ):
         self._B = np.asarray(B, dtype=float)
         Bmag = np.linalg.norm(self._B)
-        self.omega_c = abs(q) * Bmag / m   # cyclotron angular frequency [rad/s]
+        self.omega_c = abs(q) * Bmag / m
         self._E_amp = float(E_amp)
         self._E_axis = int(E_axis)
 
@@ -166,30 +149,28 @@ class CyclotronWaveField(FieldModel):
 
 
 class EarthDipole(FieldModel):
-    """Tilted magnetic dipole field of planet Earth; zero electric field.
+    """Centred, tilted dipole model of the geomagnetic field; no electric field.
 
-    The field is derived from the dipole approximation:
+    The dipole axis m̂ = (0, sin φ, cos φ) is tilted by φ from the rotation
+    axis ẑ towards ŷ, and
 
-        B_x = -M * (3xz cosφ + 3xy sinφ) / r^5
-        B_y = -M * (3yz cosφ + (2y²-x²-z²) sinφ) / r^5
-        B_z = -M * ((2z²-x²-y²) cosφ + 3zy sinφ) / r^5
+        B = -M [3 (m̂·r) r - m̂ r²] / r⁵,
 
-    where M = DIPOLE_MOMENT, φ = tilt angle, r = |position|.  This is
-    B = -M [3(m̂·r)r − m̂ r²] / r⁵ with the axis m̂ = (0, sin φ, cos φ)
-    tilted from the rotation axis ẑ towards ŷ (the minus sign makes B point
-    northward at the equator, as for the real geomagnetic field).
+    with M = μ0 m / 4π. The sign makes B point north (along m̂) at the
+    magnetic equator, as for the Earth. The defaults are the IGRF-14 values
+    from :mod:`magparsol.constants`.
 
     Parameters
     ----------
     tilt_deg : float
-        Angle between magnetic axis and Earth's rotation axis [degrees].
+        Tilt φ of the magnetic axis [degrees].
     moment : float
-        Dipole moment coefficient [T·m³].
+        M = μ0 m / 4π [T m³]; M / r³ is the equatorial field at distance r.
 
     Attributes
     ----------
     axis : ndarray, shape (3,)
-        Unit vector m̂ of the (tilted) dipole axis.
+        Unit vector m̂ along the magnetic axis.
     tilt_deg : float
     """
 
@@ -206,53 +187,44 @@ class EarthDipole(FieldModel):
         self.axis = np.array([0.0, self._sin_phi, self._cos_phi])
 
     def B_equator(self, r: float) -> float:
-        """Field magnitude on the magnetic equator at distance r [T]."""
+        """Field strength on the magnetic equator at distance ``r`` [T]."""
         return abs(self._M) / r**3
 
     def evaluate(self, r: np.ndarray, t: float):
         x = r[:, 0]
         y = r[:, 1]
         z = r[:, 2]
-        r5 = (x**2 + y**2 + z**2) ** 2.5   # |r|^5, shape (N,)
+        r5 = (x**2 + y**2 + z**2) ** 2.5
         sp = self._sin_phi
         cp = self._cos_phi
         M  = self._M
 
+        # Components of -M [3 (m·r) r - m r²] / r⁵ with m = (0, sp, cp)
         Bx = -M * (3*x*z*cp + 3*x*y*sp) / r5
         By = -M * (3*y*z*cp + (2*y**2 - x**2 - z**2)*sp) / r5
         Bz = -M * ((2*z**2 - x**2 - y**2)*cp + 3*z*y*sp) / r5
 
-        B = np.stack([Bx, By, Bz], axis=1)   # (N, 3)
+        B = np.stack([Bx, By, Bz], axis=1)
         E = np.zeros_like(B)
         return B, E
 
 
 class CustomField(FieldModel):
-    """Adapter wrapping a user-supplied field function.
+    """Field model from a user function.
 
-    Two calling conventions are supported:
-
-    **Legacy / scalar API** (``vector_api=False``)::
-
-        def my_field(x, y, z, t):
-            return Bx, By, Bz, Ex, Ey, Ez   # scalars or length-N arrays
-
-    **Vector API** (``vector_api=True``)::
-
-        def my_field(r, t):                  # r shape (N, 3)
-            return B, E                       # each shape (N, 3)
+    With ``vector_api=False`` the function is ``f(x, y, z, t)`` and returns
+    the six components ``(Bx, By, Bz, Ex, Ey, Ez)``; each may be a scalar or
+    an array of length N. With ``vector_api=True`` it is ``f(r, t)`` with
+    ``r`` of shape (N, 3) and returns ``(B, E)`` of shape (N, 3).
 
     Parameters
     ----------
     func : callable
-        The user's field function.
     vector_api : bool
-        True → func uses the (r, t) → (B, E) convention.
-        False → func uses the (x, y, z, t) → 6-tuple scalar convention.
     is_uniform, is_static : bool
-        Hints for the plotting routines (arrow grid / animation).
+        See :class:`FieldModel`. They only affect plotting and animation.
     name : str or None
-        Display name used in plot titles.
+        Name used in plot titles.
     """
 
     display_name = "Custom Field"
@@ -272,10 +244,10 @@ class CustomField(FieldModel):
             B, E = self._func(r, t)
             return np.atleast_2d(B).astype(float), np.atleast_2d(E).astype(float)
         else:
-            # Legacy scalar adapter
             x, y, z = r[:, 0], r[:, 1], r[:, 2]
             result = self._func(x, y, z, t)
             Bx, By, Bz, Ex, Ey, Ez = result
+            # Broadcast scalar components to length N
             B = np.stack([np.broadcast_to(Bx, x.shape),
                           np.broadcast_to(By, x.shape),
                           np.broadcast_to(Bz, x.shape)], axis=1).astype(float)

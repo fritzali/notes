@@ -1,30 +1,17 @@
 """
-magparsol/plotting.py
-----------------------
-Plotting utilities for particle trajectory visualization and diagnostics.
+Trajectory, energy and speed plots, and a live plot for running integrations.
 
-All functions accept a finalized ``TrajectoryHistory`` and produce matplotlib
-figures.  Particle index ``pid`` selects which particle to plot for multi-
-particle states.
-
-Functions
----------
-plot_trajectory_3d    — 3-D trajectory with optional Earth sphere
-plot_trajectory_2d    — Side-by-side X-Y and X-Z projection subplots
-plot_energy           — Kinetic energy and relative error over time
-plot_speed            — Speed (and γ for relativistic) over time
-LivePlotter           — Class for real-time animated 2-D display during runs
+All functions take a finalized :class:`TrajectoryHistory`; ``pid`` selects
+the particle of an ensemble.
 """
 
 import numpy as np
 import matplotlib.pyplot as plt
-from mpl_toolkits.mplot3d import Axes3D   # noqa: F401 (registers 3d projection)
+from mpl_toolkits.mplot3d import Axes3D   # noqa: F401 (registers the 3d projection)
 from magparsol.constants import R_EARTH, Q_E
 from magparsol.diagnostics import TrajectoryHistory, relative_energy_error
 from magparsol import style
 
-
-# ── 3-D trajectory ────────────────────────────────────────────────────────────
 
 def plot_trajectory_3d(
     history: TrajectoryHistory,
@@ -38,31 +25,30 @@ def plot_trajectory_3d(
     ax=None,
     z_ratio: float = 1.0,
 ):
-    """Plot a 3-D particle trajectory.
+    """3D trajectory of one particle.
 
     Parameters
     ----------
-    history : TrajectoryHistory (finalized)
+    history : TrajectoryHistory
     pid : int
-        Particle index to plot.
+        Index of the particle.
     length_unit : float
-        Divisor for converting metres to display units.
+        Lengths are divided by this [m] for display, by default R_E.
     unit_label : str
-        Axis label unit string.
-    ax_lim : float
-        Symmetric axis limits in display units.
+        Unit shown in the axis labels.
+    ax_lim : float, "auto" or None
+        Half width of the plotted cube in display units. "auto" or None fits
+        it to the orbit.
     earth_sphere : bool
-        If True, draw a wireframe unit sphere representing Earth
-        (only meaningful when length_unit = R_EARTH).
+        Draw a sphere of radius 1 display unit, i.e. the Earth when
+        ``length_unit`` is R_E.
     color : str
-        Trajectory line colour.
     title : str
-        Figure title.
     ax : Axes3D or None
-        Existing axes to draw into.  If None, a new figure is created.
+        Axes to draw into; a new figure is made if None.
     z_ratio : float
-        Vertical extent relative to the horizontal one; the box aspect is
-        adjusted so that the scale stays equal (the Earth stays round).
+        Height of the box relative to its width. The z range is scaled with
+        it, so the scale stays equal on all axes and the Earth stays round.
 
     Returns
     -------
@@ -92,23 +78,19 @@ def plot_trajectory_3d(
     ax.set_ylabel(f"$y$ [{unit_label}]")
     ax.set_zlabel(f"$z$ [{unit_label}]")
 
-    # Auto ax_lim from data when not specified
     if ax_lim == "auto" or ax_lim is None:
         ax_lim = float(np.max(np.abs([x, y, z]))) * 1.15
-        ax_lim = max(ax_lim, 1.1)  # never zero
+        ax_lim = max(ax_lim, 1.1)   # always show the whole Earth
 
     ax.set_xlim3d(-ax_lim, ax_lim)
     ax.set_ylim3d(-ax_lim, ax_lim)
     ax.set_zlim3d(-ax_lim * z_ratio, ax_lim * z_ratio)
-    # Equal scale on all axes so the Earth renders as a sphere
     ax.set_box_aspect((1, 1, z_ratio))
     ax.set_title(title)
     style.style_3d(ax)
     plt.tight_layout()
     return fig, ax
 
-
-# ── 2-D projections ───────────────────────────────────────────────────────────
 
 def plot_trajectory_2d(
     history: TrajectoryHistory,
@@ -119,36 +101,31 @@ def plot_trajectory_2d(
     shared_limits: bool = False,
     title: str = "Trajectory",
 ):
-    """Plot X-Y and X-Z projections side by side.
+    """xy and xz projections of one particle's orbit, side by side.
 
     Parameters
     ----------
-    history : TrajectoryHistory (finalized)
+    history : TrajectoryHistory
     pid : int
-        Particle index to plot.
     length_unit : float
-        Divisor for converting metres to display units.
+        Lengths are divided by this [m] for display.
     unit_label : str
-        Axis label unit string.
     ax_lim : float or None
-        Explicit symmetric limit applied to both subplots.
-        None → each subplot is fitted to its own data with equal aspect.
+        Symmetric limit for both panels. If None, each panel is fitted to
+        its data at equal scale, and the panel widths follow the shape of
+        the data so that no space is wasted.
     shared_limits : bool
-        If True, both subplots share the same numeric limits (useful when
-        comparing absolute orbit extent between planes).  Ignored when ax_lim
-        is set explicitly.
+        Without ``ax_lim``: give both panels the same symmetric limit.
     title : str
 
     Returns
     -------
-    fig, (ax1, ax2)
+    fig, (ax_xy, ax_xz)
     """
     x = history.r[:, pid, 0] / length_unit
     y = history.r[:, pid, 1] / length_unit
     z = history.r[:, pid, 2] / length_unit
 
-    # Panel widths follow the data aspect ratios so equal-scale panels fill
-    # the figure instead of leaving gaps
     asp = [max(np.ptp(x), 1e-12) / max(np.ptp(c), 1e-12) for c in (y, z)]
     asp = [min(max(a, 0.2), 5.0) for a in asp]
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(min(3.9 * sum(asp) + 1.3, 11), 4.25),
@@ -168,18 +145,15 @@ def plot_trajectory_2d(
     ax2.set_aspect("equal")
 
     if ax_lim is not None:
-        # Explicit user value → apply to both
         for ax in (ax1, ax2):
             ax.set_xlim(-ax_lim, ax_lim)
             ax.set_ylim(-ax_lim, ax_lim)
     elif shared_limits:
-        # Same auto-computed limit for both (informative for flat orbits)
         lim = _auto_lim(x, np.concatenate([y, z]))
         for ax in (ax1, ax2):
             ax.set_xlim(-lim, lim)
             ax.set_ylim(-lim, lim)
     else:
-        # Fit each panel to its data (centred, equal aspect, 8% margin)
         for ax, a, b in ((ax1, x, y), (ax2, x, z)):
             _fit_box(ax, a, b)
 
@@ -189,20 +163,18 @@ def plot_trajectory_2d(
 
 
 def _auto_lim(a, b, margin=1.15):
-    """Symmetric axis limit covering both arrays."""
+    """Symmetric limit covering both arrays, with a margin."""
     m = margin * max(float(np.abs(a).max()), float(np.abs(b).max()))
     return max(m, 1e-10)
 
 
 def _fit_box(ax, a, b, margin=0.08):
-    """Data limits with a margin; equal scale, the box shrinks to fit."""
+    """Fit the limits to the data plus a margin, at equal scale."""
     pad = margin * max(np.ptp(a), np.ptp(b), 1e-12)
     ax.set_xlim(a.min() - pad, a.max() + pad)
     ax.set_ylim(b.min() - pad, b.max() + pad)
     ax.set_aspect("equal", adjustable="box")
 
-
-# ── Energy diagnostics ────────────────────────────────────────────────────────
 
 def plot_energy(
     history: TrajectoryHistory,
@@ -211,25 +183,26 @@ def plot_energy(
     relativistic: bool = True,
     title: str = "Energy",
 ):
-    """Plot kinetic energy and relative energy error over time.
+    """Kinetic energy and its relative change over time.
+
+    The energy is shown in eV, keV, MeV or GeV, whichever fits.
 
     Parameters
     ----------
-    history : TrajectoryHistory (finalized)
+    history : TrajectoryHistory
     m : ndarray, shape (N,)
-        Particle masses [kg].
+        Masses [kg].
     pid : int
-        Particle index.
     relativistic : bool
-        Whether to compute relativistic kinetic energy.
+        Use (γ - 1) m c² instead of m v²/2.
     title : str
 
     Returns
     -------
-    fig, (ax1, ax2)
+    fig, (ax_energy, ax_error)
     """
-    K = history.kinetic_energy(m, relativistic=relativistic)[:, pid]   # (S,)
-    err = relative_energy_error(history, m, relativistic=relativistic)[:, pid]  # (S,)
+    K = history.kinetic_energy(m, relativistic=relativistic)[:, pid]
+    err = relative_energy_error(history, m, relativistic=relativistic)[:, pid]
     t = history.t
 
     fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(7.6, 5.1), sharex=True)
@@ -251,15 +224,13 @@ def plot_energy(
     return fig, (ax1, ax2)
 
 
-# ── Speed / gamma ─────────────────────────────────────────────────────────────
-
 def plot_speed(
     history: TrajectoryHistory,
     pid: int = 0,
     relativistic: bool = True,
     title: str = "Speed",
 ):
-    """Plot particle speed (and γ for relativistic) over time.
+    """Speed over time: |v|/c and γ if ``relativistic``, otherwise |v| in m/s.
 
     Returns
     -------
@@ -292,10 +263,8 @@ def plot_speed(
         return fig, ax
 
 
-# ── Live (animated) plotter ───────────────────────────────────────────────────
-
 def _in_notebook() -> bool:
-    """Return True when running inside a Jupyter kernel."""
+    """Whether the code runs in a Jupyter kernel."""
     try:
         from IPython import get_ipython
         cfg = get_ipython()
@@ -305,23 +274,23 @@ def _in_notebook() -> bool:
 
 
 class LivePlotter:
-    """Real-time 2-D trajectory display during an integrator run.
+    """xy and xz positions drawn while an integrator runs.
 
-    Mimics the ``IZLAZ.init_plots`` / ``write_plots`` pattern from the
-    original code, decoupled from the integrator itself.
+    Pass it to :meth:`Integrator.run`, which calls :meth:`update` every
+    few steps. Each update adds one point per panel; in Jupyter the figure
+    is redisplayed, in a script ``plt.pause`` refreshes the window.
 
     Parameters
     ----------
     ax_lim : float
-        Symmetric axis limits for both subplots.
+        Symmetric limit of both panels in display units.
     length_unit : float
-        Divisor for converting metres to display units.
+        Lengths are divided by this [m] for display, by default R_E.
     unit_label : str
-        Axis label unit string.
     pause : float
-        Pause duration per update [s] (passed to ``plt.pause``).
+        Pause after each update outside Jupyter [s].
     pid : int
-        Particle index to display.
+        Index of the particle to follow.
     """
 
     def __init__(
@@ -332,11 +301,11 @@ class LivePlotter:
         pause: float = 1e-5,
         pid: int = 0,
     ):
-        self.length_unit    = length_unit
-        self.unit_label     = unit_label
-        self.pause          = pause
-        self.pid            = pid
-        self._ax_lim        = ax_lim
+        self.length_unit = length_unit
+        self.unit_label = unit_label
+        self.pause = pause
+        self.pid = pid
+        self._ax_lim = ax_lim
         self._notebook_mode = _in_notebook()
         self._init_figure()
 
@@ -357,14 +326,7 @@ class LivePlotter:
         plt.show()
 
     def update(self, state, t_max: float = None):
-        """Draw the current particle position.
-
-        Parameters
-        ----------
-        state : ParticleState
-        t_max : float or None
-            If provided, show progress in the subplot title.
-        """
+        """Add the current position; with ``t_max``, show the elapsed time."""
         d = self.length_unit
         pid = self.pid
         x = float(state.r[pid, 0]) / d

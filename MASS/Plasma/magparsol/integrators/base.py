@@ -1,17 +1,8 @@
 """
-magparsol/integrators/base.py
-------------------------------
-Abstract base class for all particle integrators.
+Base class of the integrators.
 
-The template-method pattern is used throughout:
-
-- ``run()`` owns the time-stepping loop, history recording, and optional
-  live plotting — it does not know about physics.
-- ``step()`` (abstract) advances ``self.state`` by one ``self.dt``.  For
-  adaptive RK integrators the step size used may differ from ``self.dt``
-  (which is updated in-place by the adaptive controller).
-
-Subclasses only need to implement ``step()``.
+:meth:`Integrator.run` owns the time loop, the history and the optional
+live plot; subclasses only implement :meth:`Integrator.step`.
 """
 
 import numpy as np
@@ -22,26 +13,24 @@ from magparsol.diagnostics import TrajectoryHistory
 
 
 class Integrator(ABC):
-    """Abstract particle integrator.
+    """Advances a :class:`ParticleState` in a :class:`FieldModel`.
 
     Parameters
     ----------
     state : ParticleState
-        Initial particle state.  **Modified in-place** during ``run()``.
-        Pass ``state.copy()`` if you need to preserve the original.
+        Initial state. It is advanced in place, so pass ``state.copy()`` to
+        keep the original.
     field : FieldModel
-        Electromagnetic field callable.
     dt : float
-        Time step [s].  For adaptive integrators this is the *initial*
-        step size; it is updated after each accepted step.
+        Time step [s]; the first trial step for adaptive integrators, which
+        update it as they go.
     t_max : float
-        End time of the simulation [s].
+        End time [s].
     store_dt : float or None
-        Minimum elapsed simulation time between stored trajectory snapshots.
-        ``None`` → store every step (fine for fixed-step integrators; may
-        produce very large arrays for adaptive integrators with small dt).
+        Sampling interval of the stored history [s]; None stores every step.
     relativistic : bool
-        Whether to use relativistic kinetic energy in diagnostics/plotting.
+        Energy formula used by :meth:`plot_energy` and :meth:`plot_speed`.
+        It does not change the equations of motion.
     """
 
     def __init__(
@@ -60,17 +49,9 @@ class Integrator(ABC):
         self.store_dt = store_dt
         self.relativistic = relativistic
 
-    # ── Abstract interface ────────────────────────────────────────────────────
-
     @abstractmethod
     def step(self):
-        """Advance ``self.state`` by one time step.
-
-        Must update ``self.state.r``, ``self.state.v``, and ``self.state.t``
-        in place.  For adaptive integrators, ``self.dt`` may also be updated.
-        """
-
-    # ── Main loop ─────────────────────────────────────────────────────────────
+        """Advance ``self.state`` (r, v and t) by one step."""
 
     def run(
         self,
@@ -78,24 +59,23 @@ class Integrator(ABC):
         live_every: int = 100,
         progress_every: int = 0,
     ) -> TrajectoryHistory:
-        """Run the simulation from current state until ``t_max``.
+        """Integrate from the current state to ``t_max``.
 
         Parameters
         ----------
         live_plotter : LivePlotter or None
-            If provided, ``live_plotter.update(state)`` is called every
-            ``live_every`` steps for real-time display.
+            Updated with the current state every ``live_every`` steps.
         live_every : int
-            Call ``live_plotter.update`` every this many steps.
         progress_every : int
-            Print ``t`` every this many steps.  0 = silent.
+            Print the time every this many steps; 0 prints nothing.
 
         Returns
         -------
-        history : TrajectoryHistory (finalized)
+        TrajectoryHistory
+            Finalized history, starting with the initial state.
         """
         history = TrajectoryHistory(store_dt=self.store_dt)
-        history.record(self.state, force=True)   # always store t=0
+        history.record(self.state, force=True)
 
         step_count = 0
         while self.state.t < self.t_max - 0.5 * self.dt:
@@ -112,40 +92,31 @@ class Integrator(ABC):
         history.finalize()
         return history
 
-    # ── Convenience diagnostics (delegating to diagnostics / plotting modules) ─
+    # Shortcuts to the diagnostics, using the first particle's q and m.
+    # The gyration quantities are nonrelativistic.
 
     def gyroperiod_estimate(self, B_mag: float) -> float:
-        """Estimate the gyro-period at the current particle state.
-
-        Parameters
-        ----------
-        B_mag : float
-            Representative magnetic field magnitude [T].
-
-        Returns
-        -------
-        T_c : float [s]
-        """
+        """Gyroperiod [s] in a field of strength ``B_mag`` [T]."""
         from magparsol.diagnostics import gyroperiod
         q = float(self.state.q[0])
         m = float(self.state.m[0])
         return gyroperiod(q, m, B_mag)
 
     def suggest_dt(self, B_mag: float, steps_per_gyration: float = 100.0) -> float:
-        """Suggest a dt for the given field strength."""
+        """Time step [s] giving ``steps_per_gyration`` steps per gyroperiod."""
         from magparsol.diagnostics import suggest_dt
         q = float(self.state.q[0])
         m = float(self.state.m[0])
         return suggest_dt(q, m, B_mag, steps_per_gyration)
 
     def check_dt(self, B_mag: float, warn_threshold: float = 0.1) -> float:
-        """Check current dt resolution against the gyro-period."""
+        """dt / T_c for the current step, with a warning above ``warn_threshold``."""
         from magparsol.diagnostics import check_dt_resolution
         q = float(self.state.q[0])
         m = float(self.state.m[0])
         return check_dt_resolution(self.dt, q, m, B_mag, warn_threshold)
 
-    # ── Plotting convenience methods ──────────────────────────────────────────
+    # Shortcuts to the plotting functions
 
     def plot_trajectory_3d(self, history: TrajectoryHistory, **kwargs):
         from magparsol.plotting import plot_trajectory_3d
@@ -162,8 +133,6 @@ class Integrator(ABC):
     def plot_speed(self, history: TrajectoryHistory, **kwargs):
         from magparsol.plotting import plot_speed
         return plot_speed(history, relativistic=self.relativistic, **kwargs)
-
-    # ── Representation ────────────────────────────────────────────────────────
 
     def __repr__(self):
         cls = type(self).__name__

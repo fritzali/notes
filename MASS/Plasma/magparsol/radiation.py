@@ -1,36 +1,16 @@
 """
-magparsol/radiation.py
------------------------
-Radiation spectra from single-particle (and ensemble) trajectories.
+Radiated power and spectra, computed from a finished trajectory history.
 
-All computation is post-processing of an already-finalized TrajectoryHistory —
-no new simulation is required.
-
-Two spectral methods
---------------------
-spectrum_fft :
-    FFT of the observer-projected transverse acceleration/velocity, resampled
-    onto a uniform time grid when needed (adaptive-RK runs).  Cheap: O(S log S).
-    Appropriate for periodic/quasi-periodic gyration (cyclotron, synchrotron).
-
-spectrum_retarded :
-    Direct numerical evaluation of Jackson's retarded-time integral at each
-    requested frequency.  Accurate for high harmonics / strongly relativistic
-    beaming, but O(S × n_ω).  Always shows the final result (never animated
-    incrementally).
-
-Ensemble spectra
-----------------
-ensemble_spectrum :
-    Incoherent sum of individual particle spectra (physically correct for
-    thermal/uncorrelated ensembles where particle separations ≫ wavelength).
-
-Instantaneous power
--------------------
-radiated_power :
-    Liénard formula evaluated at each stored trajectory point using stored
-    velocity and acceleration (acceleration re-derived from the Lorentz-force
-    RHS, not finite-differenced from v).
+* :func:`radiated_power`: Liénard power along the orbit, with the
+  acceleration taken from the Lorentz force at each stored point rather
+  than from differences of the stored velocities.
+* :func:`spectrum_fft`: Fourier spectrum of the transverse motion seen by
+  an observer. Fast, but without retardation, so it misses relativistic
+  harmonics and beaming.
+* :func:`spectrum_retarded`: Jackson's retarded-time integral evaluated
+  frequency by frequency. Includes the harmonics, but costs S × n_ω.
+* :func:`ensemble_spectrum`: incoherent sum of single-particle spectra,
+  appropriate for uncorrelated particles.
 """
 
 import warnings
@@ -38,30 +18,22 @@ import numpy as np
 from magparsol.diagnostics import TrajectoryHistory
 from magparsol.constants import C, EPS0
 
-# np.trapz was removed in NumPy 2.0 in favour of np.trapezoid
+# NumPy 2 renamed np.trapz to np.trapezoid
 _trapezoid = getattr(np, "trapezoid", None) or np.trapz
 
-# Resampling cap: maximum number of uniform grid points for FFT
-_N_RESAMPLE_MAX = 2**18   # ~262 144
+# Largest uniform grid used when resampling an uneven time series
+_N_RESAMPLE_MAX = 2**18
 
-
-# ── Uniform-grid resampling (for adaptive-RK or any non-uniform time series) ──
 
 def _resample_uniform(t: np.ndarray, y: np.ndarray,
                       interp_method: str = "linear") -> tuple:
-    """Resample an irregularly-spaced time series onto a uniform grid.
+    """Interpolate a time series ``y`` (S, ...) at uneven times ``t`` onto a
+    uniform grid.
 
-    Parameters
-    ----------
-    t : ndarray, shape (S,)   — possibly non-uniform times
-    y : ndarray, shape (S, …) — signal values
-    interp_method : "linear" | "cubic"
-
-    Returns
-    -------
-    t_uni : ndarray, shape (M,)   — uniform times
-    y_uni : ndarray, shape (M, …) — resampled signal
-    dt_uni : float                 — uniform step size
+    The grid step is the smallest step of ``t``, unless that would need
+    more than ``_N_RESAMPLE_MAX`` points. ``interp_method`` is "linear" or
+    "cubic" (scipy). Returns the uniform times, the resampled series and
+    the grid step.
     """
     dt_min = float(np.min(np.diff(t)))
     T_total = float(t[-1] - t[0])
@@ -87,7 +59,6 @@ def _resample_uniform(t: np.ndarray, y: np.ndarray,
         cs = CubicSpline(t, y, axis=0)
         y_uni = cs(t_uni)
     else:
-        # linear — sufficient for smooth trajectories
         shape_out = (len(t_uni),) + y.shape[1:]
         y_uni = np.empty(shape_out)
         for idx in np.ndindex(y.shape[1:]):
@@ -98,73 +69,66 @@ def _resample_uniform(t: np.ndarray, y: np.ndarray,
 
 
 def _check_uniform(t: np.ndarray) -> tuple:
-    """Return (is_uniform, dt).  Uniform if max step variation < 1%."""
+    """Return ``(is_uniform, mean step)``; uniform means steps vary by < 1 %."""
     diffs = np.diff(t)
     dt = float(diffs.mean())
     is_uni = float(diffs.std()) / dt < 0.01 if dt > 0 else True
     return is_uni, dt
 
 
-# ── Instantaneous radiated power (Liénard formula) ────────────────────────────
-
 def radiated_power(history: TrajectoryHistory,
                    q: np.ndarray,
                    m: np.ndarray,
                    field,
                    relativistic: bool = True) -> np.ndarray:
-    """Instantaneous radiated power at each stored trajectory point.
+    """Radiated power [W] at every stored point, shape (S, N).
 
-    Uses the Liénard generalization of Larmor's formula:
+    Liénard's formula
 
-        P = (q² γ⁶ / 6πε₀c³) [|a|² − |v×a|²/c²]
+        P = q² γ⁶ / (6π ε0 c³) [a² - |v × a|² / c²],
 
-    which reduces to P = q²|a|²/(6πε₀c³) for v≪c.
-
-    Acceleration is re-derived analytically from the Lorentz force
-    (via the stored field evaluated at stored positions), not finite-
-    differenced from velocity — this avoids noise from coarse storage.
+    which for v ≪ c (or ``relativistic=False``) is Larmor's
+    P = q² a² / (6π ε0 c³). The acceleration a is computed from the
+    Lorentz force with ``field`` at the stored positions and velocities.
 
     Parameters
     ----------
-    history : TrajectoryHistory (finalized)
-    q : ndarray, shape (N,)
-    m : ndarray, shape (N,)
-    field : FieldModel — used to evaluate E, B at stored positions
+    history : TrajectoryHistory
+    q, m : ndarray, shape (N,)
+        Charges [C] and masses [kg].
+    field : FieldModel
     relativistic : bool
-
-    Returns
-    -------
-    P : ndarray, shape (S, N)   [W]
     """
     history._check_finalized()
     S, N, _ = history.r.shape
     P = np.zeros((S, N))
 
     for s in range(S):
-        r_s = history.r[s]          # (N, 3)
-        v_s = history.v[s]          # (N, 3)
+        r_s = history.r[s]
+        v_s = history.v[s]
         t_s = history.t[s]
-        B, E = field(r_s, t_s)      # each (N, 3)
+        B, E = field(r_s, t_s)
 
-        speed2 = np.sum(v_s**2, axis=1)   # (N,)
+        speed2 = np.sum(v_s**2, axis=1)
 
         if relativistic:
             beta2  = np.clip(speed2 / C**2, 0.0, 1.0 - 1e-15)
-            gamma  = 1.0 / np.sqrt(1.0 - beta2)            # (N,)
+            gamma  = 1.0 / np.sqrt(1.0 - beta2)
             gamma6 = gamma**6
             q_m    = q / m
-            vdotE  = np.sum(v_s * E, axis=1)               # (N,)
+            vdotE  = np.sum(v_s * E, axis=1)
+            # a = (q / γm) (E + v × B - (v·E) v / c²)
             a = (q_m * (1.0/gamma))[:, None] * (
                 E + np.cross(v_s, B)
                 - (vdotE / C**2)[:, None] * v_s
-            )   # (N, 3)
+            )
             vcross_a = np.cross(v_s, a)
             P[s] = (q**2 * gamma6 / (6 * np.pi * EPS0 * C**3)) * (
                 np.sum(a**2, axis=1) - np.sum(vcross_a**2, axis=1) / C**2
             )
         else:
             q_m = q / m
-            a   = q_m[:, None] * (E + np.cross(v_s, B))   # (N, 3)
+            a   = q_m[:, None] * (E + np.cross(v_s, B))
             P[s] = (q**2 / (6 * np.pi * EPS0 * C**3)) * np.sum(a**2, axis=1)
 
     return P
@@ -173,17 +137,11 @@ def radiated_power(history: TrajectoryHistory,
 def total_radiated_energy(history: TrajectoryHistory,
                            q: np.ndarray, m: np.ndarray,
                            field, relativistic: bool = True) -> np.ndarray:
-    """Time-integrated radiated energy for each particle.
-
-    Returns
-    -------
-    W : ndarray, shape (N,)   [J]
-    """
+    """Radiated energy [J] over the whole run, shape (N,): the time integral
+    of :func:`radiated_power` (same parameters)."""
     P = radiated_power(history, q, m, field, relativistic)
     return _trapezoid(P, history.t, axis=0)
 
-
-# ── FFT-based spectrum ────────────────────────────────────────────────────────
 
 def spectrum_fft(history: TrajectoryHistory,
                  pid: int = 0,
@@ -192,37 +150,37 @@ def spectrum_fft(history: TrajectoryHistory,
                  interp_method: str = "linear",
                  store_dt_warn_period: float = None,
                  weighting: str = "acceleration") -> tuple:
-    """FFT-based single-particle radiated power spectrum.
+    """Power spectrum of one particle's transverse motion, by FFT.
 
-    Computes the power spectral density of the observer-projected transverse
-    velocity v⊥(ω).  With ``weighting="acceleration"`` (default) it is
-    multiplied by ω², i.e. the spectrum of the transverse acceleration,
-    which is proportional to the emitted dipole radiation dI/dω for non- and
-    mildly relativistic motion.  Retardation (beaming, harmonics) is
-    neglected — use :func:`spectrum_retarded` for that.
+    The velocity component perpendicular to the line of sight,
+    v⊥ = v - (v·n̂) n̂, is Hann-windowed and Fourier transformed; the power
+    of the three components is summed. With ``weighting="acceleration"``
+    the result is multiplied by ω², giving the spectrum of the transverse
+    acceleration, which is proportional to the dipole radiation spectrum
+    dI/dω for slow particles. Retardation is neglected.
 
     Parameters
     ----------
-    history : TrajectoryHistory (finalized)
+    history : TrajectoryHistory
     pid : int
-        Particle index.
-    observer : ndarray, shape (3,) or None
-        Observer direction unit vector n̂.  None → (0, 0, 1) (z-axis).
+        Index of the particle.
+    observer : array_like, shape (3,) or None
+        Direction of the observer, by default +z.
     upto : int or None
-        Use only history[:upto] — for animated "building up" panels.
-        None → use full trajectory.
-    interp_method : "linear" | "cubic"
-        Interpolation for non-uniform time grids (adaptive RK).
+        Use only the first ``upto`` samples (for spectra that build up in
+        an animation). None uses the whole run.
+    interp_method : "linear" or "cubic"
+        Interpolation used to resample uneven time steps (adaptive runs).
     store_dt_warn_period : float or None
-        Gyroperiod for Nyquist check.  If store_dt > gyroperiod/2, warn.
-    weighting : "acceleration" | "velocity"
-        "acceleration" → ω²|v⊥(ω)|² (radiated spectrum);
-        "velocity" → |v⊥(ω)|² (plain velocity PSD).
+        Gyroperiod [s]; warns if the sampling is too coarse to resolve it.
+    weighting : "acceleration" or "velocity"
 
     Returns
     -------
-    freqs : ndarray, shape (M,)   [Hz]
-    power : ndarray, shape (M,)   [arb. units, proportional to dI/dω]
+    freqs : ndarray
+        Positive frequencies [Hz].
+    power : ndarray
+        Power in arbitrary units.
     """
     history._check_finalized()
 
@@ -231,20 +189,17 @@ def spectrum_fft(history: TrajectoryHistory,
         return np.array([0.0]), np.array([0.0])
 
     t = history.t[:i_end]
-    v = history.v[:i_end, pid, :]   # (S, 3)
+    v = history.v[:i_end, pid, :]
 
-    # Observer projection: transverse velocity components (as vectors, not norm)
-    # Taking the norm destroys oscillation info for circular motion.
-    # Instead FFT each transverse component separately and sum power spectra.
     if observer is None:
         observer = np.array([0.0, 0.0, 1.0])
     n_hat = np.asarray(observer, dtype=float)
     n_hat = n_hat / np.linalg.norm(n_hat)
-    # Transverse velocity vector = v - (v·n̂)n̂  shape (S, 3)
+    # Keep v⊥ as a vector: its magnitude is constant for circular motion
+    # and carries no frequency information.
     v_dot_n = np.sum(v * n_hat, axis=1, keepdims=True)
-    v_trans = v - v_dot_n * n_hat   # (S, 3) — keep as vector
+    v_trans = v - v_dot_n * n_hat
 
-    # Nyquist check against store_dt
     if store_dt_warn_period is not None and len(t) > 1:
         mean_dt = float(np.mean(np.diff(t)))
         if mean_dt > store_dt_warn_period / 2.0:
@@ -256,12 +211,10 @@ def spectrum_fft(history: TrajectoryHistory,
                 UserWarning, stacklevel=2,
             )
 
-    # Resample to uniform grid if needed (adaptive RK produces uneven spacing)
     is_uni, dt = _check_uniform(t)
     if not is_uni:
         t, v_trans, dt = _resample_uniform(t, v_trans, interp_method)
 
-    # FFT each transverse component; sum power spectra (incoherent combination)
     n     = len(t)
     win   = np.hanning(n)
     freqs = np.fft.rfftfreq(n, d=dt)
@@ -269,43 +222,16 @@ def spectrum_fft(history: TrajectoryHistory,
     for ax_idx in range(3):
         sig    = v_trans[:, ax_idx]
         if np.max(np.abs(sig)) < 1e-30:
-            continue   # skip zero components (e.g. vz=0 for pure xy gyration)
+            continue
         fft_c  = np.fft.rfft(sig * win)
         power += (np.abs(fft_c)**2) / n
 
     if weighting == "acceleration":
         power *= (2 * np.pi * freqs)**2
 
-    # Only positive frequencies
     mask = freqs > 0
     return freqs[mask], power[mask]
 
-
-def _check_spectrum_convergence(spec_prev: np.ndarray, spec_curr: np.ndarray,
-                                 freqs: np.ndarray, rtol: float = 0.05) -> bool:
-    """Check if FFT spectrum has converged between two updates.
-
-    Compares peak frequency and its half-power width.
-    Returns True if converged (relative change < rtol in both).
-    """
-    def peak_info(p):
-        idx = np.argmax(p)
-        f_peak = freqs[idx]
-        half  = p[idx] / 2.0
-        above = np.where(p >= half)[0]
-        fwhm  = freqs[above[-1]] - freqs[above[0]] if len(above) > 1 else 0.0
-        return f_peak, fwhm
-
-    if spec_prev is None or len(spec_prev) != len(spec_curr):
-        return False
-    f0, w0 = peak_info(spec_prev)
-    f1, w1 = peak_info(spec_curr)
-    if f0 == 0:
-        return False
-    return (abs(f1 - f0) / abs(f0) < rtol) and (abs(w1 - w0) / (abs(w0) + 1e-30) < rtol)
-
-
-# ── Retarded-integral spectrum ────────────────────────────────────────────────
 
 def spectrum_retarded(history: TrajectoryHistory,
                        pid: int = 0,
@@ -313,61 +239,59 @@ def spectrum_retarded(history: TrajectoryHistory,
                        observer: np.ndarray = None,
                        n_omega: int = 512,
                        window: str = "hann") -> tuple:
-    """Retarded-time Fourier integral spectrum (Jackson Eq. 14.67).
+    """Spectrum seen by a distant observer, from the retarded-time integral
+    (Jackson, Eq. 14.67):
 
-    d²I/dω dΩ ∝ ω² |∫ n̂×(n̂×β) exp[iω(t − n̂·r/c)] dt|²
+        d²I / dω dΩ ∝ ω² |∫ n̂ × (n̂ × β) exp[iω (t - n̂·r/c)] dt|²
 
-    The retardation phase n̂·r/c produces the relativistic harmonics and
-    beaming that the plain FFT misses.
-
-    Accurate for high harmonics and strongly relativistic beaming,
-    but O(S × n_ω).  Always computed from the full trajectory.
+    The retardation phase n̂·r/c turns relativistic gyration into harmonics
+    of the gyrofrequency. The integral is evaluated by the trapezoidal rule
+    for every frequency, over the whole run.
 
     Parameters
     ----------
-    history : TrajectoryHistory (finalized)
+    history : TrajectoryHistory
     pid : int
+        Index of the particle.
     omega_array : ndarray or None
-        Angular frequencies [rad/s] at which to evaluate.
-        None → from 0 to the Nyquist frequency of the stored samples.
-    observer : ndarray, shape (3,) or None
-        Observer direction n̂.  None → (0, 0, 1).
+        Angular frequencies [rad/s]. By default ``n_omega`` values up to the
+        Nyquist frequency of the stored samples.
+    observer : array_like, shape (3,) or None
+        Direction of the observer, by default +z.
     n_omega : int
-        Number of frequency points when omega_array is None.
-    window : "hann" | None
-        Taper applied to the finite observation interval.  A Hann window
-        suppresses the sinc side-lobes (leakage) of the abrupt start/end of
-        the trajectory; None gives the bare truncated integral.
+    window : "hann" or None
+        Taper over the observation time. The Hann window suppresses the
+        leakage caused by the abrupt start and end of the trajectory.
 
     Returns
     -------
-    freqs : ndarray, shape (n_omega,)   [Hz]
-    power : ndarray, shape (n_omega,)   [arb. units]
+    freqs : ndarray
+        Frequencies [Hz].
+    power : ndarray
+        Power in arbitrary units.
     """
     history._check_finalized()
 
     t = history.t
-    r = history.r[:, pid, :]   # (S, 3)
-    v = history.v[:, pid, :]   # (S, 3)
+    r = history.r[:, pid, :]
+    v = history.v[:, pid, :]
 
     if observer is None:
         observer = np.array([0.0, 0.0, 1.0])
     n_hat = np.asarray(observer, dtype=float)
     n_hat = n_hat / np.linalg.norm(n_hat)
 
-    # Transverse field: n̂×(n̂×v) = (n̂·v)n̂ − v   (only transverse matters)
-    v_dot_n  = np.sum(v * n_hat, axis=1, keepdims=True)   # (S,1)
-    v_perp   = v_dot_n * n_hat - v                          # (S, 3)
+    # n̂ × (n̂ × v) = (n̂·v) n̂ - v
+    v_dot_n  = np.sum(v * n_hat, axis=1, keepdims=True)
+    v_perp   = v_dot_n * n_hat - v
 
-    # Retardation phase: n̂·r/c
-    r_dot_n  = np.sum(r * n_hat, axis=1)   # (S,)
+    r_dot_n  = np.sum(r * n_hat, axis=1)
 
     if window == "hann":
         tau     = (t - t[0]) / (t[-1] - t[0])
         v_perp  = v_perp * (0.5 - 0.5 * np.cos(2 * np.pi * tau))[:, None]
 
     if omega_array is None:
-        # Auto-estimate frequency range from velocity oscillation
         is_uni, dt = _check_uniform(t)
         if not is_uni:
             dt = float(np.mean(np.diff(t)))
@@ -378,40 +302,40 @@ def spectrum_retarded(history: TrajectoryHistory,
     power  = np.zeros(len(omega_array))
 
     for k, omega in enumerate(omega_array):
-        phase      = omega * (t - r_dot_n / C)          # (S,)
-        integrand  = v_perp * np.exp(1j * phase)[:, None]   # (S, 3)
-        integral   = _trapezoid(integrand, t, axis=0)     # (3,)
+        phase      = omega * (t - r_dot_n / C)
+        integrand  = v_perp * np.exp(1j * phase)[:, None]
+        integral   = _trapezoid(integrand, t, axis=0)
         power[k]   = omega**2 * float(np.real(np.dot(integral, np.conj(integral))))
 
     return freqs, power
 
-
-# ── Ensemble spectrum ─────────────────────────────────────────────────────────
 
 def ensemble_spectrum(history: TrajectoryHistory,
                        method: str = "fft",
                        observer: np.ndarray = None,
                        weights: np.ndarray = None,
                        **kwargs) -> tuple:
-    """Incoherent sum of individual particle spectra.
-
-    For a thermal/uncorrelated ensemble the total emitted power spectrum
-    is the weighted sum of single-particle spectra.
+    """Weighted incoherent sum of the single-particle spectra of an ensemble.
 
     Parameters
     ----------
-    history : TrajectoryHistory (finalized, N>1)
-    method : "fft" | "retarded"
-    observer : ndarray, shape (3,) or None
+    history : TrajectoryHistory
+    method : "fft" or "retarded"
+        Uses :func:`spectrum_fft` or :func:`spectrum_retarded`; further
+        keyword arguments are passed on.
+    observer : array_like, shape (3,) or None
     weights : ndarray, shape (N,) or None
-        Per-particle weights.  None → equal weights (1/N each).
-    **kwargs : passed to spectrum_fft or spectrum_retarded
+        Particle weights, by default 1/N each.
 
     Returns
     -------
-    freqs : ndarray   [Hz]
-    total_power : ndarray
-    individual : list of ndarray — per-particle spectra (same freq grid)
+    freqs : ndarray
+        Frequencies [Hz] of the first particle's spectrum; the others are
+        interpolated onto them.
+    total : ndarray
+        Weighted sum.
+    individual : list of ndarray
+        Unweighted spectrum of each particle.
     """
     history._check_finalized()
     N = history.r.shape[1]
@@ -429,7 +353,6 @@ def ensemble_spectrum(history: TrajectoryHistory,
             ref_freqs = f
             total = np.zeros_like(p)
         else:
-            # Interpolate onto common frequency grid
             p = np.interp(ref_freqs, f, p, left=0.0, right=0.0)
         total += weights[pid] * p
         individual.append(p)
