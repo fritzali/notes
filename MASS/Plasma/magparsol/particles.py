@@ -1,8 +1,8 @@
 """
 Particle states and initial conditions.
 
-Positions and velocities always have shape (N, 3), also for a single
-particle; charges and masses have shape (N,) and broadcast as ``q[:, None]``.
+Positions and velocities always have shape (N, 3), also for single
+particles; charges and masses have shape (N,) and broadcast as ``q[:, None]``.
 """
 
 import numpy as np

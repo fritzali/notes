@@ -1,4 +1,4 @@
-"""Boris and Runge–Kutta integrators."""
+"""Boris and Runge–Kutta integrator implementations."""
 
 from magparsol.integrators.rungekutta import RKnonrel, RKrel
 from magparsol.integrators.boris import BorisA, BorisB, BorisC

@@ -1,7 +1,7 @@
 """
 magparsol: charged particle orbits in prescribed electromagnetic fields.
 
-Example::
+Example:
 
     from magparsol import EarthDipole, BorisC, dipole_initial_conditions
 

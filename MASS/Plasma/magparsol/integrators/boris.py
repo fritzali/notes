@@ -2,7 +2,7 @@
 Relativistic Boris integrators A, B and C, after Zenitani & Umeda (2018),
 "On the Boris solver in particle-in-cell simulation", Phys. Plasmas 25, 112110.
 
-All three advance u = γv in the same leapfrog sequence:
+All three advance u = γv via the same leapfrog sequence:
 
 1. half electric push      u⁻ = uⁿ + (q Δt / 2m) E                  (Eq. 3)
 2. magnetic rotation       u⁺ = R(u⁻), by the angle θ = q Δt |B| / (m γ⁻)

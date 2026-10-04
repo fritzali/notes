@@ -5,7 +5,7 @@ The overview has six panels in two rows: position in the xy and xz
 planes and the field configuration with the orbit on top; velocity in the
 xy and xz planes and the emission spectrum below.
 
-Every panel is an object with ``build(ax, history)``, which draws the
+Each panel is an object with ``build(ax, history)``, which draws the
 static parts and returns the artists to animate, and ``update(artists, i,
 ...)``, which shows the run up to stored sample i. The static overview
 (:func:`plot_overview`), single-panel GIFs (:func:`make_panel_gif`) and the

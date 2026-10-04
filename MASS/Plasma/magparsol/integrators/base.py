@@ -1,5 +1,5 @@
 """
-Base class of the integrators.
+Base class shared by all integrators.
 
 :meth:`Integrator.run` owns the time loop, the history and the optional
 live plot; subclasses only implement :meth:`Integrator.step`.

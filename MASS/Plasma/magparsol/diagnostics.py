@@ -1,7 +1,7 @@
 """
 Trajectory history and gyration diagnostics.
 
-:class:`TrajectoryHistory` collects the states visited during a run; the
+:class:`TrajectoryHistory` collects all states visited during a run; the
 functions below compute gyration quantities and check time steps.
 """
 

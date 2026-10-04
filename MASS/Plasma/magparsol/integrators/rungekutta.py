@@ -3,7 +3,7 @@ Runge–Kutta integrators, nonrelativistic (RKnonrel) and relativistic (RKrel).
 
 Both use the Dormand–Prince 5(4) pair (Dormand & Prince 1980, J. Comput.
 Appl. Math. 6, 19) with a fixed or an adaptive step; they differ only in
-the acceleration:
+their acceleration:
 
 * RKnonrel: dv/dt = (q/m) (E + v × B)
 * RKrel:    dv/dt = (q / γm) (E + v × B - (v·E) v / c²)

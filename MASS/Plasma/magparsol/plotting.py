@@ -2,7 +2,7 @@
 Trajectory, energy and speed plots, and a live plot for running integrations.
 
 All functions take a finalized :class:`TrajectoryHistory`; ``pid`` selects
-the particle of an ensemble.
+the particle out of an ensemble.
 """
 
 import numpy as np

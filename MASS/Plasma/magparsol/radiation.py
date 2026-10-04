@@ -1,5 +1,5 @@
 """
-Radiated power and spectra, computed from a finished trajectory history.
+Radiated power and spectra, computed from an already finished trajectory history.
 
 * :func:`radiated_power`: Liénard power along the orbit, with the
   acceleration taken from the Lorentz force at each stored point rather

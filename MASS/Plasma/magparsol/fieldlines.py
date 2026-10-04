@@ -1,5 +1,5 @@
 """
-Field line plots.
+Field line plotting.
 
 :func:`plot_field_lines` picks the representation from the field:
 

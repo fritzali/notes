@@ -1,5 +1,5 @@
 """
-Electromagnetic field models.
+Collected electromagnetic field models.
 
 A field model is called as ``field(r, t)`` with positions ``r`` of shape
 (N, 3) in metres and a scalar time ``t`` in seconds, and returns ``(B, E)``,

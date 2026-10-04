@@ -1,5 +1,5 @@
 """
-Plot style shared by all plotting functions of the package.
+Plot style shared by all plotting functions of this package.
 
 Colours are restricted to named matplotlib colours: black and greys plus
 steelblue, firebrick, olivedrab, goldenrod and rebeccapurple. Call

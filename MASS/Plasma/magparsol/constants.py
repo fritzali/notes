@@ -1,7 +1,7 @@
 """
 Physical constants in SI units.
 
-Fundamental constants are CODATA 2018 values. The Earth's field is the
+Fundamental constants values from CODATA 2018. The Earth's field is the
 centred dipole of IGRF-14 at epoch 2025.0.
 """
 
