@@ -118,7 +118,7 @@ from magparsol.animation import (
 
 from magparsol import style
 
-__version__ = "0.4.0"
+__version__ = "0.1.5"
 
 __all__ = [
     # constants
