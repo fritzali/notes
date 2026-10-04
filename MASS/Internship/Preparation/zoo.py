@@ -1159,10 +1159,10 @@ def build_amr_patches_3d(
     )]
 
     def vertical_gap(cz, k0, k1):
-        """Distance from the midplane to the nearest face of the block (0 if
-        the block straddles it), so blocks taller than a thin disk still
-        count as containing it."""
-        return 0.0 if spherical else max(abs(cz) - 0.5 * (k1 - k0) * dz, 0.0)
+        """Disks: distance from the midplane to the nearest face of the block
+        (0 if the block straddles it), so blocks taller than a thin disk still
+        count as containing it. Spheroids: |z| of the block centre."""
+        return abs(cz) if spherical else max(abs(cz) - 0.5 * (k1 - k0) * dz, 0.0)
 
     def wants_refinement(level, i0, i1, j0, j1, k0, k1):
         cx = xlim[0] + 0.5 * (i0 + i1) * dx
