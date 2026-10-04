@@ -1,19 +1,8 @@
 """
-magparsol/diagnostics.py
--------------------------
-Trajectory storage and physical diagnostics.
+Trajectory history and gyration diagnostics.
 
-TrajectoryHistory
-~~~~~~~~~~~~~~~~~
-Stores particle trajectories from integrator runs using dynamic list
-accumulation (required for adaptive step-size integrators where the number
-of steps is not known in advance).  Call ``finalize()`` to convert lists to
-numpy arrays after the run.
-
-Diagnostics
-~~~~~~~~~~~
-Standalone functions that operate on a ``TrajectoryHistory`` or on raw
-``ParticleState`` data.
+:class:`TrajectoryHistory` collects the states visited during a run; the
+functions below compute gyration quantities and check time steps.
 """
 
 import numpy as np
@@ -22,18 +11,24 @@ from magparsol.constants import C
 
 
 class TrajectoryHistory:
-    """Dynamic-sized storage for particle trajectory data.
+    """Stored states of a run.
 
-    Supports both fixed-step integrators (where every step is stored) and
-    adaptive-step integrators (where the time spacing is irregular).  A
-    ``store_dt`` threshold can be used to limit storage to a sub-sampled
-    sequence, matching the original ``T_smp`` sampling-interval pattern.
+    States are collected in lists while the integrator runs (adaptive
+    integrators do not know the number of steps in advance) and converted
+    to arrays by :meth:`finalize`. Afterwards the history has
+
+    * ``t``: times, shape (S,)
+    * ``r``: positions, shape (S, N, 3)
+    * ``v``: velocities, shape (S, N, 3)
+
+    for S stored samples of N particles.
 
     Parameters
     ----------
     store_dt : float or None
-        Minimum elapsed simulation time between stored snapshots.
-        ``None`` → store every call to :meth:`record`.
+        Sampling interval [s]. States are stored on the grid t0 + k store_dt
+        (at the first step on or after each grid time). None stores every
+        step.
     """
 
     def __init__(self, store_dt=None):
@@ -45,22 +40,15 @@ class TrajectoryHistory:
         self._next_store_t: float = -np.inf
         self._finalized: bool = False
 
-        # Arrays populated after finalize()
         self.t: np.ndarray = None
         self.r: np.ndarray = None
         self.v: np.ndarray = None
 
-    # ── Recording ─────────────────────────────────────────────────────────────
-
     def record(self, state, force: bool = False):
-        """Append the current particle state if the sampling condition is met.
+        """Store ``state`` if the next sampling time has been reached.
 
-        Parameters
-        ----------
-        state : ParticleState
-            Current simulation state.
-        force : bool
-            If True, bypass the ``store_dt`` gate (used for the initial point).
+        ``force=True`` stores it unconditionally and restarts the sampling
+        grid at ``state.t``; the integrator does this for the initial state.
         """
         if self._finalized:
             raise RuntimeError("Cannot record into a finalized TrajectoryHistory.")
@@ -68,34 +56,25 @@ class TrajectoryHistory:
             store = True
             self._next_store_t = state.t + (self.store_dt or 0.0)
         else:
-            # Scheduled sampling on the grid t0 + k·store_dt (the tolerance
-            # absorbs float round-off in the accumulated simulation time)
+            # The small tolerance absorbs round-off in the accumulated time,
+            # which would otherwise skip samples now and then.
             store = state.t >= self._next_store_t - 1e-6 * self.store_dt
             if store:
                 while self._next_store_t <= state.t + 1e-6 * self.store_dt:
                     self._next_store_t += self.store_dt
         if store:
             self._t.append(state.t)
-            self._r.append(state.r.copy())   # (N, 3)
-            self._v.append(state.v.copy())   # (N, 3)
+            self._r.append(state.r.copy())
+            self._v.append(state.v.copy())
             self._last_stored_t = state.t
 
     def finalize(self):
-        """Convert internal lists to numpy arrays.
-
-        After calling this, ``self.t``, ``self.r``, ``self.v`` are available:
-
-        - ``t`` : shape (S,)
-        - ``r`` : shape (S, N, 3)
-        - ``v`` : shape (S, N, 3)
-
-        where S is the number of stored snapshots and N is the particle count.
-        """
+        """Convert the stored lists to the arrays ``t``, ``r`` and ``v``."""
         if len(self._t) == 0:
             raise RuntimeError("No data recorded; run the integrator first.")
         self.t = np.array(self._t)
-        self.r = np.array(self._r)   # (S, N, 3)
-        self.v = np.array(self._v)   # (S, N, 3)
+        self.r = np.array(self._r)
+        self.v = np.array(self._v)
         self._finalized = True
 
     @property
@@ -105,39 +84,27 @@ class TrajectoryHistory:
     def __len__(self):
         return len(self._t) if not self._finalized else len(self.t)
 
-    # ── Derived quantities ────────────────────────────────────────────────────
-
     def kinetic_energy(self, m: np.ndarray, relativistic: bool = True) -> np.ndarray:
-        """Kinetic energy along the trajectory.
+        """Kinetic energy [J], shape (S, N), for masses ``m`` of shape (N,).
 
-        Parameters
-        ----------
-        m : ndarray, shape (N,)
-            Particle masses [kg].
-        relativistic : bool
-            Whether to use the relativistic formula K=(γ-1)mc².
-
-        Returns
-        -------
-        K : ndarray, shape (S, N) — kinetic energy of each particle at each
-            stored time step [J].
+        (γ - 1) m c² if ``relativistic``, otherwise m v²/2.
         """
         self._check_finalized()
-        speed2 = np.sum(self.v**2, axis=2)   # (S, N)
+        speed2 = np.sum(self.v**2, axis=2)
         if relativistic:
             beta2 = np.clip(speed2 / C**2, 0.0, 1.0 - 1e-15)
-            gamma = 1.0 / np.sqrt(1.0 - beta2)   # (S, N)
+            gamma = 1.0 / np.sqrt(1.0 - beta2)
             return (gamma - 1.0) * m[None, :] * C**2
         else:
             return 0.5 * m[None, :] * speed2
 
     def speed(self) -> np.ndarray:
-        """Speed |v| at each snapshot, shape (S, N)."""
+        """Speed |v|, shape (S, N)."""
         self._check_finalized()
         return np.linalg.norm(self.v, axis=2)
 
     def gamma(self) -> np.ndarray:
-        """Lorentz factor γ at each snapshot, shape (S, N)."""
+        """Lorentz factor, shape (S, N)."""
         self._check_finalized()
         beta2 = np.clip(self.speed()**2 / C**2, 0.0, 1.0 - 1e-15)
         return 1.0 / np.sqrt(1.0 - beta2)
@@ -147,55 +114,36 @@ class TrajectoryHistory:
             raise RuntimeError("Call finalize() before accessing trajectory arrays.")
 
 
-# ── Physical diagnostic functions ─────────────────────────────────────────────
-
 def relative_energy_error(
     history: TrajectoryHistory,
     m: np.ndarray,
     relativistic: bool = True,
 ) -> np.ndarray:
-    """Relative kinetic-energy deviation Δε/ε₀ over time.
+    """Relative change of the kinetic energy, (K(t) - K(0)) / K(0), shape (S, N).
 
-    For pure-magnetic-field simulations the kinetic energy should be constant.
-    Deviations indicate integrator error.
-
-    Parameters
-    ----------
-    history : TrajectoryHistory (finalized)
-    m : ndarray, shape (N,)
-    relativistic : bool
-
-    Returns
-    -------
-    err : ndarray, shape (S, N)
-        ``(K(t) - K(0)) / K(0)``.
+    In a pure magnetic field K is conserved, so this measures the error
+    of the integrator. Particles with K(0) = 0 get the absolute change.
     """
-    K = history.kinetic_energy(m, relativistic=relativistic)   # (S, N)
-    K0 = K[0:1, :]                                              # (1, N)
+    K = history.kinetic_energy(m, relativistic=relativistic)
+    K0 = K[0:1, :]
     return (K - K0) / np.where(np.abs(K0) > 0, np.abs(K0), 1.0)
 
 
 def gyrofrequency(q: float, m: float, B_mag: float) -> float:
-    """Non-relativistic cyclotron angular frequency [rad/s].
+    """Nonrelativistic gyrofrequency ω_c = |q| B / m [rad/s].
 
-    ω_c = |q| |B| / m
+    For a relativistic particle use ``m`` = γ m₀.
     """
     return abs(q) * abs(B_mag) / m
 
 
 def gyroperiod(q: float, m: float, B_mag: float) -> float:
-    """Non-relativistic gyro-period [s].
-
-    T_c = 2π m / (|q| |B|)
-    """
+    """Nonrelativistic gyroperiod T_c = 2π m / (|q| B) [s]."""
     return 2.0 * np.pi * m / (abs(q) * abs(B_mag))
 
 
 def gyroradius(m: float, v_perp: float, q: float, B_mag: float) -> float:
-    """Non-relativistic Larmor radius [m].
-
-    r_L = m |v_⊥| / (|q| |B|)
-    """
+    """Nonrelativistic gyroradius r_L = m v⊥ / (|q| B) [m]."""
     return m * abs(v_perp) / (abs(q) * abs(B_mag))
 
 
@@ -206,23 +154,17 @@ def check_dt_resolution(
     B_mag: float,
     warn_threshold: float = 0.1,
 ) -> float:
-    """Check whether dt is small enough relative to the gyro-period.
+    """Return dt / T_c and warn if it exceeds ``warn_threshold``.
 
     Parameters
     ----------
     dt : float
-        Integration time step [s].
+        Time step [s].
     q, m : float
-        Particle charge and mass.
+        Charge [C] and mass [kg].
     B_mag : float
-        Representative magnetic field magnitude [T].
+        Typical field strength [T].
     warn_threshold : float
-        Emit a warning if dt / T_c > warn_threshold.
-
-    Returns
-    -------
-    ratio : float
-        dt / T_c.
     """
     Tc = gyroperiod(q, m, B_mag)
     ratio = dt / Tc
@@ -242,16 +184,6 @@ def suggest_dt(
     B_mag: float,
     steps_per_gyration: float = 100.0,
 ) -> float:
-    """Suggest a time step giving ``steps_per_gyration`` per gyro-period.
-
-    Parameters
-    ----------
-    steps_per_gyration : float
-        Target number of integration steps per gyro-period.
-
-    Returns
-    -------
-    dt : float   [s]
-    """
+    """Time step [s] that resolves one gyroperiod with ``steps_per_gyration`` steps."""
     Tc = gyroperiod(q, m, B_mag)
     return Tc / steps_per_gyration

@@ -1,34 +1,21 @@
 """
-magparsol/fieldlines.py
-------------------------
-Field-line tracing and plotting for any FieldModel.
+Field line plots.
 
-Rendering strategy (chosen automatically from the field type)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-EarthDipole
-    Field lines are traced from their magnetic-equator crossings at the
-    requested L-shells, in the magnetic meridian plane(s), down to the
-    Earth's surface.  Because the meridian plane contains the (tilted)
-    dipole axis, every line is an exact closed loop  r = L cos²λ.
-    The Earth disk, the rotation axis and the magnetic axis are drawn.
+:func:`plot_field_lines` picks the representation from the field:
 
-Spatially uniform fields (``is_uniform=True``)
-    A regular grid of equal-length arrows (``quiver``).  Field components
-    normal to the viewing plane are shown as ⊙ (out of the plane) and
-    ⊗ (into the plane).  With both B and E, the E grid is offset by half
-    a cell so the two families never overlap.
+* Earth dipole: lines are traced from the magnetic equator at the given
+  L values down to the Earth's surface. In a meridian plane they are the
+  closed loops r = L cos²λ. The Earth, the rotation axis and the magnetic
+  axis are drawn as well.
+* Uniform fields: a grid of equal arrows. A component normal to the page
+  is marked ⊙ (out of the page) or ⊗ (into it). With both B and E, the E
+  grid is shifted by half a cell.
+* Other fields: streamlines of the in-plane components in 2D, or lines
+  traced from seed points (always in 3D, or when ``seed_points`` is given).
 
-Other non-uniform fields
-    2-D projections use ``streamplot`` of the in-plane components;
-    3-D views (or explicit ``seed_points``) use RK4 line tracing.
-
-Field lines satisfy  dr/ds = F(r)/|F(r)|  with F = B or E.  Tracing is a
-fixed-step RK4 on the unit direction field, both ways from every seed,
-stopping at ``r_min`` (planet surface), ``r_max`` or ``max_steps``.
-
-Projections
-~~~~~~~~~~~
-"xy", "xz", "yz" (2-D)  or  "3d".
+A field line solves dr/ds = F/|F| (F = B or E). It is traced with fixed-step
+RK4 in both directions from each seed, until the field vanishes, the line
+reaches ``r_min`` or ``r_max``, or ``max_steps`` is used up.
 """
 
 import numpy as np
@@ -43,6 +30,7 @@ from magparsol import style
 
 _DEFAULT_COLORS = {"B": style.B_COLOR, "E": style.E_COLOR}
 
+# Viewing planes: two in-plane unit vectors and the axis labels
 _PLANES = {
     "xy": (np.array([1.0, 0.0, 0.0]), np.array([0.0, 1.0, 0.0]), ("x", "y")),
     "xz": (np.array([1.0, 0.0, 0.0]), np.array([0.0, 0.0, 1.0]), ("x", "z")),
@@ -51,7 +39,7 @@ _PLANES = {
 
 
 def _plane(projection):
-    """Return (e1, e2, n, axis labels) of a 2-D projection plane."""
+    """In-plane unit vectors e1, e2, the normal e1 × e2 and the axis labels."""
     if projection not in _PLANES:
         raise ValueError(f"Unknown projection '{projection}'. "
                          f"Choose from {list(_PLANES) + ['3d']}.")
@@ -69,10 +57,8 @@ def _component(field, r, t, comp):
     return B if comp == "B" else E
 
 
-# ── Seeding helpers ───────────────────────────────────────────────────────────
-
 def _seeds_sphere(n: int, radius: float) -> np.ndarray:
-    """n seeds distributed roughly uniformly on a sphere (Fibonacci spiral)."""
+    """n points spread evenly over a sphere (Fibonacci lattice)."""
     golden = np.pi * (3.0 - np.sqrt(5.0))
     i      = np.arange(n)
     y      = 1.0 - 2.0 * i / (n - 1) if n > 1 else np.array([0.0])
@@ -82,7 +68,7 @@ def _seeds_sphere(n: int, radius: float) -> np.ndarray:
 
 
 def _seeds_box(n: int, bbox_min: np.ndarray, bbox_max: np.ndarray) -> np.ndarray:
-    """About n seeds on a regular grid spanning the bounding box."""
+    """At most n points of a regular grid filling the box."""
     n_side = max(2, int(round(n ** (1.0/3.0))))
     axes   = [np.linspace(bbox_min[i], bbox_max[i], n_side) for i in range(3)]
     grid   = np.array(np.meshgrid(*axes, indexing="ij")).reshape(3, -1).T
@@ -94,17 +80,18 @@ def _seeds_box(n: int, bbox_min: np.ndarray, bbox_max: np.ndarray) -> np.ndarray
 
 def _seeds_dipole_lshells(field, L_shells=(2, 3, 4, 5, 6, 8),
                           azimuths=(0.0, np.pi), unit: float = R_EARTH):
-    """Seeds on the magnetic equator at radius L·R_E.
+    """Points on the magnetic equator at distance L R_E.
 
-    The equator is the plane perpendicular to ``field.axis``.  Azimuth ψ is
-    measured from x̂ towards ``axis × x̂`` (the in-equator direction lying in
-    the y-z plane), so ψ = 0, π gives the meridian containing x̂ and
-    ψ = ±π/2 the meridian lying in the y-z plane.
+    The azimuth ψ is measured in the magnetic equator from x̂ towards
+    ``axis × x̂``: ψ = 0 and π give the meridian through x̂, ψ = ±π/2 the
+    meridian in the yz plane.
 
     Returns
     -------
-    seeds : ndarray (n, 3)  [m]
-    L_of_seed : ndarray (n,)
+    seeds : ndarray, shape (n, 3)
+        Positions [m].
+    L : ndarray, shape (n,)
+        L value of each seed.
     """
     e_a = np.array([1.0, 0.0, 0.0])
     e_b = np.cross(field.axis, e_a)
@@ -119,24 +106,20 @@ def _seeds_dipole_lshells(field, L_shells=(2, 3, 4, 5, 6, 8),
 
 
 def _auto_bbox(history) -> tuple:
-    """Bounding box of the trajectory with 20% margin."""
+    """Bounding box of all stored positions, enlarged by 20 %."""
     r = history.r.reshape(-1, 3)
     return r.min(axis=0) * 1.2, r.max(axis=0) * 1.2
 
 
-# ── Single field-line trace (RK4 on unit direction) ──────────────────────────
-
 def _trace_line(field, r0, t: float, component: str, ds: float,
                 max_steps: int, r_max=None, direction: int = 1,
                 r_min=None) -> np.ndarray:
-    """Trace one field line from r0 along (+1) or against (-1) the field.
+    """Trace a field line from ``r0`` along (direction +1) or against (-1)
+    the field, in RK4 steps of arc length ``ds`` [m].
 
-    Stops at a null point, when |r| < r_min (the last point is placed on the
-    sphere |r| = r_min), when |r| > r_max, or after max_steps.
-
-    Returns
-    -------
-    points : ndarray, shape (n_points, 3)  [m]
+    Stops where the field vanishes, after ``max_steps``, beyond ``r_max``,
+    or inside ``r_min``; in the last case the final point is moved onto the
+    sphere |r| = r_min. Returns the points, shape (n, 3) [m].
     """
     floor = np.sqrt(B_FLOOR)
 
@@ -159,7 +142,6 @@ def _trace_line(field, r0, t: float, component: str, ds: float,
         r_new = r + (ds/6.0) * (k1 + 2*k2 + 2*k3 + k4)
 
         if r_min is not None and np.linalg.norm(r_new) < r_min:
-            # Linear interpolation onto the surface |r| = r_min
             a, b = np.linalg.norm(r), np.linalg.norm(r_new)
             s = (a - r_min) / (a - b) if a != b else 1.0
             points.append(r + s * (r_new - r))
@@ -172,20 +154,18 @@ def _trace_line(field, r0, t: float, component: str, ds: float,
 
 
 def _trace_both(field, seed, t, comp, ds, max_steps, r_max, r_min):
-    """Trace both ways and join into one line running along the field."""
+    """The whole line through ``seed``, ordered along the field."""
     fwd = _trace_line(field, seed, t, comp, ds, max_steps, r_max, +1, r_min)
     bwd = _trace_line(field, seed, t, comp, ds, max_steps, r_max, -1, r_min)
     return np.vstack([bwd[::-1], fwd[1:]])
 
 
 def _add_direction_arrow(ax, pts2d, color, head_len, frac=0.5, width=0.6):
-    """Filled arrowhead lying on a 2-D polyline at fraction ``frac`` of its length.
+    """Arrowhead on a 2D line at the fraction ``frac`` of its length.
 
-    The tip and the centre of the base are both points *on* the curve,
-    separated by ``head_len`` of arc length, so the head follows the line
-    even where it bends (a straight annotation arrow along a tiny chord
-    sticks out of curved lines).  ``head_len`` is in data units; field line
-    plots use equal aspect, so the head keeps its shape on screen.
+    Tip and base centre are both points on the line, ``head_len`` of arc
+    length apart (data units), so the head stays on curved lines. The base
+    is ``width`` × ``head_len`` wide. Equal aspect keeps the shape on screen.
     """
     if len(pts2d) < 3:
         return
@@ -205,27 +185,25 @@ def _add_direction_arrow(ax, pts2d, color, head_len, frac=0.5, width=0.6):
                          facecolor=color, edgecolor="none", zorder=style.Z_FIELD))
 
 
-# ── Decorations ───────────────────────────────────────────────────────────────
-
 def draw_earth_2d(ax, length_unit, zorder=style.Z_EARTH):
-    """Filled Earth disk of radius R_E (in display units)."""
+    """Opaque Earth disk, radius R_E in display units."""
     ax.add_patch(Circle((0, 0), R_EARTH / length_unit,
                         facecolor=style.earth_fill(), edgecolor="black",
                         lw=0.6, zorder=zorder))
 
 
 def _draw_earth_2d(ax, field, e1, e2, length_unit, extent):
-    """Earth disk, rotation axis (dotted) and magnetic axis (dashed)."""
+    """Earth disk with the rotation axis (dotted) and magnetic axis (dashed)."""
     draw_earth_2d(ax, length_unit)
     axes = []
     for vec, ls, lbl in ((np.array([0.0, 0.0, 1.0]), ":", "Rotation Axis"),
                          (field.axis, "--", "Magnetic Axis")):
         p = np.array([vec @ e1, vec @ e2])
         if np.linalg.norm(p) < 0.2:
-            continue   # axis (nearly) normal to the viewing plane
+            continue   # axis nearly normal to the page
         axes.append((p / np.linalg.norm(p), ls, lbl))
     if len(axes) == 2 and abs(axes[0][0] @ axes[1][0]) > np.cos(np.radians(0.5)):
-        # Both axes project onto the same line: draw and label it once
+        # Both axes appear on the same line: draw it once
         axes = [(axes[1][0], "--", "Rotation & Magnetic Axis")]
     for p, ls, lbl in axes:
         p = p * extent
@@ -240,14 +218,12 @@ def _draw_earth_3d(ax, length_unit):
                     color=style.EARTH_FACE, alpha=0.45, linewidth=0, shade=True)
 
 
-# ── Fading orbit trail (static and animated) ──────────────────────────────────
-
 class FadingTrail:
-    """A line whose opacity ramps from 0 (oldest) to ``alpha`` (newest).
+    """The last ``length`` points of an orbit, fading out towards the oldest.
 
-    Only the last ``length`` points are drawn, so an orbit plotted over a
-    field configuration does not hide the field.  Call :meth:`set_data` with
-    the full path up to the current point.
+    Opacity rises from 0 at the tail to ``alpha`` at the newest point, so an
+    orbit drawn over field lines hides little of them. :meth:`set_data`
+    takes the whole path so far and returns the line collection.
     """
 
     def __init__(self, ax, length=200, color=style.ORBIT_COLOR, alpha=0.8,
@@ -274,25 +250,42 @@ class FadingTrail:
 
 
 def field_legend(ax, handles, n_cols=None):
-    """Legend in a row above the axes (never covers the field)."""
+    """Legend in one row between the title and the axes, off the field."""
     if not handles:
         return None
     leg = style.legend(ax, handles=handles, loc="lower center",
                        bbox_to_anchor=(0.5, 1.01),
                        ncol=n_cols or min(len(handles), 4), fontsize=8,
                        handlelength=1.6, columnspacing=1.0, borderpad=0.35)
-    ax.set_title(ax.get_title(), pad=26)
+    ax.set_title(ax.get_title(), pad=26)   # make room for the legend
     return leg
 
 
-# ── Uniform-field arrow grids (re-usable by the animation module) ─────────────
-
 class UniformFieldArrows:
-    """Quiver grid (+ ⊙/⊗ markers) for one component of a uniform field.
+    """Arrow grid, with ⊙ / ⊗ for the normal part, of one uniform field.
 
-    Arrow length is proportional to |F_in-plane| / ``ref_mag`` so a
-    time-dependent field (e.g. ``CyclotronWaveField``) can be animated with
-    :meth:`update` while keeping a fixed length scale.
+    Arrows are scaled by ``ref_mag``, so a time dependent field (e.g. the
+    cyclotron wave) can be animated with :meth:`update` at a fixed scale.
+    The symbols appear when the normal component exceeds 5 % of |F|.
+
+    Parameters
+    ----------
+    ax : Axes
+    field : FieldModel
+    comp : "B" or "E"
+    t : float
+        Time of the first drawing [s].
+    e1, e2 : ndarray, shape (3,)
+        In-plane unit vectors.
+    lim : float
+        Half width of the plot in display units.
+    n_grid : int
+        Grid points per side.
+    offset : float
+        Shift of the grid in cells (to interleave B and E).
+    color : str
+    ref_mag : float or None
+        |F| that gets the full arrow length; by default |F(t)|.
     """
 
     def __init__(self, ax, field, comp, t, e1, e2, lim, n_grid=7,
@@ -318,6 +311,7 @@ class UniformFieldArrows:
         self.update(t)
 
     def update(self, t):
+        """Redraw for time ``t``; returns the changed artists."""
         F = _component(self.field, np.zeros((1, 3)), t, self.comp)[0]
         mag = np.linalg.norm(F)
         f1, f2, fn = F @ self.e1, F @ self.e2, F @ self.n
@@ -325,7 +319,6 @@ class UniformFieldArrows:
         U = np.full_like(self.X, f1 * s)
         V = np.full_like(self.Y, f2 * s)
         self.quiver.set_UVC(U, V)
-        # Out-of-plane symbol when the normal component is significant
         show = mag > 0 and abs(fn) > 0.05 * mag and np.hypot(f1, f2) < 0.95 * mag
         x, y = (self.X.ravel(), self.Y.ravel()) if show else ([], [])
         self.ring.set_data(x, y)
@@ -335,7 +328,11 @@ class UniformFieldArrows:
 
 
 def _ref_magnitude(field, comp, t, ref_times=None):
-    """Largest |F| over ``ref_times`` (for a fixed arrow scale), or None."""
+    """Largest |F| over ``ref_times`` for a time dependent field, else None.
+
+    Without ``ref_times``, one wave period is sampled if the field has an
+    ``omega_c`` attribute.
+    """
     if field.is_static:
         return None
     if ref_times is None:
@@ -350,6 +347,7 @@ def _ref_magnitude(field, comp, t, ref_times=None):
 
 
 def _uniform_3d(ax, field, comp, t, lim, color, n=4):
+    """n × n × n grid of equal arrows for a uniform field in 3D."""
     F = _component(field, np.zeros((1, 3)), t, comp)[0]
     mag = np.linalg.norm(F)
     if mag == 0:
@@ -361,8 +359,6 @@ def _uniform_3d(ax, field, comp, t, lim, color, n=4):
     ax.quiver(X, Y, Z, f[0], f[1], f[2], color=color, alpha=0.8,
               arrow_length_ratio=0.3, pivot="middle", linewidth=0.9)
 
-
-# ── Main public function ──────────────────────────────────────────────────────
 
 def plot_field_lines(
     field,
@@ -392,61 +388,77 @@ def plot_field_lines(
     orbit_alpha: float = 0.35,
     orbit_trail: int = None,
 ):
-    """Trace and plot field lines (or arrow grids) for any FieldModel.
+    """Plot the field lines (or arrow grid) of a field, optionally with an orbit.
 
     Parameters
     ----------
     field : FieldModel
     history : TrajectoryHistory or None
-        Used for automatic axis limits / seeding and overlaid if given.
-    components : tuple of "B" and/or "E"
-    density : "low" | "medium" | "high" | "auto"
-        Number of seeds / arrows / streamline density.
-    seed_points : array-like (n, 3) or None
-        Explicit seed positions [m] (forces RK4 line tracing).
-    seed_strategy : "auto" | "sphere" | "box" | "dipole_Lshells"
-        Only used for non-uniform fields in 3-D or with explicit tracing.
+        Orbit to draw over the field; also sets the default axis limit.
+    components : tuple of "B" and "E"
+    density : "low", "medium", "high" or "auto" (= "medium")
+        Number of lines, arrows or streamlines.
+    seed_points : array_like, shape (n, 3), or None
+        Start points of traced lines [m]. Given seeds are always traced,
+        also in 2D.
+    seed_strategy : "auto", "sphere" or "box"
+        Seeds for traced lines of non-dipole fields without ``seed_points``:
+        on a sphere of half the plot size (the default) or on a grid
+        filling the orbit's bounding box (or the plot). Dipoles are always
+        seeded at ``L_shells``.
     n_seeds : int or None
-        Override the density-derived seed count (sphere / box seeding).
+        Number of sphere or box seeds; by default set by ``density``.
     t : float
         Time at which the field is evaluated [s].
     ds : float or None
-        Arc-length step for tracing [m].  Auto-estimated if None.
+        Tracing step [m]. By default 1 % of L R_E for dipole lines and
+        1/300 of the seed spread or plot size otherwise.
     max_steps : int
+        Maximum number of tracing steps in each direction.
     r_max, r_min : float or None
-        Outer / inner tracing boundary [m].  For EarthDipole r_min defaults
-        to R_EARTH (lines end on the surface) and r_max to 1.5·max(L)·R_E.
+        Tracing stops beyond r_max and inside r_min [m]. For the dipole they
+        default to 1.5 max(L) R_E and R_E, so lines end on the surface;
+        otherwise r_max defaults to 1.8 times the plot size.
     length_unit : float
-        Divisor for display units (e.g. R_EARTH).
+        Lengths are divided by this [m] for display.
     unit_label : str
     ax_lim : float or None
-        Symmetric axis limit in display units.
-    projection : "3d" | "xy" | "xz" | "yz"
+        Half width of the plot in display units. By default it fits the
+        orbit, the dipole lines or the seeds, otherwise 1.
+    projection : "3d", "xy", "xz" or "yz"
     earth_sphere : bool or None
-        Draw the Earth.  None → True for EarthDipole.
+        Draw the Earth; by default only for the dipole.
     color : str, dict or None
-        None → B blue, E red.  Dict: {"B": ..., "E": ...}.
-    ax : matplotlib Axes or None
+        One colour for all, or {"B": ..., "E": ...}. By default B is
+        steelblue and E firebrick.
+    ax : Axes or None
+        Axes to draw into (3D axes for ``projection="3d"``); a new figure is
+        made if None.
     title : str or None
+        By default the field's ``display_name``.
     L_shells : tuple of float
-        L values for dipole lines.
+        L values of the dipole lines.
     arrows : bool
-        Add direction arrowheads to traced lines.
+        Mark the direction of traced lines with arrowheads.
     legend : bool
-    ref_times : array-like or None
-        Times used to fix the arrow length scale of a time-dependent
-        uniform field (arrow length ∝ |F(t)| / max |F(ref_times)|).
-        None → one wave period if the field has ``omega_c``, else just t.
+    ref_times : array_like or None
+        Times over which a time dependent uniform field is sampled to fix
+        the arrow scale, so arrows keep their scale in an animation. By
+        default one wave period if the field has ``omega_c``.
     orbit_alpha : float
-        Opacity of the overlaid ``history`` orbit (kept low so the field
-        stays visible).
+        Opacity of the orbit, low so the field stays visible.
     orbit_trail : int or None
-        If given (2-D only), draw only the last ``orbit_trail`` samples of the
-        orbit as a trail that fades out towards its tail.
+        2D only: draw just the last ``orbit_trail`` samples of the orbit
+        as a fading trail.
 
     Returns
     -------
     fig, ax
+
+    Notes
+    -----
+    For 2D uniform fields the arrow grids are kept in
+    ``ax._mps_uniform_arrows``, which the animation uses to update them.
     """
     dens = {"low": 0, "medium": 1, "high": 2, "auto": 1}.get(density, 1)
     if n_seeds is None:
@@ -465,7 +477,6 @@ def plot_field_lines(
 
     is3d = projection == "3d"
 
-    # ── Axis limit in display units ───────────────────────────────────────────
     if ax_lim is None:
         if history is not None:
             r_flat = history.r.reshape(-1, 3) / length_unit
@@ -477,9 +488,8 @@ def plot_field_lines(
         else:
             ax_lim = 1.0
     ax_lim = float(ax_lim) if ax_lim > 0 else 1.0
-    head_len = 0.07 * ax_lim          # arrowhead length: 3.5 % of the plot span
+    head_len = 0.07 * ax_lim          # 3.5 % of the plot width
 
-    # ── Axes ──────────────────────────────────────────────────────────────────
     own_fig = ax is None
     if own_fig:
         fig = plt.figure(figsize=(6, 5.5))
@@ -491,7 +501,6 @@ def plot_field_lines(
         e1, e2, n_hat, labels = _plane(projection)
     handles = []
 
-    # ── Draw each component ───────────────────────────────────────────────────
     ax._mps_uniform_arrows = []
     for k, comp in enumerate(components):
         col = color.get(comp, "grey")
@@ -511,16 +520,18 @@ def plot_field_lines(
             continue
 
         if is_dipole and comp == "E":
-            continue   # dipole has no electric field
+            continue   # the dipole has no electric field
 
         if is_dipole and seed_points is None:
+            # Azimuths of the meridians to draw
             if is3d:
-                # Offset so no meridian is seen edge-on from the default view
+                # 4, 6 or 8 meridians (by density), turned by 20° so that
+                # none is seen edge on from the default viewpoint
                 az = np.linspace(0, 2*np.pi, (4, 6, 8)[dens], endpoint=False) \
                     + np.pi / 9
             elif projection == "yz":
                 az = (np.pi/2, -np.pi/2)
-            else:   # xz (true meridian ⊃ x̂) or xy (top view)
+            else:   # xz: the meridian through x̂; xy: eight meridians from above
                 az = (0.0, np.pi) if projection == "xz" else \
                      np.linspace(0, 2*np.pi, 8, endpoint=False)
             seeds, Ls = _seeds_dipole_lshells(field, L_shells, az)
@@ -540,7 +551,7 @@ def plot_field_lines(
             continue
 
         if not is3d and seed_points is None:
-            # Generic 2-D view: streamlines of the in-plane components
+            # Streamlines of the in-plane components on a 60 × 60 grid
             n_g = 60
             g = np.linspace(-ax_lim, ax_lim, n_g)
             X, Y = np.meshgrid(g, g)
@@ -560,7 +571,7 @@ def plot_field_lines(
                                       label=f"$\\mathbf{{{comp}}}$"))
             continue
 
-        # Generic RK4 tracing (3-D, or explicit seeds)
+        # Traced lines: 3D views, or explicit seeds
         if seed_points is not None:
             seeds = np.asarray(seed_points, dtype=float)
         else:
@@ -590,7 +601,6 @@ def plot_field_lines(
                     _add_direction_arrow(ax, p2, col, head_len)
         handles.append(Line2D([], [], color=col, label=f"$\\mathbf{{{comp}}}$"))
 
-    # ── Earth, trajectory, formatting ─────────────────────────────────────────
     if earth_sphere:
         if is3d:
             _draw_earth_3d(ax, length_unit)
@@ -641,4 +651,3 @@ def plot_field_lines(
     if own_fig:
         fig.tight_layout()
     return fig, ax
-

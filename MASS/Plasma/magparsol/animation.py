@@ -1,33 +1,20 @@
 """
-magparsol/animation.py
------------------------
-Overview panel (static multi-quantity summary figure) and GIF animation system.
+Overview figure and GIF animations of a finished run.
 
-Overview panel layout (2×3 gridspec)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-┌────────────────┬────────────────┬───────────────┐
-│  X-Y Position  │  X-Z Position  │  Field + orbit│
-├────────────────┼────────────────┼───────────────┤
-│  X-Y Velocity  │  X-Z Velocity  │    Spectrum   │
-└────────────────┴────────────────┴───────────────┘
+The overview has six panels in two rows: position in the xy and xz
+planes and the field configuration with the orbit on top; velocity in the
+xy and xz planes and the emission spectrum below.
 
-Panel registry
-~~~~~~~~~~~~~~
-Each panel is a small object with ``build(ax, history)`` → artists and
-``update(artists, i, k, t)`` → artists.  This shared structure powers the
-static overview, standalone per-panel GIFs and the combined overview GIF
-from one code path.
+Every panel is an object with ``build(ax, history)``, which draws the
+static parts and returns the artists to animate, and ``update(artists, i,
+...)``, which shows the run up to stored sample i. The static overview
+(:func:`plot_overview`), single-panel GIFs (:func:`make_panel_gif`) and the
+overview GIF (:func:`make_overview_gif`) are all built from these panels.
 
-Spectrum animation
-~~~~~~~~~~~~~~~~~~
-The FFT panel shows the final spectrum as a faint grey reference and, on
-top, the spectrum of the trajectory *up to the current frame*.  As the
-observation window grows the cyclotron line narrows (Δf ≈ 1/T_window) and
-rises out of the window side-lobes.  The retarded-time integral spectrum
-is expensive and always shown as the final result only.
-
-Adaptive-RK note: non-uniform time histories are resampled before the FFT
-inside ``radiation.spectrum_fft``; no special handling is needed here.
+In the animated spectrum the final spectrum is drawn in grey and the
+spectrum of the orbit observed so far on top. As the observation time T
+grows, a line narrows (width about 1/T) and rises out of the side lobes.
+The retarded-time spectrum is expensive, so it is only shown complete.
 """
 
 import numpy as np
@@ -39,10 +26,8 @@ from magparsol.constants import C, R_EARTH
 from magparsol import style
 
 
-# ── Helpers ───────────────────────────────────────────────────────────────────
-
 def _auto_lim(a, b, margin=1.15):
-    """Symmetric axis limit covering both arrays with a margin."""
+    """Symmetric limit covering both arrays, with a margin."""
     m = margin * max(float(np.abs(a).max()), float(np.abs(b).max()))
     return m if m > 0 else 1.0
 
@@ -57,9 +42,11 @@ def _colors(N):
 
 
 def mean_gyrofrequency(history, q, m, field):
-    """Trajectory-averaged relativistic gyrofrequency f_c = |q|B / (2π γ m) [Hz].
+    """Relativistic gyrofrequency f_c = |q| B / (2π γ m) [Hz], averaged over
+    the run (up to 400 samples) and over all particles.
 
-    Used to normalise spectrum axes.  Returns None if no field is given.
+    Used to scale the frequency axis of spectra. Returns None if ``field``,
+    ``q`` or ``m`` is None, or if the result is not positive.
     """
     if field is None or q is None or m is None:
         return None
@@ -76,18 +63,17 @@ def mean_gyrofrequency(history, q, m, field):
     return f_c if f_c > 0 else None
 
 
-# ── Per-panel classes ─────────────────────────────────────────────────────────
-
 class _PositionPanel:
-    """X-Y or X-Z trajectory projection with a growing trail."""
+    """Orbit in the xy or xz plane, drawn up to the current sample."""
 
     def __init__(self, plane="xy", length_unit=1.0, unit_label="m", earth=False):
-        self.plane       = plane
+        self.plane = plane
         self.length_unit = length_unit
-        self.unit_label  = unit_label
-        self.earth       = earth
+        self.unit_label = unit_label
+        self.earth = earth
 
     def _c2(self, r):
+        """Second plotted coordinate: y or z."""
         return r[..., 1] if self.plane == "xy" else r[..., 2]
 
     def build(self, ax, history, **kwargs):
@@ -124,16 +110,16 @@ class _PositionPanel:
 
 
 class _VelocityPanel:
-    """X-Y or X-Z velocity hodograph.
+    """Velocity in the xy or xz plane (hodograph).
 
-    The full hodograph is drawn faintly; the highlighted trail shows only the
-    last ``trail`` samples (≈ a few gyrations) so long runs stay readable.
+    With ``trail`` set, the full hodograph is drawn in light grey and only
+    the last ``trail`` samples are highlighted, so long runs stay readable.
     """
 
     def __init__(self, plane="xy", normalize_v=False, trail=None):
-        self.plane       = plane
+        self.plane = plane
         self.normalize_v = normalize_v
-        self.trail       = trail
+        self.trail = trail
 
     def build(self, ax, history, **kwargs):
         scale = C if self.normalize_v else 1.0
@@ -168,26 +154,27 @@ class _VelocityPanel:
 
 
 class _FieldPanel:
-    """Field lines / arrow grid with the particle orbit overlaid.
+    """Field configuration with a fading trail of the orbit.
 
-    Spatially uniform, time-dependent fields (e.g. ``CyclotronWaveField``)
-    are animated by updating the arrow vectors.  Non-uniform time-dependent
-    fields are re-traced every ``field_update_every`` frames.
+    Uniform time dependent fields (such as the cyclotron wave) are animated
+    by updating their arrows; other time dependent fields are redrawn every
+    ``field_update_every`` frames. The default projection is xz for the
+    dipole (a meridian) and xy otherwise.
     """
 
     def __init__(self, field, length_unit=1.0, unit_label="m",
                  components=("B", "E"), density="low", field_update_every=10,
                  projection="auto", trail=None):
-        self.field              = field
-        self.length_unit        = length_unit
-        self.unit_label         = unit_label
-        self.components         = components
-        self.density            = density
+        self.field = field
+        self.length_unit = length_unit
+        self.unit_label = unit_label
+        self.components = components
+        self.density = density
         self.field_update_every = field_update_every
         if projection == "auto":
             projection = "xz" if _is_dipole(field) else "xy"
-        self.projection         = projection
-        self.trail              = trail
+        self.projection = projection
+        self.trail = trail
 
     def _draw(self, ax, t):
         from magparsol.fieldlines import plot_field_lines
@@ -210,7 +197,7 @@ class _FieldPanel:
         self._L_shells = (2, 3, 4, 6, 8)
         if _is_dipole(self.field):
             self._lim = max(self._lim, 1.3 * R_EARTH / self.length_unit)
-            # L-shells that fit inside the panel
+            # Only the L values that fit into the panel
             lim_RE = self._lim * self.length_unit / R_EARTH
             self._L_shells = tuple(L for L in (1.5, 2, 3, 4, 5, 6, 8, 10, 12)
                                    if L <= 0.95 * lim_RE) or (1.5,)
@@ -219,7 +206,6 @@ class _FieldPanel:
         self._draw(ax, float(history.t[0]))
         from magparsol.fieldlines import FadingTrail
         N = r.shape[1]
-        # Trail ≈ 1/10 of the run (at least 30 samples) so the field stays visible
         n_trail = self.trail or max(30, len(history.t) // 10)
         lines, dots = [], []
         for pid, col in zip(range(N), _colors(N)):
@@ -243,6 +229,7 @@ class _FieldPanel:
             for arr in arrows:
                 out += arr.update(t_current)
         elif k is None or k % self.field_update_every == 0:
+            # Clearing the axes also removes the orbit, so add it back
             self._ax.cla()
             self._draw(self._ax, t_current)
             for tr, pt in zip(artists["lines"], artists["dots"]):
@@ -251,25 +238,33 @@ class _FieldPanel:
 
 
 class _SpectrumPanel:
-    """Spectrum panel: FFT that builds up in time, or static retarded integral."""
+    """Emission spectrum on a logarithmic power axis.
+
+    The frequency axis is in units of the mean gyrofrequency (or ``f_norm``)
+    when it can be computed, otherwise in Hz. ``final_only`` (static
+    overview) or ``method="retarded"`` show only the final spectrum;
+    otherwise :meth:`update` draws the spectrum of the run so far every
+    ``spectrum_update_every`` frames.
+    """
 
     def __init__(self, q, m, field=None, method="fft", spectrum_update_every=5,
                  show_individual=False, observer=None,
                  store_dt_warn_period=None, f_norm=None, f_max_norm=6.0,
                  final_only=False):
-        self.q                     = q
-        self.m                     = m
-        self.field                 = field
-        self.method                = method
+        self.q = q
+        self.m = m
+        self.field = field
+        self.method = method
         self.spectrum_update_every = spectrum_update_every
-        self.show_individual       = show_individual
-        self.observer              = observer
-        self.store_dt_warn_period  = store_dt_warn_period
-        self.f_norm                = f_norm
-        self.f_max_norm            = f_max_norm
-        self.final_only            = final_only   # static figure: no live line
+        self.show_individual = show_individual
+        self.observer = observer
+        self.store_dt_warn_period = store_dt_warn_period
+        self.f_norm = f_norm
+        self.f_max_norm = f_max_norm
+        self.final_only = final_only
 
     def _spectrum(self, upto=None, method="fft"):
+        """Spectrum of one particle, or the ensemble spectrum for several."""
         from magparsol.radiation import spectrum_fft, spectrum_retarded, ensemble_spectrum
         h = self._history
         if h.r.shape[1] == 1:
@@ -301,15 +296,15 @@ class _SpectrumPanel:
                     lw=1.2 if static else 0.9,
                     label="Retarded" if self.method == "retarded" else "Final")
         live, = ax.semilogy([], [], color="firebrick", lw=1.2, label="Current")
-        # Time label in the empty top right corner (the y axis keeps two
-        # decades of headroom above the peak; the legend sits top left)
+        # Time label in the top right corner, which the headroom below keeps
+        # free of data (the legend goes top left)
         info  = ax.text(0.97, 0.96, "", transform=ax.transAxes, ha="right",
                         va="top", fontsize=8, zorder=style.Z_LABEL,
                         bbox=dict(boxstyle="square,pad=0.3", fc="white",
                                   ec="none", alpha=1.0))
 
-        # x range: up to where the final spectrum has fallen 6 decades below
-        # its peak (with margin), capped at f_max_norm
+        # Frequency range: up to where the final spectrum has dropped six
+        # decades below its peak, plus 15 %, at most f_max_norm
         pos   = (x > 0) & (p > 0)
         p_top = float(p[pos].max()) if np.any(pos) else 1.0
         above = np.where(pos & (p > p_top * 1e-6))[0]
@@ -318,7 +313,7 @@ class _SpectrumPanel:
             x_max = min(max(x_max, 1.5), self.f_max_norm)
         x_max = min(x_max, x.max())
         ax.set_xlim(0, x_max)
-        # Two decades of headroom keep the legend and time box off the data
+        # Six decades below the peak, two and a half above it for the labels
         ax.set_ylim(p_top * 1e-6, p_top * 300)
         if f_c:
             ax.axvline(1.0, color="black", lw=0.6, ls="--", alpha=0.6)
@@ -339,7 +334,7 @@ class _SpectrumPanel:
         last = i == len(self._history.t) - 1
         if k is not None and k % self.spectrum_update_every != 0 and not last:
             return [info]
-        if i < 8:
+        if i < 8:   # too few samples for a meaningful FFT
             live.set_data([], [])
             return [live, info]
         f, p, _ = self._spectrum(upto=i + 1)
@@ -347,8 +342,7 @@ class _SpectrumPanel:
         return [live, info]
 
 
-# ── LAYOUT definition ─────────────────────────────────────────────────────────
-# Maps panel name → (row, col) in the 2×3 gridspec
+# Panel name: (row, column) in the overview grid
 LAYOUT = {
     "position_xy": (0, 0),
     "position_xz": (0, 1),
@@ -372,9 +366,10 @@ def _build_panel_registry(history, field, q, m,
                           field_projection="auto",
                           field_trail=None,
                           final_spectrum_only=False) -> dict:
-    """Instantiate one panel object per panel name."""
+    """One panel object for each name in LAYOUT."""
     earth = _is_dipole(field)
-    # Hodograph trail ≈ 3 gyrations when the run covers many more than that
+    # For runs of more than ten gyrations, highlight about the last three
+    # gyrations in the velocity panels
     trail = None
     f_c = mean_gyrofrequency(history, q, m, field)
     if f_c and len(history.t) > 1:
@@ -401,8 +396,6 @@ def _update_panel(panel, artists, i, k, history):
     return panel.update(artists, i, k=k, t_current=float(history.t[i]))
 
 
-# ── Static overview figure ────────────────────────────────────────────────────
-
 def plot_overview(
     history: TrajectoryHistory,
     field,
@@ -420,25 +413,31 @@ def plot_overview(
     field_projection: str = "auto",
     field_trail: int = None,
 ):
-    """Static 2×3 overview panel of a finished run.
+    """Six-panel overview of a finished run, showing the final state.
 
     Parameters
     ----------
-    history : TrajectoryHistory (finalized)
+    history : TrajectoryHistory
     field : FieldModel
     q, m : ndarray, shape (N,)
+        Charges [C] and masses [kg].
     length_unit : float
+        Lengths are divided by this [m] for display.
     unit_label : str
-    normalize_v : bool   — show velocity in units of c
-    field_components : tuple of "B" and/or "E"
-    field_density : "low" | "medium" | "high"
-    spectrum_method : "fft" | "retarded"
-    show_individual : bool   — overlay per-particle spectra (N>1)
-    store_dt_warn_period : float or None  — gyroperiod for Nyquist warning
-    field_projection : "auto" | "xy" | "xz" | "yz"
+    normalize_v : bool
+        Show velocities in units of c.
+    field_components : tuple of "B" and "E"
+    field_density : "low", "medium" or "high"
+    spectrum_method : "fft" or "retarded"
+    show_individual : bool
+        Also draw each particle's spectrum (ensembles).
+    title : str
+    store_dt_warn_period : float or None
+        Gyroperiod [s] used to warn about too coarse sampling.
+    field_projection : "auto", "xy", "xz" or "yz"
     field_trail : int or None
-        Length (in stored samples) of the fading orbit trail drawn over the
-        field panel.  None → one tenth of the run.
+        Length of the orbit trail in the field panel, in stored samples;
+        by default a tenth of the run.
 
     Returns
     -------
@@ -464,16 +463,14 @@ def plot_overview(
     return fig
 
 
-# ── GIF generation ────────────────────────────────────────────────────────────
-
 def _save(fig, update, n_frames, filename, fps, writer, n_colors=128):
-    """Render every frame and write a compact GIF.
+    """Draw all frames and write them as a GIF.
 
-    All frames share one palette and are quantised without dithering, so
-    pixels that do not change between frames stay identical and the GIF
-    encoder only stores the changed region of each frame.  (Per-frame
-    adaptive palettes with dithering make every pixel flicker and inflate
-    the file by an order of magnitude.)
+    All frames share one palette (``n_colors`` colours, taken from a sample
+    of frames) and are quantised without dithering. Unchanged pixels then
+    stay identical from frame to frame, and the GIF only stores what
+    changes; matplotlib's own GIF writer dithers every frame with its own
+    palette, which makes files many times larger.
     """
     from PIL import Image
     from matplotlib.backends.backend_agg import FigureCanvasAgg
@@ -487,7 +484,6 @@ def _save(fig, update, n_frames, filename, fps, writer, n_colors=128):
         frames.append(Image.fromarray(np.asarray(canvas.buffer_rgba())[..., :3].copy()))
     plt.close(fig)
 
-    # One palette from a mosaic of evenly spaced frames
     pick = np.unique(np.linspace(0, n_frames - 1, min(8, n_frames)).astype(int))
     w, h = frames[0].size
     mosaic = Image.new("RGB", (w, h * len(pick)))
@@ -525,19 +521,23 @@ def make_panel_gif(
     field_trail: int = None,
     dpi: int = 90,
 ):
-    """Generate a GIF for a single panel.
+    """GIF of a single overview panel.
 
     Parameters
     ----------
-    panel_name : one of "position_xy", "position_xz", "velocity_xy",
-                 "velocity_xz", "field", "spectrum"
-    filename : output path.  Defaults to f"{panel_name}.gif"
-    writer : "gif" (Pillow).
-    (other params: same as make_overview_gif)
+    panel_name : str
+        "position_xy", "position_xz", "velocity_xy", "velocity_xz",
+        "field" or "spectrum".
+    filename : str or None
+        Output file, by default "<panel_name>.gif".
+    dpi : int
+        Resolution of the frames.
+
+    The other parameters are as for :func:`make_overview_gif`.
 
     Returns
     -------
-    filename : str
+    filename
     """
     if panel_name not in LAYOUT:
         raise ValueError(f"Unknown panel '{panel_name}'. Choose from: {list(LAYOUT)}")
@@ -587,22 +587,35 @@ def make_overview_gif(
     title: str = "Overview",
     dpi: int = 70,
 ):
-    """Generate a combined overview GIF with up to 6 panels.
+    """GIF of the overview figure.
 
     Parameters
     ----------
+    history, field, q, m
+        As for :func:`plot_overview`, as are the display options.
+    filename : str
+    fps : int
+        Frames per second.
+    n_frames : int
+        Number of frames, spread evenly over the stored samples.
+    writer : "gif"
+        The only supported format.
     panels : list of str or None
-        Subset of panel names to include.  None → all 6.
-    filename : output path
-    n_frames : number of GIF frames (evenly spaced over the stored history)
-    spectrum_update_every : recompute the FFT every this many frames
-    field_update_every : re-trace time-dependent non-uniform fields every
-        this many frames (uniform fields update every frame)
-    writer : "gif".
+        Panels to include (names as in ``LAYOUT``); by default all six.
+    spectrum_update_every : int
+        Recompute the spectrum every this many frames.
+    field_update_every : int
+        Redraw time dependent non-uniform fields every this many frames;
+        uniform fields are updated in every frame.
+    field_trail : int or None
+        Length of the orbit trail in the field panel, in stored samples.
+    title : str
+    dpi : int
+        Resolution of the frames.
 
     Returns
     -------
-    filename : str
+    filename
     """
     panels = panels or list(LAYOUT.keys())
 
