@@ -22,7 +22,8 @@
   in physical units: the module constants are set from the code units, the disk starts
   in local thermodynamic equilibrium and the radial boundaries handle radiation fields.
   Compton energy exchange between gas and radiation enters as an effective absorption
-  opacity, and the gas temperature is floored at 1e4 K.
+  opacity, the gas temperature is floored at 1e4 K, and matter and radiation decouple
+  where the gas moves faster than the nonrelativistic radiation module can handle.
   ========================================================================================
   ========================================================================================
 */
@@ -64,6 +65,9 @@
 
 #define T_OPAC_MIN 1.0e4   // Kelvin, lower validity limit of Kramers opacities used below
 #define T_GAS_MIN  1.0e4   // Kelvin, gas temperature floor, no recombination or molecular physics below
+
+#define BETA_DECOUPLE 0.5  // v/c above which matter and radiation are decoupled, see UserDefOpacitiesAt
+#define BETA_WIDTH    0.05 // width of that transition in v/c
 
 /* ********************************************************************* */
 static double MeanMolWeight (void)
@@ -1023,7 +1027,7 @@ void UserDefOpacitiesAt(double *v, double x1, double x2, double *abs, double *sc
  * resistivity are, in place of the previous tracer.
  *********************************************************************** */
 {
-  double rho_cgs, T, kappa_ffbf, kappa_es, kappa_c, f;
+  double rho_cgs, T, kappa_ffbf, kappa_es, kappa_c, f, beta;
 
   rho_cgs = v[RHO] * UNIT_DENSITY;                                // g/cm^3
   T       = MAX(GetTemperature(v[RHO], v[PRS]), T_OPAC_MIN);      // Kelvin
@@ -1033,6 +1037,15 @@ void UserDefOpacitiesAt(double *v, double x1, double x2, double *abs, double *sc
   kappa_c    = ComptonOpacity(v, kappa_es);                       // cm^2/g
 
   f = DiskFraction(v, x1, x2);
+
+  /* The nonrelativistic radiation module assumes v << c, its v^2/c^2
+     source corrections turn into anti damping once v approaches c, and
+     with Newtonian dynamics in the Paczynski-Wiita potential the plunging
+     gas next to the horizon reaches several c. Matter and radiation are
+     therefore decoupled smoothly above BETA_DECOUPLE, which only affects
+     the plunging region inside a few R_g. */
+  beta = sqrt(v[VX1]*v[VX1] + v[VX2]*v[VX2] + v[VX3]*v[VX3]) / g_radC;
+  f   *= 1.0 / (1.0 + exp(MIN((beta - BETA_DECOUPLE) / BETA_WIDTH, 50.0)));
 
   /* The Compton part only exchanges energy, so it is moved from scattering
      to absorption, leaving the total extinction at exactly Thomson. */
