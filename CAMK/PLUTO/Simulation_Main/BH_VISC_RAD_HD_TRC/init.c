@@ -18,7 +18,9 @@
   ========================================================================================
   ========================================================================================
   Further modified to include a replacement for the tracer and fixes to radiation module.
-  Opacity code was slightly extended to expose position to DiskFrac call.
+  Opacity code was slightly extended to expose position to DiskFrac call. Radiation runs
+  in physical units: the module constants are set from the code units, the disk starts
+  in local thermodynamic equilibrium and the radial boundaries handle radiation fields.
   ========================================================================================
   ========================================================================================
 */
@@ -31,66 +33,92 @@
  #include <mpi.h>
 #endif
 
-#define T_FLOOR_KELVIN 10.0   // physical floor, Kelvin — carries actual meaning; adjust to sensible minimum for this problem
-
 /* ---------------------------------------------------------------------
- * Composition and Unit-Temperature Support
+ * Physical Units
  * ---------------------------------------------------------------------
- * X, Z (and derived Y) set the gas composition used both by the Kramers
- * opacity coefficients below and by the mean molecular weight mu, which
- * is needed to convert PLUTO's dimensionless code-unit temperature
- * (returned by GetTemperature) into physical Kelvin for use in the
- * CGS-calibrated opacity formulas.
+ * Code units are fixed in definitions.h through BH_MASS:
+ *
+ *   UNIT_LENGTH   = R_g = G M / c^2
+ *   UNIT_VELOCITY = c   = sqrt(G M / UNIT_LENGTH)
+ *   UNIT_DENSITY  = free normalization, sets the disk density in g/cm^3
+ *
+ * so G M = 1 in code units, which is exactly what the potential, the
+ * corona and the Kluzniak & Kita disk below assume. The Keplerian speed at
+ * r = 1 (the "stellar surface" of the original setup, here r = R_g) is
+ * therefore identical to the speed of light, and all velocities written
+ * by the initialization are consistently in units of c.
+ *
+ * The radiation module does not know about any of this by itself, all of
+ * its constants default to unity. They are set here following the
+ * convention of PLUTO's own radiative disk tests, after which:
+ *
+ *   GetTemperature(rho, prs)   returns the gas temperature in Kelvin
+ *   Blackbody(T [K])           returns a_R T^4 in code energy density
+ *   opacities                  are per unit mass, in code units
  * --------------------------------------------------------------------- */
 #define X_MASSFRAC 0.70    // hydrogen mass fraction
 #define Z_MASSFRAC 0.02    // metallicity
 #define Y_MASSFRAC (1.0 - X_MASSFRAC - Z_MASSFRAC)   // helium mass fraction, derived
 
-static double g_unitTemperature = -1.0;   // Kelvin per code-unit temperature; computed once on first use, see GetUnitTemperature()
-static double g_TFloorCode      = -1.0;   // T_FLOOR_KELVIN converted to code units; computed alongside g_unitTemperature
+#define T_OPAC_MIN 1.0e4   // Kelvin, lower validity limit of Kramers opacities used below
 
 /* ********************************************************************* */
-double MeanMolWeightNoCooling ()
+static double MeanMolWeight (void)
 /*!
- * Mean molecular weight for a fully ionized gas, no non-equilibrium
- * chemistry/cooling tracked (matches PLUTO's own MeanMolecularWeight()
- * under COOLING == NO, evaluated here from mass fractions rather than
- * PLUTO's FRAC_He/FRAC_Z number-fraction macros, so it does not depend
- * on those macros being defined in this build).
+ * Mean molecular weight for a fully ionized gas of the composition above.
  *********************************************************************** */
 {
   return 1.0 / (2.0*X_MASSFRAC + 0.75*Y_MASSFRAC + 0.5*Z_MASSFRAC);
 }
 
 /* ********************************************************************* */
-double GetUnitTemperature ()
+static void SetPhysicalUnits (void)
 /*!
- * Return Kelvin per unit of PLUTO's dimensionless code-unit temperature,
- * i.e. the factor GetTemperature()'s return value must be multiplied by
- * to obtain physical Kelvin. Computed once (deterministically, so safe
- * to recompute independently on every MPI rank with no communication)
- * and cached in g_unitTemperature; also caches T_FLOOR_KELVIN converted
- * to code units in g_TFloorCode.
- *
- * COOLING == NO (this problem's current configuration) uses the
- * fully-ionized mu above. If COOLING is enabled in a future build,
- * switch this to call PLUTO's own MeanMolecularWeight(v) so mu matches
- * g_idealGasConst exactly as computed by that build's cooling module;
- * that call needs a live primitive-variable array v, unlike the
- * COOLING==NO case, so the call site will need updating accordingly.
+ * Set the radiation module constants in code units. Cheap and idempotent,
+ * called from Init(), which PLUTO runs on restarts as well.
  *********************************************************************** */
 {
-  double mu;
-
-  if (g_unitTemperature > 0.0) return g_unitTemperature;
-
-  mu = MeanMolWeightNoCooling();
-
-  g_unitTemperature = UNIT_VELOCITY*UNIT_VELOCITY * mu * CONST_mp / CONST_kB;
-  g_TFloorCode      = T_FLOOR_KELVIN / g_unitTemperature;
-
-  return g_unitTemperature;
+#if RADIATION
+  g_radiationConst = 4.0 * CONST_sigma / CONST_c
+                     / (UNIT_DENSITY * UNIT_VELOCITY * UNIT_VELOCITY);   // a_R / (rho0 v0^2), per K^4
+  g_idealGasConst  = MeanMolWeight() * CONST_amu / CONST_kB
+                     * UNIT_VELOCITY * UNIT_VELOCITY;                    // T [K] = g_idealGasConst * p / rho
+  g_radC           = CONST_c / UNIT_VELOCITY;                            // exactly 1 for UNIT_VELOCITY = c
+  g_reducedC       = g_inputParam[REDUCED_C] * g_radC;                   // must stay above all gas speeds
+#endif
 }
+
+#if RADIATION
+/* ********************************************************************* */
+static double LTETemperature (double rho, double ptot)
+/*!
+ * Temperature at which gas and radiation in local thermodynamic equilibrium
+ * together provide the total pressure, i.e. the root of
+ *
+ *   rho T / g_idealGasConst + g_radiationConst T^4 / 3 = ptot
+ *
+ * The left side is increasing and convex in T. Both the pure gas and the
+ * pure radiation estimates lie above the root, so Newton started from the
+ * smaller of the two converges monotonically from above.
+ *********************************************************************** */
+{
+  double T, Tg, Tr, f, df;
+  int    n;
+
+  Tg = g_idealGasConst * ptot / rho;
+  Tr = pow(3.0 * ptot / g_radiationConst, 0.25);
+  T  = MIN(Tg, Tr);
+
+  for (n = 0; n < 100; n++) {
+    f  = rho * T / g_idealGasConst + g_radiationConst * T*T*T*T / 3.0 - ptot;
+    df = rho / g_idealGasConst + 4.0 / 3.0 * g_radiationConst * T*T*T;
+    T -= f / df;
+    if (fabs(f) < 1.e-12 * ptot) break;
+  }
+
+  return T;
+}
+#endif
 
 /* ---------------------------------------------------------------------
  * Inner Boundary Condition Selector
@@ -399,6 +427,8 @@ void Init (double *v, double x1, double x2, double x3)
   double coeff, eps2, pc, rcyl;
   double lambda;
 
+  SetPhysicalUnits();
+
   rcyl = x1 * sin(x2);
   eps2 = g_inputParam[EPS] * g_inputParam[EPS];
   coeff = 0.4 / eps2 * (1.0 / x1 - (1.0 - 2.5 * eps2) / rcyl);
@@ -462,13 +492,27 @@ void Init (double *v, double x1, double x2, double x3)
 #endif /* PHYSICS == MHD */
 
   #if RADIATION
-  /* Blackbody/GetTemperature both operate in PLUTO code units here
-     (g_radiationConst is itself normalized so Blackbody(T_code) returns
-     code-unit radiation energy density) — the floor must therefore also
-     be in code units, not Kelvin, so convert T_FLOOR_KELVIN via
-     GetUnitTemperature() rather than applying it directly. */
-  GetUnitTemperature();   /* ensure g_TFloorCode is populated */
-  v[ENR] = Blackbody(MAX(GetTemperature(v[RHO],v[PRS]), g_TFloorCode)) * DiskFraction(v, x1, x2) ;
+  /* -------------------------------------------------------------------
+     4. Radiation field in local thermodynamic equilibrium
+
+     The analytic disk pressure above is the total pressure that holds
+     the disk in equilibrium. With radiation enabled it is shared between
+     gas and radiation at a common temperature, which for AGN parameters
+     makes the disk radiation pressure dominated, as expected. Putting it
+     all into the gas instead would give T ~ 1e9-1e10 K and, through a_R T^4,
+     a radiation energy many orders of magnitude above the gas energy.
+
+     The corona is transparent by construction, since opacities are gated
+     by DiskFraction, so it remains purely adiabatic gas and starts with
+     the minimum radiation energy the module allows.
+     ------------------------------------------------------------------- */
+  if (DiskFraction(v, x1, x2) > 0.5) {
+    double T = LTETemperature(v[RHO], v[PRS]);
+    v[PRS] = v[RHO] * T / g_idealGasConst;
+    v[ENR] = Blackbody(T);
+  } else {
+    v[ENR] = RADIATION_MIN_ERAD;
+  }
   v[FR1] = 0.;
   v[FR2] = 0.;
   v[FR3] = 0.;
@@ -718,6 +762,14 @@ void UserDefBoundary (const Data *d, RBox *box, int side, Grid *grid)
         if (d->Vc[PRS][k][j][i] < g_inputParam[DFLOOR] * 1.0e-3) {
           d->Vc[PRS][k][j][i] = g_inputParam[DFLOOR] * 1.0e-3;
         }
+
+#if RADIATION
+        /* radiation may only stream into the horizon, never out of it */
+        d->Vc[ENR][k][j][i] = d->Vc[ENR][k][j][IBEG];
+        d->Vc[FR1][k][j][i] = MIN(d->Vc[FR1][k][j][IBEG], 0.0);
+        d->Vc[FR2][k][j][i] = d->Vc[FR2][k][j][IBEG];
+        d->Vc[FR3][k][j][i] = d->Vc[FR3][k][j][IBEG];
+#endif
       }
 
 #elif INNER_BOUNDARY == BOUNDARY_STAR
@@ -746,6 +798,14 @@ void UserDefBoundary (const Data *d, RBox *box, int side, Grid *grid)
         if (d->Vc[RHO][k][j][i] < g_inputParam[DFLOOR]) {
           d->Vc[RHO][k][j][i] = g_inputParam[DFLOOR];
         }
+
+#if RADIATION
+        /* zero gradient radiation field at the stellar surface */
+        d->Vc[ENR][k][j][i] = d->Vc[ENR][k][j][IBEG];
+        d->Vc[FR1][k][j][i] = d->Vc[FR1][k][j][IBEG];
+        d->Vc[FR2][k][j][i] = d->Vc[FR2][k][j][IBEG];
+        d->Vc[FR3][k][j][i] = d->Vc[FR3][k][j][IBEG];
+#endif
       }
 #endif
 
@@ -763,6 +823,14 @@ void UserDefBoundary (const Data *d, RBox *box, int side, Grid *grid)
     if (box->vpos == CENTER) {
       BOX_LOOP(box, k, j, i) {
         d->Vc[TRC][k][j][i] = d->Vc[TRC][k][j][IEND];
+
+#if RADIATION
+        /* radiation leaves the domain freely, nothing streams back in */
+        d->Vc[ENR][k][j][i] = d->Vc[ENR][k][j][IEND];
+        d->Vc[FR1][k][j][i] = MAX(d->Vc[FR1][k][j][IEND], 0.0);
+        d->Vc[FR2][k][j][i] = d->Vc[FR2][k][j][IEND];
+        d->Vc[FR3][k][j][i] = d->Vc[FR3][k][j][IEND];
+#endif
 
         /* logarithmic extrapolation of density */
         a1 = log10(d->Vc[RHO][k][j][IEND]   / d->Vc[RHO][k][j][IEND-1]) / log10(r[IEND]   / r[IEND-1]);
@@ -867,20 +935,23 @@ double BodyForcePotential(double x1, double x2, double x3)
 #endif
 
 #if RADIATION_VAR_OPACITIES
-        #include <math.h>
+/* ---------------------------------------------------------------------
+ * Kramers and Electron Scattering Opacities (CGS)
+ * ---------------------------------------------------------------------
+ *   kappa_ff = C_FF g_ff (1 - Z) (1 + X)   rho T^-3.5   cm^2/g
+ *   kappa_bf = C_BF g_bf Z (1 + X) / t     rho T^-3.5   cm^2/g
+ *   kappa_es = 0.2 (1 + X)                              cm^2/g
+ * --------------------------------------------------------------------- */
+#define G_BF     1.0       // bound-free Gaunt factor
+#define G_FF     1.0       // free-free Gaunt factor
+#define T_FACTOR 1.0e1     // bound-free guillotine factor, typically 1 < t < 100
 
-        #define G_BF 1.0        // Bound-Free Gaunt factor
-        #define G_FF 1.0        // Free-Free Gaunt factor
-        #define T_FACTOR 1e1    // Bound-Free correction factor, typically 1 < T < 100
+#define C_BF 4.34e25       // Kramers bound-free constant, CGS
+#define C_FF 3.68e22       // Kramers free-free constant, CGS
 
-        #define C_BF 4.34e25    // Kramer's law bound-free constant, CGS
-        #define C_FF 3.68e22    // Kramer's law free-free constant,  CGS
-
-    // scattering constants (CGS); X_MASSFRAC/Z_MASSFRAC defined above
-    const double K_BF = C_BF * G_BF * Z_MASSFRAC * (1.0 + X_MASSFRAC) / T_FACTOR;
-    const double K_FF = C_FF * (1.0 - Z_MASSFRAC) * (1.0 + X_MASSFRAC);
-    const double K_ES = 0.2  * (1.0 + X_MASSFRAC);
-
+static const double K_BF = C_BF * G_BF * Z_MASSFRAC * (1.0 + X_MASSFRAC) / T_FACTOR;
+static const double K_FF = C_FF * G_FF * (1.0 - Z_MASSFRAC) * (1.0 + X_MASSFRAC);
+static const double K_ES = 0.2 * (1.0 + X_MASSFRAC);
 
 /* ********************************************************************* */
 void UserDefOpacitiesAt(double *v, double x1, double x2, double *abs, double *scat)
@@ -889,56 +960,33 @@ void UserDefOpacitiesAt(double *v, double x1, double x2, double *abs, double *sc
  * from two places:
  *   1. For user defined opacities, the fixed signature entry point that
  *      the radiation module calls from radiation steps, it supplies x1,x2
- *      via the g_i/g_j globals.
+ *      via the g_i_rad/g_j globals.
  *   2. For user defined ouputs, its diagnostic loop directly uses own
  *      real x1[i],x2[j] instead of the globals, which would be stale
  *      there, left over from whichever cell the last radiation implicit
  *      step visited, not the cell the diagnostic loop is currently on.
  *
+ * PLUTO multiplies the returned coefficients by the density itself, see
+ * e.g. dt*rho0*g_reducedC*abs_op in rad_step.c, so they are opacities per
+ * unit mass. Converting cm^2/g to code units uses UNIT_DENSITY*UNIT_LENGTH,
+ * so that kappa*rho*dx is the same optical depth in both systems.
+ *
  * Opacities are gated by DiskFraction the same way viscosity and
  * resistivity are, in place of the previous tracer.
  *********************************************************************** */
 {
-    /* K_BF, K_FF, K_ES are CGS-calibrated Kramers coefficients — rho and T
-       must be converted from PLUTO code units to CGS (g/cm^3, Kelvin)
-       before entering the opacity formulas. UNIT_DENSITY converts density
-       directly; temperature needs GetUnitTemperature() since PLUTO has no
-       fixed UNIT_TEMPERATURE macro (derived from UNIT_VELOCITY and the
-       mean molecular weight, not an independent normalization).
+  double rho_cgs, T, kappa_ffbf, kappa_es, f;
 
-       The resulting kappa_cgs [cm^2/g] must then be converted BACK to a
-       code-unit opacity before multiplying by rho_code: RadImplicitNR
-       (rad_step.c) uses abs_op/tot_op directly in expressions like
-       dt*rho0*g_reducedC*abs_op added to 1.0, i.e. it expects a code-unit
-       opacity coefficient consistent with code-unit rho and g_reducedC,
-       not a raw CGS cm^2/g value. Since kappa*rho*L is the dimensionless
-       optical depth, kappa_code = kappa_cgs * UNIT_DENSITY * UNIT_LENGTH
-       is the correct conversion so that kappa_code*rho_code reproduces
-       the same physical optical-depth-per-code-length as kappa_cgs*rho_cgs
-       does in physical cm. */
-    double unitTemperature = GetUnitTemperature();   /* cached after first call */
+  rho_cgs = v[RHO] * UNIT_DENSITY;                                // g/cm^3
+  T       = MAX(GetTemperature(v[RHO], v[PRS]), T_OPAC_MIN);      // Kelvin
 
-    double rho_code = v[RHO];
-    double rho_cgs  = rho_code * UNIT_DENSITY;                                    // g/cm^3
-    double T_cgs    = MAX(GetTemperature(v[RHO], v[PRS]), g_TFloorCode) * unitTemperature;  // Kelvin
-    double f;
+  kappa_ffbf = (K_BF + K_FF) * rho_cgs * pow(T, -3.5);            // cm^2/g
+  kappa_es   = K_ES;                                              // cm^2/g
 
-    double kappa_es_cgs   = K_ES;                                       // cm^2/g
-    double kappa_ffbf_cgs = (K_BF + K_FF) * pow(T_cgs, -3.5);           // cm^2/g (rho left out here deliberately — see rho_cgs note below)
+  f = DiskFraction(v, x1, x2);
 
-    /* Kramers free-free/bound-free opacity already has an explicit rho
-       dependence baked into the physical formula (kappa ~ rho * T^-3.5);
-       that physical rho must be rho_cgs, matching the CGS calibration of
-       C_BF/C_FF, before converting the whole coefficient to code units. */
-    kappa_ffbf_cgs *= rho_cgs;
-
-    double kappa_es_code   = kappa_es_cgs   * UNIT_DENSITY * UNIT_LENGTH;
-    double kappa_ffbf_code = kappa_ffbf_cgs * UNIT_DENSITY * UNIT_LENGTH;
-
-    f = DiskFraction(v, x1, x2);
-
-    *scat = f * rho_code * kappa_es_code;        // Thomson scattering only
-    *abs  = f * rho_code * kappa_ffbf_code;      // True free-free + bound-free absorption
+  *abs  = f * kappa_ffbf * UNIT_DENSITY * UNIT_LENGTH;   // true free-free + bound-free absorption
+  *scat = f * kappa_es   * UNIT_DENSITY * UNIT_LENGTH;   // Thomson scattering only
 }
 
 /* ********************************************************************* */
