@@ -42,3 +42,17 @@ coupling off above `v = 0.9 c`, with width `0.03 c`. The threshold must stay wel
 already `0.61 c` at `R = 6` and `0.47 c` at `R = 8`. A first try at `0.5 c` decoupled the whole inner disk, which then heated up just as
 without Compton. At `0.9 c` only the plunging region inside `r ~ 4` is affected, and the gas dynamics there stay untouched. `BH_VISC_RAD_HD_TRC/` has the same superluminal plunge, and it survives there only because that region holds
 much less radiation.
+
+### Test Runs and Disk Parameters
+
+Serial test runs to `t = 200` on the default grid, compared against `BH_VISC_RAD_HD_TRC/`, show that the Compton coupling works as
+intended: the midplane gas stays at `1e6–1e7 K` and the disk remains radiation pressure dominated by `1e3–1e4`, where previously gas and
+radiation pressure equalized within `t ~ 20`. The disk nevertheless inflates radiation-driven cavities from `t ~ 50` and is disrupted by
+`t ~ 150`. This follows from the parameters rather than the numerics: with `BETAV = 1` and `UNIT_DENSITY = 1.16e-8`, viscous heating in
+the initial disk exceeds what radiative diffusion can carry out by a factor `12–31` at `R = 8–20`, which corresponds to strongly
+super-Eddington accretion. The radiation energy of the disk then doubles within about `40–60` time units at `R = 8–10`, so it cannot
+stay thin.
+
+Heating over cooling scales with `BETAV * UNIT_DENSITY`. Lowering the density to `UNIT_DENSITY = 5.8e-10` brings both into rough
+balance while keeping the disk optically thick, at `tau ~ 100` from midplane to surface, and in that run the disk stays thin and intact
+through `t = 200`.
