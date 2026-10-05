@@ -1,0 +1,12 @@
+USER           = fritz
+WORKING_DIR    = /home/fritz/work/notebooks/CAMK/PLUTO/Simulation_Main/BH_VISC_RAD_HD_TRC_COMP
+SYSTEM_NAME    = Linux
+NODE_NAME      = pluto
+RELEASE        = 7.2.8-arch1-2
+ARCH           = x86_64
+BYTE_ORDER     = little
+VERSION        = #1 SMP PREEMPT_DYNAMIC Thu, 01 Oct 2026 17:24:20 +0000
+PLUTO_DIR      = /home/fritz/work/notebooks/CAMK/PLUTO/PLUTO
+PLUTO_VERSION  = 2026)"
+C_COMPILER     = gcc
+MPI_C_COMPILER = mpicc
