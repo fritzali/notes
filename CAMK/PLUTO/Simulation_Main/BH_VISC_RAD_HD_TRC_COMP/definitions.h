@@ -36,7 +36,7 @@
 /* [Beg] user-defined constants (do not change this line) */
 
 #define  BH_MASS                        (1.0e8*1.989e33)
-#define  UNIT_DENSITY                   1.16e-8
+#define  UNIT_DENSITY                   5.8e-10
 #define  UNIT_LENGTH                    (CONST_G*BH_MASS/(CONST_c*CONST_c))
 #define  UNIT_VELOCITY                  (sqrt(CONST_G*BH_MASS/UNIT_LENGTH))
 #define  WARNING_MESSAGES               NO

@@ -10,6 +10,7 @@ radiation is Kramers absorption, which falls as `T^-3.5`. The overpressured gas 
 2. `init.c` floors the gas temperature at `1e4 K`
 3. `init.c` decouples matter and radiation where the gas moves faster than about `0.9 c`
 4. `rad_step.c` keeps the radiation energy density of the primitive state current inside the implicit iteration
+5. `definitions.h` lowers `UNIT_DENSITY` to `5.8e-10`, so that the disk can radiate its viscous heating, see below
 
 ### Compton Coupling
 
@@ -53,6 +54,6 @@ the initial disk exceeds what radiative diffusion can carry out by a factor `12�
 super-Eddington accretion. The radiation energy of the disk then doubles within about `40–60` time units at `R = 8–10`, so it cannot
 stay thin.
 
-Heating over cooling scales with `BETAV * UNIT_DENSITY`. Lowering the density to `UNIT_DENSITY = 5.8e-10` brings both into rough
-balance while keeping the disk optically thick, at `tau ~ 100` from midplane to surface, and in that run the disk stays thin and intact
-through `t = 200`.
+Heating over cooling scales with `BETAV * UNIT_DENSITY`. This setup therefore uses `UNIT_DENSITY = 5.8e-10`, twenty times lower than
+`BH_VISC_RAD_HD_TRC/`, which brings both into rough balance while keeping the disk optically thick, at `tau ~ 100` from midplane to
+surface. The disk midplane then starts at `2–3e5 K`, and in the test run the disk stays thin and intact through `t = 200`.
