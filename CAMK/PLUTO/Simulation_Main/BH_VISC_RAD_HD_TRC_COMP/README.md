@@ -13,7 +13,8 @@ radiation is Kramers absorption, which falls as `T^-3.5`. The overpressured gas 
 5. `definitions.h` lowers `UNIT_DENSITY` to `5.8e-10`, so that the disk can radiate its viscous heating, see below
 6. `pluto.ini` lowers `BETAV` to `0.5` for the same reason, see below
 7. `init.c` holds the Compton rate fixed above a gas temperature of `1e9 K`
-8. `init.c` switches all opacities off below `DiskFraction = 0.05`, so that the corona is truly transparent
+8. `init.c` switches absorption and Compton off below `DiskFraction = 0.05`, so that the corona is thermally decoupled
+9. `init.c` applies Thomson scattering to all gas instead of gating it by DiskFraction
 
 ### Compton Coupling
 
@@ -85,3 +86,20 @@ within `20–50` time units. Two changes address this:
 The corona drained in `BH_VISC_RAD_HD_TRC/` as well, though more slowly. Its mass fell from `2.8` to `0.66` code units by `t = 200`.
 This happens because the corona is built in Newtonian hydrostatic equilibrium but evolves in the stronger Paczyński–Wiita potential, and
 the outer boundary blocks coronal inflow, so it is never replenished. None of the changes here address that.
+
+### Ungated Thomson Scattering
+
+The run with the changes above showed a thin, dense layer along the disk surface from `t ~ 40`. It was up to `15` times denser than
+the midplane, sat exactly at the DiskFraction boundary, and wrinkled and lifted off in a Rayleigh–Taylor-like way. The disk interior is
+supported almost entirely by radiation, with radiation pressure exceeding gas pressure by `1e3–1e4`, but radiation could only push on gas
+classified as disk, because all opacities were multiplied by DiskFraction. Gas lifted across the classification edge lost its opacity and
+fell back, while gas just below was still pushed up, so material converged and piled up at the edge. Meanwhile the interior heated and
+inflated, which inverted the vertical density profile. Once the corona had drained, after `t ~ 400`, the disk became smooth and
+resembled `BH_VISC_HD/`.
+
+Thomson scattering only transfers momentum, and its opacity per unit mass is the same for all ionized gas, so there is no physical reason
+to restrict it to the disk. Only the energy exchange, Kramers absorption and Compton, needs gating to keep the hot corona from being
+Compton cooled. Scattering is therefore no longer gated, while absorption and Compton keep the DiskFraction gating and the `0.05` cutoff.
+The velocity decoupling above `0.9 c` still applies to all of them, because the unstable `v^2/c^2` terms scale with the total opacity.
+These changes have not been tested yet. The corona, now with a Thomson optical depth of about `1–3`, may be pushed outward by radiation,
+and the `kappa_scat` output is no longer zero there.
