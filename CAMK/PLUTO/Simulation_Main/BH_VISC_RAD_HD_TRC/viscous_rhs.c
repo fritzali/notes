@@ -15,12 +15,16 @@
   res_rhs.c for the resistive operator, the update is written in
   conservative flux-divergence form using a viscous flux \c ViF and
   source term \c ViS (from ViscousFlux(), which internally uses the
-  coefficients from Visc_nu()); a local, explicit viscous-heating
-  correction is then subtracted from the internal energy using the
-  viscous momentum flux components at the cell (see step "cooling"
-  below), capped so it cannot remove more than a fixed fraction of the
-  local thermal energy in a single step - the direct analog of the
-  Ohmic cooling safeguard in ResistiveRHS().
+  coefficients from Visc_nu()).
+
+  =====================================================================
+  With radiation enabled, the ad hoc sink that radiated away the viscous
+  heating of disk material has been removed. The heat stays in the gas
+  and is exchanged with the radiation field by the radiative transfer
+  module, which is what cools the disk. The file is kept as a local copy
+  so that it lines up with the non-radiative setups, which still carry
+  that sink, and is otherwise identical to the PLUTO original.
+  =====================================================================
 
   \authors A. Mignone (andrea.mignone@unito.it)\n
 
@@ -30,7 +34,6 @@
 */
 /* ///////////////////////////////////////////////////////////////////// */
 #include "pluto.h"
-#include "modifications.h"
 
 /* ********************************************************************* */
 void ViscousRHS (const Data *d, Data_Arr dU, double *dcoeff,
@@ -56,17 +59,6 @@ void ViscousRHS (const Data *d, Data_Arr dU, double *dcoeff,
   double A, dtdV, wp, w;
   double rhs[NVAR];
   static double **ViF, **ViS, **fxA, **src;
-  double vc[NVAR], vi[NVAR];    /* Center and interface values */
-
-  /* -- Viscous heating correction: locally evaluated nu1 and the
-        associated capped energy sink; see step-by-step comments
-        below for the physical/numerical rationale. -- */
-  double nu1, nu2, rr, tt, st, rr2, rr4, st2, st4;
-  double nu_floor = 1e-25;      /* below this, nu1 is treated as zero  */
-  double cost = 2;              /* O(1) prefactor for the viscous heat */
-  double cool_cutoff = 1e-1;    /* max fraction of thermal energy      */
-                                 /* removable in a single step         */
-  double cool;
   intList var_list;
   #if HAVE_ENERGY
   var_list.nvar = 4;
@@ -155,44 +147,11 @@ void ViscousRHS (const Data *d, Data_Arr dU, double *dcoeff,
         rhs[nv] = dtdV*(fxA[i][nv] - fxA[i-1][nv]) + dt*src[i][nv];
       }
 
-      /* -- 1c. Explicit viscous heating correction.
-
-             Evaluate the local dynamical viscosity nu1 at the cell
-             center, then estimate the local viscous heating rate
-             from the momentum-flux components of the viscous flux
-             (ViF[iMR], ViF[iMTH], ViF[iMPHI]) and remove it from
-             the internal energy:
-
-               cool = cost*tracer*dt * 0.5*(ViF_R^2+ViF_TH^2+ViF_PHI^2)/nu1
-
-             This is the viscous-heating analog of the Ohmic cooling
-             correction in ResistiveRHS(): applied only where nu1
-             exceeds a numerical floor (nu_floor), and only if the
-             resulting energy removal stays below a fixed fraction
-             (cool_cutoff) of the local thermal energy p/(gamma-1),
-             to guard against over-cooling / negative pressures from
-             locally large viscous stresses.
-         -- */
-
-      NVAR_LOOP(nv) {
-        vc[nv] = d->Vc[nv][k][j][i];
-      }
-      Visc_nu(vc, x1[i], x2[j], x3[k], &nu1, &nu2);
-      if (nu1 > nu_floor) {
-//      cool = cost*vc[TRC]*dt*0.5*(pow(ViF[i][iMR],2)+pow(ViF[i][iMTH],2)+pow(ViF[i][iMPHI],2))/(nu1);
-  /* Replaced vc[TCR] with the DiskFraction(vc, x1, x2) reconstruction. */
-        cool = cost*DiskFraction(vc, x1[i], x2[j])*dt*0.5*(pow(ViF[i][iMR],2)+pow(ViF[i][iMTH],2)
-                                     +pow(ViF[i][iMPHI],2))/(nu1);
-        if (fabs(cool) < cool_cutoff*vc[PRS]/(g_gamma-1)) {
-          rhs[ENG] -= cool;
-        }
-      }
-
       #ifdef iMPHI
       rhs[iMPHI] /= fabs(x1[i]);
       #endif
 
-    /* -- 1d. Correct energy rhs in rotating frame or fargo --
+    /* -- 1c. Correct energy rhs in rotating frame or fargo --
 
            Subtracts the work done against the (background/FARGO)
            azimuthal velocity w so that only the residual velocity's
@@ -214,6 +173,7 @@ void ViscousRHS (const Data *d, Data_Arr dU, double *dcoeff,
 
       #if ROTATING_FRAME == YES
       #if GEOMETRY == POLAR || GEOMETRY == CYLINDRICAL
+      w += g_OmegaZ*x1[i];
       #elif GEOMETRY == SPHERICAL
       w += g_OmegaZ*x1[i]*s[j];
       #endif
@@ -226,7 +186,7 @@ void ViscousRHS (const Data *d, Data_Arr dU, double *dcoeff,
       #endif
       #endif /* HAVE_ENERGY */
 
-    /* -- 1e. Update -- */
+    /* -- 1d. Update -- */
 
       FOR_EACH(nv, &var_list) dU[k][j][i][nv] += rhs[nv];
     }
@@ -264,30 +224,11 @@ void ViscousRHS (const Data *d, Data_Arr dU, double *dcoeff,
         rhs[nv] = dtdV*(fxA[j][nv] - fxA[j-1][nv]) + dt*src[j][nv];
       }
 
-      /* -- 2c. Viscous heating correction (X2 momentum-flux component) --
-             Same construction as step 1c, using the local nu1 and the
-             viscous momentum fluxes at the X2 interface index j.
-         -- */
-
-      NVAR_LOOP(nv) {
-        vc[nv] = d->Vc[nv][k][j][i];
-      }
-      Visc_nu(vc, x1[i], x2[j], x3[k], &nu1, &nu2);
-      if (nu1 > nu_floor) {
-//      cool = cost*vc[TRC]*dt*0.5*(pow(ViF[j][iMR],2)+pow(ViF[j][iMTH],2)+pow(ViF[j][iMPHI],2))/(nu1);
-  /* Replaced vc[TCR] with the DiskFraction(vc, x1, x2) reconstruction. */
-        cool = cost*DiskFraction(vc, x1[i], x2[j])*dt*0.5*(pow(ViF[j][iMR],2)+pow(ViF[j][iMTH],2)
-                                     +pow(ViF[j][iMPHI],2))/(nu1);
-        if (fabs(cool) < cool_cutoff*vc[PRS]/(g_gamma-1)) {
-          rhs[ENG] -= cool;
-        }
-      }
-
       #if (GEOMETRY == SPHERICAL)
       rhs[iMPHI] /= fabs(s[j]);
       #endif
 
-    /* -- 2d. Correct energy rhs in rotating frame or fargo -- */
+    /* -- 2c. Correct energy rhs in rotating frame or fargo -- */
 
       #if HAVE_ENERGY
       w = 0.0;
@@ -313,7 +254,7 @@ void ViscousRHS (const Data *d, Data_Arr dU, double *dcoeff,
       #endif
       #endif /* HAVE_ENERGY */
 
-    /* -- 2e. Update -- */
+    /* -- 2d. Update -- */
 
       FOR_EACH(nv, &var_list) dU[k][j][i][nv] += rhs[nv];
     }
@@ -339,25 +280,6 @@ void ViscousRHS (const Data *d, Data_Arr dU, double *dcoeff,
 
       FOR_EACH(nv, &var_list){
         rhs[nv] = dtdV*(fxA[k][nv] - fxA[k-1][nv]) + dt*src[k][nv];
-      }
-
-      /* -- 3c. Viscous heating correction (X3 momentum-flux component) --
-             Same construction as steps 1c/2c, using the local nu1 and
-             the viscous momentum fluxes at the X3 interface index k.
-         -- */
-
-      NVAR_LOOP(nv) {
-        vc[nv] = d->Vc[nv][k][j][i];
-      }
-      Visc_nu(vc, x1[i], x2[j], x3[k], &nu1, &nu2);
-      if (nu1 > nu_floor) {
-//      cool = cost*vc[TRC]*dt*0.5*(pow(ViF[k][iMR],2)+pow(ViF[k][iMTH],2)+pow(ViF[k][iMPHI],2))/(nu1);
-  /* Replaced vc[TCR] with the DiskFraction(vc, x1, x2) reconstruction. */
-        cool = cost*DiskFraction(vc, x1[i], x2[j])*dt*0.5*(pow(ViF[k][iMR],2)+pow(ViF[k][iMTH],2)
-                                     +pow(ViF[k][iMPHI],2))/(nu1);
-        if (fabs(cool) < cool_cutoff*vc[PRS]/(g_gamma-1)) {
-          rhs[ENG] -= cool;
-        }
       }
 
       #if HAVE_ENERGY

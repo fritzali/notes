@@ -16,12 +16,16 @@
   flux \c res_flx (computed by ResistiveFlux(), using the diffusivity
   from Resistive_eta()) is differenced across each cell to produce the
   increment to the magnetic field (and, if energy is evolved, to the
-  total energy). A local, explicit Ohmic cooling correction is then
-  subtracted from the energy equation using the current density
-  \f$\vec J\f$ evaluated at the cell (see step "cooling" below); this
-  is a numerical safeguard, distinct from the standard resistive flux,
-  that caps the amount of local heating that can occur in a single
-  step so that it cannot destabilize the energy update.
+  total energy).
+
+  =====================================================================
+  With radiation enabled, the ad hoc sink that radiated away the Ohmic
+  heating of disk material has been removed. The heat stays in the gas
+  and is exchanged with the radiation field by the radiative transfer
+  module, which is what cools the disk. The file is kept as a local copy
+  so that it lines up with the non-radiative setups, which still carry
+  that sink, and is otherwise identical to the PLUTO original.
+  =====================================================================
 
   \authors A. Mignone (andrea.mignone@unito.it)\n
 
@@ -31,7 +35,6 @@
 */
 /* ///////////////////////////////////////////////////////////////////// */
 #include "pluto.h"
-#include "modifications.h"
 
 /* ********************************************************************* */
 void ResistiveRHS (const Data *d, Data_Arr dU, double **dcoeff,
@@ -56,16 +59,6 @@ void ResistiveRHS (const Data *d, Data_Arr dU, double **dcoeff,
   double A, dtdV, dtdl, q, rhs[NVAR];
   static double **res_flx, **fxA;
   intList var_list;
-
-  /* -- Ohmic (Joule) cooling correction: locally evaluated eta and
-        the associated capped energy sink; see step-by-step comments
-        below for the physical/numerical rationale. -- */
-  double eta[3], eta0, vc[NVAR];
-  double eta_floor = 1.e-25;      /* below this, eta is treated as zero  */
-  double cost = 1.0;              /* O(1) prefactor for the Joule term   */
-  double cool_cutoff = 1e-1;      /* max fraction of thermal energy      */
-                                   /* removable in a single step         */
-  double cool;
 
   #if HAVE_ENERGY
   var_list.nvar = 4;
@@ -156,39 +149,6 @@ void ResistiveRHS (const Data *d, Data_Arr dU, double **dcoeff,
       #endif
       #endif
 
-      /* -- 1c. Explicit Ohmic (Joule) cooling correction.
-
-             Evaluate the local resistivity eta0 = eta[IDIR] at the
-             cell center from the cell-centered primitive state, then
-             estimate the local Joule heating rate ~ eta0 * J_x1^2
-             (per unit tracer-weighted volume) and remove it from the
-             internal energy: cool = cost*dt*tracer*J_x1^2*eta0.
-
-             This acts as a numerical safety valve: it is only
-             applied where eta0 exceeds a numerical floor
-             (eta_floor), and only if the resulting energy removal
-             stays below a fixed fraction (cool_cutoff) of the local
-             thermal energy p/(gamma-1); otherwise the correction is
-             skipped for that step to avoid over-cooling / negative
-             pressures. This term supplements (rather than replaces)
-             the resistive energy flux already included via
-             fxA[][ENG] above; it targets local overshoots not
-             captured by the flux-based update.
-         -- */
-
-      NVAR_LOOP(nv) vc[nv] = d->Vc[nv][k][j][i];
-
-      Resistive_eta (vc, x1[i], x2[j], x3[k], NULL, eta);
-      eta0 = eta[0];
-      if (eta0 > eta_floor) {
-//      cool = cost*dt*vc[TRC]*pow(d->J[IDIR][k][j][i],2)*eta0;
-  /* Replaced vc[TCR] with the DiskFraction(vc, x1, x2) reconstruction. */
-        cool = cost*dt*DiskFraction(vc, x1[i], x2[j])*pow(d->J[IDIR][k][j][i],2)*eta0;
-        if (fabs(cool) < cool_cutoff*vc[PRS]/(g_gamma-1)) {
-          rhs[ENG] -= cool;
-        }
-      }
-
       FOR_EACH(nv, &var_list) dU[k][j][i][nv] += rhs[nv];
     }
 
@@ -220,24 +180,6 @@ void ResistiveRHS (const Data *d, Data_Arr dU, double **dcoeff,
       rhs[iBPHI] = dtdl*(res_flx[j][iBPHI] - res_flx[j-1][iBPHI]);
       #endif
 
-      /* -- 2c. Ohmic cooling correction (X2 current component) --
-             Same construction as step 1c, using eta[JDIR] and the
-             X2 component of the current density.
-         -- */
-
-      NVAR_LOOP(nv) vc[nv] = d->Vc[nv][k][j][i];
-
-      Resistive_eta (vc, x1[i], x2[j], x3[k], NULL, eta);
-      eta0 = eta[1];
-      if (eta0 > eta_floor) {
-//      cool = cost*dt*vc[TRC]*pow(d->J[JDIR][k][j][i],2)*eta0;
-  /* Replaced vc[TCR] with the DiskFraction(vc, x1, x2) reconstruction. */
-        cool = cost*dt*DiskFraction(vc, x1[i], x2[j])*pow(d->J[JDIR][k][j][i],2)*eta0;
-        if (fabs(cool) < cool_cutoff*vc[PRS]/(g_gamma-1)) {
-          rhs[ENG] -= cool;
-        }
-      }
-
       FOR_EACH(nv, &var_list) dU[k][j][i][nv] += rhs[nv];
     }
 
@@ -257,24 +199,6 @@ void ResistiveRHS (const Data *d, Data_Arr dU, double **dcoeff,
     for (k = beg; k <= end; k++){
       dtdV = dt/grid->dV[k][j][i];
       FOR_EACH(nv, &var_list) rhs[nv] = dtdV*(fxA[k][nv] - fxA[k-1][nv]);
-
-      /* -- 3c. Ohmic cooling correction (X3 current component) --
-             Same construction as steps 1c/2c, using eta[KDIR] and
-             the X3 (azimuthal) component of the current density.
-         -- */
-
-      NVAR_LOOP(nv) vc[nv] = d->Vc[nv][k][j][i];
-
-      Resistive_eta (vc, x1[i], x2[j], x3[k], NULL, eta);
-      eta0 = eta[2];
-      if (eta0 > eta_floor) {
-//      cool = cost*dt*vc[TRC]*pow(d->J[KDIR][k][j][i],2)*eta0;
-  /* Replaced vc[TCR] with the DiskFraction(vc, x1, x2) reconstruction. */
-        cool = cost*dt*DiskFraction(vc, x1[i], x2[j])*pow(d->J[KDIR][k][j][i],2)*eta0;
-        if (fabs(cool) < cool_cutoff*vc[PRS]/(g_gamma-1)) {
-          rhs[ENG] -= cool;
-        }
-      }
 
       FOR_EACH(nv, &var_list) dU[k][j][i][nv] += rhs[nv];
     }
