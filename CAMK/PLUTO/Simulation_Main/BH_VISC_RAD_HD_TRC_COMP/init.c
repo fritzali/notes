@@ -66,8 +66,8 @@
 #define T_OPAC_MIN 1.0e4   // Kelvin, lower validity limit of Kramers opacities used below
 #define T_GAS_MIN  1.0e4   // Kelvin, gas temperature floor, no recombination or molecular physics below
 
-#define BETA_DECOUPLE 0.5  // v/c above which matter and radiation are decoupled, see UserDefOpacitiesAt
-#define BETA_WIDTH    0.05 // width of that transition in v/c
+#define BETA_DECOUPLE 0.9  // v/c above which matter and radiation are decoupled, see UserDefOpacitiesAt
+#define BETA_WIDTH    0.03 // width of that transition in v/c
 
 /* ********************************************************************* */
 static double MeanMolWeight (void)
@@ -1042,8 +1042,9 @@ void UserDefOpacitiesAt(double *v, double x1, double x2, double *abs, double *sc
      source corrections turn into anti damping once v approaches c, and
      with Newtonian dynamics in the Paczynski-Wiita potential the plunging
      gas next to the horizon reaches several c. Matter and radiation are
-     therefore decoupled smoothly above BETA_DECOUPLE, which only affects
-     the plunging region inside a few R_g. */
+     therefore decoupled smoothly above BETA_DECOUPLE. The threshold has to
+     stay well above the orbital speed, which is already 0.6 c at R = 6 in
+     this potential, so that only the plunging region is affected. */
   beta = sqrt(v[VX1]*v[VX1] + v[VX2]*v[VX2] + v[VX3]*v[VX3]) / g_radC;
   f   *= 1.0 / (1.0 + exp(MIN((beta - BETA_DECOUPLE) / BETA_WIDTH, 50.0)));
 

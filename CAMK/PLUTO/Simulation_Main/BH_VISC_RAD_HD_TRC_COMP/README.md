@@ -8,7 +8,7 @@ radiation is Kramers absorption, which falls as `T^-3.5`. The overpressured gas 
 
 1. `init.c` adds Compton energy exchange as an effective absorption opacity
 2. `init.c` floors the gas temperature at `1e4 K`
-3. `init.c` decouples matter and radiation where the gas moves faster than about `0.5 c`
+3. `init.c` decouples matter and radiation where the gas moves faster than about `0.9 c`
 4. `rad_step.c` keeps the radiation energy density of the primitive state current inside the implicit iteration
 
 ### Compton Coupling
@@ -38,6 +38,7 @@ With Newtonian dynamics in the Paczyński–Wiita potential, free fall gives `v^
 to the inner boundary at `r = 2.1` moves at several `c`. The nonrelativistic radiation module assumes `v << c`, and its `v^2/c^2` source
 corrections turn into anti-damping once the gas approaches `c`. With Compton coupling the plunging gas carries enough radiation for this
 to produce a NaN within about 12 time units. Opacities are therefore multiplied by a logistic factor that switches matter–radiation
-coupling off above `v = 0.5 c`, with width `0.05 c`. This only affects the plunging region within a few `R_g`, and leaves the gas
-dynamics there untouched. `BH_VISC_RAD_HD_TRC/` has the same superluminal plunge, and it survives there only because that region holds
+coupling off above `v = 0.9 c`, with width `0.03 c`. The threshold must stay well above the orbital speed, which in this potential is
+already `0.61 c` at `R = 6` and `0.47 c` at `R = 8`. A first try at `0.5 c` decoupled the whole inner disk, which then heated up just as
+without Compton. At `0.9 c` only the plunging region inside `r ~ 4` is affected, and the gas dynamics there stay untouched. `BH_VISC_RAD_HD_TRC/` has the same superluminal plunge, and it survives there only because that region holds
 much less radiation.
