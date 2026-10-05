@@ -23,7 +23,8 @@
   in local thermodynamic equilibrium and the radial boundaries handle radiation fields.
   Compton energy exchange between gas and radiation enters as an effective absorption
   opacity, the gas temperature is floored at 1e4 K, and matter and radiation decouple
-  where the gas moves faster than the nonrelativistic radiation module can handle.
+  where the gas moves faster than the nonrelativistic radiation module can handle. The
+  Compton rate is held fixed above 1e9 K, and opacities vanish below DiskFraction 0.05.
   ========================================================================================
   ========================================================================================
 */
@@ -68,6 +69,9 @@
 
 #define BETA_DECOUPLE 0.9  // v/c above which matter and radiation are decoupled, see UserDefOpacitiesAt
 #define BETA_WIDTH    0.03 // width of that transition in v/c
+
+#define T_COMPTON_MAX 1.0e9   // Kelvin, gas temperature above which the Compton rate is held fixed, see ComptonOpacity
+#define F_OPAC_MIN    0.05    // DiskFraction below which all opacities vanish, see UserDefOpacitiesAt
 
 /* ********************************************************************* */
 static double MeanMolWeight (void)
@@ -991,18 +995,38 @@ static double ComptonOpacity (double *v, double kappa_es)
  * everywhere: kappa_es k T / (m_e c^2) in equilibrium, falling as T_g^-3
  * for hot gas, which keeps the exchange linear in T_g as it should be.
  * Needs v[ENR] to be current, see the patch in rad_step.c.
+ *
+ * The rate above is nonrelativistic and only valid for k T_g << m_e c^2,
+ * i.e. T_g well below ~6e9 K. Hot corona gas starts near 1e11 K, where it
+ * would overestimate the exchange enormously. Above T_COMPTON_MAX the rate
+ * is therefore held at its value for T_g = T_COMPTON_MAX, which requires
+ *
+ *   kappa_c = kappa_es 4 k T_r^4 (T_max - T_r) / (m_e c^2 (T_g^4 - T_r^4))
+ *
+ * so that rho kappa_c c (a_R T_g^4 - E_r) = L_C(T_max). Merely capping T_g
+ * inside the formula above would instead let the absorption form grow as
+ * T_g^4. Both branches agree at T_g = T_COMPTON_MAX.
  *********************************************************************** */
 {
-  double Tg, Tr;
+  double Tg, Tr, Tr4, mc2, kappa_c;
 
-  Tg = GetTemperature(v[RHO], v[PRS]);
-  Tr = pow(MAX(v[ENR], 0.0) / g_radiationConst, 0.25);
+  Tg  = GetTemperature(v[RHO], v[PRS]);
+  Tr  = pow(MAX(v[ENR], 0.0) / g_radiationConst, 0.25);
+  Tr4 = Tr*Tr*Tr*Tr;
+  mc2 = CONST_me * CONST_c * CONST_c;
 
   if (Tg + Tr <= 0.0) return 0.0;
 
-  return MIN(kappa_es * 4.0 * CONST_kB * Tr*Tr*Tr*Tr
-             / (CONST_me * CONST_c * CONST_c * (Tg + Tr) * (Tg*Tg + Tr*Tr)),
-             kappa_es);   // only reached for T_r above ~1e9 K, keeps scattering non negative
+  if (Tg <= T_COMPTON_MAX) {
+    kappa_c = kappa_es * 4.0 * CONST_kB * Tr4 / (mc2 * (Tg + Tr) * (Tg*Tg + Tr*Tr));
+  } else if (Tr < T_COMPTON_MAX) {
+    kappa_c = kappa_es * 4.0 * CONST_kB * Tr4 * (T_COMPTON_MAX - Tr)
+              / (mc2 * (Tg*Tg*Tg*Tg - Tr4));    // Tg > T_COMPTON_MAX > Tr, so positive
+  } else {
+    kappa_c = 0.0;                              // radiation itself above the cap, no valid rate
+  }
+
+  return MIN(kappa_c, kappa_es);   // keeps scattering non negative
 }
 
 /* ********************************************************************* */
@@ -1024,7 +1048,8 @@ void UserDefOpacitiesAt(double *v, double x1, double x2, double *abs, double *sc
  * so that kappa*rho*dx is the same optical depth in both systems.
  *
  * Opacities are gated by DiskFraction the same way viscosity and
- * resistivity are, in place of the previous tracer.
+ * resistivity are, in place of the previous tracer, but switch off
+ * entirely below F_OPAC_MIN so that the corona is truly transparent.
  *********************************************************************** */
 {
   double rho_cgs, T, kappa_ffbf, kappa_es, kappa_c, f, beta;
@@ -1047,6 +1072,14 @@ void UserDefOpacitiesAt(double *v, double x1, double x2, double *abs, double *sc
      this potential, so that only the plunging region is affected. */
   beta = sqrt(v[VX1]*v[VX1] + v[VX2]*v[VX2] + v[VX3]*v[VX3]) / g_radC;
   f   *= 1.0 / (1.0 + exp(MIN((beta - BETA_DECOUPLE) / BETA_WIDTH, 50.0)));
+
+  /* DiskFraction never reaches exactly zero in the corona, the rotation
+     sigmoid alone leaves about 1e-3 there. Combined with the hot corona
+     gas this was enough to Compton cool the whole corona, which then lost
+     its pressure support and drained into the hole. Opacities therefore
+     vanish below F_OPAC_MIN, and the remaining range is stretched back
+     onto [0,1] so that disk material keeps its full opacity. */
+  f = (f > F_OPAC_MIN) ? (f - F_OPAC_MIN) / (1.0 - F_OPAC_MIN) : 0.0;
 
   /* The Compton part only exchanges energy, so it is moved from scattering
      to absorption, leaving the total extinction at exactly Thomson. */

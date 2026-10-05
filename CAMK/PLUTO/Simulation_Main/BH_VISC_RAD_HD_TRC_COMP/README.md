@@ -11,6 +11,9 @@ radiation is Kramers absorption, which falls as `T^-3.5`. The overpressured gas 
 3. `init.c` decouples matter and radiation where the gas moves faster than about `0.9 c`
 4. `rad_step.c` keeps the radiation energy density of the primitive state current inside the implicit iteration
 5. `definitions.h` lowers `UNIT_DENSITY` to `5.8e-10`, so that the disk can radiate its viscous heating, see below
+6. `pluto.ini` lowers `BETAV` to `0.5` for the same reason, see below
+7. `init.c` holds the Compton rate fixed above a gas temperature of `1e9 K`
+8. `init.c` switches all opacities off below `DiskFraction = 0.05`, so that the corona is truly transparent
 
 ### Compton Coupling
 
@@ -57,3 +60,28 @@ stay thin.
 Heating over cooling scales with `BETAV * UNIT_DENSITY`. This setup therefore uses `UNIT_DENSITY = 5.8e-10`, twenty times lower than
 `BH_VISC_RAD_HD_TRC/`, which brings both into rough balance while keeping the disk optically thick, at `tau ~ 100` from midplane to
 surface. The disk midplane then starts at `2–3e5 K`, and in the test run the disk stays thin and intact through `t = 200`.
+
+### Full Run and Follow-Up Changes
+
+The full run to `t = 1000` with the changes above kept the disk coherent throughout, with the midplane gas at `1e6–1e7 K`. Two issues
+remained, which the following changes address. They have not been tested yet.
+
+The inner disk still developed radiation-supported bubbles over a few hundred time units. At `UNIT_DENSITY = 5.8e-10` the heating
+excess was still about `1.6` at `R = 8` and `1.2` at `R = 10`. Since this ratio scales with `BETAV * UNIT_DENSITY`, `BETAV` is now `0.5`,
+which brings it to about `0.8` and `0.6` there. `BETAV` also sets the radial velocity of the analytic disk, so the initial and reinjected
+disk change consistently with it. The outer disk is now somewhat overcooled, at a ratio of about `0.3` at `R = 20`.
+
+The corona was Compton cooled and drained into the hole by `t ~ 300`. DiskFraction bottoms out near `1.5e-3` in the corona instead of
+zero, because the rotation sigmoid never vanishes completely. At the corona temperatures near `1e11 K`, where `k T` is about `46 m_e c^2`
+and the nonrelativistic rate is far outside its validity, even this leak drained the thermal energy of the corona by `100–1000` times
+within `20–50` time units. Two changes address this:
+
+- Opacities now vanish below `DiskFraction = 0.05`, and the range above is stretched back onto `[0,1]`, so disk material keeps its full
+  opacity. Viscosity and resistivity are unaffected.
+- Above `T_g = 1e9 K` the Compton rate is held at its value for `T_g = 1e9 K`. This needs
+  `kappa_c = kappa_es 4 k T_r^4 (T_max - T_r) / (m_e c^2 (T_g^4 - T_r^4))`, which matches the previous expression at `T_g = T_max`.
+  Simply capping `T_g` inside the previous expression would let the absorption form grow as `T_g^4` instead.
+
+The corona drained in `BH_VISC_RAD_HD_TRC/` as well, though more slowly. Its mass fell from `2.8` to `0.66` code units by `t = 200`.
+This happens because the corona is built in Newtonian hydrostatic equilibrium but evolves in the stronger Paczyński–Wiita potential, and
+the outer boundary blocks coronal inflow, so it is never replenished. None of the changes here address that.
