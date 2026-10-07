@@ -24,7 +24,8 @@
   Compton energy exchange between gas and radiation enters as an effective absorption
   opacity, the gas temperature is floored at 1e4 K, and matter and radiation decouple
   where the gas moves faster than the nonrelativistic radiation module can handle. The
-  Compton rate is held fixed above 1e9 K, and opacities vanish below DiskFraction 0.05.
+  Compton rate is held fixed above 1e9 K, and absorption and Compton vanish below
+  DiskFraction 0.05, while Thomson scattering applies to all gas.
   ========================================================================================
   ========================================================================================
 */
@@ -1047,12 +1048,16 @@ void UserDefOpacitiesAt(double *v, double x1, double x2, double *abs, double *sc
  * unit mass. Converting cm^2/g to code units uses UNIT_DENSITY*UNIT_LENGTH,
  * so that kappa*rho*dx is the same optical depth in both systems.
  *
- * Opacities are gated by DiskFraction the same way viscosity and
- * resistivity are, in place of the previous tracer, but switch off
- * entirely below F_OPAC_MIN so that the corona is truly transparent.
+ * Only the opacities that exchange energy between gas and radiation, Kramers
+ * absorption and Compton, are gated by DiskFraction, in place of the previous
+ * tracer, and vanish entirely below F_OPAC_MIN. Thomson scattering only
+ * transfers momentum and applies to all ionized gas, so it is not gated: when
+ * it was, radiation could only push on gas classified as disk, and gas lifted
+ * across the classification edge lost its support and fell back, piling up
+ * into a dense, Rayleigh-Taylor unstable sheet at the disk surface.
  *********************************************************************** */
 {
-  double rho_cgs, T, kappa_ffbf, kappa_es, kappa_c, f, beta;
+  double rho_cgs, T, kappa_ffbf, kappa_es, kappa_c, fd, gv, beta;
 
   rho_cgs = v[RHO] * UNIT_DENSITY;                                // g/cm^3
   T       = MAX(GetTemperature(v[RHO], v[PRS]), T_OPAC_MIN);      // Kelvin
@@ -1061,30 +1066,31 @@ void UserDefOpacitiesAt(double *v, double x1, double x2, double *abs, double *sc
   kappa_es   = K_ES;                                              // cm^2/g
   kappa_c    = ComptonOpacity(v, kappa_es);                       // cm^2/g
 
-  f = DiskFraction(v, x1, x2);
-
   /* The nonrelativistic radiation module assumes v << c, its v^2/c^2
      source corrections turn into anti damping once v approaches c, and
      with Newtonian dynamics in the Paczynski-Wiita potential the plunging
      gas next to the horizon reaches several c. Matter and radiation are
      therefore decoupled smoothly above BETA_DECOUPLE. The threshold has to
      stay well above the orbital speed, which is already 0.6 c at R = 6 in
-     this potential, so that only the plunging region is affected. */
+     this potential, so that only the plunging region is affected. These
+     terms scale with the total opacity, so scattering is included. */
   beta = sqrt(v[VX1]*v[VX1] + v[VX2]*v[VX2] + v[VX3]*v[VX3]) / g_radC;
-  f   *= 1.0 / (1.0 + exp(MIN((beta - BETA_DECOUPLE) / BETA_WIDTH, 50.0)));
+  gv   = 1.0 / (1.0 + exp(MIN((beta - BETA_DECOUPLE) / BETA_WIDTH, 50.0)));
 
   /* DiskFraction never reaches exactly zero in the corona, the rotation
      sigmoid alone leaves about 1e-3 there. Combined with the hot corona
      gas this was enough to Compton cool the whole corona, which then lost
-     its pressure support and drained into the hole. Opacities therefore
-     vanish below F_OPAC_MIN, and the remaining range is stretched back
-     onto [0,1] so that disk material keeps its full opacity. */
-  f = (f > F_OPAC_MIN) ? (f - F_OPAC_MIN) / (1.0 - F_OPAC_MIN) : 0.0;
+     its pressure support and drained into the hole. The energy exchange
+     therefore vanishes below F_OPAC_MIN, and the remaining range is stretched
+     back onto [0,1] so that disk material keeps its full coupling. */
+  fd = DiskFraction(v, x1, x2);
+  fd = (fd > F_OPAC_MIN) ? (fd - F_OPAC_MIN) / (1.0 - F_OPAC_MIN) : 0.0;
 
   /* The Compton part only exchanges energy, so it is moved from scattering
-     to absorption, leaving the total extinction at exactly Thomson. */
-  *abs  = f * (kappa_ffbf + kappa_c)  * UNIT_DENSITY * UNIT_LENGTH;   // free-free + bound-free + Compton
-  *scat = f * (kappa_es   - kappa_c)  * UNIT_DENSITY * UNIT_LENGTH;   // remaining coherent Thomson
+     to absorption where it applies, leaving the total extinction at exactly
+     Thomson plus Kramers everywhere. */
+  *abs  = gv * fd * (kappa_ffbf + kappa_c)      * UNIT_DENSITY * UNIT_LENGTH;   // free-free + bound-free + Compton, disk only
+  *scat = gv * (kappa_es - fd * kappa_c)        * UNIT_DENSITY * UNIT_LENGTH;   // coherent Thomson, all gas
 }
 
 /* ********************************************************************* */
