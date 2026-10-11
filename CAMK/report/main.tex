@@ -1,0 +1,587 @@
+\input{header}
+
+
+% --- Title --- %
+
+\title{\textbf{Numerical Simulations of AGN Accretion Disks in PLUTO}}%
+
+
+% --- Author --- %
+
+\author{Fritz Ali Agildere%
+		\vspace{-0.5ex}\\\small\href{mailto:fritz.agildere@udo.edu}{fritz.agildere@udo.edu}%
+		\\\small\textit{Nicolaus Copernicus Astronomical Center, Polish Academy of Sciences, Warsaw}}%
+
+
+% --- Compilation Date --- %
+
+\date{\small \today}
+
+
+% --- Header & Footer --- %
+
+\fancyhead[C]{\textit{Numerical Simulations of AGN Accretion Disks in PLUTO}}
+\fancyfoot[L]{Summer Student Program 2026}
+\fancyfoot[R]{CAMK PAN \& EMJM MASS}
+
+\fancypagestyle{plain}{
+	\fancyhead[C]{}
+	\fancyfoot[L]{Summer Student Program 2026}
+	\fancyfoot[R]{CAMK PAN \& EMJM MASS}
+}
+
+
+% --- Custom Macros --- %
+
+\newcommand{\dash}{\rule[0.49ex]{0.35em}{0.06em}}
+\newcommand{\xray}{X\hspace{0.04em}\dash\hspace{0.11em}ray\space}
+\newcommand{\xrays}{X\hspace{0.04em}\dash\hspace{0.11em}rays\space}
+
+
+% --- Metadata --- %
+
+\hypersetup{
+	pdfauthor={Fritz Ali Agildere},
+	pdftitle={Course Report – Fritz Agildere}
+}
+
+
+% --- Float Setup --- %
+
+\renewcommand{\topfraction}{0.9}   
+\renewcommand{\bottomfraction}{0.8}
+\renewcommand{\textfraction}{0.1}  
+\renewcommand{\floatpagefraction}{0.7}
+
+
+% --- Begin Document --- %
+
+\begin{document}
+
+	\twocolumn[{
+		\maketitle
+		\begin{abstract}
+			This work presents a comparative analysis of galaxy classification diagnostics and narrow line region physical properties using data
+			from the Sloan Digital Sky Survey (SDSS) and the Widefield Infrared Survey Explorer (WISE) missions. We evaluate \num{10000} narrow
+			emission line galaxies at $z < \num{0.35}$ by applying optical diagnostic methods based on line ratios and equivalent width, as well
+			as infrared color selections. Optical diagnostics demonstrate high internal consistency but show poor correlation with infrared selections.
+			Additionally, we map the narrow line region gas parameters across diagnostic diagrams, finding clear increases in electron density and
+			gas velocity dispersion toward active galactic core populations. Finally, we derive central black hole masses from gas kinematics as
+			stellar proxies and identify circularities as well as structural projection biases in this approach.
+		\end{abstract}
+	}]
+	
+	\section{Introduction}
+
+	With ongoing and upcoming surveys providing ever larger amounts of data, the task of object classification is
+	becoming increasingly relevant. In this work, we will summarize and compare select methods for characterizing
+	narrow emission line galaxies and the extraction of their physical properties. For all steps in the following
+	sections, we use data from the latest SDSS data release and match those to spectra obtained by WISE for the
+	same objects \cite{wrig2010, koll2026}. Information to reproduce these results are included in the \hyperref[sec:appendix]{appendix}.
+
+	\section{Optical \& Infrared Classification}
+
+	Generally, the broad labeling of galaxies as Active Galactic Nuclei (AGN) or Star Formation (SF) dominated types
+	relies on reconstructing the excitation and ionization mechanisms from emission lines, and determining whether
+	these match the thermal continuum of stellar populations or the strongly nonthermal radiation produced in AGN
+	powered by Super Massive Black Holes (SMBH) in their centers. Approaches analyzing the continuum emission provide
+	complementary insights, and by probing different wavelengths we can peer through obscuring dust and gas to unveil
+	the true underlying physics. Now, we will explore some famous examples.
+
+	\begin{figure}[t]
+		\centering
+		\includegraphics[width=\columnwidth, draft=false]{assets/plots/BPT_scatter.pdf}\vspace{-0.5\baselineskip}
+		\caption{Standard BPT diagram and class separation curves \cite{kewl2001, kauf2003}.}
+		\label{fig:BPT_scatter}
+		\vspace{-0.5\baselineskip}
+	\end{figure}
+	
+	\subsection{BPT Diagram}
+
+	By plotting the ratio of emission line fluxes for $\mathrm{\raisebox{0.75pt}{[\raisebox{-0.75pt}{OIII}]}}$
+	at \qty{5007}{\angstrom} to $\mathrm{H}\beta$ at \qty{4863}{\angstrom} versus $\mathrm{\raisebox{0.75pt}{[\raisebox{-0.75pt}{NII}]}}$
+	at \qty{6583}{\angstrom} to $\mathrm{H}\alpha$ at \qty{6565}{\angstrom} in their work, Baldwin,
+	Phillips, and Terlevich draw a diagram that sorts galaxies into a distinctive winged shape \cite{bald1981}.
+	Due to lacking the energies to ionize heavier atoms, SF types tend towards the lower left of the image, while
+	powerful AGN fall into the upper right tip. By choosing emission lines close to one another, this framework
+	automatically cancels out reddening differences as well as calibration errors. Depicted in \Cref{fig:BPT_scatter}
+	is our entire dataset as a scatter plot that has been shaded based on the density of nearby points. This convention
+	is adopted for all such diagrams in this work for better interpretability of the data. Together with this, standard
+	theoretical \cite{kewl2001} and empirical \cite{kauf2003} curves to discriminate between AGN and SF classes
+	are shown.
+
+	\begin{figure}[H]
+		\centering
+		\includegraphics[width=\columnwidth, draft=false]{assets/plots/BPT_class.pdf}\vspace{-0.5\baselineskip}
+		\caption{Colored BPT diagram with derived class labels.}
+		\label{fig:BPT_class}
+	\end{figure}
+
+	We label points between the lines as COMP for composite types and display the classes in \Cref{fig:BPT_class} encoded by color.
+	Additionally, we have access to the already processed SDSS labels which we can similarly plot in the BPT diagram. This is done
+	in \Cref{fig:BPT_SDSS_class} for the AGN and SF as well as starburst SB subclasses. Comparing to the previous plot gives a
+	first visual impression of their cross method agreement, which for the AGN wing seems acceptable, but will be evaluated more
+	rigorously in the coming paragraphs.
+	
+	\begin{figure}[H]
+		\centering
+		\includegraphics[width=\columnwidth, draft=false]{assets/plots/BPT_SDSS_class.pdf}
+		\caption{Colored BPT diagram based on SDSS labels.}
+		\label{fig:BPT_SDSS_class}
+	\end{figure}
+
+	\subsection{WHAN Diagram}
+
+	Next up is the WHAN diagram, which plots the equivalent width $W_{\mathrm{H}\alpha}$ of the $\mathrm{H}\alpha$ line against
+	the ratio of $\mathrm{\raisebox{0.75pt}{[\raisebox{-0.75pt}{NII}]}}$ to $\mathrm{H}\alpha$ fluxes \cite{cidf2011}. This width
+	quantifies line strengths in terms of the underlying continuum and is thereby independent of measurement effects. The concept
+	behind a classification using the measure is that based on the prominence of lines above the background radiation, we
+	can estimate the relative photon budget of the exciting or ionizing radiation field. In true AGN and SF galaxies, this value
+	is high, whereas retired galaxies with old stellar populations have less pronounced emission lines. This is a distinction
+	which the BPT classifier fails to take into account and can therefore improve our label confidence.
+
+	\begin{figure}[H]
+		\centering
+		\includegraphics[width=\columnwidth, draft=false]{assets/plots/WHAN_scatter.pdf}
+		\caption{Raw data in WHAN diagram with separators.}
+		\label{fig:WHAN_scatter}
+	\end{figure}
+	
+	\begin{figure}[H]
+		\centering
+		\includegraphics[width=\columnwidth, draft=false]{assets/plots/WHAN_class.pdf}
+		\caption{Colored WHAN diagram with derived labels.}
+		\label{fig:WHAN_class}
+	\end{figure}
+
+	With the raw scattered data, \Cref{fig:WHAN_scatter} includes discrimination lines. According to these, any galaxy
+	with $W_{\mathrm{H}\alpha} < \qty{3.0}{\angstrom}$ is classified as rGAL or retired. Points above this value with
+	$\log_{10}(\mathrm{\raisebox{0.75pt}{[\raisebox{-0.75pt}{NII}]}} \mathbin{/} \mathrm{H}\alpha) > -0.4$ are labeled
+	AGN or else pSF for pure star formation. Within the active class, we also include the distinction for strong
+	sAGN if $W_{\mathrm{H}\alpha} > \qty{6.0}{\angstrom}$ and weak wAGN otherwise. There is further a category defined via
+	$W_{\mathrm{H}\alpha} < \qty{0.5}{\angstrom}$ and
+	$W_{\mathrm{\raisebox{0.5pt}{\footnotesize[\raisebox{-0.5pt}{\footnotesize{NII}}]}}} < \qty{0.5}{\angstrom}$
+	for passive, actually lineless galaxies, but based on our selection, none fall into this class. \Cref{fig:WHAN_class}
+	shows the resulting categories, while \Cref{fig:WHAN_SDSS_class} presents the more restrictive SDSS classes, which
+	show a smaller AGN region than what WHAN includes.
+
+	\begin{figure}
+		\centering
+		\includegraphics[width=\columnwidth, draft=false]{assets/plots/WHAN_SDSS_class.pdf}
+		\caption{Colored WHAN diagram based on SDSS labels.}
+		\label{fig:WHAN_SDSS_class}
+	\end{figure}
+
+	\subsection{Category Mixing}
+
+	In addition to the predefined SDSS label, we can check the mixing between BPT and WHAN classes. For this,
+	\Cref{fig:BPT_WHAN_class} displays WHAN colors in the BPT diagram, and \Cref{fig:WHAN_BPT_class} the
+	opposite. Here we can see how BPT conditions do not account for weak equivalent widths, making WHAN a more
+	nuanced model in this regard. On the other hand, WHAN labels many objects AGN that sit far down in the
+	BPT scale, indicating that information on the ionization potential of the source gets lost.
+
+	\begin{figure}[H]
+		\centering
+		\includegraphics[width=\columnwidth, draft=false]{assets/plots/BPT_WHAN_class.pdf}
+		\caption{Colored BPT diagram based on WHAN labels.}
+		\label{fig:BPT_WHAN_class}
+	\end{figure}
+
+	\begin{figure}[H]
+		\centering
+		\includegraphics[width=\columnwidth, draft=false]{assets/plots/WHAN_BPT_class.pdf}
+		\caption{Colored WHAN diagram based on BPT labels.}
+		\label{fig:WHAN_BPT_class}
+	\end{figure}
+
+	\subsection{WISE Colors}
+
+	For sources shrouded by dust, optical classifiers such as BPT and WHAN can fail. Instead, infrared data from
+	missions such as WISE with filters labeled W1 at \qty{3.4}{\micro\meter} and W2 at \qty{4.6}{\micro\meter} as well
+	as W3 at \qty{12}{\micro\meter} center wavelengths can be used. In these scenarios, galaxies dominated by their stars
+	appear in the more energetic bands corresponding to stellar atmospheres, while an AGN torus absorbs shorter wavelengths,
+	leading to cooler temperatures characterizing their spectrum. In the typical WISE colors plot, we draw the differences
+	of the respective magnitudes, equivalent to the logarithm of the flux ratio and therefore independent of true luminosity.
+	In this diagram, we can define a region where most AGN fall, referred to as the wedge from here on \cite{mate2012}. Our
+	data is visualized and classified according to this wedge in \Cref{fig:WISE_overlay} with schematic classes from
+	\cite{wrig2010} taken as a backdrop. Notably, there are only few objects being labeled as AGN by this method. For the actual
+	statistics and a more robust comparison of the classifiers, the following subsection calculates the pairwise binary
+	cross correlation and gives the raw numbers for our matched dataset.
+
+	\begin{figure*}[t]
+		\centering
+		\includegraphics[width=\textwidth, draft=false]{assets/plots/WISE_overlay.pdf}
+		\caption{Shaded scatter plot of data in WISE color diagram. Included is the wedge discriminator \cite{mate2012}
+				 as well as the background adapted from \cite{wrig2010} with shortened object type labels.}
+		\label{fig:WISE_overlay}
+	\end{figure*}
+
+	\subsection{Evaluating Diagnostics}
+
+	Listed in \Cref{tab:classes} are the numbers for our processed dataset. To better compare the performance between the
+	different classifiers, we compute the so called Matthews Correlation Coefficient (MCC) for each pair. This metric measures how
+	the matching quality compares to a pure chance baseline. A value of 1 means perfect agreement, while 0 implies no
+	advantage over randomly assigning an answer, and negative values signify worse than random anticorrelation between
+	methods. It also corrects for unbalanced population sizes, as is the case for our sample in which AGN are far fewer than
+	other types of galaxies. \Cref{fig:MCC_strict,fig:MCC_relaxed} show our results for two cases of BPT classifier, one
+	strict which restricts positives to AGN objects only, and one relaxed that also includes COMP labels.
+
+	\begin{table}[H]
+		\centering
+		\caption{List of overall and relative positive AGN labels by method. In total, \num{10000} unique SDSS objects were
+				 used, of which \num{9799} had matches in the WISE database with a \ang{;;3} tolerance.}
+		\begin{tabular}{l S[table-format=4.0] r}
+			\toprule
+			Method & Total & Fraction \\
+			\midrule
+			SDSS                  &  585 & \qty{5.9}{\percent} \\
+			BPT (strict)          &  920 & \qty{9.2}{\percent} \\
+			BPT (relaxed)         & 2491 & \qty{24.9}{\percent} \\
+			WHAN                  & 3464 & \qty{34.6}{\percent} \\
+			WISE                  &   88 & \qty{0.9}{\percent} \\
+			SDSS \& WISE          &   37 & \qty{0.4}{\percent} \\
+			BPT (strict) \& WISE  &   47 & \qty{0.5}{\percent} \\
+			BPT (relaxed) \& WISE &   64 & \qty{0.6}{\percent} \\
+			WHAN \& WISE          &   58 & \qty{0.6}{\percent} \\
+			\bottomrule
+		\end{tabular}
+		\label{tab:classes}
+	\end{table}
+
+	We recognize that generally, optical methods tend to agree amongst each other to a higher degree
+	than with infrared based results. On the other hand, agreement between WISE labels is barely
+	better than random, especially for the WHAN results. For the strict BPT case, it matches best
+	with SDSS classes, while the relaxed version shows better agreement with WHAN labels.
+
+	\begin{figure}[H]
+		\vspace{-\baselineskip}
+		\centering
+		\includegraphics[width=\columnwidth, draft=false]{assets/plots/MCC_strict.pdf}
+		\caption{Matrix of MCC results with strict BPT method.}
+		\label{fig:MCC_strict}
+	\end{figure}
+
+	Based on this, we will proceed in the BPT framework for the following section and deliver
+	SDSS and WHAN as well as WISE results for comparison in the \hyperref[sec:appendix]{appendix}.
+	There are more powerful statistical diagnostics that enable a detailed view of method performance,
+	but these are omitted in this work due to its limited scope. Furthermore, sophisticated classifiers
+	are likely able to achieve physically more sound results, though this comes at the cost of higher complexity.
+
+	\begin{figure}[H]
+		\vspace{-\baselineskip}
+		\centering
+		\includegraphics[width=\columnwidth, draft=false]{assets/plots/MCC_relaxed.pdf}\vspace{-0.5\baselineskip}
+		\captionsetup{width=\linewidth}
+		\caption{Matrix of MCC results with relaxed BPT method.}
+		\vspace{-0.5\baselineskip}
+		\label{fig:MCC_relaxed}
+	\end{figure}
+
+	\section{Physical Properties}
+
+	Other than classifying objects, we can also extract estimates of their physical properties from spectral data.
+	The following subsections will outline this process for electron density and gas velocity, as well as derive the
+	central Black Hole (BH) mass for our dataset. Graphics in this section use hexagonal bins instead of
+	scatter plots to retain the distribution shape while making possible trends in the data more visible.
+
+	\subsection{Gas Density}
+
+	First, we use the ratio of the two $\mathrm{\raisebox{0.75pt}{[\raisebox{-0.75pt}{NII}]}}$ lines at	\qty{6716}{\angstrom}
+	and \qty{6731}{\angstrom} in our data. Since these both originate from a closely spaced doublet, their relative occurrence
+	is independent of gas temperature. Instead, at low densities the ratio is fixed by their degeneracies as statistical
+	weights, whereas at high densities, collisional deexcitation becomes relevant, which does not emit photons. Due to the
+	lower wavelength state having a longer lifetime, it gets affected more strongly by this mechanism, dropping the ratio and
+	allowing us to reconstruct the local electron density as a proxy for the gas \cite{sand2016, joh2021}. The resulting
+	values are depicted in \Cref{fig:BPT_density} and show a soft but clearly recognizable trend towards higher densities
+	in the AGN classified region. This makes sense if we imagine that the harsh radiation field as well as shocks originating
+	from the central SMBH compress the surrounding Narrow Line Region (NLR) gas from which our lines are emitting.
+
+	\begin{figure}[t]
+		\centering
+		\includegraphics[width=\columnwidth, draft=false]{assets/plots/BPT_density.pdf}
+		\caption{Binned BPT data showing electron density. \\ Refer to \Cref{fig:WHAN_density,fig:WISE_density} for WHAN and WISE plots.}
+		\label{fig:BPT_density}
+	\end{figure}
+
+	\subsection{Gas Velocity}
+
+	Finding the gas kinematics is comparatively easy. We simply take the $\mathrm{\raisebox{0.75pt}{[\raisebox{-0.75pt}{OIII}]}}$
+	line dispersion $\sigma_{\mathrm{\raisebox{0.5pt}{\footnotesize[\raisebox{-0.5pt}{\footnotesize{OIII}}]}}}$ which we assume
+	is caused by Doppler broadening from the random movement of individual gas clouds as the local velocity of turbulence and kinetic
+	energy. We expect this value to be lower for SF type galaxies, in which the gas motions are relatively orderly, following
+	mostly the gravitational rotation of the disk with some stellar feedback present. In AGN on the other hand, the gas is strongly
+	affected by the presence of a deep gravity well and energized through outflows, radio jets, or shocks coming from the central engine.
+	Looking at our data, this is broadly what we observe. \Cref{fig:BPT_dispersion} shows a clear increase of velocity width towards
+	the upper right AGN wing, while lower ionization states in the left SF tip tend to have the smallest values. Here, it would be
+	interesting to evaluate whether the increased velocities towards the AGN branch are purely a result of the correlation with
+	a more massive central BH and the faster rotation required to match the higher mass, or if AGN feedback itself gives NLR gas
+	an additional boost. To probe this, provided we know the SMBH mass, we can for tight bins of masses plot the BPT dispersion
+	again. If no AGN feedback is present, it should be almost uniform in velocity. If there is feedback, the AGN branch should
+	show increased velocities despite having similar BH masses.
+
+	\begin{figure}[t]
+		\centering
+		\includegraphics[width=\columnwidth, draft=false]{assets/plots/BPT_dispersion.pdf}
+		\caption{Binned BPT data showing gas velocity. \\ Refer to \Cref{fig:WHAN_dispersion,fig:WISE_dispersion} for WHAN and WISE plots.}
+		\label{fig:BPT_dispersion}
+	\end{figure}
+
+	\begin{figure}[t]
+		\centering
+		\includegraphics[width=\columnwidth, draft=false]{assets/plots/BPT_mass.pdf}
+		\caption{Binned BPT data showing black hole mass. \\ Refer to \Cref{fig:WHAN_mass,fig:WISE_mass} for WHAN and WISE plots.}
+		\label{fig:BPT_mass}
+	\end{figure}
+
+	\begin{figure*}[t]
+		\centering
+		\vspace{-1.5\baselineskip}
+		\includegraphics[width=\textwidth, draft=false]{assets/plots/BPT_bins.pdf}\vspace{-1.5\baselineskip}
+		\caption{Binned BPT data of gas velocity for magnitude ranges of SMBH mass across subplots.}
+		\label{fig:BPT_bins}
+	\end{figure*}
+
+	\subsection{Black Hole Mass}
+
+	To find the SMBH mass, we can use well known relations mapping stellar dispersion $\sigma_{\kern-1pt *}$ to central engine properties,
+	provided that their velocities are predominantly determined by its gravitation \cite{trem2002, gebh2000, wu2009}. Since we do not have
+	access to star velocities in the galactic cores of our sample, we instead rely on
+	$\sigma_{\mathrm{\raisebox{0.5pt}{\footnotesize[\raisebox{-0.5pt}{\footnotesize{OIII}}]}}}$ as a proxy. As shown in
+	\Cref{fig:BPT_mass} this method reproduces our expectations from the velocity trend, but brings with it some serious flaws as well. For one,
+	making use of such an approximation prevents us from determining the previously mentioned AGN feedback effects. Since 
+	$\sigma_{\mathrm{\raisebox{0.5pt}{\footnotesize[\raisebox{-0.5pt}{\footnotesize{OIII}}]}}}$ determines the mass, we cannot bin $M_\mathrm{BH}$
+	and expect to see increased kinematics above the gravitational baseline when we start from the fundamental assumption that the BH gravity itself
+	is the sole culprit for the dispersion in the first place. Other than this circularity, there is also the issue of our galactic sources
+	not meeting the underlying assumption. For SF galaxies, $\mathrm{\raisebox{0.75pt}{[\raisebox{-0.75pt}{OIII}]}}$ emission occurs primarily
+	inside the thin disk and not the bulge, meaning that velocities and the resulting BH mass will tend to be underestimated. The opposite case
+	is true for AGN objects. Since gas is likely to be strongly broadened by effects other than gravity, we are biased towards assigning unrealistically
+	large SMBH masses. To compensate for these shortcomings, we require another robust and independent way to determine velocities governed by gravity
+	near the galactic core. Despite lacking such a quantity, for the next subsection, we will proceed as if our data already had been corrected in such
+	a way, so that once we can access it, we will be able to easily repeat and extend these analysis steps with the new values. \Cref{fig:BPT_bins}
+	shows the BPT dispersion in four BH mass bins as indicated in the graphic. The change between subplots matches what we expect for gravitational
+	rotation but shows no feedback signature.
+
+	\subsection{Data Analysis}
+
+	Expanding on the preceding paragraph, binning in BH mass shows some gradient within bins, notably the \qtyrange{e6}{e7}{\solarmass}
+	and \qtyrange{e7}{e8}{\solarmass} ranges. If we were selecting our mass steps more restrictively and had independent dispersion
+	data, this would be an indicator for AGN feedback driven excess velocities that distinguish active cores from quiescent ones, but
+	in our case it is simply an artifact of global scaling within broad mass bins. Another way we can isolate this effect is by plotting
+	median dispersions based on our discrete BPT classes. \Cref{fig:BPT_bar} does just that, and as expected we have an overall increase
+	in velocities with BH mass but no significant stepwise increase towards faster motion in AGN vs SF types within individual bins.
+
+	Looking at \cref{fig:BPT_multipanel} for a general population analysis, we can see that density and velocity show some positive
+	correlation between each other. From the previous discussion on AGN driven compression and acceleration, this is physically sound.
+	Contours for SF counts have a wider spread than COMP and AGN categories, and are centered at lower values for density as well as
+	dispersion. As one might expect, COMP and AGN labels overlap more significantly, although AGN continue the trend of higher values on
+	both axes with their distribution center. For BH masses, the same general observations hold as for electron density, which makes sense since
+	the former derives directly from the latter. Especially for SF galaxies, we find very low masses from \qtyrange{e3}{e4}{\solarmass}
+	which are telltale signs of systematic bias towards underestimation in objects dominated by emission lines from their stellar disks.
+
+	\section{Conclusion}
+
+	In summary, this study explores the nuances of multi band galaxy characterization and some of the structural challenges of NLR physics.
+	While optical diagnostics demonstrate good statistical coupling in identifying AGN systems among each other, they exhibit clear disconnects
+	from infrared selections, which primarily isolate active galaxies that exhibit heavy obscuration by dust. Physical property mapping confirms
+	that AGN feature systematically higher electron densities and elevated gas turbulences. However, using gas velocity dispersion as a proxy for
+	determining central SMBH mass inevitably leads to circularities that mask AGN feedback mechanisms. Expanding on this work requires independent
+	stellar kinematic data to untangle population wide effects of gravitational potentials from energetic outflows as drivers.
+
+	\begin{figure*}[t]
+		\centering
+		\includegraphics[width=\textwidth, draft=false]{assets/plots/BPT_bar.pdf}
+		\caption{Bar chart of median gas dispersion by BPT class per BH mass bin. Numbers for members in bins of each class are given in the
+				 plot. Based on this, colors have increased saturation to represent higher statistical significance of the sample. The nearly
+				 perfect linear slope of the data is a consequence of how we generate BH masses from dispersion. In absence of statistical
+				 scatter, this would fit our starting function perfectly, meaning that we gain no real insight from this. Had we calculated
+				 BH mass in another independent way, this would however possibly reveal at which cutoff feedback plays an important role, if
+				 any, to determine the gas kinematics. Refer to \Cref{fig:SDSS_bar,fig:WHAN_bar} for SDSS and WHAN classes.}
+		\label{fig:BPT_bar}
+	\end{figure*}
+
+	\begin{figure*}[t]
+		\centering
+		\includegraphics[width=\textwidth, draft=false]{assets/plots/BPT_multipanel.pdf}
+		\caption{Histograms of physical properties based on BPT labels in one and two dimensions. \textit{Left:} Linear counts in logarithmic
+				 density and velocity plane. Similar to the previous Gaussian kernel density estimation for scatter plots, this uses a Gaussian
+				 smoothing to plot contours. Categories are normalized and matched based on thickness and lightness of their lines. \textit{Right:}
+				 Linear counts on logarithmic BH mass axis. Refer to \Cref{fig:SDSS_multipanel,fig:WHAN_multipanel} for SDSS and WHAN classes.}
+		\label{fig:BPT_multipanel}
+	\end{figure*}
+
+	\newpage
+	\renewcommand{\thesubsection}{\Alph{subsection}}
+	\label{sec:appendix}
+	\twocolumn[{
+		\printbibliography
+
+		\section*{Appendix}
+
+		\pagenumbering{roman}
+		\setcounter{page}{1}
+
+		This section contains supplementary graphics as well as the SQL query in \Cref{fig:query} used to obtain our
+		crossmatched dataset from this \href{https://skyserver.sdss.org/dr19/SearchTools/sql}{site}. The full
+		implementation with numerical values and equations via raw Python code is found in this
+		\href{https://github.com/fritzali/notes/tree/main/MASS/Active/project}{repository}.
+
+		\subsection{Gas Density}
+
+		\begin{minipage}{0.475\textwidth}
+			\centering
+			\includegraphics[width=\textwidth, draft=false]{assets/plots/WHAN_density.pdf}
+			\captionof{figure}{Binned WHAN data showing electron density.}
+			\label{fig:WHAN_density}
+		\end{minipage}%
+		\hfill
+		\begin{minipage}{0.475\textwidth}
+			\centering
+			\includegraphics[width=\textwidth, draft=false]{assets/plots/WISE_density.pdf}
+			\captionof{figure}{Binned WISE data showing electron density.}
+			\label{fig:WISE_density}
+		\end{minipage}%
+
+		\subsection{Gas Velocity}
+
+		\begin{minipage}{0.475\textwidth}
+			\centering
+			\includegraphics[width=\textwidth, draft=false]{assets/plots/WHAN_dispersion.pdf}
+			\captionof{figure}{Binned WHAN data showing gas velocity.}
+			\label{fig:WHAN_dispersion}
+		\end{minipage}%
+		\hfill
+		\begin{minipage}{0.475\textwidth}
+			\centering
+			\includegraphics[width=\textwidth, draft=false]{assets/plots/WISE_dispersion.pdf}
+			\captionof{figure}{Binned WISE data showing gas velocity.}
+			\label{fig:WISE_dispersion}
+		\end{minipage}%
+	}]
+
+	\twocolumn[{
+
+		\subsection{Black Hole Mass}
+
+		\begin{minipage}{0.475\textwidth}
+			\centering
+			\includegraphics[width=\columnwidth, draft=false]{assets/plots/WHAN_mass.pdf}
+			\captionof{figure}{Binned WHAN data showing black hole mass.}
+			\label{fig:WHAN_mass}
+		\end{minipage}%
+		\hfill
+		\begin{minipage}{0.475\textwidth}
+			\centering
+			\includegraphics[width=\columnwidth, draft=false]{assets/plots/WISE_mass.pdf}
+			\captionof{figure}{Binned WISE data showing black hole mass.}
+			\label{fig:WISE_mass}
+		\end{minipage}%
+
+		\vspace{\baselineskip}
+		\subsection{Data Analysis}
+
+		\begin{minipage}{\textwidth}
+			\centering
+			\includegraphics[width=\textwidth, draft=false]{assets/plots/SDSS_bar.pdf}
+			\captionof{figure}{Bar chart of median gas dispersion by SDSS class per BH mass bin. Numbers for members in bins of each class are given in the
+							   plot. Based on this, colors have increased saturation to represent higher statistical significance of the sample. The nearly
+							   perfect linear slope of the data is a consequence of how we generate BH masses from dispersion. In absence of statistical
+							   scatter, this would fit our starting function perfectly, meaning that we gain no real insight from this. Had we calculated
+							   BH mass in another independent way, this would however possibly reveal at which cutoff feedback plays an important role, if
+							   any, to determine the gas kinematics.}
+			\label{fig:SDSS_bar}
+		\end{minipage}%
+	}]
+
+
+	\begin{figure*}[t]
+		\centering
+		\includegraphics[width=\textwidth, draft=false]{assets/plots/WHAN_bar.pdf}
+		\caption{Bar chart of median gas dispersion by WHAN class per BH mass bin. Numbers for members in bins of each class are given in the
+				 plot. Based on this, colors have increased saturation to represent higher statistical significance of the sample. The nearly
+				 perfect linear slope of the data is a consequence of how we generate BH masses from dispersion. In absence of statistical
+				 scatter, this would fit our starting function perfectly, meaning that we gain no real insight from this. Had we calculated
+				 BH mass in another independent way, this would however possibly reveal at which cutoff feedback plays an important role, if
+				 any, to determine the gas kinematics.}
+		\label{fig:WHAN_bar}
+	\end{figure*}
+
+	\begin{figure*}[t]
+		\centering
+		\includegraphics[width=\textwidth, draft=false]{assets/plots/SDSS_multipanel.pdf}
+		\caption{Histograms of physical properties based on SDSS labels in one and two dimensions. \textit{Left:} Linear counts in logarithmic
+				 density and velocity plane. Similar to the previous Gaussian kernel density estimation for scatter plots, this uses a Gaussian
+				 smoothing to plot contours. Categories are normalized and matched based on thickness and lightness of their lines. \textit{Right:}
+				 Linear counts on logarithmic BH mass axis.}
+		\label{fig:SDSS_multipanel}
+	\end{figure*}
+
+	\begin{figure*}[t]
+		\centering
+		\includegraphics[width=\textwidth, draft=false]{assets/plots/WHAN_multipanel.pdf}
+		\caption{Histograms of physical properties based on WHAN labels in one and two dimensions. \textit{Left:} Logarithmic counts in logarithmic
+				 density and velocity plane. Similar to the previous Gaussian kernel density estimation for scatter plots, this uses a Gaussian
+				 smoothing to plot contours. Categories are normalized and matched based on thickness and lightness of their lines. \textit{Right:}
+				 Logarithmic counts on logarithmic BH mass axis.}
+		\label{fig:WHAN_multipanel}
+	\end{figure*}
+
+	\begin{figure*}[t]
+
+	\vspace{\baselineskip}
+	\subsection{Database Query}
+	\vspace{0.25\baselineskip}
+
+	\begin{center}
+		\begin{varwidth}{0.875\textwidth}
+			\begin{lstlisting}
+SELECT TOP 10000
+    g.sii_6717_flux, g.sii_6731_flux, g.nii_6584_flux, g.oi_6300_flux, g.oiii_5007_flux,
+    g.h_alpha_flux, g.h_beta_flux,
+    g.h_alpha_eqw, g.nii_6584_eqw, g.oiii_sigma,
+    w.w1mpro, w.w2mpro, w.w3mpro,
+    s.z, s.class, s.subclass, s.bestobjid
+FROM SpecObj AS s
+    JOIN galSpecLine AS g ON s.specobjid = g.specobjid
+    JOIN PhotoTag AS p ON s.bestobjid = p.objid
+    OUTER APPLY (   SELECT TOP 1 x.wise_cntr
+                    FROM wise_xmatch AS x
+                    WHERE p.objid = x.sdss_objid AND x.match_dist < 3 
+                    ORDER BY x.match_dist ASC
+                ) AS y
+    LEFT JOIN wise_allsky AS w ON y.wise_cntr = w.cntr
+WHERE s.class = 'GALAXY'
+    AND s.subclass != 'BROADLINE'
+    AND s.subclass != 'AGN BROADLINE'
+    AND s.subclass != 'STARFORMING BROADLINE'
+    AND s.subclass != 'STARBURST BROADLINE'
+    AND s.snmedian_r > 5.0
+    AND s.z < 0.35
+    AND g.sii_6717_eqw < 0.0
+    AND g.sii_6731_eqw < 0.0
+    AND g.nii_6584_eqw < 0.0
+    AND g.oi_6300_eqw < 0.0
+    AND g.oiii_5007_eqw < 0.0 
+    AND g.h_alpha_eqw < 0.0
+    AND g.h_beta_eqw < 0.0
+    AND (2.355 * g.sigma_forbidden) < 500 
+    AND (2.355 * g.sigma_balmer) < 500 
+    AND g.sii_6717_flux > 3 * g.sii_6717_flux_err
+    AND g.sii_6731_flux > 3 * g.sii_6731_flux_err
+    AND g.nii_6584_flux > 3 * g.nii_6584_flux_err
+    AND g.oi_6300_flux > 3 * g.oi_6300_flux_err
+    AND g.oiii_5007_flux > 3 * g.oiii_5007_flux_err
+    AND g.h_alpha_flux > 3 * g.h_alpha_flux_err
+    AND g.h_beta_flux > 3 * g.h_beta_flux_err
+ORDER BY s.specobjid ASC\end{lstlisting}
+			\end{varwidth}
+		\end{center}
+		\caption{Code to query this \href{https://skyserver.sdss.org/dr19/SearchTools/sql}{database} for the retrieval of an exact match to the
+				 dataset used in this work. We select the first \num{10000} matches from SDSS ordered by object identifier, and look for unique
+				 matches in the WISE catalog. To select strictly narrow emission line objects, we filter by label and dispersion. To ensure
+				 sufficient data quality, we also restrict our signal to noise floor and the uncertainty for individual lines. Redshift is
+				 specified based on the given criteria.}
+		\label{fig:query}
+	\end{figure*}
+
+\end{document}
+
