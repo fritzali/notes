@@ -53,27 +53,28 @@ mpl.rcParams.update({
     "font.size": 9,
 
     "axes.prop_cycle": "cycler('color', ['steelblue', 'olivedrab', 'goldenrod', 'firebrick', 'rebeccapurple'])",
-    "axes.labelsize": 'small',
-    "axes.titlesize": 'small',
+    "axes.labelsize": 9,
+    "axes.titlesize": 9,
     "axes.linewidth": 0.6,
 
     "figure.constrained_layout.use": True,
     "figure.constrained_layout.h_pad": 0.02,
     "figure.constrained_layout.w_pad": 0.02,
 
-    "legend.fontsize": 'small',
+    "legend.fontsize": 8,
     "legend.frameon": False,
     "legend.handlelength": 1.5,
     "legend.columnspacing": 1.2,
     "legend.handletextpad": 0.5,
+    "legend.borderaxespad": 0.4,
 
     "lines.linewidth": 1.0,
 
-    "xtick.labelsize": 'small',
+    "xtick.labelsize": 9,
     "xtick.minor.visible": True,
     "xtick.direction": 'in',
     "xtick.top": True,
-    "ytick.labelsize": 'small',
+    "ytick.labelsize": 9,
     "ytick.minor.visible": True,
     "ytick.direction": 'in',
     "ytick.right": True,
@@ -88,7 +89,8 @@ from matplotlib.ticker import FixedLocator, FuncFormatter, MaxNLocator, NullForm
 from matplotlib.lines import Line2D
 from matplotlib.text import Text
 from matplotlib.legend_handler import HandlerBase
-from mpl_toolkits.axes_grid1 import ImageGrid
+from matplotlib.collections import LineCollection, PolyCollection, QuadMesh
+from matplotlib.path import Path as MplPath
 
 from scipy import signal
 from scipy.ndimage import uniform_filter1d
@@ -144,8 +146,129 @@ def wanted(name):
     return not ONLY or any(name.startswith(key) for key in ONLY)
 
 
+LEGEND_LOCS = ['upper right', 'upper left', 'lower left', 'lower right', 'center right', 'center left',
+               'lower center', 'upper center', 'center']
+
+
+def place_legend(ax, handles=None, labels=None, loc=None, **kw):
+    if handles is None:
+        handles, labels = ax.get_legend_handles_labels()
+    elif labels is None:
+        labels = [h.get_label() for h in handles]
+    ax.__dict__.setdefault('_pending_legends', []).append((handles, labels, loc, kw))
+
+
+def densify(xy, step=1.5):
+    out = []
+    good = np.all(np.isfinite(xy), axis=1)
+    for a, b, ga, gb in zip(xy[:-1], xy[1:], good[:-1], good[1:]):
+        if ga and gb:
+            n = int(np.ceil(np.hypot(*(b - a)) / step)) + 1
+            out.append(a + np.linspace(0.0, 1.0, n)[:, None] * (b - a))
+    if not out:
+        return xy[good]
+    return np.concatenate(out)
+
+
+def data_geometry(ax):
+    points, polys = [], []
+    for a in ax.figure.axes:
+        if a.bbox.bounds != ax.bbox.bounds:
+            continue
+        for line in a.lines:
+            if not line.get_visible():
+                continue
+            xy = line.get_transform().transform(line.get_path().vertices)
+            if str(line.get_linestyle()).lower() in ('none', '', ' '):
+                points.append(xy[np.all(np.isfinite(xy), axis=1)])
+            else:
+                points.append(densify(xy))
+        for c in a.collections:
+            if isinstance(c, QuadMesh) or not c.get_visible():
+                continue
+            if isinstance(c, PolyCollection):
+                polys += [c.get_transform().transform_path(path) for path in c.get_paths()]
+            elif isinstance(c, LineCollection):
+                points += [densify(c.get_transform().transform(seg)) for seg in c.get_segments() if len(seg)]
+            elif len(c.get_offsets()):
+                points.append(c.get_offset_transform().transform(c.get_offsets()))
+    points = [p for p in points if len(p)]
+    return (np.concatenate(points) if points else np.zeros((0, 2))), polys
+
+
+def legend_rect(ax, loc, w, h, pad):
+    A = ax.bbox
+    x = {'left': A.x0 + pad, 'right': A.x1 - pad - w, 'center': A.x0 + 0.5 * (A.width - w)}
+    y = {'lower': A.y0 + pad, 'upper': A.y1 - pad - h, 'center': A.y0 + 0.5 * (A.height - h)}
+    parts = loc.split()
+    if len(parts) == 1:
+        return x['center'], y['center'], w, h
+    return x[parts[1]], y[parts[0]], w, h
+
+
+def overlap_score(rect, points, polys, others):
+    x0, y0, w, h = rect
+    x1, y1 = x0 + w, y0 + h
+    inside = (points[:, 0] > x0 - 1) & (points[:, 0] < x1 + 1) & (points[:, 1] > y0 - 1) & (points[:, 1] < y1 + 1)
+    score = float(inside.sum())
+    if polys:
+        gx, gy = np.meshgrid(np.linspace(x0, x1, 10), np.linspace(y0, y1, 6))
+        grid = np.column_stack([gx.ravel(), gy.ravel()])
+        hits = np.zeros(len(grid), dtype=bool)
+        for path in polys:
+            hits |= path.contains_points(grid)
+        score += 2.0 * hits.sum()
+    for o in others:
+        if not (x1 < o.x0 or x0 > o.x1 or y1 < o.y0 or y0 > o.y1):
+            score += 1e6
+    return score
+
+
+def expand_ylim(ax, frac=0.15):
+    lo, hi = ax.get_ylim()
+    if ax.get_yscale() == 'log':
+        ax.set_ylim(lo, hi * (hi / lo)**frac)
+    else:
+        ax.set_ylim(lo, hi + frac * (hi - lo))
+
+
+def best_legend(ax, handles, labels, loc, kw, others, name):
+    fig = ax.figure
+    order = ([loc] if loc else []) + [c for c in LEGEND_LOCS if c != loc]
+    for attempt in range(6):
+        fig.draw_without_rendering()
+        renderer = fig._get_renderer()
+        probe = ax.legend(handles, labels, loc=order[0], **kw)
+        bb = probe.get_window_extent(renderer)
+        pad = probe.borderaxespad * probe._fontsize * fig.dpi / 72.0
+        probe.remove()
+
+        points, polys = data_geometry(ax)
+        scores = [overlap_score(legend_rect(ax, c, bb.width, bb.height, pad), points, polys, others) for c in order]
+        k = int(np.argmin(scores))
+        if scores[k] == 0 or attempt == 5:
+            if scores[k] > 0:
+                print(f'  legend in {name} still covers data, score {scores[k]:.0f}')
+            leg = ax.legend(handles, labels, loc=order[k], **kw)
+            x0, y0, w, h = legend_rect(ax, order[k], bb.width, bb.height, pad)
+            return leg, mpl.transforms.Bbox.from_bounds(x0, y0, w, h)
+        expand_ylim(ax)
+
+
+def finalize_legends(fig, name):
+    for ax in fig.axes:
+        pending = ax.__dict__.pop('_pending_legends', [])
+        placed = []
+        for k, (handles, labels, loc, kw) in enumerate(pending):
+            leg, box = best_legend(ax, handles, labels, loc, kw, placed, name)
+            placed.append(box)
+            if k < len(pending) - 1:
+                ax.add_artist(leg)
+
+
 def save(fig, name):
     OUT.mkdir(exist_ok=True)
+    finalize_legends(fig, name)
     fig.savefig(OUT / f'{name}.{FORMAT}', dpi=DPI)
     plt.close(fig)
     print(f'wrote {name}.{FORMAT}')
@@ -487,7 +610,7 @@ def run_legend(ax, runs, color=False, extra=(), **kw):
         else:
             handles.append(Line2D([], [], color='k', lw=run['lw'], label=run['label']))
     handles += [Line2D([], [], label=label, **{'color': 'k', **style}) for label, style in extra]
-    return ax.legend(handles=handles, **kw)
+    place_legend(ax, handles, **kw)
 
 
 def run_table(ax, rows, columns, **kw):
@@ -499,19 +622,23 @@ def run_table(ax, rows, columns, **kw):
 
     opts = dict(ncol=len(columns), columnspacing=0.3, handlelength=1.5, handletextpad=0.4, handleheight=1.8,
                 handler_map={TableHeader: TableHeaderHandler()})
-    return ax.legend(handles, labels, **{**opts, **kw})
+    place_legend(ax, handles, labels, **{**opts, **kw})
 
 
 MAP_FIELDS = {
     'rho':   dict(norm=LogNorm(vmin=DFLOOR, vmax=0.2), cmap='magma', label=r'$\rho\ /\ \rho_0$'),
     'f':     dict(norm=Normalize(vmin=0.0, vmax=1.0), cmap='coolwarm', label=r'$f$'),
-    'tr':    dict(norm=Normalize(vmin=0.0, vmax=1.0), cmap='coolwarm', label=r'$\mathrm{tracer}$'),
-    'diff':  dict(norm=Normalize(vmin=-1.0, vmax=1.0), cmap='RdBu_r', label=r'$f - \mathrm{tracer}$'),
+    'tr':    dict(norm=Normalize(vmin=0.0, vmax=1.0), cmap='coolwarm', label=r'$f_\mathrm{tr}$'),
+    'diff':  dict(norm=Normalize(vmin=-1.0, vmax=1.0), cmap='RdBu_r', label=r'$\Delta f$'),
     'Tg':    dict(norm=LogNorm(vmin=1e4, vmax=1e12), cmap='inferno', label=r'$T_g\ /\ \mathrm{K}$'),
-    'ratio': dict(norm=LogNorm(vmin=1e-3, vmax=1e3), cmap='RdBu_r', label=r'$T_g / T_r$'),
+    'ratio': dict(norm=LogNorm(vmin=1e-6, vmax=1e6), cmap='RdBu_r', label=r'$T_g / T_r$'),
     'vr':    dict(norm=SymLogNorm(linthresh=1e-3, vmin=-1.0, vmax=1.0), cmap='RdBu_r', label=r'$v_r\ /\ c$'),
     'vphi':  dict(norm=Normalize(vmin=0.0, vmax=0.8), cmap='viridis', label=r'$v_\phi\ /\ c$'),
 }
+
+MAP_LEFT, MAP_BOTTOM, MAP_TOP = 0.40, 0.42, 0.06
+MAP_GAP, GROUP_GAP = 0.05, 0.16
+CB_PAD, CB_WIDTH, CB_RIGHT = 0.06, 0.08, 0.72
 
 
 def map_field(F, key):
@@ -534,20 +661,44 @@ def map_field(F, key):
     raise KeyError(key)
 
 
-def map_figure(nrow, ncol, width, xlim, ylim, cbar=True, gap=0.06):
-    left, right, bottom, top = 0.42, 0.62 if cbar else 0.08, 0.36, 0.06
-    cb = 0.08 if cbar else 0.0
-    w = (width - left - right - (ncol - 1) * gap) / ncol
+def map_layout(groups, ncol, width, xlim, ylim):
+    right = CB_PAD + CB_WIDTH + CB_RIGHT
+    w = (width - MAP_LEFT - right - (ncol - 1) * MAP_GAP) / ncol
     h = w * (ylim[1] - ylim[0]) / (xlim[1] - xlim[0])
-    height = bottom + top + nrow * h + (nrow - 1) * gap
+    nrow = sum(groups)
+    height = MAP_BOTTOM + MAP_TOP + nrow * h + (nrow - len(groups)) * MAP_GAP + (len(groups) - 1) * GROUP_GAP
 
     fig = plt.figure(figsize=[width, height], layout='none')
-    rect = (left / width, bottom / height, (width - left - right + (cb + 0.06 if cbar else 0.0)) / width, (height - bottom - top) / height)
-    grid = ImageGrid(fig, rect, (nrow, ncol), axes_pad=gap, share_all=True, label_mode='L',
-                     cbar_mode='single' if cbar else None, cbar_location='right', cbar_size=cb, cbar_pad=0.06)
-    grid[0].xaxis.set_major_locator(MaxNLocator(5, prune='upper' if ncol > 1 else None))
-    grid[0].yaxis.set_major_locator(MaxNLocator(5, prune='upper' if nrow > 1 else None))
-    return fig, grid
+    axes = np.empty((nrow, ncol), dtype=object)
+    caxes = []
+    y, i = height - MAP_TOP, 0
+    for n in groups:
+        top = y
+        for k in range(n):
+            for j in range(ncol):
+                rect = [(MAP_LEFT + j * (w + MAP_GAP)) / width, (y - h) / height, w / width, h / height]
+                share = axes[0, 0] if i or j else None
+                axes[i, j] = fig.add_axes(rect, sharex=share, sharey=share)
+            y -= h
+            i += 1
+            if k < n - 1:
+                y -= MAP_GAP
+        caxes.append(fig.add_axes([(width - right + CB_PAD) / width, y / height, CB_WIDTH / width, (top - y) / height]))
+        y -= GROUP_GAP
+
+    for i in range(nrow):
+        for j in range(ncol):
+            ax = axes[i, j]
+            ax.tick_params(which='both', direction='out', color='k', top=False, right=False, length=2.5)
+            ax.tick_params(which='minor', length=1.5)
+            ax.tick_params(labelleft=(j == 0), labelbottom=(i == nrow - 1))
+            if j == 0:
+                ax.set_ylabel(r'$z\ /\ r_g$')
+            if i == nrow - 1:
+                ax.set_xlabel(r'$R\ /\ r_g$')
+    axes[0, 0].xaxis.set_major_locator(MaxNLocator(5, prune='upper' if ncol > 1 else None))
+    axes[0, 0].yaxis.set_major_locator(MaxNLocator(5, prune='upper' if nrow > 1 else None))
+    return fig, axes, caxes
 
 
 def draw_map(ax, field, key, geo, xlim, ylim):
@@ -556,60 +707,88 @@ def draw_map(ax, field, key, geo, xlim, ylim):
     Ze = geo['R_E'][:, None] * np.cos(geo['TH_E'])[None, :]
     im = ax.pcolormesh(Xe, Ze, field, norm=spec['norm'], cmap=spec['cmap'], shading='flat', rasterized=True)
     ax.add_patch(plt.Circle((0, 0), geo['R_E'][0], color='k', zorder=3))
-    ax.set_facecolor('0.85' if xlim[1] >= geo['R_E'][-1] else 'k')
-
+    ax.set_facecolor('0.85')
     ax.set_xlim(*xlim)
     ax.set_ylim(*ylim)
     ax.set_aspect('equal')
-    ax.set_xlabel(r'$R\ /\ r_g$')
-    ax.set_ylabel(r'$z\ /\ r_g$')
-    ax.tick_params(which='both', color='w')
 
+    Xc = geo['R_C'][:, None] * np.sin(geo['TH_C'])[None, :]
+    Zc = geo['R_C'][:, None] * np.cos(geo['TH_C'])[None, :]
+    ax._map_cells = ((Xc.ravel() - xlim[0]) / (xlim[1] - xlim[0]), (Zc.ravel() - ylim[0]) / (ylim[1] - ylim[0]),
+                     im.to_rgba(np.ma.masked_invalid(field).ravel()))
     return im
+
+
+def contrast_color(ax, x0, x1, y0, y1):
+    fx, fy, rgba = ax._map_cells
+    m = (fx >= x0) & (fx <= x1) & (fy >= y0) & (fy <= y1)
+    if not m.any():
+        lum = 0.85
+    else:
+        c = rgba[m, :3]
+        lum = np.mean(0.2126 * c[:, 0] + 0.7152 * c[:, 1] + 0.0722 * c[:, 2])
+    return 'k' if lum > 0.45 else 'w'
+
+
+def time_label(ax, t):
+    color = contrast_color(ax, 0.55, 1.0, 0.75, 1.0)
+    ax.text(0.96, 0.93, rf'$t = \num{{{t:.0f}}}\,t_g$', color=color, ha='right', va='top', transform=ax.transAxes, fontsize=8)
+
+
+def row_tag(ax, text):
+    color = contrast_color(ax, 0.0, 0.35, 0.75, 1.0)
+    ax.text(0.04, 0.93, text, color=color, ha='left', va='top', transform=ax.transAxes, fontsize=8)
 
 
 def map_colorbar(fig, im, cax, key):
     cb = fig.colorbar(im, cax=cax)
     cb.set_label(MAP_FIELDS[key]['label'])
-    cb.ax.tick_params(which='both', direction='out', right=True, left=False)
-    if key in ('f', 'tr'):
-        cb.set_ticks([0.0, 0.5, 1.0])
+    cb.ax.tick_params(which='both', direction='out', right=True, left=False, color='k')
+    if key in ('f', 'tr', 'diff'):
+        cb.set_ticks([-1.0, -0.5, 0.0, 0.5, 1.0] if key == 'diff' else [0.0, 0.5, 1.0])
         cb.ax.minorticks_off()
     return cb
 
 
-def time_label(ax, t, color='w'):
-    ax.text(0.96, 0.92, rf'$t = \num{{{t:.0f}}}\,t_g$', color=color, ha='right', va='top', transform=ax.transAxes, fontsize='small')
-
-
-def map_rows(rows, times, width, name, xlim=(0, 20), ylim=(0, 10)):
-    fig, grid = map_figure(len(rows), len(times), width, xlim, ylim)
-    for i, (path, key) in enumerate(rows):
-        geo = make_geometry(path)
-        for j, t_req in enumerate(times):
-            n, t = nearest_out(path, t_req)
-            F = load(n, path, geo, names=('rho', 'vx1', 'vx2', 'vx3', 'prs', 'enr', 'diskfrac', 'tr1'))
-            ax = grid[i * len(times) + j]
-            im = draw_map(ax, map_field(F, key), key, geo, xlim, ylim)
-            if i == 0:
-                time_label(ax, t)
-    map_colorbar(fig, im, grid.cbar_axes[0], rows[-1][1])
+def map_grid(groups, width, name, xlim=(0, 20), ylim=(0, 10)):
+    """groups: list of (colorbar key, rows), each row a list of cells (field, key, geo, t, tag[, extra])"""
+    ncol = len(groups[0][1][0])
+    fig, axes, caxes = map_layout([len(rows) for _, rows in groups], ncol, width, xlim, ylim)
+    i = 0
+    for (cbar_key, rows), cax in zip(groups, caxes):
+        im = None
+        for row in rows:
+            for j, cell in enumerate(row):
+                field, key, geo, t, tag = cell[:5]
+                im = draw_map(axes[i, j], field, key, geo, xlim, ylim)
+                if len(cell) > 5:
+                    cell[5](axes[i, j])
+                if t is not None:
+                    time_label(axes[i, j], t)
+                if tag is not None:
+                    row_tag(axes[i, j], tag)
+            i += 1
+        map_colorbar(fig, im, cax, cbar_key)
     save(fig, name)
 
 
-def map_rows_shared(rows, times, width, name, keys_share, xlim=(0, 20), ylim=(0, 10)):
-    fig, grid = map_figure(len(rows), len(times), width, xlim, ylim)
-    for i, (path, key) in enumerate(rows):
-        geo = make_geometry(path)
-        for j, t_req in enumerate(times):
-            n, t = nearest_out(path, t_req)
-            F = load(n, path, geo, names=('rho', 'vx3', 'prs', 'diskfrac', 'tr1'))
-            ax = grid[i * len(times) + j]
-            im = draw_map(ax, map_field(F, key), key, geo, xlim, ylim)
-            if i == 0:
-                time_label(ax, t)
-    map_colorbar(fig, im, grid.cbar_axes[0], keys_share)
-    save(fig, name)
+SNAP_CACHE = {}
+
+
+def snapshot(path, t_req, names=('rho', 'vx1', 'vx2', 'vx3', 'prs', 'enr', 'diskfrac', 'tr1')):
+    n, t = nearest_out(path, t_req)
+    key = (str(path), int(n))
+    if key not in SNAP_CACHE:
+        SNAP_CACHE[key] = (t, make_geometry(path), load(n, path, make_geometry(path), names=names))
+    return SNAP_CACHE[key]
+
+
+def time_row(path, key, times, label_times=True, tag=None):
+    row = []
+    for j, t_req in enumerate(times):
+        t, geo, F = snapshot(path, t_req)
+        row.append((map_field(F, key), key, geo, t if label_times else None, tag if j == 0 else None))
+    return row
 
 
 def agreement_series(path):
@@ -628,23 +807,31 @@ def agreement_series(path):
 
 
 def fig_validation():
+    diff_rows = []
     for label, tracer_path, df_path in TRACER_RUNS:
         if not (tracer_path / 'dbl.out').exists() or not (df_path / 'dbl.out').exists():
             print(f'skipping validation {label}, outputs missing')
             continue
 
         tag = label.lower()
-        map_rows_shared([(tracer_path, 'rho'), (df_path, 'rho')], T_VALID, TEXT, f'valid_{tag}_rho_text', 'rho')
-        map_rows_shared([(df_path, 'tr'), (df_path, 'f')], T_VALID, TEXT, f'valid_{tag}_class_text', 'f')
-        map_rows([(df_path, 'diff')], T_VALID, TEXT, f'valid_{tag}_diff_text')
+        map_grid([('rho', [time_row(tracer_path, 'rho', T_VALID), time_row(df_path, 'rho', T_VALID, False)]),
+                  ('f', [time_row(df_path, 'tr', T_VALID, False), time_row(df_path, 'f', T_VALID, False)])],
+                 TEXT, f'valid_{tag}_text')
+        diff_rows.append(time_row(df_path, 'diff', T_VALID, not diff_rows, rf'$\mathrm{{{label}}}$'))
 
-        for path, key, kind in [(tracer_path, 'rho', 'tracerrun'), (df_path, 'rho', 'dfrun'), (df_path, 'tr', 'tracer'), (df_path, 'f', 'f')]:
-            map_rows([(path, key)], [T_VALID[-1]], COL, f'valid_{tag}_{kind}_col')
+        for path, key, kind in [(tracer_path, 'rho', 'tracerrun'), (df_path, 'rho', 'dfrun'), (df_path, 'tr', 'tracer'),
+                                (df_path, 'f', 'f'), (df_path, 'diff', 'diff')]:
+            map_grid([(key, [time_row(path, key, [T_VALID[-1]])])], COL, f'valid_{tag}_{kind}_col')
+
+    if diff_rows:
+        map_grid([('diff', diff_rows)], TEXT, 'valid_diff_text')
 
     if (RAD_TRACER_RUN / 'dbl.out').exists():
-        map_rows_shared([(RAD_TRACER_RUN, 'tr'), (RAD_TRACER_RUN, 'f')], T_VALID, TEXT, 'valid_rad_class_text', 'f')
-        map_rows([(RAD_TRACER_RUN, 'tr')], [T_VALID[-1]], COL, 'valid_rad_tracer_col')
-        map_rows([(RAD_TRACER_RUN, 'f')], [T_VALID[-1]], COL, 'valid_rad_f_col')
+        map_grid([('rho', [time_row(RAD_TRACER_RUN, 'rho', T_VALID)]),
+                  ('f', [time_row(RAD_TRACER_RUN, 'tr', T_VALID, False), time_row(RAD_TRACER_RUN, 'f', T_VALID, False)])],
+                 TEXT, 'valid_rad_text')
+        for key, kind in [('tr', 'tracer'), ('f', 'f')]:
+            map_grid([(key, [time_row(RAD_TRACER_RUN, key, [T_VALID[-1]])])], COL, f'valid_rad_{kind}_col')
 
     fig, ax = plt.subplots(figsize=[COL, 0.62 * COL])
     shown = False
@@ -660,11 +847,8 @@ def fig_validation():
         shown = True
     if shown:
         ax.set_xlabel(r'$t\ /\ t_g$')
-        ax.set_ylabel(r'$1 - \langle|f - \mathrm{tracer}|\rangle\ /\ \%$')
-        h, l = ax.get_legend_handles_labels()
-        h += [Line2D([], [], color='k'), Line2D([], [], color='k', lw=0.6, ls='--')]
-        l += [r'$\mathrm{mass}$', r'$\mathrm{volume}$']
-        ax.legend(h, l, ncol=3, loc='lower center', bbox_to_anchor=(0.5, 1.0))
+        ax.set_ylabel(r'$1 - \langle|\Delta f|\rangle\ /\ \%$')
+        place_legend(ax, ncol=3)
         save(fig, 'valid_agreement_col')
     else:
         plt.close(fig)
@@ -672,7 +856,7 @@ def fig_validation():
 
 def fig_timescales():
     R = np.geomspace(2.5, 30, 300)
-    fig, ax = plt.subplots(figsize=[COL, 0.7 * COL])
+    fig, ax = plt.subplots(figsize=[COL, 0.62 * COL])
 
     ax.axvline(6.0, color='gray', lw=0.6, ls=':')
     ax.plot(R, t_orbit(R), label=r'$t_\mathrm{orb}$')
@@ -687,7 +871,7 @@ def fig_timescales():
 
     ax.set_xlabel(r'$R\ /\ r_g$')
     ax.set_ylabel(r'$t\ /\ t_g$')
-    ax.legend(ncol=2)
+    place_legend(ax, ncol=2)
 
     save(fig, 'timescales_col')
 
@@ -718,69 +902,65 @@ def fig_full_domain(run):
         if np.nanmax(tau) > 1.0:
             ax.contour(Xc, Zc, tau, levels=[1.0], colors='w', linewidths=0.6, linestyles='--')
 
-    for key in ('rho', 'f', 'Tg', 'ratio', 'vr', 'vphi'):
-        fig, grid = map_figure(1, 2, TEXT, lim, lim)
-        im = draw_map(grid[0], init[key], key, geo, lim, lim)
-        draw_map(grid[1], mean[key], key, geo, lim, lim)
+    def cells(key):
+        extra = {}
         if key == 'rho':
-            contours(grid[0], init['f'], init['tau'])
-            contours(grid[1], mean['f'], mean['tau'])
-        map_colorbar(fig, im, grid.cbar_axes[0], key)
-        save(fig, f'domain_{key}_text')
+            extra = dict(init=lambda ax: contours(ax, init['f'], init['tau']), mean=lambda ax: contours(ax, mean['f'], mean['tau']))
+        return [(init[key], key, geo, None, None) + ((extra['init'],) if extra else ()),
+                (mean[key], key, geo, None, None) + ((extra['mean'],) if extra else ())]
 
-        for label, data, f, tau in [('init', init[key], init['f'], init['tau']), ('mean', mean[key], mean['f'], mean['tau'])]:
-            fig, grid = map_figure(1, 1, COL, lim, lim)
-            im = draw_map(grid[0], data, key, geo, lim, lim)
-            if key == 'rho':
-                contours(grid[0], f, tau)
-            map_colorbar(fig, im, grid.cbar_axes[0], key)
-            save(fig, f'domain_{key}_{label}_col')
+    for key in ('rho', 'f', 'Tg', 'ratio', 'vr', 'vphi'):
+        map_grid([(key, [cells(key)])], TEXT, f'domain_{key}_text', lim, lim)
+        for k, label in enumerate(('init', 'mean')):
+            map_grid([(key, [[cells(key)[k]]])], COL, f'domain_{key}_{label}_col', lim, lim)
+
+    for name, (a, b) in [('thermal', ('Tg', 'ratio')), ('velocity', ('vr', 'vphi'))]:
+        map_grid([(a, [cells(a)]), (b, [cells(b)])], TEXT, f'domain_{name}_text', lim, lim)
 
     return mean
 
 
 def fig_early(run, keys=('rho', 'f', 'Tg', 'ratio', 'vr', 'vphi')):
-    path, geo = run['path'], run['geo']
-    snaps = []
-    for t_req in T_EARLY:
-        n, t = nearest_out(path, t_req)
-        snaps.append((t, load(n, path, geo)))
+    path = run['path']
+    half = len(T_EARLY) // 2
+
+    def rows(key, labels=True):
+        return [time_row(path, key, T_EARLY[:half], labels), time_row(path, key, T_EARLY[half:], labels)]
 
     for key in keys:
-        fig, grid = map_figure(2, 3, TEXT, (0, 20), (0, 10))
-        for ax, (t, F) in zip(grid, snaps):
-            im = draw_map(ax, map_field(F, key), key, geo, (0, 20), (0, 10))
-            time_label(ax, t)
-        map_colorbar(fig, im, grid.cbar_axes[0], key)
-        save(fig, f'early_{key}_text')
+        map_grid([(key, rows(key))], TEXT, f'early_{key}_text')
+
+    for name, (a, b) in [('thermal', ('Tg', 'ratio')), ('velocity', ('vr', 'vphi'))]:
+        map_grid([(a, rows(a)), (b, rows(b, False))], TEXT, f'early_{name}_text')
 
 
 def fig_relaxation(runs):
-    fig, ax = plt.subplots(figsize=[TEXT, 0.36 * TEXT])
-    tmax = max(run['t'][-1] for run in runs)
+    for width, aspect, suffix in [(TEXT, 0.36, 'text'), (COL, 0.62, 'col')]:
+        fig, ax = plt.subplots(figsize=[width, aspect * width])
+        tmax = max(run['t'][-1] for run in runs)
 
-    for run in runs:
-        Cx, t = run['C'], run['t']
-        for k, (key, name) in enumerate([('M', r'$M$'), ('M_d', r'$M_d$'), ('M_c', r'$M_c$')]):
-            ax.plot(t, Cx[key], color=f'C{k}', lw=run['lw'], label=name if run is runs[0] else None)
+        for run in runs:
+            Cx, t = run['C'], run['t']
+            for k, (key, name) in enumerate([('M', r'$M$'), ('M_d', r'$M_d$'), ('M_c', r'$M_c$')]):
+                ax.plot(t, Cx[key], color=f'C{k}', lw=run['lw'], label=name if run is runs[0] else None)
 
-    ax.set_yscale('log')
-    ax.set_xscale('symlog', linthresh=11e3, linscale=1.0)
-    ax.set_xlim(0, tmax)
-    ax.xaxis.set_major_locator(FixedLocator([0, 1e4]))
-    ax.xaxis.set_major_formatter(FuncFormatter(lambda v, _: '$0$' if v == 0 else rf'$10^{{{int(np.floor(np.log10(v)))}}}$'))
-    ax.xaxis.set_minor_locator(FixedLocator([k * 1e3 for k in range(1, 51) if k != 10]))
-    ax.xaxis.set_minor_formatter(NullFormatter())
+        ax.set_yscale('log')
+        ax.set_xscale('symlog', linthresh=11e3, linscale=1.0)
+        ax.set_xlim(0, tmax)
+        ax.xaxis.set_major_locator(FixedLocator([0, 1e4]))
+        ax.xaxis.set_major_formatter(FuncFormatter(lambda v, _: '$0$' if v == 0 else rf'$10^{{{int(np.floor(np.log10(v)))}}}$'))
+        ax.xaxis.set_minor_locator(FixedLocator([k * 1e3 for k in range(1, 51) if k != 10]))
+        ax.xaxis.set_minor_formatter(NullFormatter())
 
-    ax.set_xlabel(r'$t\ /\ t_g$')
-    ax.set_ylabel(r'$M\ /\ \rho_0 r_g^3$')
+        ax.set_xlabel(r'$t\ /\ t_g$')
+        ax.set_ylabel(r'$M\ /\ \rho_0 r_g^3$')
 
-    ax.add_artist(ax.legend(loc='upper right'))
-    run_legend(ax, runs, loc='lower right')
+        place_legend(ax, ncol=3, loc='upper right')
+        run_legend(ax, runs, ncol=2, loc='lower right')
 
-    save(fig, 'relax_mass_text')
+        save(fig, f'relax_mass_{suffix}')
 
-    fig, ax = plt.subplots(figsize=[COL, 0.7 * COL])
+    fig, ax = plt.subplots(figsize=[COL, 0.62 * COL])
     run = runs[0]
     for k, (key, (tc, D)) in enumerate(run['D_curves'].items()):
         ax.plot(tc, D, color=f'C{k}', label=GLOBAL_TEX[key])
@@ -789,7 +969,7 @@ def fig_relaxation(runs):
     ax.set_yscale('log')
     ax.set_xlabel(r'$t_c\ /\ t_g$')
     ax.set_ylabel(r'$D(t_c)$')
-    ax.legend(ncol=2, loc='upper right')
+    place_legend(ax, ncol=2, loc='upper right')
     save(fig, 'relax_distance_col')
 
 
@@ -813,10 +993,10 @@ def fig_window(runs):
     axs[2].set_xlabel(r'$t\ /\ t_g$')
     axs[2].set_xlim(min(run['t_steady'] for run in runs), max(run['t'][-1] for run in runs))
 
-    axs[0].add_artist(axs[0].legend(ncol=3, loc='center left', bbox_to_anchor=(0.0, 0.62)))
-    run_legend(axs[0], runs, ncol=2, loc='center left', bbox_to_anchor=(0.0, 0.3))
-    axs[1].legend(ncol=3, loc='center left', bbox_to_anchor=(0.0, 0.62))
-    axs[2].legend(ncol=2, loc='upper left')
+    place_legend(axs[0], ncol=3)
+    run_legend(axs[0], runs, ncol=2)
+    place_legend(axs[1], ncol=3)
+    place_legend(axs[2], ncol=2)
 
     save(fig, 'window_text')
 
@@ -841,13 +1021,13 @@ def fig_spacetime(run):
     vmax = np.nanpercentile(np.abs(mdot) * SCALE, 99.5)
     norm = SymLogNorm(linthresh=max(lin, 11e-2), vmin=-vmax, vmax=vmax)
 
-    fig, axs = plt.subplots(1, 2, figsize=[TEXT, 0.5 * TEXT], sharex=True, sharey=True)
+    fig, axs = plt.subplots(1, 2, figsize=[TEXT, 0.4 * TEXT], sharex=True, sharey=True)
     spacetime(axs[0], T, -C['mdot_d'] * SCALE, norm, 'RdBu_r', r, tlim=(TS[0], TS[-1]))
     im = spacetime(axs[1], T, -C['mdot_c'] * SCALE, norm, 'RdBu_r', r, tlim=(TS[0], TS[-1]))
     axs[1].set_ylabel('')
-    axs[0].set_title(r'$\mathrm{disk}$')
-    axs[1].set_title(r'$\mathrm{corona}$')
-    fig.colorbar(im, ax=axs, label=r'$\dot M_\mathrm{acc}\ /\ \dot M_\mathrm{E}$', pad=0.02)
+    axs[0].set_title(r'$\dot M_d$')
+    axs[1].set_title(r'$\dot M_c$')
+    fig.colorbar(im, ax=axs, label=r'$\dot M\ /\ \dot M_\mathrm{E}$', pad=0.02)
     save(fig, 'spacetime_mdot_text')
 
     delta_long = C['sigma'][s] / C['sigma'][s].mean(axis=0)[None, :] - 1.0
@@ -855,7 +1035,7 @@ def fig_spacetime(run):
     dnorm = TwoSlopeNorm(vmin=-amp, vcenter=0.0, vmax=amp)
     tlim = (max(run['S']['t'][0], run['S']['t'][-1] - 3000), run['S']['t'][-1])
 
-    fig, axs = plt.subplots(1, 2, figsize=[TEXT, 0.5 * TEXT], sharex=True)
+    fig, axs = plt.subplots(1, 2, figsize=[TEXT, 0.4 * TEXT], sharex=True)
     spacetime(axs[0], TS, delta_long, dnorm, 'RdBu_r', r)
     im = spacetime(axs[1], run['S']['t'], run['delta'], dnorm, 'RdBu_r', r, tlim=tlim)
     for ax in axs:
@@ -864,7 +1044,7 @@ def fig_spacetime(run):
     save(fig, 'spacetime_delta_text')
 
     for label, t, data, tl in [('long', TS, delta_long, None), ('dense', run['S']['t'], run['delta'], tlim)]:
-        fig, ax = plt.subplots(figsize=[COL, 1.1 * COL])
+        fig, ax = plt.subplots(figsize=[COL, 0.7 * COL])
         im = spacetime(ax, t, data, dnorm, 'RdBu_r', r, tlim=tl)
         ax.axvline(6.0, color='k', lw=0.5, ls=':')
         fig.colorbar(im, ax=ax, label=r'$\delta$', pad=0.02)
@@ -893,8 +1073,8 @@ def fig_profiles(runs):
         plain_log(ax, 'x')
         ax.set_xlabel(r'$r\ /\ r_g$')
         ax.set_ylabel(r'$\langle\dot M_\mathrm{acc}\rangle\ /\ \dot M_\mathrm{E}$')
-        ax.add_artist(ax.legend(ncol=2, loc='lower left'))
-        run_legend(ax, runs, loc='center left')
+        place_legend(ax, ncol=2, loc='lower left')
+        run_legend(ax, runs, ncol=2)
 
     def sigma_panel(ax):
         for run in runs:
@@ -946,12 +1126,12 @@ def fig_profiles(runs):
         run_legend(ax, runs, color=True, extra=[(r'$\bar v_\mathrm{ss}$', dict(ls='--', lw=0.7))], loc='upper right')
 
     for name, panels in [('mdot_sigma', (mdot_panel, sigma_panel)), ('alpha_inflow', (alpha_panel, inflow_panel))]:
-        fig, axs = plt.subplots(1, 2, figsize=[TEXT, 0.4 * TEXT])
+        fig, axs = plt.subplots(1, 2, figsize=[TEXT, 0.34 * TEXT])
         for ax, panel in zip(axs, panels):
             panel(ax)
         save(fig, f'{name}_text')
         for panel, part in zip(panels, name.split('_')):
-            fig, ax = plt.subplots(figsize=[COL, 0.78 * COL])
+            fig, ax = plt.subplots(figsize=[COL, 0.62 * COL])
             panel(ax)
             save(fig, f'{part}_col')
 
@@ -1065,7 +1245,7 @@ def fig_waves(runs):
               (nu_kin(r) / r, r'$\nu/R$')]
 
     f_w, P_w, w = main['f_w'], main['P_w'], main['wave']
-    fig, ax = plt.subplots(figsize=[COL, 0.8 * COL])
+    fig, ax = plt.subplots(figsize=[COL, 0.62 * COL])
     im = ax.pcolormesh(r[w], f_w[1:], P_w[1:] / P_w[1:].max(axis=0, keepdims=True), cmap='viridis', norm=LogNorm(vmin=1e-3, vmax=1.0),
                        shading='nearest', rasterized=True)
     fig.colorbar(im, ax=ax, label=r'$P / P_\mathrm{max}(r)$', pad=0.02)
@@ -1104,7 +1284,7 @@ def fig_waves(runs):
         plain_log(ax, 'x')
         ax.set_xlabel(r'$r\ /\ r_g$')
         ax.set_ylabel(r'$v\ /\ c$')
-        ax.add_artist(ax.legend(ncol=2, loc='lower right'))
+        place_legend(ax, ncol=3, loc='lower right')
         run_table(ax, [(r'$v_p$', dict(marker='o', ls='none', ms=2))],
                   [(run['label'], run['color'], dict(color=run['color'])) for run in runs], loc='upper left', handlelength=1.0)
 
@@ -1139,15 +1319,15 @@ def fig_waves(runs):
         plain_log(ax, 'x')
         ax.set_xlabel(r'$r\ /\ r_g$')
         ax.set_ylabel(r'$\Delta\varphi(\nu_\mathrm{peak})\ /\ \mathrm{rad}$')
-        ax.legend(loc='lower left')
+        place_legend(ax, loc='lower left')
 
     for name, panels in [('phase_speed', (phase_panel, speed_panel)), ('rms_cross', (rms_panel, cross_panel))]:
-        fig, axs = plt.subplots(1, 2, figsize=[TEXT, 0.4 * TEXT])
+        fig, axs = plt.subplots(1, 2, figsize=[TEXT, 0.34 * TEXT])
         for ax, panel in zip(axs, panels):
             panel(ax)
         save(fig, f'{name}_text')
         for panel, part in zip(panels, name.split('_')):
-            fig, ax = plt.subplots(figsize=[COL, 0.78 * COL])
+            fig, ax = plt.subplots(figsize=[COL, 0.62 * COL])
             panel(ax)
             save(fig, f'{part}_col')
 
@@ -1207,7 +1387,7 @@ def fig_heating(runs):
         ax.set_ylabel(r'$t\ /\ t_g$')
         h = [Line2D([], [], color=f'C{k}') for k in range(3)] + [Line2D([], [], color='k', ls='--', lw=0.6)]
         l = [lab for _, lab in times] + [r'$1/\Omega$']
-        ax.add_artist(ax.legend(h, l, ncol=2, loc='upper left'))
+        place_legend(ax, h, l, ncol=2, loc='upper left')
         run_legend(ax, [dict(label=run['label'], lw=1.2 if run is runs[0] else 0.5) for run in runs], loc='lower right')
 
     def ratio_panel(ax):
@@ -1225,12 +1405,12 @@ def fig_heating(runs):
         ax.set_ylabel(r'$q^+ / (\Lambda_C + \Lambda_\mathrm{ff})$')
         run_legend(ax, runs, color=True, loc='upper right')
 
-    fig, axs = plt.subplots(1, 2, figsize=[TEXT, 0.4 * TEXT])
+    fig, axs = plt.subplots(1, 2, figsize=[TEXT, 0.34 * TEXT])
     times_panel(axs[0])
     ratio_panel(axs[1])
     save(fig, 'heating_text')
     for panel, part in [(times_panel, 'heating_times'), (ratio_panel, 'heating_ratio')]:
-        fig, ax = plt.subplots(figsize=[COL, 0.78 * COL])
+        fig, ax = plt.subplots(figsize=[COL, 0.62 * COL])
         panel(ax)
         save(fig, f'{part}_col')
 
@@ -1273,14 +1453,14 @@ def fig_budget(run):
         ax.set_xlabel(r'$t\ /\ t_g$')
         ax.set_ylabel(r'$M\ /\ \rho_0 r_g^3$')
         if legend:
-            ax.legend(loc='upper left')
+            place_legend(ax, loc='upper left')
 
-    fig, axs = plt.subplots(1, 2, figsize=[TEXT, 0.4 * TEXT])
+    fig, axs = plt.subplots(1, 2, figsize=[TEXT, 0.34 * TEXT])
     for k, (ax, (_, B)) in enumerate(zip(axs, budgets)):
         panel(ax, B, k == 1)
     save(fig, 'budget_text')
     for label, B in budgets:
-        fig, ax = plt.subplots(figsize=[COL, 0.78 * COL])
+        fig, ax = plt.subplots(figsize=[COL, 0.62 * COL])
         panel(ax, B, True)
         save(fig, f'budget_{label}_col')
 
@@ -1329,7 +1509,7 @@ def fig_structure(run):
     QP /= len(outs)
     QM = np.where(NQM > 0, QM / np.maximum(NQM, 1), np.nan)
 
-    fig, axs = plt.subplots(2, 3, figsize=[TEXT, 0.62 * TEXT], sharex=True)
+    fig, axs = plt.subplots(2, 3, figsize=[TEXT, 0.5 * TEXT], sharex=True)
     for R0 in R_PROFILES:
         P = PROF[R0]
         line, = axs[0, 0].semilogy(COT, P['rho'], label=rf'$R = {R0:g}$')
@@ -1351,34 +1531,34 @@ def fig_structure(run):
         ax.set_ylabel(lab)
     for ax in axs[1]:
         ax.set_xlabel(r'$z/R$')
-    axs[0, 0].legend(loc='upper right')
-    axs[0, 1].legend(handles=[Line2D([], [], color='k', label=r'$\langle p_r\rangle$'), Line2D([], [], color='k', ls='--', label=r'$\langle p_g\rangle$')],
+    place_legend(axs[0, 0])
+    place_legend(axs[0, 1], [Line2D([], [], color='k', label=r'$\langle p_r\rangle$'), Line2D([], [], color='k', ls='--', label=r'$\langle p_g\rangle$')],
                      ncol=2, loc='upper right')
-    axs[0, 2].legend(handles=[Line2D([], [], color='k', label=r'$\langle T_r\rangle$'), Line2D([], [], color='k', ls='--', label=r'$\langle T_g\rangle$')],
+    place_legend(axs[0, 2], [Line2D([], [], color='k', label=r'$\langle T_r\rangle$'), Line2D([], [], color='k', ls='--', label=r'$\langle T_g\rangle$')],
                      ncol=2, loc='upper right')
     save(fig, 'vertical_text')
 
     t_diff = KAPPA_ES * RHO0 * R_G * run['sig_mean'] / 2.0 * run['hr_mean'] * R_C
-    fig, axs = plt.subplots(1, 2, figsize=[TEXT, 0.4 * TEXT])
+    fig, axs = plt.subplots(1, 2, figsize=[TEXT, 0.34 * TEXT])
     axs[0].loglog(R_C, QP, label=r'$Q^+$')
     axs[0].loglog(R_C, np.where(QM > 0, QM, np.nan), label=r'$Q^- = F_z|_{\tau = 1}$')
     axs[0].set_xlabel(r'$r\ /\ r_g$')
     axs[0].set_ylabel(r'$Q\ /\ \rho_0 c^3$')
-    axs[0].legend(loc='lower left')
+    place_legend(axs[0], loc='lower left')
     axs[1].loglog(R_C, t_diff, label=r'$t_\mathrm{diff}$')
     axs[1].loglog(R_C, t_thermal(R_C), label=r'$t_\mathrm{th}$')
     axs[1].loglog(R_C, t_viscous(R_C), label=r'$t_\nu$')
     axs[1].axhline(1 / run['f_peak'], color='firebrick', ls='--', lw=0.7, label=r'$1/\nu_\mathrm{peak}$')
     axs[1].set_xlabel(r'$r\ /\ r_g$')
     axs[1].set_ylabel(r'$t\ /\ t_g$')
-    axs[1].legend(loc='lower right', ncol=2)
+    place_legend(axs[1], ncol=2, loc='lower right')
     for ax in axs:
         plain_log(ax, 'x')
     save(fig, 'balance_text')
 
 
 def fig_aspect(runs):
-    fig, ax = plt.subplots(figsize=[COL, 0.78 * COL])
+    fig, ax = plt.subplots(figsize=[COL, 0.62 * COL])
     axr = ax.twinx()
     for run in runs:
         ax.plot(run['r'], run['hr_mean'], color=run['color'])
@@ -1462,17 +1642,18 @@ def fig_angular(runs):
         ax.set_ylabel(lab)
         ax.set_xlabel(r'$\vartheta\ /\ \mathrm{deg}$')
         if legend:
-            run_table(ax, [(rf'$r = {r0:g}$', dict(color=c)) for r0, c in zip(R_ANG, rcol)],
-                      [(run['label'], 'k', dict(lw=lw)) for run, lw in zip(runs, lws)], loc='lower left', handleheight=1.2)
+            place_legend(ax, [Line2D([], [], color=c, label=rf'$r = {r0:g}$') for r0, c in zip(R_ANG, rcol)], ncol=3,
+                         handlelength=1.0, columnspacing=0.8, loc='lower left')
+            run_legend(ax, [dict(label=run['label'], lw=lw) for run, lw in zip(runs, lws)], ncol=2)
 
-    fig, axs = plt.subplots(2, 2, figsize=[TEXT, 0.72 * TEXT], sharex=True)
+    fig, axs = plt.subplots(2, 2, figsize=[TEXT, 0.66 * TEXT], sharex=True)
     for k, (ax, (key, lab, sign)) in enumerate(zip(axs.flat, panels)):
         panel(ax, key, lab, sign, k == 0)
     for ax in axs[0]:
         ax.set_xlabel('')
     save(fig, 'angular_text')
     for key, lab, sign in panels:
-        fig, ax = plt.subplots(figsize=[COL, 0.85 * COL])
+        fig, ax = plt.subplots(figsize=[COL, 0.62 * COL])
         panel(ax, key, lab, sign, key == 'mdot_dist')
         save(fig, f'angular_{key}_col')
 
