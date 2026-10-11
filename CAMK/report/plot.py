@@ -1,24 +1,31 @@
 #!/usr/bin/env python
-# coding: utf-8
 
-# ## AGN Project: *Characterization of Galaxies via Optical and Infrared Surveys*
-# 
-# ### Notebook Preamble
+import os
+import re
+import sys
+import warnings
+from pathlib import Path
 
-# In[1]:
-
-
-# get_ipython().run_line_magic('matplotlib', 'inline')
-# get_ipython().run_line_magic('config', "InlineBackend.figure_formats = ['retina']")
-
-import scipy as sci
-import pandas as pd
 import numpy as np
 import matplotlib as mpl
 
+warnings.filterwarnings("ignore", category=DeprecationWarning)
+warnings.filterwarnings("ignore", category=RuntimeWarning)
+
+
+ROOT = Path(__file__).resolve().parent
+DATA = ROOT.parent / 'PLUTO' / 'Simulation_Main'
+OUT = ROOT / 'plots'
+
+FORMAT = os.environ.get('PLOT_FORMAT', 'png')
+DPI = int(os.environ.get('PLOT_DPI', '600'))
+ONLY = [s for s in os.environ.get('PLOT_ONLY', '').split(',') if s]
+
+COL = 82.5 / 25.4
+TEXT = 170.0 / 25.4
+
 preamble = r'''
     \usepackage{amsmath}
-    \usepackage{amssymb}
     \usepackage{mathtools}
 
     \usepackage{fontspec}
@@ -26,42 +33,41 @@ preamble = r'''
     \setmainfont{TeX Gyre Termes}
     \setmathfont{TeX Gyre Termes Math}
 
-    \usepackage{microtype}
-
     \usepackage[
-    	locale = US,
-    	per-mode = power,
-    	print-zero-exponent = true,
-    	print-unity-mantissa = false
+        locale = US,
+        per-mode = power,
+        exponent-mode = input,
+        print-unity-mantissa = false
     ]{siunitx}
-
-    \DeclareSIUnit{\year}{yr}
-    \DeclareSIUnit{\erg}{erg}
-    \DeclareSIUnit{\parsec}{pc}
-    \DeclareSIUnit{\angstrom}{\text{\AA}}
-    \DeclareSIUnit{\solarmass}{\ensuremath{M_\odot}}
 
     \def\mathdefault#1{#1}
 '''
 
 mpl.rcParams.update({
-    "axes.prop_cycle": "cycler('color', ['firebrick', 'goldenrod', 'olivedrab', 'steelblue', 'rebeccapurple'])",
-
     "backend": 'pgf',
-
-    "figure.figsize": [3.25, 2.44],
-    "figure.constrained_layout.use": True,
+    "pgf.texsystem": 'lualatex',
+    "pgf.rcfonts": False,
+    "pgf.preamble": preamble,
+    "text.usetex": True,
     "font.family": 'serif',
-
-    "axes.labelsize": 'small',
-
     "font.size": 10,
+
+    "axes.prop_cycle": "cycler('color', ['steelblue', 'olivedrab', 'goldenrod', 'firebrick', 'rebeccapurple'])",
+    "axes.labelsize": 'small',
+    "axes.titlesize": 'small',
+    "axes.linewidth": 0.6,
+
+    "figure.constrained_layout.use": True,
+    "figure.constrained_layout.h_pad": 0.02,
+    "figure.constrained_layout.w_pad": 0.02,
 
     "legend.fontsize": 'small',
     "legend.frameon": False,
     "legend.handlelength": 1.5,
-    "legend.columnspacing": 1.5,
-    "legend.handletextpad": 0.6,
+    "legend.columnspacing": 1.2,
+    "legend.handletextpad": 0.5,
+
+    "lines.linewidth": 1.0,
 
     "xtick.labelsize": 'small',
     "xtick.minor.visible": True,
@@ -72,2342 +78,1431 @@ mpl.rcParams.update({
     "ytick.direction": 'in',
     "ytick.right": True,
 
-    "pgf.rcfonts": False,
-
-    "text.usetex": True,
-    "pgf.texsystem": 'lualatex',
-    "pgf.preamble": preamble
+    "savefig.dpi": DPI,
 })
 
-from scipy.spatial import distance_matrix
-from scipy.stats import gaussian_kde
-from scipy.ndimage import gaussian_filter
-
-from sklearn.metrics import matthews_corrcoef
-
 import matplotlib.pyplot as plt
-import matplotlib.colors as mcolors
 
-from matplotlib.path import Path
-from matplotlib.colors import ListedColormap
+from matplotlib.colors import LogNorm, SymLogNorm, TwoSlopeNorm, Normalize
+from matplotlib.ticker import FixedLocator, FuncFormatter, MaxNLocator, NullFormatter
+from matplotlib.lines import Line2D
+from matplotlib.text import Text
+from matplotlib.legend_handler import HandlerBase
+from mpl_toolkits.axes_grid1 import ImageGrid
 
-N = 2**8
+from scipy import signal
+from scipy.ndimage import uniform_filter1d
+from scipy.interpolate import CubicSpline
 
-vals = np.ones((N, 4))
-vals[:, 0] = np.linspace(178/256, 1, N)
-vals[:, 1] = np.linspace(34/256, 1, N)
-vals[:, 2] = np.linspace(34/256, 1, N)
-FireBrick = ListedColormap(vals)
-FireBrick_r = FireBrick.reversed()
+import statsmodels.api as sm
 
-vals = np.ones((N, 4))
-vals[:, 0] = np.linspace(218/256, 1, N)
-vals[:, 1] = np.linspace(165/256, 1, N)
-vals[:, 2] = np.linspace(32/256, 1, N)
-GoldenRod = ListedColormap(vals)
-GoldenRod_r = GoldenRod.reversed()
-
-vals = np.ones((N, 4))
-vals[:, 0] = np.linspace(107/256, 1, N)
-vals[:, 1] = np.linspace(142/256, 1, N)
-vals[:, 2] = np.linspace(35/256, 1, N)
-OliveDrab = ListedColormap(vals)
-OliveDrab_r = OliveDrab.reversed()
-
-vals = np.ones((N, 4))
-vals[:, 0] = np.linspace(70/256, 1, N)
-vals[:, 1] = np.linspace(130/256, 1, N)
-vals[:, 2] = np.linspace(180/256, 1, N)
-SteelBlue = ListedColormap(vals)
-SteelBlue_r = SteelBlue.reversed()
-
-vals = np.ones((N, 4))
-vals[:, 0] = np.linspace(102/256, 1, N)
-vals[:, 1] = np.linspace(51/256, 1, N)
-vals[:, 2] = np.linspace(153/256, 1, N)
-RebeccaPurple = ListedColormap(vals)
-RebeccaPurple_r = RebeccaPurple.reversed()
-
-rng = np.random.default_rng(seed=123)
-
-figures = {}
+import pyPLUTO as pp
 
 
-# ### [SkyServer Query](https://skyserver.sdss.org/dr19/SearchTools/sql)
-# 
-# ```sql
-# SELECT TOP 10000
-#     g.sii_6717_flux, g.sii_6731_flux, g.nii_6584_flux, g.oi_6300_flux, g.oiii_5007_flux,
-#     g.h_alpha_flux, g.h_beta_flux,
-#     g.h_alpha_eqw, g.nii_6584_eqw, g.oiii_sigma,
-#     w.w1mpro, w.w2mpro, w.w3mpro,
-#     s.z, s.class, s.subclass, s.bestobjid
-# FROM SpecObj AS s
-#     JOIN galSpecLine AS g ON s.specobjid = g.specobjid
-#     JOIN PhotoTag AS p ON s.bestobjid = p.objid
-#     OUTER APPLY (   SELECT TOP 1 x.wise_cntr
-#                     FROM wise_xmatch AS x
-#                     WHERE p.objid = x.sdss_objid AND x.match_dist < 3
-#                     ORDER BY x.match_dist ASC
-#                 ) AS y
-#     LEFT JOIN wise_allsky AS w ON y.wise_cntr = w.cntr
-# WHERE s.class = 'GALAXY'
-#     AND s.subclass != 'BROADLINE'
-#     AND s.subclass != 'AGN BROADLINE'
-#     AND s.subclass != 'STARFORMING BROADLINE'
-#     AND s.subclass != 'STARBURST BROADLINE'
-#     AND s.snmedian_r > 5.0
-#     AND s.z < 0.35
-#     AND g.sii_6717_eqw < 0
-#     AND g.sii_6731_eqw < 0
-#     AND g.nii_6584_eqw < 0
-#     AND g.oi_6300_eqw < 0
-#     AND g.oiii_5007_eqw < 0
-#     AND g.h_alpha_eqw < 0
-#     AND g.h_beta_eqw < 0
-#     AND (2.355 * g.sigma_forbidden) < 500
-#     AND (2.355 * g.sigma_balmer) < 500
-#     AND g.sii_6717_flux > 3 * g.sii_6717_flux_err
-#     AND g.sii_6731_flux > 3 * g.sii_6731_flux_err
-#     AND g.nii_6584_flux > 3 * g.nii_6584_flux_err
-#     AND g.oi_6300_flux > 3 * g.oi_6300_flux_err
-#     AND g.oiii_5007_flux > 3 * g.oiii_5007_flux_err
-#     AND g.h_alpha_flux > 3 * g.h_alpha_flux_err
-#     AND g.h_beta_flux > 3 * g.h_beta_flux_err
-# ORDER BY s.specobjid ASC
-# ```
-# 
-# ### Dataframe Loading
+MAIN_PATH = DATA / 'BH_VISC_RAD_HD_TRC_COMP_FIX'
+REF_PATH = DATA / 'BH_VISC_RAD_HD_TRC_COMP'
 
-# In[2]:
+TRACER_RUNS = [('HD', DATA / 'BH_VISC_HD', DATA / 'BH_VISC_HD_TRC'),
+               ('MHD', DATA / 'BH_VISC_MHD', DATA / 'BH_VISC_MHD_TRC'),
+               ('RMHD', DATA / 'BH_VISC_RES_MHD', DATA / 'BH_VISC_RES_MHD_TRC')]
+RAD_TRACER_RUN = DATA / 'BH_VISC_RAD_HD_TRC'
+
+T_VALID = [0.0, 250.0, 500.0, 750.0]
+T_EARLY = [100, 200, 300, 400, 500, 600]
+FULL_AVG_SPAN = 1.0e4
+
+W_WINDOW = 2500.0
+BLOCK = 1000.0
+REF_FRAC = 0.2
+Z_CRIT = 2.0
+TOL_EQ = 0.2
+
+R_WAVE = (4.0, 25.0)
+WELCH_SEG = 6
+WELCH_TSEG = 2500.0
+R_PHASE_REF = 7.0
+FIT_FRAC = 0.15
+P_FUND_MIN = 0.3
+
+R_PROFILES = [8.0, 12.0, 16.0]
+R_ANG = (2.5, 3.0, 4.0, 6.0, 10.0, 20.0)
+PROFILE_STRIDE = 4
+R_BUDGET = (2.5, 25.0)
+R_MIN_HC = 4.0
+HEMI = 2.0
+
+CONST_G = 6.6726e-8
+CONST_c = 2.99792458e10
+CONST_amu = 1.66053886e-24
+CONST_kB = 1.3806505e-16
+CONST_sigma = 5.67051e-5
+CONST_me = 9.1093826e-28
+CONST_Msun = 1.989e33
 
 
-df = pd.read_csv('data.csv', skiprows=1)
-
-counts = df['bestobjid'].value_counts()
-
-print(f'\nFound a Total of {len(df)} SDSS Objects, with {len(df.dropna(subset=['w1mpro', 'w2mpro', 'w3mpro']))} Matches to the WISE Database.',
-      f'There are {len(counts[counts > 1])} Duplicates in this Table.\n',
-      f'\nIncluded GALAXY Subclasses: {' '.join(map(str, df['subclass'].dropna().unique()))}\n')
-
-df.head(15).style.hide()
+def wanted(name):
+    return not ONLY or any(name.startswith(key) for key in ONLY)
 
 
-# ### Derived Values
+def save(fig, name):
+    OUT.mkdir(exist_ok=True)
+    fig.savefig(OUT / f'{name}.{FORMAT}', dpi=DPI)
+    plt.close(fig)
+    print(f'wrote {name}.{FORMAT}')
 
-# In[3]:
+
+def plain_log(ax, axis='x', mantissas=(1, 2, 3, 4, 6)):
+    a = ax.xaxis if axis == 'x' else ax.yaxis
+    lo, hi = sorted(ax.get_xlim() if axis == 'x' else ax.get_ylim())
+    ticks = [m * 10.0**k for k in range(int(np.floor(np.log10(lo))) - 1, int(np.ceil(np.log10(hi))) + 1) for m in mantissas]
+    a.set_major_locator(FixedLocator([t for t in ticks if lo <= t <= hi]))
+    a.set_major_formatter(FuncFormatter(lambda v, pos: f'${v:g}$'))
+    a.set_minor_formatter(NullFormatter())
 
 
-print(f'\nRatios of SDSS Classes:  SF = {100 * len(df[df['subclass'] == 'STARFORMING']) / len(df):.0f}%  ',
-      f'SB = {100 * len(df[df['subclass'] == 'STARBURST']) / len(df):.0f}%  ',
-      f'AGN = {100 * len(df[df['subclass'] == 'AGN']) / len(df):.0f}%\n')
+def read_definitions(path):
+    txt = (path / 'definitions.h').read_text()
+    rho0 = re.search(r'#define\s+UNIT_DENSITY\s+([0-9.eE+-]+)', txt)
+    mbh = re.search(r'#define\s+BH_MASS\s+\(\s*([0-9.eE+-]+)\s*\*\s*([0-9.eE+-]+)\s*\)', txt)
+    rho0 = float(rho0.group(1)) if rho0 else 5.8e-10
+    mbh = float(mbh.group(1)) * float(mbh.group(2)) if mbh else 1.0e8 * CONST_Msun
+    return rho0, mbh
 
-df[['oiii_h_beta_ratio', 'nii_h_alpha_ratio', 'w2_w3', 'w1_w2', 'el_gas_dens', 'bh_mass']] = np.nan
-df[['bpt_class', 'whan_class', 'color_class']] = None
 
-df['oiii_h_beta_ratio'] = df['oiii_5007_flux'] / df['h_beta_flux']
-df['nii_h_alpha_ratio'] = df['nii_6584_flux'] / df['h_alpha_flux']
-df['w2_w3'] = df['w2mpro'] - df['w3mpro']
-df['w1_w2'] = df['w1mpro'] - df['w2mpro']
+def read_parameters(path):
+    params, inside = {}, False
+    for line in (path / 'pluto.ini').read_text().splitlines():
+        s = line.strip()
+        if s.startswith('['):
+            inside = (s == '[Parameters]')
+            continue
+        if inside and s and not s.startswith('#'):
+            key, val = s.split()[:2]
+            params[key] = float(val)
+    return params
 
-def el_gas_dens(flux1, flux2, a = 0.4315, b = 2107.0, c = 627.1, Rmin = 0.4375, Rmax = 1.4484):
-    'Estimate Electron / Gas Density Using Line Ratios (Sanders et al. 2016)'
-    if flux2 == 0.0:
-        return np.nan
-    R = flux1 / flux2
-    if (R >= Rmin) & (R <= Rmax):
-        return (c * R - b * a) / (a - R)
-    return np.nan
 
-df['el_gas_dens'] = np.vectorize(el_gas_dens)(df['sii_6717_flux'].values, df['sii_6731_flux'].values)
+RHO0, M_BH = read_definitions(MAIN_PATH)
+PAR = read_parameters(MAIN_PATH)
 
-def bh_mass(s, s0 = 200.0, alpha = 8.13, beta = 4.02):
-    'Estimate Black Hole Mass Using Galactic Velocity Dispersion (Tremaine et al. 2002)'
-    x = np.log10(s / s0)
-    y = alpha + beta * x
-    return 10**y
+GAMMA = 5.0 / 3.0
+X_H, Z_M = 0.70, 0.02
+MU = 1.0 / (2.0 * X_H + 0.75 * (1.0 - X_H - Z_M) + 0.5 * Z_M)
 
-df['bh_mass'] = bh_mass(df['oiii_sigma'])
+ALPHA = PAR['BETAV']
+EPS = PAR['EPS']
+DFLOOR = PAR['DFLOOR']
 
-def kewley_discrim_r(r, a = 0.61, b = -0.47, c = 1.19):
-    'Classify Galaxies Using Analytical Line Ratio Relation (Kewley et al. 2001)'
-    def helper(r, a, b, c):
-        if r < 10**(-b):
-            return 10**(a / (np.log10(r) + b) + c)
+R_G = CONST_G * M_BH / CONST_c**2
+T_G = R_G / CONST_c
+P0 = RHO0 * CONST_c**2
+MDOT0 = RHO0 * CONST_c * R_G**2
+L0 = RHO0 * CONST_c**3 * R_G**2
+
+K_T = MU * CONST_amu * CONST_c**2 / CONST_kB
+A_RAD = 4.0 * CONST_sigma / CONST_c / P0
+
+KAPPA_ES = 0.2 * (1.0 + X_H)
+ETA = 1.0 / 16.0
+L_EDD = 4.0 * np.pi * CONST_G * M_BH * CONST_c / KAPPA_ES
+MDOT_EDD = L_EDD / (ETA * CONST_c**2)
+SCALE = MDOT0 / MDOT_EDD
+
+KAPPA_CODE = RHO0 * R_G
+K_FFBF = 4.34e25 * Z_M * (1.0 + X_H) / 10.0 + 3.68e22 * (1.0 - Z_M) * (1.0 + X_H)
+T_COMPTON_MAX = 1.0e9
+
+
+def omega_pw(R):
+    return 1.0 / ((R - 2.0) * np.sqrt(R))
+
+
+def omega_newton(R):
+    return R**-1.5
+
+
+def nu_kin(R):
+    return 2.0 / 3.0 * ALPHA * EPS**2 * np.sqrt(R)
+
+
+def cs0(R):
+    return EPS / np.sqrt(R)
+
+
+def t_orbit(R):
+    return 2.0 * np.pi / omega_pw(R)
+
+
+def t_thermal(R):
+    return 1.0 / (ALPHA * omega_newton(R))
+
+
+def t_viscous(R):
+    return R**2 / nu_kin(R)
+
+
+def t_sound(R):
+    return R / cs0(R)
+
+
+def r_viscous(t):
+    return (2.0 * ALPHA * EPS**2 * np.asarray(t, dtype=float) / 3.0)**(2.0 / 3.0)
+
+
+def read_grid(path):
+    lines = [l for l in (path / 'grid.out').read_text().splitlines(True) if not l.startswith('#')]
+
+    edges, k = [], 0
+    while k < len(lines) and lines[k].strip():
+        n = int(lines[k].split()[0])
+        k += 1
+        block = np.array([[float(v) for v in lines[k + m].split()[1:3]] for m in range(n)])
+        edges.append(np.append(block[:, 0], block[-1, 1]))
+        k += n
+
+    return edges
+
+
+def read_outputs(path):
+    entries = {}
+    for line in (path / 'dbl.out').read_text().splitlines():
+        s = line.split()
+        if len(s) > 1:
+            entries[int(s[0])] = float(s[1])
+
+    outs = np.array(sorted(entries))
+    return outs, np.array([entries[n] for n in outs])
+
+
+def make_geometry(path):
+    R_E, TH_E = read_grid(path)[:2]
+    R_C = 0.5 * (R_E[1:] + R_E[:-1])
+    TH_C = 0.5 * (TH_E[1:] + TH_E[:-1])
+    DOM = 2.0 * np.pi * (np.cos(TH_E[:-1]) - np.cos(TH_E[1:]))
+    return dict(R_E=R_E, TH_E=TH_E, R_C=R_C, TH_C=TH_C, NR=R_C.size, NTH=TH_C.size, DTH=np.diff(TH_E), DOM=DOM,
+                COT=np.cos(TH_C) / np.sin(TH_C))
+
+
+def load(n, path, geo, names=('rho', 'vx1', 'vx2', 'vx3', 'prs', 'enr', 'fr1', 'fr2', 'diskfrac', 'nu', 'kappa_abs', 'kappa_scat')):
+    D = pp.Load(nout=int(n), path=str(path) + '/')
+    shape = (geo['NR'], geo['NTH'])
+
+    out = {}
+    for v in names:
+        if hasattr(D, v):
+            a = np.asarray(getattr(D, v), dtype=float)
+            assert a.shape == shape, f"{v} has shape {a.shape}, expected {shape}"
+            out[v] = a
+
+    return out
+
+
+def nearest_out(path, t):
+    outs, times = read_outputs(path)
+    k = int(np.argmin(np.abs(times - t)))
+    return outs[k], times[k]
+
+
+def gas_temperature(F):
+    return K_T * F['prs'] / F['rho']
+
+
+def rad_temperature(F):
+    return (np.clip(F['enr'], 0.0, None) / A_RAD)**0.25
+
+
+def optical_depth_from_pole(F, g):
+    dtau = F['rho'] * (F['kappa_abs'] + F['kappa_scat']) * g['R_C'][:, None] * g['DTH'][None, :]
+    return np.cumsum(dtau, axis=1)
+
+
+def read_cache(path):
+    cache = path / 'analysis_cache.npz'
+    if not cache.exists():
+        sys.exit(f"{cache} is missing, run Full_Analysis.ipynb once to build it")
+    with np.load(cache) as Z:
+        return {key: Z[key] for key in Z.files}
+
+
+def frames(span, dt):
+    return max(int(round(span / dt)), 1)
+
+
+def cadences(t):
+    dts = np.diff(t)
+    dts = dts[dts > 0]
+    rounded = np.array([float(f"{x:.3g}") for x in dts])
+    values, counts = np.unique(rounded, return_counts=True)
+    frequent = values[counts >= 10]
+    return frequent if frequent.size else np.array([np.median(dts)])
+
+
+def long_indices(t, dt_long):
+    phase = t / dt_long
+    on_grid = np.abs(phase - np.round(phase)) < 0.02
+    idx = np.nonzero(on_grid)[0]
+    _, first = np.unique(np.round(phase[idx]).astype(int), return_index=True)
+    return idx[first]
+
+
+def dense_indices(t, dt_long):
+    fine = cadences(t).min()
+    if fine > 0.5 * dt_long:
+        return None
+    jumps = np.nonzero(np.diff(t) > 1.5 * fine)[0]
+    t_dense = t[jumps[-1] + 1] if jumps.size else t[0]
+    idx = np.nonzero(t >= t_dense)[0]
+    return idx if idx.size > 20 else None
+
+
+def slice_cache(Cx, idx):
+    n = Cx['t'].size
+    return {key: (val[idx] if (np.ndim(val) > 0 and val.shape[0] == n and key != 'r') else val) for key, val in Cx.items()}
+
+
+def mean_se(X, dt):
+    X = np.asarray(X, dtype=float)
+    n = X.shape[0]
+    size = min(frames(BLOCK, dt), max(n // 4, 1))
+    nb = n // size
+
+    blocks = X[:nb * size].reshape((nb, size) + X.shape[1:]).mean(axis=1)
+    return X.mean(axis=0), blocks.std(axis=0, ddof=1) / np.sqrt(nb)
+
+
+def window_means(t, X, dt):
+    X = np.asarray(X, dtype=float)
+    n_w = min(frames(W_WINDOW, dt), X.shape[0])
+    cs = np.cumsum(np.concatenate([np.zeros((1,) + X.shape[1:]), X]), axis=0)
+    means = (cs[n_w:] - cs[:-n_w]) / n_w
+    centres = 0.5 * (t[n_w - 1:] + t[:t.size - n_w + 1])
+    return centres, means, n_w
+
+
+def relaxation(t, X, dt):
+    X = np.asarray(X, dtype=float)
+    n_ref = max(int(round(REF_FRAC * t.size)), 8)
+    tc, m, n_w = window_means(t, X, dt)
+    ref, se = mean_se(X[-n_ref:], dt)
+    sigma = np.maximum(se * np.sqrt(1.0 + n_ref / n_w), 1e-300)
+    D = np.abs(m - ref) / sigma
+
+    t_ref = t[-n_ref]
+    judged = tc + 0.5 * W_WINDOW <= t_ref
+    if not judged.any():
+        return np.full(X.shape[1:], np.nan), tc, D, t_ref
+
+    ok = D[judged] < Z_CRIT
+    tail_ok = np.flip(np.logical_and.accumulate(np.flip(ok, axis=0), axis=0), axis=0)
+    first = np.argmax(tail_ok, axis=0)
+    return np.where(tail_ok.any(axis=0), tc[judged][first], np.nan), tc, D, t_ref
+
+
+GLOBAL_TEX = {'M_d': r'$M_d$', 'E_rad': r'$E_\mathrm{rad}$', 'mdot_in': r'$\dot M_\mathrm{acc}(r_\mathrm{in})$', 'L_out': r'$L(r_\mathrm{out})$'}
+
+
+def global_series(Cx):
+    return {'M_d': Cx['M_d'], 'E_rad': Cx['E_rad'], 'mdot_in': -Cx['mdot'][:, 0], 'L_out': Cx['L_out']}
+
+
+def inflow_equilibrium(run):
+    t, r, dt = run['t'], run['r'], run['dt']
+    tc, wm, _ = window_means(t, -run['C']['mdot'], dt)
+
+    inner = (r > r[0]) & (r < 6.0)
+    ref = wm[:, inner].mean(axis=1)
+    smooth = uniform_filter1d(wm, 5, axis=1, mode='nearest')
+    ok = np.abs(smooth / ref[:, None] - 1.0) < TOL_EQ
+    ok[:, r < 6.0] = True
+    ok[:, -2:] = True
+
+    flat = np.logical_and.accumulate(ok, axis=1)
+    r_eq = np.array([r[np.nonzero(row)[0][-1]] if row.any() else np.nan for row in flat])
+
+    steady = tc - 0.5 * W_WINDOW >= run['t_steady']
+    return np.nanpercentile(r_eq[steady], [16, 50, 84]) if steady.any() else np.full(3, np.nan)
+
+
+def make_run(path, label, color, lw):
+    Cx = read_cache(path)
+    t_all = Cx['t']
+    dt_long = cadences(t_all).max()
+    il = long_indices(t_all, dt_long)
+    idn = dense_indices(t_all, dt_long)
+
+    run = dict(path=path, label=label, color=color, lw=lw, geo=make_geometry(path), r=Cx['r'], all=Cx,
+               C=slice_cache(Cx, il), dt=dt_long)
+    run['t'] = run['C']['t']
+
+    times, curves = {}, {}
+    for key, X in global_series(run['C']).items():
+        tr, tc, D, t_ref = relaxation(run['t'], X, run['dt'])
+        times[key] = float(tr)
+        curves[key] = (tc, D)
+    run['t_ref'] = t_ref
+    run['t_relax'], run['D_curves'] = times, curves
+    run['t_steady'] = max(v if np.isfinite(v) else t_ref for v in times.values())
+    run['sel'] = run['t'] >= run['t_steady']
+
+    if idn is not None:
+        D = slice_cache(Cx, idn)
+        run['S'] = slice_cache(D, np.nonzero(D['t'] >= run['t_steady'])[0])
+        run['dt_s'] = float(np.median(np.diff(t_all[idn])))
+    else:
+        run['S'] = slice_cache(run['C'], np.nonzero(run['sel'])[0])
+        run['dt_s'] = run['dt']
+
+    run['R_eq_stats'] = inflow_equilibrium(run)
+
+    s, dt = run['sel'], run['dt']
+    run['mdot_in_mean'], run['mdot_in_se'] = mean_se(-run['C']['mdot'][s, 0], dt)
+    run['sig_mean'], run['sig_se'] = mean_se(run['C']['sigma'][s], dt)
+    run['hr_mean'], run['hr_se'] = mean_se(run['C']['hr'][s], dt)
+    run['cells_H'] = run['hr_mean'] / run['geo']['DTH'][-1]
+    run['delta'] = run['S']['sigma'] / run['S']['sigma'].mean(axis=0)[None, :] - 1.0
+
+    return run
+
+
+class TableHeader:
+    def __init__(self, text, color):
+        self.text = text
+        self.color = color
+
+
+class TableHeaderHandler(HandlerBase):
+    def legend_artist(self, legend, handle, fontsize, handlebox):
+        x = 0.5 * handlebox.width - handlebox.xdescent
+        y = 0.5 * handlebox.height - handlebox.ydescent
+        text = Text(x, y, handle.text, color=handle.color, fontsize=fontsize, ha='center', va='center')
+        handlebox.add_artist(text)
+        return text
+
+
+def run_legend(ax, runs, color=False, extra=(), **kw):
+    handles = []
+    for run in runs:
+        if color:
+            handles.append(Line2D([], [], color=run['color'], label=run['label']))
         else:
-            return 0.0
-    return np.vectorize(helper)(r, a, b, c)
-
-def kauffmann_discrim_r(r, a = 0.61, b = -0.05, c = 1.3):
-    'Classify Galaxies Using Empirical Line Ratio Relation (Kauffmann et al. 2003)'
-    def helper(r, a, b, c):
-        if r < 10**(-b):
-            return 10**(a / (np.log10(r) + b) + c)
-        else:
-            return 0.0
-    return np.vectorize(helper)(r, a, b, c)
-
-mask = df['oiii_h_beta_ratio'] > kewley_discrim_r(df['nii_h_alpha_ratio'])
-df.loc[mask, 'bpt_class'] = 'AGN'
-
-mask = (df['oiii_h_beta_ratio'] <= kewley_discrim_r(df['nii_h_alpha_ratio'])) & (df['oiii_h_beta_ratio'] >= kauffmann_discrim_r(df['nii_h_alpha_ratio']))
-df.loc[mask, 'bpt_class'] = 'COMP'
-
-mask = df['oiii_h_beta_ratio'] < kauffmann_discrim_r(df['nii_h_alpha_ratio'])
-df.loc[mask, 'bpt_class'] = 'SF'
-
-print(f'Ratios of BPT Classes:   SF = {100 * len(df[df['bpt_class'] == 'SF']) / len(df):.0f}%  ',
-      f'COMP = {100 * len(df[df['bpt_class'] == 'COMP']) / len(df):.0f}%  ',
-      f'AGN = {100 * len(df[df['bpt_class'] == 'AGN']) / len(df):.0f}%\n')
-
-df.loc[(df['nii_h_alpha_ratio'] < 10**(-0.4)) & (-df['h_alpha_eqw'] > 3.0), 'whan_class'] = 'Pure SF'
-df.loc[(df['nii_h_alpha_ratio'] > 10**(-0.4)) & (-df['h_alpha_eqw'] > 6.0), 'whan_class'] = 'Strong AGN'
-df.loc[(df['nii_h_alpha_ratio'] > 10**(-0.4)) & (-df['h_alpha_eqw'] < 6.0) & (-df['h_alpha_eqw'] > 3.0), 'whan_class'] = 'Weak AGN'
-df.loc[-df['h_alpha_eqw'] < 3.0, 'whan_class'] = 'Retired G'
-df.loc[(-df['h_alpha_eqw'] < 0.5) & (-df['nii_6584_eqw'] < 0.5), 'whan_class'] = 'Passive G'
-
-print(f'Ratios of WHAN Classes:  Pure SF = {100 * len(df[df['whan_class'] == 'Pure SF']) / len(df):.0f}%  ',
-      f'Strong AGN = {100 * len(df[df['whan_class'] == 'Strong AGN']) / len(df):.0f}%  ',
-      f'Weak AGN = {100 * len(df[df['whan_class'] == 'Weak AGN']) / len(df):.0f}%  ',
-      f'Retired G = {100 * len(df[df['whan_class'] == 'Retired G']) / len(df):.0f}%  ',
-      f'Passive G = {100 * len(df[df['bpt_class'] == 'Passive G']) / len(df):.0f}%\n')
-
-def wedge_up(x, a = 0.315, b = 0.796):
-    'Bounds Classification Wedge Upper Border (Mateos et al. 2012)'
-    return a * x + b
-
-def wedge_bot(x, a = 0.315, b = -0.222):
-    'Bounds Classification Wedge Bottom Border (Mateos et al. 2012)'
-    return a * x + b
-
-def wedge_side(x, a = -3.172, b = 7.624):
-    'Bounds Classification Wedge Side Border (Mateos et al. 2012)'
-    return a * x + b
-
-df.loc[(df['w1_w2'] <= wedge_up(df['w2_w3'])) &
-       (df['w1_w2'] >= wedge_bot(df['w2_w3'])) &
-       (df['w1_w2'] >= wedge_side(df['w2_w3'])), 'color_class'] = 'AGN'
-
-print(f'Ratio of Color Class:    AGN = {100 * len(df[df['color_class'] == 'AGN']) / len(df):.0f}%\n')
-
-df.head(30).style.hide()
-
-
-# ### Plotting
-
-# In[4]:
-
-
-df_bpt = df.replace([np.inf, -np.inf], np.nan).dropna(subset=['nii_h_alpha_ratio', 'oiii_h_beta_ratio'])
-
-x = df_bpt['nii_h_alpha_ratio']
-y = df_bpt['oiii_h_beta_ratio']
-
-X = np.column_stack((x, y))
-
-kde = gaussian_kde(X.T)
-density_points = kde(X.T)
-
-mod_density = density_points**0.3
-d_min, d_max = mod_density.min(), mod_density.max()
-norm_density = (mod_density - d_min) / (d_max - d_min)
-
-base_color_rgb = np.array([0.1, 0.1, 0.1])
-
-white = np.array([1.0, 1.0, 1.0])
-
-min_weight = 0.1 
-adjusted_density = min_weight + (1.0 - min_weight) * norm_density
-
-mixed_colors = white + (base_color_rgb - white) * adjusted_density[:, np.newaxis]
-
-fig, ax = plt.subplots()
-ax.set_facecolor('white')  
-
-ax.scatter(X[:, 0], X[:, 1], marker='s', c=mixed_colors, s=3, edgecolor='none', alpha=1)
-
-xDisc = np.logspace(-3, 1, 333)
-yKauf = kauffmann_discrim_r(xDisc)
-yKewl = kewley_discrim_r(xDisc)
-
-plt.plot(xDisc, yKewl, 'k', label='Theoretical',ls=(0, (6.3, 2)), lw=0.85)
-plt.plot(xDisc, yKauf, 'k', label='Empirical', ls='-', lw=0.85)
-
-ax.set_xscale('log')
-ax.set_yscale('log')
-
-xmin_log, xmax_log = -2.1, 0.6
-ymin_log, ymax_log = -1.2, 1.4
-
-ax.set_xlim(10**xmin_log, 10**xmax_log)
-ax.set_ylim(10**ymin_log, 10**ymax_log)
-
-ax.set_xlabel(r'$\mathrm{\raisebox{0.75pt}{[\raisebox{-0.75pt}{NII}]}} \mathbin{/} \mathrm{H}\alpha$')
-ax.set_ylabel(r'$\mathrm{\raisebox{0.75pt}{[\raisebox{-0.75pt}{OIII}]}} \mathbin{/} \mathrm{H}\beta$', labelpad=-0.75)
-
-ax.legend()
-
-figures['BPT_scatter'] = fig
-
-plt.close()
-
-figures['BPT_scatter']
-
-
-# In[5]:
-
-
-x1 = df_bpt['nii_h_alpha_ratio'][df_bpt['bpt_class'] == 'SF']
-y1 = df_bpt['oiii_h_beta_ratio'][df_bpt['bpt_class'] == 'SF']
-
-x2 = df_bpt['nii_h_alpha_ratio'][df_bpt['bpt_class'] == 'COMP']
-y2 = df_bpt['oiii_h_beta_ratio'][df_bpt['bpt_class'] == 'COMP']
-
-x3 = df_bpt['nii_h_alpha_ratio'][df_bpt['bpt_class'] == 'AGN']
-y3 = df_bpt['oiii_h_beta_ratio'][df_bpt['bpt_class'] == 'AGN']
-
-cat1 = np.column_stack((x1, y1))
-cat2 = np.column_stack((x2, y2))
-cat3 = np.column_stack((x3, y3))
-
-X = np.vstack([cat1, cat2, cat3])
-categories = np.array([0]*len(x1) + [1]*len(x2) + [2]*len(x3))
-
-kde = gaussian_kde(X.T)
-density_points = kde(X.T)
-
-mod_density = density_points**0.3
-d_min, d_max = mod_density.min(), mod_density.max()
-norm_density = (mod_density - d_min) / (d_max - d_min)
-
-base_colors_rgb = np.array([
-    [70/255, 130/255, 180/255],
-    [107/255, 142/255, 35/255],
-    [218/255, 165/255, 32/255]
-])
-
-point_base_colors = base_colors_rgb[categories]
-
-white = np.array([1.0, 1.0, 1.0])
-
-min_weight = 0.1
-adjusted_density = min_weight + (1.0 - min_weight) * norm_density
-
-mixed_colors = white + (point_base_colors - white) * adjusted_density[:, np.newaxis]
-
-shuffle_indices = rng.permutation(len(X))
-
-X_shuffled = X[shuffle_indices]
-mixed_colors = mixed_colors[shuffle_indices]
-
-fig, ax = plt.subplots()
-ax.set_facecolor('white')  
-
-ax.scatter(X_shuffled[:, 0], X_shuffled[:, 1], marker='s', c=mixed_colors, s=3, edgecolor='none', alpha=1)
-
-ax.set_xscale('log')
-ax.set_yscale('log')
-
-xmin_log, xmax_log = -2.1, 0.6
-ymin_log, ymax_log = -1.2, 1.4
-
-ax.set_xlim(10**xmin_log, 10**xmax_log)
-ax.set_ylim(10**ymin_log, 10**ymax_log)
-
-ax.scatter([],[],marker='s', c='steelblue', s=4, edgecolor='none', label='BPT SF')
-ax.scatter([],[],marker='s', c='olivedrab', s=4, edgecolor='none', label='BPT COMP')
-ax.scatter([],[],marker='s', c='goldenrod', s=4, edgecolor='none', label='BPT AGN')
-
-ax.set_xlabel(r'$\mathrm{\raisebox{0.75pt}{[\raisebox{-0.75pt}{NII}]}} \mathbin{/} \mathrm{H}\alpha$')
-ax.set_ylabel(r'$\mathrm{\raisebox{0.75pt}{[\raisebox{-0.75pt}{OIII}]}} \mathbin{/} \mathrm{H}\beta$', labelpad=-0.75)
-
-ax.legend()
-
-figures['BPT_class'] = fig
-
-plt.close()
-
-figures['BPT_class']
-
-
-# In[6]:
-
-
-x1 = df_bpt['nii_h_alpha_ratio'][df_bpt['whan_class'] == 'Pure SF']
-y1 = df_bpt['oiii_h_beta_ratio'][df_bpt['whan_class'] == 'Pure SF']
-
-x2 = df_bpt['nii_h_alpha_ratio'][df_bpt['whan_class'] == 'Retired G']
-y2 = df_bpt['oiii_h_beta_ratio'][df_bpt['whan_class'] == 'Retired G']
-
-x3 = df_bpt['nii_h_alpha_ratio'][df_bpt['whan_class'] == 'Weak AGN']
-y3 = df_bpt['oiii_h_beta_ratio'][df_bpt['whan_class'] == 'Weak AGN']
-
-x4 = df_bpt['nii_h_alpha_ratio'][df_bpt['whan_class'] == 'Strong AGN']
-y4 = df_bpt['oiii_h_beta_ratio'][df_bpt['whan_class'] == 'Strong AGN']
-
-cat1 = np.column_stack((x1, y1))
-cat2 = np.column_stack((x2, y2))
-cat3 = np.column_stack((x3, y3))
-cat4 = np.column_stack((x4, y4))
-
-X = np.vstack([cat1, cat2, cat3, cat4])
-categories = np.array([0]*len(x1) + [1]*len(x2) + [2]*len(x3) + [3]*len(x4))
-
-kde = gaussian_kde(X.T)
-density_points = kde(X.T)
-
-mod_density = density_points**0.3
-d_min, d_max = mod_density.min(), mod_density.max()
-norm_density = (mod_density - d_min) / (d_max - d_min)
-
-base_colors_rgb = np.array([
-    [178/255, 34/255, 34/255],
-    [70/255, 130/255, 180/255],
-    [107/255, 142/255, 35/255],
-    [218/255, 165/255, 32/255]
-])
-
-point_base_colors = base_colors_rgb[categories]
-
-white = np.array([1.0, 1.0, 1.0])
-
-min_weight = 0.1
-adjusted_density = min_weight + (1.0 - min_weight) * norm_density
-
-mixed_colors = white + (point_base_colors - white) * adjusted_density[:, np.newaxis]
-
-shuffle_indices = rng.permutation(len(X))
-
-X_shuffled = X[shuffle_indices]
-mixed_colors = mixed_colors[shuffle_indices]
-
-fig, ax = plt.subplots()
-ax.set_facecolor('white')  
-
-ax.scatter(X_shuffled[:, 0], X_shuffled[:, 1], marker='s', c=mixed_colors, s=3, edgecolor='none', alpha=1)
-
-ax.set_xscale('log')
-ax.set_yscale('log')
-
-xmin_log, xmax_log = -2.1, 0.6
-ymin_log, ymax_log = -1.2, 1.4
-
-ax.set_xlim(10**xmin_log, 10**xmax_log)
-ax.set_ylim(10**ymin_log, 10**ymax_log)
-
-ax.scatter([], [], marker='s', c='firebrick', s=4, edgecolor='none', label='WHAN pSF')
-ax.scatter([], [], marker='s', c='goldenrod', s=4, edgecolor='none', label='WHAN sAGN')
-ax.scatter([], [], marker='s', c='olivedrab', s=4, edgecolor='none', label='WHAN wAGN')
-ax.scatter([], [], marker='s', c='steelblue', s=4, edgecolor='none', label='WHAN rGAL')
-
-ax.set_xlabel(r'$\mathrm{\raisebox{0.75pt}{[\raisebox{-0.75pt}{NII}]}} \mathbin{/} \mathrm{H}\alpha$')
-ax.set_ylabel(r'$\mathrm{\raisebox{0.75pt}{[\raisebox{-0.75pt}{OIII}]}} \mathbin{/} \mathrm{H}\beta$', labelpad=-0.75)
-
-ax.legend()
-
-figures['BPT_WHAN_class'] = fig
-
-plt.close()
-
-figures['BPT_WHAN_class']
-
-
-# In[7]:
-
-
-x1 = df_bpt['nii_h_alpha_ratio'][df_bpt['subclass'] == 'STARBURST']
-y1 = df_bpt['oiii_h_beta_ratio'][df_bpt['subclass'] == 'STARBURST']
-
-x2 = df_bpt['nii_h_alpha_ratio'][df_bpt['subclass'] == 'STARFORMING']
-y2 = df_bpt['oiii_h_beta_ratio'][df_bpt['subclass'] == 'STARFORMING']
-
-x3 = df_bpt['nii_h_alpha_ratio'][df_bpt['subclass'] == 'AGN']
-y3 = df_bpt['oiii_h_beta_ratio'][df_bpt['subclass'] == 'AGN']
-
-cat1 = np.column_stack((x1, y1))
-cat2 = np.column_stack((x2, y2))
-cat3 = np.column_stack((x3, y3))
-
-X = np.vstack([cat1, cat2, cat3])
-categories = np.array([0]*len(x1) + [1]*len(x2) + [2]*len(x3))
-
-kde = gaussian_kde(X.T)
-density_points = kde(X.T)
-
-mod_density = density_points**0.3
-d_min, d_max = mod_density.min(), mod_density.max()
-norm_density = (mod_density - d_min) / (d_max - d_min)
-
-base_colors_rgb = np.array([
-    [70/255, 130/255, 180/255],
-    [107/255, 142/255, 35/255],
-    [218/255, 165/255, 32/255]
-])
-
-point_base_colors = base_colors_rgb[categories]
-
-white = np.array([1.0, 1.0, 1.0])
-
-min_weight = 0.1
-adjusted_density = min_weight + (1.0 - min_weight) * norm_density
-
-mixed_colors = white + (point_base_colors - white) * adjusted_density[:, np.newaxis]
-
-shuffle_indices = rng.permutation(len(X))
-
-X_shuffled = X[shuffle_indices]
-mixed_colors = mixed_colors[shuffle_indices]
-
-fig, ax = plt.subplots()
-ax.set_facecolor('white')  
-
-ax.scatter(X_shuffled[:, 0], X_shuffled[:, 1], marker='s', c=mixed_colors, s=3, edgecolor='none', alpha=1)
-
-ax.set_xscale('log')
-ax.set_yscale('log')
-
-xmin_log, xmax_log = -2.1, 0.6
-ymin_log, ymax_log = -1.2, 1.4
-
-ax.set_xlim(10**xmin_log, 10**xmax_log)
-ax.set_ylim(10**ymin_log, 10**ymax_log)
-
-ax.scatter([],[],marker='s', c='steelblue', s=4, edgecolor='none', label='SDSS SB')
-ax.scatter([],[],marker='s', c='olivedrab', s=4, edgecolor='none', label='SDSS SF')
-ax.scatter([],[],marker='s', c='goldenrod', s=4, edgecolor='none', label='SDSS AGN')
-
-ax.set_xlabel(r'$\mathrm{\raisebox{0.75pt}{[\raisebox{-0.75pt}{NII}]}} \mathbin{/} \mathrm{H}\alpha$')
-ax.set_ylabel(r'$\mathrm{\raisebox{0.75pt}{[\raisebox{-0.75pt}{OIII}]}} \mathbin{/} \mathrm{H}\beta$', labelpad=-0.75)
-
-ax.legend()
-
-figures['BPT_SDSS_class'] = fig
-
-plt.close()
-
-figures['BPT_SDSS_class']
-
-
-# In[8]:
-
-
-df_whan = df.replace([np.inf, -np.inf], np.nan).dropna(subset=['nii_h_alpha_ratio', 'h_alpha_eqw'])
-
-x = df_bpt['nii_h_alpha_ratio']
-y = -df_bpt['h_alpha_eqw']
-
-X = np.column_stack((x, y))
-
-kde = gaussian_kde(X.T)
-density_points = kde(X.T)
-
-mod_density = density_points**0.3
-d_min, d_max = mod_density.min(), mod_density.max()
-norm_density = (mod_density - d_min) / (d_max - d_min)
-
-base_color_rgb = np.array([0.1, 0.1, 0.1])
-
-white = np.array([1.0, 1.0, 1.0])
-
-min_weight = 0.1 
-adjusted_density = min_weight + (1.0 - min_weight) * norm_density
-
-mixed_colors = white + (base_color_rgb - white) * adjusted_density[:, np.newaxis]
-
-fig, ax = plt.subplots()
-ax.set_facecolor('white')  
-
-ax.scatter(X[:, 0], X[:, 1], marker='s', c=mixed_colors, s=3, edgecolor='none', alpha=1)
-
-plt.plot([10**(-0.4), 10**(-0.4)], [3.0, 1e4], 'k-', lw=0.85)
-plt.plot([1e-3, 1e1], [3.0, 3.0], 'k-', lw=0.85)
-plt.plot([10**(-0.4), 1e1], [6.0, 6.0], 'k-', lw=0.85)
-
-ax.set_xscale('log')
-ax.set_yscale('log')
-
-xmin_log, xmax_log = -2.1, 0.6
-ymin_log, ymax_log = -0.4, 3.5
-
-ax.set_xlim(10**xmin_log, 10**xmax_log)
-ax.set_ylim(10**ymin_log, 10**ymax_log)
-
-ax.set_xlabel(r'$\mathrm{\raisebox{0.75pt}{[\raisebox{-0.75pt}{NII}]}} \mathbin{/} \mathrm{H}\alpha$')
-ax.set_ylabel(r'$W_{\mathrm{H}\alpha} \mathbin{/} \mathrm{\AA}$')
-
-figures['WHAN_scatter'] = fig
-
-plt.close()
-
-figures['WHAN_scatter']
-
-
-# In[9]:
-
-
-x1 = df_whan['nii_h_alpha_ratio'][df_whan['whan_class'] == 'Pure SF']
-y1 = -df_whan['h_alpha_eqw'][df_whan['whan_class'] == 'Pure SF']
-
-x2 = df_whan['nii_h_alpha_ratio'][df_whan['whan_class'] == 'Retired G']
-y2 = -df_whan['h_alpha_eqw'][df_whan['whan_class'] == 'Retired G']
-
-x3 = df_whan['nii_h_alpha_ratio'][df_whan['whan_class'] == 'Weak AGN']
-y3 = -df_whan['h_alpha_eqw'][df_whan['whan_class'] == 'Weak AGN']
-
-x4 = df_whan['nii_h_alpha_ratio'][df_whan['whan_class'] == 'Strong AGN']
-y4 = -df_whan['h_alpha_eqw'][df_whan['whan_class'] == 'Strong AGN']
-
-cat1 = np.column_stack((x1, y1))
-cat2 = np.column_stack((x2, y2))
-cat3 = np.column_stack((x3, y3))
-cat4 = np.column_stack((x4, y4))
-
-X = np.vstack([cat1, cat2, cat3, cat4])
-categories = np.array([0]*len(x1) + [1]*len(x2) + [2]*len(x3) + [3]*len(x4))
-
-kde = gaussian_kde(X.T)
-density_points = kde(X.T)
-
-mod_density = density_points**0.3
-d_min, d_max = mod_density.min(), mod_density.max()
-norm_density = (mod_density - d_min) / (d_max - d_min)
-
-base_colors_rgb = np.array([
-    [178/255, 34/255, 34/255],
-    [70/255, 130/255, 180/255],
-    [107/255, 142/255, 35/255],
-    [218/255, 165/255, 32/255]
-])
-
-point_base_colors = base_colors_rgb[categories]
-
-white = np.array([1.0, 1.0, 1.0])
-
-min_weight = 0.1 
-adjusted_density = min_weight + (1.0 - min_weight) * norm_density
-
-mixed_colors = white + (point_base_colors - white) * adjusted_density[:, np.newaxis]
-
-shuffle_indices = rng.permutation(len(X))
-
-X = X[shuffle_indices]
-mixed_colors = mixed_colors[shuffle_indices]
-
-fig, ax = plt.subplots()
-ax.set_facecolor('white')  
-
-ax.scatter(X[:, 0], X[:, 1], marker='s', c=mixed_colors, s=3, edgecolor='none', alpha=1)
-
-ax.set_xscale('log')
-ax.set_yscale('log')
-
-xmin_log, xmax_log = -2.1, 0.6
-ymin_log, ymax_log = -0.4, 3.5
-
-ax.set_xlim(10**xmin_log, 10**xmax_log)
-ax.set_ylim(10**ymin_log, 10**ymax_log)
-
-ax.scatter([], [], marker='s', c='firebrick', s=4, edgecolor='none', label='WHAN pSF')
-ax.scatter([], [], marker='s', c='goldenrod', s=4, edgecolor='none', label='WHAN sAGN')
-ax.scatter([], [], marker='s', c='olivedrab', s=4, edgecolor='none', label='WHAN wAGN')
-ax.scatter([], [], marker='s', c='steelblue', s=4, edgecolor='none', label='WHAN rGAL')
-
-ax.set_xlabel(r'$\mathrm{\raisebox{0.75pt}{[\raisebox{-0.75pt}{NII}]}} \mathbin{/} \mathrm{H}\alpha$')
-ax.set_ylabel(r'$W_{\mathrm{H}\alpha} \mathbin{/} \mathrm{\AA}$')
-
-ax.legend()
-
-figures['WHAN_class'] = fig
-
-plt.close()
-
-figures['WHAN_class']
-
-
-# In[10]:
-
-
-x1 = df_whan['nii_h_alpha_ratio'][df_whan['bpt_class'] == 'SF']
-y1 = -df_whan['h_alpha_eqw'][df_whan['bpt_class'] == 'SF']
-
-x2 = df_whan['nii_h_alpha_ratio'][df_whan['bpt_class'] == 'COMP']
-y2 = -df_whan['h_alpha_eqw'][df_whan['bpt_class'] == 'COMP']
-
-x3 = df_whan['nii_h_alpha_ratio'][df_whan['bpt_class'] == 'AGN']
-y3 = -df_whan['h_alpha_eqw'][df_whan['bpt_class'] == 'AGN']
-
-cat1 = np.column_stack((x1, y1))
-cat2 = np.column_stack((x2, y2))
-cat3 = np.column_stack((x3, y3))
-
-X = np.vstack([cat1, cat2, cat3])
-categories = np.array([0]*len(x1) + [1]*len(x2) + [2]*len(x3))
-
-kde = gaussian_kde(X.T)
-density_points = kde(X.T)
-
-mod_density = density_points**0.3
-d_min, d_max = mod_density.min(), mod_density.max()
-norm_density = (mod_density - d_min) / (d_max - d_min)
-
-base_colors_rgb = np.array([
-    [70/255, 130/255, 180/255],
-    [107/255, 142/255, 35/255],
-    [218/255, 165/255, 32/255]
-])
-
-point_base_colors = base_colors_rgb[categories]
-
-white = np.array([1.0, 1.0, 1.0])
-
-min_weight = 0.1 
-adjusted_density = min_weight + (1.0 - min_weight) * norm_density
-
-mixed_colors = white + (point_base_colors - white) * adjusted_density[:, np.newaxis]
-
-shuffle_indices = rng.permutation(len(X))
-
-X = X[shuffle_indices]
-mixed_colors = mixed_colors[shuffle_indices]
-
-fig, ax = plt.subplots()
-ax.set_facecolor('white')  
-
-ax.scatter(X[:, 0], X[:, 1], marker='s', c=mixed_colors, s=3, edgecolor='none', alpha=1)
-
-ax.set_xscale('log')
-ax.set_yscale('log')
-
-xmin_log, xmax_log = -2.1, 0.6
-ymin_log, ymax_log = -0.4, 3.5
-
-ax.set_xlim(10**xmin_log, 10**xmax_log)
-ax.set_ylim(10**ymin_log, 10**ymax_log)
-
-ax.scatter([],[],marker='s', c='steelblue', s=4, edgecolor='none', label='BPT SF')
-ax.scatter([],[],marker='s', c='olivedrab', s=4, edgecolor='none', label='BPT COMP')
-ax.scatter([],[],marker='s', c='goldenrod', s=4, edgecolor='none', label='BPT AGN')
-
-ax.set_xlabel(r'$\mathrm{\raisebox{0.75pt}{[\raisebox{-0.75pt}{NII}]}} \mathbin{/} \mathrm{H}\alpha$')
-ax.set_ylabel(r'$W_{\mathrm{H}\alpha} \mathbin{/} \mathrm{\AA}$')
-
-ax.legend()
-
-figures['WHAN_BPT_class'] = fig
-
-plt.close()
-
-figures['WHAN_BPT_class']
-
-
-# In[11]:
-
-
-x1 = df_whan['nii_h_alpha_ratio'][df_whan['subclass'] == 'STARBURST']
-y1 = -df_whan['h_alpha_eqw'][df_whan['subclass'] == 'STARBURST']
-
-x2 = df_whan['nii_h_alpha_ratio'][df_whan['subclass'] == 'STARFORMING']
-y2 = -df_whan['h_alpha_eqw'][df_whan['subclass'] == 'STARFORMING']
-
-x3 = df_whan['nii_h_alpha_ratio'][df_whan['subclass'] == 'AGN']
-y3 = -df_whan['h_alpha_eqw'][df_whan['subclass'] == 'AGN']
-
-cat1 = np.column_stack((x1, y1))
-cat2 = np.column_stack((x2, y2))
-cat3 = np.column_stack((x3, y3))
-
-X = np.vstack([cat1, cat2, cat3])
-categories = np.array([0]*len(x1) + [1]*len(x2) + [2]*len(x3))
-
-kde = gaussian_kde(X.T)
-density_points = kde(X.T)
-
-mod_density = density_points**0.3
-d_min, d_max = mod_density.min(), mod_density.max()
-norm_density = (mod_density - d_min) / (d_max - d_min)
-
-base_colors_rgb = np.array([
-    [70/255, 130/255, 180/255],
-    [107/255, 142/255, 35/255],
-    [218/255, 165/255, 32/255]
-])
-
-point_base_colors = base_colors_rgb[categories]
-
-white = np.array([1.0, 1.0, 1.0])
-
-min_weight = 0.1 
-adjusted_density = min_weight + (1.0 - min_weight) * norm_density
-
-mixed_colors = white + (point_base_colors - white) * adjusted_density[:, np.newaxis]
-
-shuffle_indices = rng.permutation(len(X))
-
-X = X[shuffle_indices]
-mixed_colors = mixed_colors[shuffle_indices]
-
-fig, ax = plt.subplots()
-ax.set_facecolor('white')  
-
-ax.scatter(X[:, 0], X[:, 1], marker='s', c=mixed_colors, s=3, edgecolor='none', alpha=1)
-
-ax.set_xscale('log')
-ax.set_yscale('log')
-
-xmin_log, xmax_log = -2.1, 0.6
-ymin_log, ymax_log = -0.4, 3.5
-
-ax.set_xlim(10**xmin_log, 10**xmax_log)
-ax.set_ylim(10**ymin_log, 10**ymax_log)
-
-ax.scatter([],[],marker='s', c='steelblue', s=4, edgecolor='none', label='SDSS SB')
-ax.scatter([],[],marker='s', c='olivedrab', s=4, edgecolor='none', label='SDSS SF')
-ax.scatter([],[],marker='s', c='goldenrod', s=4, edgecolor='none', label='SDSS AGN')
-
-ax.set_xlabel(r'$\mathrm{\raisebox{0.75pt}{[\raisebox{-0.75pt}{NII}]}} \mathbin{/} \mathrm{H}\alpha$')
-ax.set_ylabel(r'$W_{\mathrm{H}\alpha} \mathbin{/} \mathrm{\AA}$')
-
-ax.legend()
-
-figures['WHAN_SDSS_class'] = fig
-
-plt.close()
-
-figures['WHAN_SDSS_class']
-
-
-# In[12]:
-
-
-df_wise = df.replace([np.inf, -np.inf], np.nan).dropna(subset=['w1_w2', 'w2_w3'])
-
-xGAL = df_wise['w2_w3'][df_wise['color_class'] != 'AGN']
-yGAL = df_wise['w1_w2'][df_wise['color_class'] != 'AGN']
-xAGN = df_wise['w2_w3'][df_wise['color_class'] == 'AGN']
-yAGN = df_wise['w1_w2'][df_wise['color_class'] == 'AGN']
-
-cat1 = np.column_stack((xGAL, yGAL))
-cat2 = np.column_stack((xAGN, yAGN))
-n_gal = len(cat1) 
-
-X = np.vstack([cat1, cat2])
-
-kde = gaussian_kde(X.T)
-density_points = kde(X.T)
-
-clipped_density = np.clip(density_points, np.percentile(density_points, 1), density_points.max())
-mod_density = clipped_density**0.5
-d_min, d_max = mod_density.min(), mod_density.max()
-norm_density = (mod_density - d_min) / (d_max - d_min)
-
-def read_shapes(file_path, refine=5):
-    x, y = np.genfromtxt(file_path, unpack=True, delimiter=',', skip_header=1)
-    points = np.column_stack((x, y))
-    dist_mat = distance_matrix(points, points)
-    unvisited = list(range(len(points)))
-    current = unvisited.pop(0)
-    path = [current]
-    while unvisited:
-        nearest = min(unvisited, key=lambda idx: dist_mat[current, idx])
-        unvisited.remove(nearest)
-        path.append(nearest)
-        current = nearest
-    x, y = x[path], y[path]
-    for _ in range(refine):
-        closeX, closeY = np.append(x, x[0]), np.append(y, y[0])
-        newX, newY = [], []
-        for i in range(len(closeX) - 1):
-            newX.extend([0.75 * closeX[i] + 0.25 * closeX[i+1], 0.25 * closeX[i] + 0.75 * closeX[i+1]])
-            newY.extend([0.75 * closeY[i] + 0.25 * closeY[i+1], 0.25 * closeY[i] + 0.75 * closeY[i+1]])
-        x, y = np.array(newX), np.array(newY)
-    return x, y
-
-x1, y1 = read_shapes('assets/shapes/dwarfs.csv')
-x2, y2 = read_shapes('assets/shapes/stars.csv')
-x3, y3 = read_shapes('assets/shapes/ellipticals.csv')
-x4, y4 = read_shapes('assets/shapes/spirals.csv')
-x5, y5 = read_shapes('assets/shapes/lirgs.csv')
-x6, y6 = read_shapes('assets/shapes/obscureds.csv')
-x7, y7 = read_shapes('assets/shapes/starbursts.csv')
-x8, y8 = read_shapes('assets/shapes/seyferts.csv')
-x9, y9 = read_shapes('assets/shapes/quasars.csv')
-
-
-bg_colors = np.ones((len(X), 3))
-a = 0.5
-white = np.array([1.0, 1.0, 1.0])
-
-shape_layers = [
-    (x1, y1, '#c26138'), (x2, y2, '#c29038'), (x3, y3, '#c1bf38'),
-    (x4, y4, '#94c137'), (x5, y5, '#37c139'), (x6, y6, '#37c098'),
-    (x7, y7, '#37b9c0'), (x8, y8, '#368ac0'), (x9, y9, '#4136bf'),
-]
-
-for xs, ys, hex_color in shape_layers:
-    fill_rgb = np.array(mcolors.to_rgb(hex_color))
-    displayed_color = a * fill_rgb + (1.0 - a) * white
-
-    poly_path = Path(np.column_stack((xs, ys)))
-    inside_mask = poly_path.contains_points(X)
-    bg_colors[inside_mask] = displayed_color
-
-core_darkness = 0.2
-
-min_alpha = 0.2
-
-vector_rgba = np.zeros((len(X), 4))
-
-vector_rgba[:, :3] = bg_colors * core_darkness
-
-vector_rgba[:, 3] = min_alpha + (1.0 - min_alpha) * norm_density
-
-fig, ax = plt.subplots(figsize=[6.69, 4.51])
-ax.set_facecolor('white')
-
-ax.fill(x1, y1, antialiased=True, alpha=a, color='#c26138', label='Dwarf', linewidth=0, zorder=10)
-ax.fill(x2, y2, antialiased=True, alpha=a, color='#c29038', label='Star', linewidth=0, zorder=20)
-ax.fill(x3, y3, antialiased=True, alpha=a, color='#c1bf38', label='Ellipse', linewidth=0, zorder=30)
-ax.fill(x4, y4, antialiased=True, alpha=a, color='#94c137', label='Spiral', linewidth=0, zorder=40)
-ax.fill(x5, y5, antialiased=True, alpha=a, color='#37c139', label='Infrared', linewidth=0, zorder=50)
-ax.fill(x6, y6, antialiased=True, alpha=a, color='#37c098', label='Obscured', linewidth=0, zorder=60)
-ax.fill(x7, y7, antialiased=True, alpha=a, color='#37b9c0', label='Starburst', linewidth=0, zorder=70)
-ax.fill(x8, y8, antialiased=True, alpha=a, color='#368ac0', label='Seyfert', linewidth=0, zorder=80)
-ax.fill(x9, y9, antialiased=True, alpha=a, color='#4136bf', label='Quasar', linewidth=0, zorder=90)
-ax.plot([], [], ' ', label=' ')
-
-x_wedge = [7, 6828/3487, 7846/3487, 7]
-y_wedge = [3001/1000, 615809/435875, 212172/435875, 1983/1000]
-
-ax.scatter(X[:n_gal, 0], X[:n_gal, 1], marker='s', c=vector_rgba[:n_gal], s=3, edgecolor='none', zorder=100)
-ax.scatter(X[n_gal:, 0], X[n_gal:, 1], marker='D', c=vector_rgba[n_gal:], s=3, edgecolor='none', zorder=100)
-
-ax.scatter([], [], marker='s', c='k', s=4, alpha=1, label=r'WISE GAL', zorder=120)
-ax.scatter([], [], marker='D', c='k', s=4, alpha=1, label=r'WISE AGN', zorder=120)
-ax.plot(x_wedge, y_wedge, 'k-', label='Wedge', lw=0.85, zorder=110)
-ax.plot([], [], ' ', label=' ')
-ax.plot([], [], ' ', label=' ')
-
-ax.set_xlim(-1, 7)
-ax.set_ylim(-0.8, 4.2)
-ax.set_xlabel(r'$\mathrm{W2 - W3}$')
-ax.set_ylabel(r'$\mathrm{W1 - W2}$')
-ax.legend(ncols=3)
-
-figures['WISE_overlay'] = fig
-plt.close(fig)
-figures['WISE_overlay']
-
-
-# In[13]:
-
-
-temp_df = pd.DataFrame(df)
-
-agn_labels = {
-    'subclass': ['AGN'],
-    'bpt_class': ['AGN'],
-    'whan_class': ['Strong AGN', 'Weak AGN'],
-    'color_class': ['AGN']
+            handles.append(Line2D([], [], color='k', lw=run['lw'], label=run['label']))
+    handles += [Line2D([], [], label=label, **{'color': 'k', **style}) for label, style in extra]
+    return ax.legend(handles=handles, **kw)
+
+
+def run_table(ax, rows, columns, **kw):
+    handles, labels = [], []
+    for j, (text, color, over) in enumerate(columns):
+        last = j == len(columns) - 1
+        handles += [TableHeader(text, color)] + [Line2D([], [], **{'color': 'k', **style, **over}) for _, style in rows]
+        labels += [''] + [label if last else '' for label, _ in rows]
+
+    opts = dict(ncol=len(columns), columnspacing=0.3, handlelength=1.5, handletextpad=0.4, handleheight=1.8,
+                handler_map={TableHeader: TableHeaderHandler()})
+    return ax.legend(handles, labels, **{**opts, **kw})
+
+
+MAP_FIELDS = {
+    'rho':   dict(norm=LogNorm(vmin=DFLOOR, vmax=0.2), cmap='magma', label=r'$\rho\ /\ \rho_0$'),
+    'f':     dict(norm=Normalize(vmin=0.0, vmax=1.0), cmap='coolwarm', label=r'$f$'),
+    'tr':    dict(norm=Normalize(vmin=0.0, vmax=1.0), cmap='coolwarm', label=r'$\mathrm{tracer}$'),
+    'diff':  dict(norm=Normalize(vmin=-1.0, vmax=1.0), cmap='RdBu_r', label=r'$f - \mathrm{tracer}$'),
+    'Tg':    dict(norm=LogNorm(vmin=1e4, vmax=1e12), cmap='inferno', label=r'$T_g\ /\ \mathrm{K}$'),
+    'ratio': dict(norm=LogNorm(vmin=1e-3, vmax=1e3), cmap='RdBu_r', label=r'$T_g / T_r$'),
+    'vr':    dict(norm=SymLogNorm(linthresh=1e-3, vmin=-1.0, vmax=1.0), cmap='RdBu_r', label=r'$v_r\ /\ c$'),
+    'vphi':  dict(norm=Normalize(vmin=0.0, vmax=0.8), cmap='viridis', label=r'$v_\phi\ /\ c$'),
 }
 
-non_agn_labels = {
-    'subclass': ['STARFORMING', 'STARBURST', np.nan], 
-    'bpt_class': ['SF', 'COMP', None], 
-    'whan_class': ['Pure SF', 'Retired G', None], 
-    'color_class': ['GAL', None] 
-}
 
-binary_columns = {}
-
-for col in agn_labels.keys():
-    df_str = temp_df[col].astype(str).str.strip()
-
-    is_agn = df_str.isin(agn_labels[col])
-    is_non_agn = df_str.isin(non_agn_labels[col])
-
-    binary_series = pd.Series(np.nan, index=temp_df.index)
-    binary_series[is_non_agn] = 0
-    binary_series[is_agn] = 1
-
-    binary_columns[col] = binary_series
-
-working_df = pd.DataFrame(binary_columns).dropna().astype(int)
-
-print(f'\nUsing {len(working_df)} overlapping rows as matching sample to compute the matrix.\n')
-
-agn_counts = working_df.sum()
-
-print('Total number of positive categorizations by classifier:\n')
-print(f'SDSS: {agn_counts['subclass']:4.0f}')
-print(f'BPT:  {agn_counts['bpt_class']:4.0f}')
-print(f'WHAN: {agn_counts['whan_class']:4.0f}')
-print(f'WISE: {agn_counts['color_class']:4.0f}\n')
-
-match_subclass = ((working_df['color_class'] == 1) & (working_df['subclass'] == 1)).sum()
-match_bpt      = ((working_df['color_class'] == 1) & (working_df['bpt_class'] == 1)).sum()
-match_whan     = ((working_df['color_class'] == 1) & (working_df['whan_class'] == 1)).sum()
-
-print('Total positives with optical and infrared agreement by classifier:\n')
-print(f'WISE & SDSS: {match_subclass:>2}')
-print(f'WISE & BPT:  {match_bpt:>2}')
-print(f'WISE & WHAN: {match_whan:>2}\n')
-
-labels = list(agn_labels.keys())
-mcc_df = pd.DataFrame(index=labels, columns=labels, dtype=float)
-
-for cat1 in labels:
-    for cat2 in labels:
-        mcc_df.loc[cat1, cat2] = matthews_corrcoef(working_df[cat1], working_df[cat2])
-
-fig, ax = plt.subplots(figsize=(3.25, 3.25))
-
-ax.set_frame_on(False)
-
-im = ax.imshow(mcc_df.values, cmap=OliveDrab_r, vmin=0.0, vmax=1.0)
-
-ax.set_xticks(np.arange(len(labels)))
-ax.set_yticks(np.arange(len(labels)))
-ax.set_xticklabels(['SDSS', 'BPT', 'WHAN', 'WISE'], fontsize=10)
-ax.set_yticklabels(['SDSS', 'BPT', 'WHAN', 'WISE'], fontsize=10)
-
-ax.tick_params(axis='both', which='both', length=0)
-
-for i in range(len(labels)):
-    for j in range(len(labels)):
-        val = mcc_df.values[i, j]
-        text_color = "white" if abs(val) > 0.45 else "black"
-        ax.text(j, i, f"{val:.3f}", ha="center", va="center", color=text_color, fontweight='medium')
-
-ax.spines[:].set_visible(False)
-
-for pos in np.arange(len(labels) - 1) + 0.5:
-    ax.axvline(pos, color="white", linewidth=1.5)
-    ax.axhline(pos, color="white", linewidth=1.5)
-
-ax.set_xlim(-0.5, len(labels) - 0.5)
-ax.set_ylim(len(labels) - 0.5, -0.5)
-
-figures['MCC_strict'] = fig
-
-plt.close()
-
-figures['MCC_strict']
-
-
-# In[14]:
-
-
-temp_df = pd.DataFrame(df)
-
-agn_labels = {
-    'subclass': ['AGN'],
-    'bpt_class': ['AGN', 'COMP'],
-    'whan_class': ['Strong AGN', 'Weak AGN'],
-    'color_class': ['AGN']
-}
-
-non_agn_labels = {
-    'subclass': ['STARFORMING', 'STARBURST', np.nan], 
-    'bpt_class': ['SF', None], 
-    'whan_class': ['Pure SF', 'Retired G', None], 
-    'color_class': ['GAL', None] 
-}
-
-binary_columns = {}
-
-for col in agn_labels.keys():
-    df_str = temp_df[col].astype(str).str.strip()
-
-    is_agn = df_str.isin(agn_labels[col])
-    is_non_agn = df_str.isin(non_agn_labels[col])
-
-    binary_series = pd.Series(np.nan, index=temp_df.index)
-    binary_series[is_non_agn] = 0
-    binary_series[is_agn] = 1
-
-    binary_columns[col] = binary_series
-
-working_df = pd.DataFrame(binary_columns).dropna().astype(int)
-
-print(f'\nUsing {len(working_df)} overlapping rows as matching sample to compute the matrix.\n')
-
-agn_counts = working_df.sum()
-
-print('Total number of positive categorizations by classifier:\n')
-print(f'SDSS: {agn_counts['subclass']:>4}')
-print(f'BPT:  {agn_counts['bpt_class']:>4}')
-print(f'WHAN: {agn_counts['whan_class']:>4}')
-print(f'WISE: {agn_counts['color_class']:>4}\n')
-
-match_subclass = ((working_df['color_class'] == 1) & (working_df['subclass'] == 1)).sum()
-match_bpt      = ((working_df['color_class'] == 1) & (working_df['bpt_class'] == 1)).sum()
-match_whan     = ((working_df['color_class'] == 1) & (working_df['whan_class'] == 1)).sum()
-
-print('Total positives with optical and infrared agreement by classifier:\n')
-print(f'WISE & SDSS: {match_subclass:>2}')
-print(f'WISE & BPT:  {match_bpt:>2}')
-print(f'WISE & WHAN: {match_whan:>2}\n')
-
-labels = list(agn_labels.keys())
-mcc_df = pd.DataFrame(index=labels, columns=labels, dtype=float)
-
-for cat1 in labels:
-    for cat2 in labels:
-        mcc_df.loc[cat1, cat2] = matthews_corrcoef(working_df[cat1], working_df[cat2])
-
-fig, ax = plt.subplots(figsize=(3.25, 3.25))
-
-ax.set_frame_on(False)
-
-im = ax.imshow(mcc_df.values, cmap=OliveDrab_r, vmin=0.0, vmax=1.0)
-
-ax.set_xticks(np.arange(len(labels)))
-ax.set_yticks(np.arange(len(labels)))
-ax.set_xticklabels(['SDSS', 'BPT', 'WHAN', 'WISE'], fontsize=10)
-ax.set_yticklabels(['SDSS', 'BPT', 'WHAN', 'WISE'], fontsize=10)
-
-ax.tick_params(axis='both', which='both', length=0)
-
-for i in range(len(labels)):
-    for j in range(len(labels)):
-        val = mcc_df.values[i, j]
-        text_color = "white" if abs(val) > 0.45 else "black"
-        ax.text(j, i, f"{val:.3f}", ha="center", va="center", color=text_color, fontweight='medium')
-
-ax.spines[:].set_visible(False)
-
-for pos in np.arange(len(labels) - 1) + 0.5:
-    ax.axvline(pos, color="white", linewidth=1.5)
-    ax.axhline(pos, color="white", linewidth=1.5)
-
-ax.set_xlim(-0.5, len(labels) - 0.5)
-ax.set_ylim(len(labels) - 0.5, -0.5)
-
-figures['MCC_relaxed'] = fig
-
-plt.close()
-
-figures['MCC_relaxed']
-
-
-# In[15]:
-
-
-x = df_bpt['nii_h_alpha_ratio']
-y = df_bpt['oiii_h_beta_ratio']
-z = df_bpt['el_gas_dens']
-
-mask = (x > 0) & (y > 0) & np.isfinite(x) & np.isfinite(y)
-x_clean, y_clean, z_clean = x[mask], y[mask], z[mask]
-
-fig, ax = plt.subplots(figsize=[3.25, 2.50])
-ax.set_facecolor('white')  
-
-xmin_log, xmax_log = -2.1, 0.6
-ymin_log, ymax_log = -1.2, 1.4
-
-hb = ax.hexbin(
-    x_clean, y_clean,
-    C=z_clean,                       
-    reduce_C_function=np.nanmedian, 
-    gridsize=33,                    
-    cmap=SteelBlue_r,
-    norm=mcolors.LogNorm(),          
-    mincnt=2,                       
-    edgecolors='face',
-    linewidths=0.25,
-    xscale='log',
-    yscale='log',
-    extent=[xmin_log, xmax_log, ymin_log, ymax_log]
-)
-
-ax.set_xscale('log')
-ax.set_yscale('log')
-
-ax.set_xlim(10**xmin_log, 10**xmax_log)
-ax.set_ylim(10**ymin_log, 10**ymax_log)
-
-ax.set_xlabel(r'$\mathrm{\raisebox{0.75pt}{[\raisebox{-0.75pt}{NII}]}} \mathbin{/} \mathrm{H}\alpha$')
-ax.set_ylabel(r'$\mathrm{\raisebox{0.75pt}{[\raisebox{-0.75pt}{OIII}]}} \mathbin{/} \mathrm{H}\beta$', labelpad=2)
-
-ax.set_aspect('auto')
-
-cbar = fig.colorbar(hb, ax=ax, pad=0.05, shrink=1)
-cbar.set_label(r'$n_e \mathbin{/} \mathrm{cm}^{-3}$', rotation=270, labelpad=15)
-
-figures['BPT_density'] = fig
-plt.close()
-
-figures['BPT_density']
-
-
-# In[16]:
-
-
-x = df_bpt['nii_h_alpha_ratio']
-y = df_bpt['oiii_h_beta_ratio']
-z = df_bpt['oiii_sigma']
-
-mask = (x > 0) & (y > 0) & np.isfinite(x) & np.isfinite(y)
-x_clean, y_clean, z_clean = x[mask], y[mask], z[mask]
-
-fig, ax = plt.subplots(figsize=[3.25, 2.50])
-ax.set_facecolor('white')  
-
-xmin_log, xmax_log = -2.1, 0.6
-ymin_log, ymax_log = -1.2, 1.4
-
-hb = ax.hexbin(
-    x_clean, y_clean,
-    C=z_clean,                       
-    reduce_C_function=np.nanmedian, 
-    gridsize=33,                    
-    cmap=OliveDrab_r,
-    norm=mcolors.LogNorm(),          
-    mincnt=2,                       
-    edgecolors='face',
-    linewidths=0.25,
-    xscale='log',
-    yscale='log',
-    extent=[xmin_log, xmax_log, ymin_log, ymax_log]
-)
-
-ax.set_xscale('log')
-ax.set_yscale('log')
-
-ax.set_xlim(10**xmin_log, 10**xmax_log)
-ax.set_ylim(10**ymin_log, 10**ymax_log)
-
-ax.set_xlabel(r'$\mathrm{\raisebox{0.75pt}{[\raisebox{-0.75pt}{NII}]}} \mathbin{/} \mathrm{H}\alpha$')
-ax.set_ylabel(r'$\mathrm{\raisebox{0.75pt}{[\raisebox{-0.75pt}{OIII}]}} \mathbin{/} \mathrm{H}\beta$', labelpad=2)
-
-ax.set_aspect('auto')
-
-cbar = fig.colorbar(hb, ax=ax, pad=0.05, shrink=1)
-cbar.set_label(r'$\sigma_{\mathrm{\raisebox{0.5pt}{\footnotesize [\raisebox{-0.5pt}{\footnotesize OIII}]}}} \mathbin{/} \mathrm{km}\kern+1pt\mathrm{s}^{-1}$', rotation=270, labelpad=14.5)
-
-figures['BPT_dispersion'] = fig
-plt.close()
-
-figures['BPT_dispersion']
-
-
-# In[17]:
-
-
-x = df_bpt['nii_h_alpha_ratio']
-y = df_bpt['oiii_h_beta_ratio']
-z = df_bpt['bh_mass']
-
-mask = (x > 0) & (y > 0) & np.isfinite(x) & np.isfinite(y)
-x_clean, y_clean, z_clean = x[mask], y[mask], z[mask]
-
-fig, ax = plt.subplots(figsize=[3.25, 2.50])
-ax.set_facecolor('white')  
-
-xmin_log, xmax_log = -2.1, 0.6
-ymin_log, ymax_log = -1.2, 1.4
-
-hb = ax.hexbin(
-    x_clean, y_clean,
-    C=z_clean,                       
-    reduce_C_function=np.nanmedian, 
-    gridsize=33,                    
-    cmap=GoldenRod_r,
-    norm=mcolors.LogNorm(),          
-    mincnt=2,                       
-    edgecolors='face',
-    linewidths=0.25,
-    xscale='log',
-    yscale='log',
-    extent=[xmin_log, xmax_log, ymin_log, ymax_log]
-)
-
-ax.set_xscale('log')
-ax.set_yscale('log')
-
-ax.set_xlim(10**xmin_log, 10**xmax_log)
-ax.set_ylim(10**ymin_log, 10**ymax_log)
-
-ax.set_xlabel(r'$\mathrm{\raisebox{0.75pt}{[\raisebox{-0.75pt}{NII}]}} \mathbin{/} \mathrm{H}\alpha$')
-ax.set_ylabel(r'$\mathrm{\raisebox{0.75pt}{[\raisebox{-0.75pt}{OIII}]}} \mathbin{/} \mathrm{H}\beta$', labelpad=2)
-
-ax.set_aspect('auto')
-
-cbar = fig.colorbar(hb, ax=ax, pad=0.05, shrink=1)
-cbar.set_label(r'$M_\mathrm{BH} \mathbin{/} \mathrm{M}_\odot$', rotation=270, labelpad=15)
-
-figures['BPT_mass'] = fig
-plt.close()
-
-figures['BPT_mass']
-
-
-# In[18]:
-
-
-x = df_whan['nii_h_alpha_ratio']
-y = -df_whan['h_alpha_eqw']
-z = df_whan['el_gas_dens']
-
-mask = (x > 0) & (y > 0) & np.isfinite(x) & np.isfinite(y)
-x_clean, y_clean, z_clean = x[mask], y[mask], z[mask]
-
-fig, ax = plt.subplots(figsize=[3.25, 2.50])
-ax.set_facecolor('white')  
-
-xmin_log, xmax_log = -2.1, 0.6
-ymin_log, ymax_log = -0.4, 3.5
-
-hb = ax.hexbin(
-    x_clean, y_clean,
-    C=z_clean,                       
-    reduce_C_function=np.nanmedian, 
-    gridsize=33,                    
-    cmap=SteelBlue_r,
-    norm=mcolors.LogNorm(),          
-    mincnt=2,                       
-    edgecolors='face',
-    linewidths=0.25,
-    xscale='log',
-    yscale='log',
-    extent=[xmin_log, xmax_log, ymin_log, ymax_log]
-)
-
-ax.set_xscale('log')
-ax.set_yscale('log')
-
-ax.set_xlim(10**xmin_log, 10**xmax_log)
-ax.set_ylim(10**ymin_log, 10**ymax_log)
-
-ax.set_xlabel(r'$\mathrm{\raisebox{0.75pt}{[\raisebox{-0.75pt}{NII}]}} \mathbin{/} \mathrm{H}\alpha$')
-ax.set_ylabel(r'$W_{\mathrm{H}\alpha} \mathbin{/} \mathrm{\AA}$')
-
-ax.set_aspect('auto')
-
-cbar = fig.colorbar(hb, ax=ax, pad=0.05, shrink=1)
-cbar.set_label(r'$n_e \mathbin{/} \mathrm{cm}^{-3}$', rotation=270, labelpad=15)
-
-figures['WHAN_density'] = fig
-plt.close()
-
-figures['WHAN_density']
-
-
-# In[19]:
-
-
-x = df_whan['nii_h_alpha_ratio']
-y = -df_whan['h_alpha_eqw']
-z = df_whan['oiii_sigma']
-
-mask = (x > 0) & (y > 0) & np.isfinite(x) & np.isfinite(y)
-x_clean, y_clean, z_clean = x[mask], y[mask], z[mask]
-
-fig, ax = plt.subplots(figsize=[3.25, 2.50])
-ax.set_facecolor('white')  
-
-xmin_log, xmax_log = -2.1, 0.6
-ymin_log, ymax_log = -0.4, 3.5
-
-hb = ax.hexbin(
-    x_clean, y_clean,
-    C=z_clean,                       
-    reduce_C_function=np.nanmedian, 
-    gridsize=33,                    
-    cmap=OliveDrab_r,
-    norm=mcolors.LogNorm(),          
-    mincnt=2,                       
-    edgecolors='face',
-    linewidths=0.25,
-    xscale='log',
-    yscale='log',
-    extent=[xmin_log, xmax_log, ymin_log, ymax_log]
-)
-
-ax.set_xscale('log')
-ax.set_yscale('log')
-
-ax.set_xlim(10**xmin_log, 10**xmax_log)
-ax.set_ylim(10**ymin_log, 10**ymax_log)
-
-ax.set_xlabel(r'$\mathrm{\raisebox{0.75pt}{[\raisebox{-0.75pt}{NII}]}} \mathbin{/} \mathrm{H}\alpha$')
-ax.set_ylabel(r'$W_{\mathrm{H}\alpha} \mathbin{/} \mathrm{\AA}$')
-
-ax.set_aspect('auto')
-
-cbar = fig.colorbar(hb, ax=ax, pad=0.05, shrink=1)
-cbar.set_label(r'$\sigma_{\mathrm{\raisebox{0.5pt}{\footnotesize [\raisebox{-0.5pt}{\footnotesize OIII}]}}} \mathbin{/} \mathrm{km}\kern+1pt\mathrm{s}^{-1}$', rotation=270, labelpad=14.5)
-
-figures['WHAN_dispersion'] = fig
-plt.close()
-
-figures['WHAN_dispersion']
-
-
-# In[20]:
-
-
-x = df_whan['nii_h_alpha_ratio']
-y = -df_whan['h_alpha_eqw']
-z = df_whan['bh_mass']
-
-mask = (x > 0) & (y > 0) & np.isfinite(x) & np.isfinite(y)
-x_clean, y_clean, z_clean = x[mask], y[mask], z[mask]
-
-fig, ax = plt.subplots(figsize=[3.25, 2.50])
-ax.set_facecolor('white')  
-
-xmin_log, xmax_log = -2.1, 0.6
-ymin_log, ymax_log = -0.4, 3.5
-
-hb = ax.hexbin(
-    x_clean, y_clean,
-    C=z_clean,                       
-    reduce_C_function=np.nanmedian, 
-    gridsize=33,                    
-    cmap=GoldenRod_r,
-    norm=mcolors.LogNorm(),          
-    mincnt=2,                       
-    edgecolors='face',
-    linewidths=0.25,
-    xscale='log',
-    yscale='log',
-    extent=[xmin_log, xmax_log, ymin_log, ymax_log]
-)
-
-ax.set_xscale('log')
-ax.set_yscale('log')
-
-ax.set_xlim(10**xmin_log, 10**xmax_log)
-ax.set_ylim(10**ymin_log, 10**ymax_log)
-
-ax.set_xlabel(r'$\mathrm{\raisebox{0.75pt}{[\raisebox{-0.75pt}{NII}]}} \mathbin{/} \mathrm{H}\alpha$')
-ax.set_ylabel(r'$W_{\mathrm{H}\alpha} \mathbin{/} \mathrm{\AA}$')
-
-ax.set_aspect('auto')
-
-cbar = fig.colorbar(hb, ax=ax, pad=0.05, shrink=1)
-cbar.set_label(r'$M_\mathrm{BH} \mathbin{/} \mathrm{M}_\odot$', rotation=270, labelpad=15)
-
-figures['WHAN_mass'] = fig
-plt.close()
-
-figures['WHAN_mass']
-
-
-# In[21]:
-
-
-x = df_wise['w2_w3']
-y = df_wise['w1_w2']
-z = df_wise['el_gas_dens']
-
-mask = (
-    np.isfinite(x) & (x > -10) & 
-    np.isfinite(y) & (y > -10) & 
-    np.isfinite(z) & (z > 0)
-)
-x_clean, y_clean, z_clean = x[mask], y[mask], z[mask]
-
-fig, ax = plt.subplots(figsize=[3.25, 2.50])
-ax.set_facecolor('white')
-
-hb = ax.hexbin(
-    x_clean, y_clean,
-    C=z_clean,                       
-    reduce_C_function=np.nanmedian, 
-    gridsize=33,                    
-    cmap=SteelBlue_r,
-    norm=mcolors.LogNorm(),          
-    mincnt=2,            
-    edgecolors='face',
-    linewidths=0.25
-)
-
-ax.set_xlabel(r'$\mathrm{W2 - W3}$')
-ax.set_ylabel(r'$\mathrm{W1 - W2}$')
-
-ax.set_xlim(np.array(ax.set_xlim()) - 0.2)
-
-ax.set_aspect('auto')
-
-cbar = fig.colorbar(hb, ax=ax, pad=0.05, shrink=1)
-cbar.set_label(r'$n_e \mathbin{/} \mathrm{cm}^{-3}$', rotation=270, labelpad=15)
-
-figures['WISE_density'] = fig
-plt.close()
-
-figures['WISE_density']
-
-
-# In[22]:
-
-
-x = df_wise['w2_w3']
-y = df_wise['w1_w2']
-z = df_wise['oiii_sigma']
-
-mask = (
-    np.isfinite(x) & (x > -10) & 
-    np.isfinite(y) & (y > -10) & 
-    np.isfinite(z) & (z > 0)
-)
-x_clean, y_clean, z_clean = x[mask], y[mask], z[mask]
-
-fig, ax = plt.subplots(figsize=[3.25, 2.50])
-ax.set_facecolor('white')
-
-hb = ax.hexbin(
-    x_clean, y_clean,
-    C=z_clean,                       
-    reduce_C_function=np.nanmedian, 
-    gridsize=33,                    
-    cmap=OliveDrab_r,
-    mincnt=2,                       
-    edgecolors='face',
-    linewidths=0.25
-)
-
-ax.set_xlabel(r'$\mathrm{W2 - W3}$')
-ax.set_ylabel(r'$\mathrm{W1 - W2}$')
-
-ax.set_xlim(np.array(ax.set_xlim()) - 0.2)
-
-ax.set_aspect('auto')
-
-cbar = fig.colorbar(hb, ax=ax, pad=0.05, shrink=1, ticks=[60, 120, 180, 240])
-cbar.set_label(r'$\sigma_{\mathrm{\raisebox{0.5pt}{\footnotesize [\raisebox{-0.5pt}{\footnotesize OIII}]}}} \mathbin{/} \mathrm{km}\kern+1pt\mathrm{s}^{-1}$', rotation=270, labelpad=16.5)
-
-figures['WISE_dispersion'] = fig
-plt.close()
-
-figures['WISE_dispersion']
-
-
-# In[23]:
-
-
-x = df_wise['w2_w3']
-y = df_wise['w1_w2']
-z = df_wise['bh_mass']
-
-mask = (
-    np.isfinite(x) & (x > -10) & 
-    np.isfinite(y) & (y > -10) & 
-    np.isfinite(z) & (z > 0)
-)
-x_clean, y_clean, z_clean = x[mask], y[mask], z[mask]
-
-fig, ax = plt.subplots(figsize=[3.25, 2.50])
-ax.set_facecolor('white')
-
-hb = ax.hexbin(
-    x_clean, y_clean,
-    C=z_clean,                       
-    reduce_C_function=np.nanmedian, 
-    gridsize=33,                    
-    cmap=GoldenRod_r,
-    norm=mcolors.LogNorm(),          
-    mincnt=2,            
-    edgecolors='face',
-    linewidths=0.25
-)
-
-ax.set_xlabel(r'$\mathrm{W2 - W3}$')
-ax.set_ylabel(r'$\mathrm{W1 - W2}$')
-
-ax.set_xlim(np.array(ax.set_xlim()) - 0.2)
-
-ax.set_aspect('auto')
-
-cbar = fig.colorbar(hb, ax=ax, pad=0.05, shrink=1)
-cbar.set_label(r'$M_\mathrm{BH} \mathbin{/} \mathrm{M}_\odot$', rotation=270, labelpad=15)
-
-figures['WISE_mass'] = fig
-plt.close()
-
-figures['WISE_mass']
-
-
-# In[24]:
-
-
-import matplotlib.ticker as mticker
-
-bin_edges = [5.0, 6.0, 7.0, 8.0, 9.0]
-titles = [
-    r'$5 \le \log_{10}(M_{\mathrm{BH}} \mathbin{/} \mathrm{M}_\odot) < 6$',
-    r'$6 \le \log_{10}(M_{\mathrm{BH}} \mathbin{/} \mathrm{M}_\odot) < 7$',
-    r'$7 \le \log_{10}(M_{\mathrm{BH}} \mathbin{/} \mathrm{M}_\odot) < 8$',
-    r'$8 \le \log_{10}(M_{\mathrm{BH}} \mathbin{/} \mathrm{M}_\odot) \le 9$'
-]
-
-global_norm = mcolors.LogNorm(vmin=40, vmax=350)
-
-fig, axes = plt.subplots(2, 2, figsize=[6.69, 6.0], sharex=True, sharey=True, layout='none')
-axes_flat = axes.flatten()
-
-xmin_log, xmax_log = -2.1, 0.6
-ymin_log, ymax_log = -1.2, 1.4
-
-for i in range(4):
-    ax = axes_flat[i]
-    ax.set_facecolor('white')
-
-    m_lower = 10**bin_edges[i]
-    m_upper = 10**bin_edges[i+1]
-    mass_mask = (df_bpt['bh_mass'] >= m_lower) & (df_bpt['bh_mass'] < m_upper)
-
-    x = df_bpt['nii_h_alpha_ratio'][mass_mask]
-    y = df_bpt['oiii_h_beta_ratio'][mass_mask]
-    z = df_bpt['oiii_sigma'][mass_mask]
-
-    mask = (x > 0) & (y > 0) & np.isfinite(x) & np.isfinite(y) & np.isfinite(z)
-    x_clean, y_clean, z_clean = x[mask], y[mask], z[mask]
-
-    if len(x_clean) > 0:
-        hb = ax.hexbin(
-            x_clean, y_clean,
-            C=z_clean,                       
-            reduce_C_function=np.nanmedian, 
-            gridsize=22,                    
-            cmap=OliveDrab_r,       
-            norm=global_norm,       
-            mincnt=2,                       
-            edgecolors='face',
-            linewidths=0.25,
-            xscale='log',
-            yscale='log',
-            extent=[xmin_log, xmax_log, ymin_log, ymax_log]
-        )
+def map_field(F, key):
+    if key == 'rho':
+        return F['rho']
+    if key == 'f':
+        return F['diskfrac']
+    if key == 'tr':
+        return F['tr1']
+    if key == 'diff':
+        return F['diskfrac'] - F['tr1']
+    if key == 'Tg':
+        return gas_temperature(F)
+    if key == 'ratio':
+        return gas_temperature(F) / np.maximum(rad_temperature(F), 1.0)
+    if key == 'vr':
+        return F['vx1']
+    if key == 'vphi':
+        return F['vx3']
+    raise KeyError(key)
+
+
+def map_figure(nrow, ncol, width, xlim, ylim, cbar=True, gap=0.06):
+    left, right, bottom, top = 0.42, 0.62 if cbar else 0.08, 0.36, 0.06
+    cb = 0.08 if cbar else 0.0
+    w = (width - left - right - (ncol - 1) * gap) / ncol
+    h = w * (ylim[1] - ylim[0]) / (xlim[1] - xlim[0])
+    height = bottom + top + nrow * h + (nrow - 1) * gap
+
+    fig = plt.figure(figsize=[width, height], layout='none')
+    rect = (left / width, bottom / height, (width - left - right + (cb + 0.06 if cbar else 0.0)) / width, (height - bottom - top) / height)
+    grid = ImageGrid(fig, rect, (nrow, ncol), axes_pad=gap, share_all=True, label_mode='L',
+                     cbar_mode='single' if cbar else None, cbar_location='right', cbar_size=cb, cbar_pad=0.06)
+    grid[0].xaxis.set_major_locator(MaxNLocator(5, prune='upper' if ncol > 1 else None))
+    grid[0].yaxis.set_major_locator(MaxNLocator(5, prune='upper' if nrow > 1 else None))
+    return fig, grid
+
+
+def draw_map(ax, field, key, geo, xlim, ylim):
+    spec = MAP_FIELDS[key]
+    Xe = geo['R_E'][:, None] * np.sin(geo['TH_E'])[None, :]
+    Ze = geo['R_E'][:, None] * np.cos(geo['TH_E'])[None, :]
+    im = ax.pcolormesh(Xe, Ze, field, norm=spec['norm'], cmap=spec['cmap'], shading='flat', rasterized=True)
+    ax.add_patch(plt.Circle((0, 0), geo['R_E'][0], color='k', zorder=3))
+    ax.set_facecolor('0.85' if xlim[1] >= geo['R_E'][-1] else 'k')
+
+    ax.set_xlim(*xlim)
+    ax.set_ylim(*ylim)
+    ax.set_aspect('equal')
+    ax.set_xlabel(r'$R\ /\ r_g$')
+    ax.set_ylabel(r'$z\ /\ r_g$')
+    ax.tick_params(which='both', color='w')
+
+    return im
+
+
+def map_colorbar(fig, im, cax, key):
+    cb = fig.colorbar(im, cax=cax)
+    cb.set_label(MAP_FIELDS[key]['label'])
+    cb.ax.tick_params(which='both', direction='out', right=True, left=False)
+    if key in ('f', 'tr'):
+        cb.set_ticks([0.0, 0.5, 1.0])
+        cb.ax.minorticks_off()
+    return cb
+
+
+def time_label(ax, t, color='w'):
+    ax.text(0.96, 0.92, rf'$t = \num{{{t:.0f}}}\,t_g$', color=color, ha='right', va='top', transform=ax.transAxes, fontsize='small')
+
+
+def map_rows(rows, times, width, name, xlim=(0, 20), ylim=(0, 10)):
+    fig, grid = map_figure(len(rows), len(times), width, xlim, ylim)
+    for i, (path, key) in enumerate(rows):
+        geo = make_geometry(path)
+        for j, t_req in enumerate(times):
+            n, t = nearest_out(path, t_req)
+            F = load(n, path, geo, names=('rho', 'vx1', 'vx2', 'vx3', 'prs', 'enr', 'diskfrac', 'tr1'))
+            ax = grid[i * len(times) + j]
+            im = draw_map(ax, map_field(F, key), key, geo, xlim, ylim)
+            if i == 0:
+                time_label(ax, t)
+    map_colorbar(fig, im, grid.cbar_axes[0], rows[-1][1])
+    save(fig, name)
+
+
+def map_rows_shared(rows, times, width, name, keys_share, xlim=(0, 20), ylim=(0, 10)):
+    fig, grid = map_figure(len(rows), len(times), width, xlim, ylim)
+    for i, (path, key) in enumerate(rows):
+        geo = make_geometry(path)
+        for j, t_req in enumerate(times):
+            n, t = nearest_out(path, t_req)
+            F = load(n, path, geo, names=('rho', 'vx3', 'prs', 'diskfrac', 'tr1'))
+            ax = grid[i * len(times) + j]
+            im = draw_map(ax, map_field(F, key), key, geo, xlim, ylim)
+            if i == 0:
+                time_label(ax, t)
+    map_colorbar(fig, im, grid.cbar_axes[0], keys_share)
+    save(fig, name)
+
+
+def agreement_series(path):
+    geo = make_geometry(path)
+    outs, times = read_outputs(path)
+    w = geo['DOM'][None, :] * ((geo['R_E'][1:]**3 - geo['R_E'][:-1]**3) / 3.0)[:, None]
+    vals = []
+    for n in outs:
+        F = load(n, path, geo, names=('rho', 'diskfrac', 'tr1'))
+        if 'tr1' not in F or 'diskfrac' not in F:
+            return None
+        diff = np.abs(F['diskfrac'] - F['tr1'])
+        mass = F['rho'] * w
+        vals.append((1.0 - np.sum(diff * w) / np.sum(w), 1.0 - np.sum(diff * mass) / np.sum(mass)))
+    return times, np.array(vals)
+
+
+def fig_validation():
+    for label, tracer_path, df_path in TRACER_RUNS:
+        if not (tracer_path / 'dbl.out').exists() or not (df_path / 'dbl.out').exists():
+            print(f'skipping validation {label}, outputs missing')
+            continue
+
+        tag = label.lower()
+        map_rows_shared([(tracer_path, 'rho'), (df_path, 'rho')], T_VALID, TEXT, f'valid_{tag}_rho_text', 'rho')
+        map_rows_shared([(df_path, 'tr'), (df_path, 'f')], T_VALID, TEXT, f'valid_{tag}_class_text', 'f')
+        map_rows([(df_path, 'diff')], T_VALID, TEXT, f'valid_{tag}_diff_text')
+
+        for path, key, kind in [(tracer_path, 'rho', 'tracerrun'), (df_path, 'rho', 'dfrun'), (df_path, 'tr', 'tracer'), (df_path, 'f', 'f')]:
+            map_rows([(path, key)], [T_VALID[-1]], COL, f'valid_{tag}_{kind}_col')
+
+    if (RAD_TRACER_RUN / 'dbl.out').exists():
+        map_rows_shared([(RAD_TRACER_RUN, 'tr'), (RAD_TRACER_RUN, 'f')], T_VALID, TEXT, 'valid_rad_class_text', 'f')
+        map_rows([(RAD_TRACER_RUN, 'tr')], [T_VALID[-1]], COL, 'valid_rad_tracer_col')
+        map_rows([(RAD_TRACER_RUN, 'f')], [T_VALID[-1]], COL, 'valid_rad_f_col')
+
+    fig, ax = plt.subplots(figsize=[COL, 0.62 * COL])
+    shown = False
+    for k, (label, _, df_path) in enumerate(TRACER_RUNS):
+        if not (df_path / 'dbl.out').exists():
+            continue
+        res = agreement_series(df_path)
+        if res is None:
+            continue
+        t, a = res
+        ax.plot(t, 100.0 * a[:, 1], color=f'C{k}', label=rf'$\mathrm{{{label}}}$')
+        ax.plot(t, 100.0 * a[:, 0], color=f'C{k}', lw=0.6, ls='--')
+        shown = True
+    if shown:
+        ax.set_xlabel(r'$t\ /\ t_g$')
+        ax.set_ylabel(r'$1 - \langle|f - \mathrm{tracer}|\rangle\ /\ \%$')
+        h, l = ax.get_legend_handles_labels()
+        h += [Line2D([], [], color='k'), Line2D([], [], color='k', lw=0.6, ls='--')]
+        l += [r'$\mathrm{mass}$', r'$\mathrm{volume}$']
+        ax.legend(h, l, ncol=3, loc='lower center', bbox_to_anchor=(0.5, 1.0))
+        save(fig, 'valid_agreement_col')
+    else:
+        plt.close(fig)
+
+
+def fig_timescales():
+    R = np.geomspace(2.5, 30, 300)
+    fig, ax = plt.subplots(figsize=[COL, 0.7 * COL])
+
+    ax.axvline(6.0, color='gray', lw=0.6, ls=':')
+    ax.plot(R, t_orbit(R), label=r'$t_\mathrm{orb}$')
+    ax.plot(R, t_thermal(R), label=r'$t_\mathrm{th}$')
+    ax.plot(R, t_sound(R), label=r'$t_{c_s}$')
+    ax.plot(R, t_viscous(R), label=r'$t_\nu$')
 
     ax.set_xscale('log')
     ax.set_yscale('log')
-    ax.set_xlim(10**xmin_log, 10**xmax_log)
-    ax.set_ylim(10**ymin_log, 10**ymax_log)
-    ax.set_aspect('auto')
-    ax.set_title(titles[i], fontsize=9, pad=5)
-
-for ax in axes[-1, :]:  
-    ax.set_xlabel(r'$\mathrm{\raisebox{0.75pt}{[\raisebox{-0.75pt}{NII}]}} \mathbin{/} \mathrm{H}\alpha$')
-for ax in axes[:, 0]:   
-    ax.set_ylabel(r'$\mathrm{\raisebox{0.75pt}{[\raisebox{-0.75pt}{OIII}]}} \mathbin{/} \mathrm{H}\beta$', labelpad=2)
-
-fig.subplots_adjust(right=0.825, wspace=0.06, hspace=0.12)  
-
-pos_top = axes[0, 1].get_position()
-pos_bottom = axes[1, 1].get_position()
-cbar_ax = fig.add_axes([0.85, pos_bottom.y0, 0.025, pos_top.y1 - pos_bottom.y0]) 
-
-cbar = fig.colorbar(hb, cax=cbar_ax)
-
-# Explicitly assign your major tick and format its label
-cbar.set_ticks([100])
-cbar.ax.set_yticklabels(['1e2'])
-
-# Hide text labels for minor ticks while keeping the tick ticks visible
-cbar.ax.yaxis.set_minor_formatter(mticker.NullFormatter())
-
-cbar.set_label(r'$\sigma_{\mathrm{\raisebox{0.5pt}{\footnotesize [\raisebox{-0.5pt}{\footnotesize OIII}]}}} \mathbin{/} \mathrm{km}\kern+1pt\mathrm{s}^{-1}$', rotation=270, labelpad=14.5)
-
-figures['BPT_bins'] = fig
-plt.close()
-
-figures['BPT_bins']
-
-
-# In[25]:
-
-
-bin_edges = np.arange(4.5, 9.5, 0.5)  
-num_bins = len(bin_edges) - 1
-
-bpt_types = ['SF', 'COMP', 'AGN']
-type_colors = ['steelblue', 'olivedrab', 'goldenrod']
-
-fig, ax = plt.subplots(figsize=[6.69, 4.51])
-ax.set_facecolor('white')
-
-x_indexes = np.arange(num_bins)
-bar_width = 0.24
-
-parsed_data = {bpt: [] for bpt in bpt_types}
-parsed_counts = {bpt: [] for bpt in bpt_types}
-parsed_colors = {bpt: [] for bpt in bpt_types}
-parsed_text_colors = {bpt: [] for bpt in bpt_types}
-
-all_counts = []
-for i in range(num_bins):
-    m_lower = 10**bin_edges[i]
-    m_upper = 10**bin_edges[i+1]
-    df_bin = df[(df['bh_mass'] >= m_lower) & (df['bh_mass'] < m_upper)]
-
-    for bpt_type in bpt_types:
-        df_sub = df_bin[df_bin['bpt_class'] == bpt_type]
-
-        if not df_sub.empty and 'oiii_sigma' in df_sub.columns:
-            clean_mask = np.isfinite(df_sub['oiii_sigma']) & (df_sub['oiii_sigma'] > 0)
-            n_samples = np.sum(clean_mask)
-            parsed_counts[bpt_type].append(n_samples)
-            if n_samples > 0:
-                all_counts.append(n_samples)
-                parsed_data[bpt_type].append(np.nanmedian(df_sub['oiii_sigma'][clean_mask]))
-            else:
-                parsed_data[bpt_type].append(0.0)
-        else:
-            parsed_counts[bpt_type].append(0)
-            parsed_data[bpt_type].append(0.0)
-
-log_n_min = np.log10(min(all_counts)) if len(all_counts) > 0 else 0
-log_n_max = np.log10(max(all_counts)) if len(all_counts) > 0 else 1
-log_n_range = log_n_max - log_n_min if log_n_max != log_n_min else 1
-
-for j, bpt_type in enumerate(bpt_types):
-    base_rgb = np.array(mcolors.to_rgb(type_colors[j]))
-    white_rgb = np.array([1.0, 1.0, 1.0])
-
-    for n_count in parsed_counts[bpt_type]:
-        if n_count == 0:
-            parsed_colors[bpt_type].append((1.0, 1.0, 1.0))
-            parsed_text_colors[bpt_type].append('black')
-            continue
-
-        log_n = np.log10(n_count)
-        fade_weight = np.clip(1.0 - ((log_n - log_n_min) / log_n_range), 0.0, 0.85)
-
-        parsed_colors[bpt_type].append((1.0 - fade_weight) * base_rgb + fade_weight * white_rgb)
-        parsed_text_colors[bpt_type].append('#4b4b4b' if fade_weight > 0.50 else '#ffffff')
-
-for j, bpt_type in enumerate(bpt_types):
-    bar_positions = x_indexes + (j - 1) * bar_width
-
-    bars = ax.bar(
-        bar_positions, parsed_data[bpt_type],
-        width=bar_width,
-        label=bpt_type,
-        color=parsed_colors[bpt_type],   
-        edgecolor='white',             
-        linewidth=0.5,
-        zorder=-10
-    )
-
-    for idx, bar in enumerate(bars):
-        y_val = bar.get_height()
-        n_count = parsed_counts[bpt_type][idx]
-
-        if n_count > 0 and y_val > 0:
-            ax.text(
-                bar.get_x() + bar.get_width()/1.75, 
-                y_val * 0.95, 
-                f'{n_count}', 
-                ha='center', 
-                va='top',       
-                fontsize=7.5, 
-                color=parsed_text_colors[bpt_type][idx],
-                weight='medium', 
-                rotation=90, 
-                zorder=5
-            )
-
-ax.set_xticks(np.arange(-0.5, 9, 1))
-ax.set_xticklabels(['4.5', '5.0', '5.5', '6.0', '6.5', '7.0', '7.5', '8.0', '8.5', '9.0'])
-ax.minorticks_off()
-
-ax.set_xlabel(r'$\log_{10}(M_{\mathrm{BH}} \mathbin{/} \mathrm{M}_\odot)$')
-ax.set_ylabel(r'$\sigma_{\mathrm{\raisebox{0.75pt}{\footnotesize [\raisebox{-0.75pt}{\footnotesize OIII}]}}} \mathbin{/} \mathrm{km}\kern+1pt\mathrm{s}^{-1}$', labelpad=-0.75)
-ax.set_ylim(7e0, 4e2) 
-
-legend_handles = [plt.Rectangle((0,0),1,1, color=c, ec='white', lw=0.5) for c in type_colors]
-ax.legend(legend_handles, ['BPT SF', 'BPT COMP', 'BPT AGN'], loc='upper left')
-ax.set_yscale('log')
-
-figures['BPT_bar'] = fig
-plt.close()
-
-figures['BPT_bar']
-
-
-# In[26]:
-
-
-bin_edges = np.arange(4.5, 9.5, 0.5)  
-num_bins = len(bin_edges) - 1
-
-sdss_types = ['STARBURST', 'STARFORMING', 'AGN']
-type_colors = ['steelblue', 'olivedrab', 'goldenrod']
-
-fig, ax = plt.subplots(figsize=[6.69, 4.51])
-ax.set_facecolor('white')
-
-x_indexes = np.arange(num_bins)
-bar_width = 0.24
-
-parsed_data = {sdss: [] for sdss in sdss_types}
-parsed_counts = {sdss: [] for sdss in sdss_types}
-parsed_colors = {sdss: [] for sdss in sdss_types}
-parsed_text_colors = {sdss: [] for sdss in sdss_types}
-
-all_counts = []
-for i in range(num_bins):
-    m_lower = 10**bin_edges[i]
-    m_upper = 10**bin_edges[i+1]
-    df_bin = df[(df['bh_mass'] >= m_lower) & (df['bh_mass'] < m_upper)]
-
-    for sdss_type in sdss_types:
-        df_sub = df_bin[df_bin['subclass'] == sdss_type]
-
-        if not df_sub.empty and 'oiii_sigma' in df_sub.columns:
-            clean_mask = np.isfinite(df_sub['oiii_sigma']) & (df_sub['oiii_sigma'] > 0)
-            n_samples = np.sum(clean_mask)
-            parsed_counts[sdss_type].append(n_samples)
-            if n_samples > 0:
-                all_counts.append(n_samples)
-                parsed_data[sdss_type].append(np.nanmedian(df_sub['oiii_sigma'][clean_mask]))
-            else:
-                parsed_data[sdss_type].append(0.0)
-        else:
-            parsed_counts[sdss_type].append(0)
-            parsed_data[sdss_type].append(0.0)
-
-log_n_min = np.log10(min(all_counts)) if len(all_counts) > 0 else 0
-log_n_max = np.log10(max(all_counts)) if len(all_counts) > 0 else 1
-log_n_range = log_n_max - log_n_min if log_n_max != log_n_min else 1
-
-for j, sdss_type in enumerate(sdss_types):
-    base_rgb = np.array(mcolors.to_rgb(type_colors[j]))
-    white_rgb = np.array([1.0, 1.0, 1.0])
-
-    for n_count in parsed_counts[sdss_type]:
-        if n_count == 0:
-            parsed_colors[sdss_type].append((1.0, 1.0, 1.0))
-            parsed_text_colors[sdss_type].append('black')
-            continue
-
-        log_n = np.log10(n_count)
-        fade_weight = np.clip(1.0 - ((log_n - log_n_min) / log_n_range), 0.0, 0.85)
-
-        parsed_colors[sdss_type].append((1.0 - fade_weight) * base_rgb + fade_weight * white_rgb)
-        parsed_text_colors[sdss_type].append('#4b4b4b' if fade_weight > 0.50 else '#ffffff')
-
-for j, sdss_type in enumerate(sdss_types):
-    bar_positions = x_indexes + (j - 1) * bar_width
-
-    bars = ax.bar(
-        bar_positions, parsed_data[sdss_type],
-        width=bar_width,
-        label=sdss_type,
-        color=parsed_colors[sdss_type],   
-        edgecolor='white',             
-        linewidth=0.5,
-        zorder=-10
-    )
-
-    for idx, bar in enumerate(bars):
-        y_val = bar.get_height()
-        n_count = parsed_counts[sdss_type][idx]
-
-        if n_count > 0 and y_val > 0:
-            ax.text(
-                bar.get_x() + bar.get_width()/1.75, 
-                y_val * 0.95, 
-                f'{n_count}', 
-                ha='center', 
-                va='top',       
-                fontsize=7.5, 
-                color=parsed_text_colors[sdss_type][idx],
-                weight='medium', 
-                rotation=90, 
-                zorder=5
-            )
-
-ax.set_xticks(np.arange(-0.5, 9, 1))
-ax.set_xticklabels(['4.5', '5.0', '5.5', '6.0', '6.5', '7.0', '7.5', '8.0', '8.5', '9.0'])
-ax.minorticks_off()
-
-ax.set_xlabel(r'$\log_{10}(M_{\mathrm{BH}} \mathbin{/} \mathrm{M}_\odot)$')
-ax.set_ylabel(r'$\sigma_{\mathrm{\raisebox{0.75pt}{\footnotesize [\raisebox{-0.75pt}{\footnotesize OIII}]}}} \mathbin{/} \mathrm{km}\kern+1pt\mathrm{s}^{-1}$', labelpad=-0.75)
-ax.set_ylim(7e0, 4e2) 
-
-legend_handles = [plt.Rectangle((0,0),1,1, color=c, ec='white', lw=0.5) for c in type_colors]
-ax.legend(legend_handles, ['SDSS SB', 'SDSS SF', 'SDSS AGN'], loc='upper left')
-ax.set_yscale('log')
-
-figures['SDSS_bar'] = fig
-plt.close()
-
-figures['SDSS_bar']
-
-
-# In[27]:
-
-
-bin_edges = np.arange(4.5, 9.5, 0.5)  
-num_bins = len(bin_edges) - 1
-
-whan_types = ['Pure SF', 'Strong AGN', 'Weak AGN', 'Retired G']
-type_colors = ['firebrick', 'goldenrod', 'olivedrab', 'steelblue']
-
-fig, ax = plt.subplots(figsize=[6.69, 4.51])
-ax.set_facecolor('white')
-
-x_indexes = np.arange(num_bins)
-bar_width = 0.18
-
-parsed_data = {whan: [] for whan in whan_types}
-parsed_counts = {whan: [] for whan in whan_types}
-parsed_colors = {whan: [] for whan in whan_types}
-parsed_text_colors = {whan: [] for whan in whan_types}
-
-all_counts = []
-for i in range(num_bins):
-    m_lower = 10**bin_edges[i]
-    m_upper = 10**bin_edges[i+1]
-    df_bin = df[(df['bh_mass'] >= m_lower) & (df['bh_mass'] < m_upper)]
-
-    for whan_type in whan_types:
-        df_sub = df_bin[df_bin['whan_class'] == whan_type]
-
-        if not df_sub.empty and 'oiii_sigma' in df_sub.columns:
-            clean_mask = np.isfinite(df_sub['oiii_sigma']) & (df_sub['oiii_sigma'] > 0)
-            n_samples = np.sum(clean_mask)
-            parsed_counts[whan_type].append(n_samples)
-            if n_samples > 0:
-                all_counts.append(n_samples)
-                parsed_data[whan_type].append(np.nanmedian(df_sub['oiii_sigma'][clean_mask]))
-            else:
-                parsed_data[whan_type].append(0.0)
-        else:
-            parsed_counts[whan_type].append(0)
-            parsed_data[whan_type].append(0.0)
-
-log_n_min = np.log10(min(all_counts)) if len(all_counts) > 0 else 0
-log_n_max = np.log10(max(all_counts)) if len(all_counts) > 0 else 1
-log_n_range = log_n_max - log_n_min if log_n_max != log_n_min else 1
-
-for j, whan_type in enumerate(whan_types):
-    base_rgb = np.array(mcolors.to_rgb(type_colors[j]))
-    white_rgb = np.array([1.0, 1.0, 1.0])
-
-    for n_count in parsed_counts[whan_type]:
-        if n_count == 0:
-            parsed_colors[whan_type].append((1.0, 1.0, 1.0))
-            parsed_text_colors[whan_type].append('black')
-            continue
-
-        log_n = np.log10(n_count)
-        fade_weight = np.clip(1.0 - ((log_n - log_n_min) / log_n_range), 0.0, 0.85)
-
-        parsed_colors[whan_type].append((1.0 - fade_weight) * base_rgb + fade_weight * white_rgb)
-        parsed_text_colors[whan_type].append('#4b4b4b' if fade_weight > 0.50 else '#ffffff')
-
-for j, whan_type in enumerate(whan_types):
-    bar_positions = x_indexes + (j - 1.5) * bar_width
-
-    bars = ax.bar(
-        bar_positions, parsed_data[whan_type],
-        width=bar_width,
-        label=whan_type,
-        color=parsed_colors[whan_type],   
-        edgecolor='white',             
-        linewidth=0.5,
-        zorder=-10
-    )
-
-    for idx, bar in enumerate(bars):
-        y_val = bar.get_height()
-        n_count = parsed_counts[whan_type][idx]
-
-        if n_count > 0 and y_val > 0:
-            ax.text(
-                bar.get_x() + bar.get_width()/1.7, 
-                y_val * 0.95, 
-                f'{n_count}', 
-                ha='center', 
-                va='top',       
-                fontsize=6.5, 
-                color=parsed_text_colors[whan_type][idx],
-                weight='medium', 
-                rotation=90, 
-                zorder=5
-            )
-
-ax.set_xticks(np.arange(-0.5, 9, 1))
-ax.set_xticklabels(['4.5', '5.0', '5.5', '6.0', '6.5', '7.0', '7.5', '8.0', '8.5', '9.0'])
-ax.minorticks_off()
-
-ax.set_xlabel(r'$\log_{10}(M_{\mathrm{BH}} \mathbin{/} \mathrm{M}_\odot)$')
-ax.set_ylabel(r'$\sigma_{\mathrm{\raisebox{0.75pt}{\footnotesize [\raisebox{-0.75pt}{\footnotesize OIII}]}}} \mathbin{/} \mathrm{km}\kern+1pt\mathrm{s}^{-1}$', labelpad=-0.75)
-ax.set_ylim(7e0, 4e2) 
-
-legend_handles = [plt.Rectangle((0,0),1,1, color=c, ec='white', lw=0.5) for c in type_colors]
-ax.legend(legend_handles, ['WHAN pSF', 'WHAN sAGN', 'WHAN wAGN', 'WHAN rGAL'], loc='upper left')
-ax.set_yscale('log')
-
-figures['WHAN_bar'] = fig
-plt.close()
-
-figures['WHAN_bar']
-
-
-# In[28]:
-
-
-bpt_classes = ['SF', 'COMP', 'AGN']
-legend_labels = ['BPT SF', 'BPT COMP', 'BPT AGN']
-type_colors = ['steelblue', 'olivedrab', 'goldenrod']
-
-fig, (ax1, ax2) = plt.subplots(1, 2, figsize=[6.69, 2.51])
-ax1.set_facecolor('white')
-ax2.set_facecolor('white')
-
-class_data_2d = {}
-class_data_1d = {}
-all_x_logs = []
-all_y_logs = []
-all_m_raw = []
-
-for cls in bpt_classes:
-    df_sub = df[df['bpt_class'] == cls]
-    if not df_sub.empty:
-        if 'el_gas_dens' in df_sub.columns and 'oiii_sigma' in df_sub.columns:
-            x_raw = df_sub['el_gas_dens'].to_numpy()
-            y_raw = df_sub['oiii_sigma'].to_numpy()
-            mask_2d = (x_raw > 0) & (y_raw > 0) & np.isfinite(x_raw) & np.isfinite(y_raw)
-            if np.sum(mask_2d) > 10:
-                x_log = np.log10(x_raw[mask_2d])
-                y_log = np.log10(y_raw[mask_2d])
-                class_data_2d[cls] = (x_log, y_log)
-                all_x_logs.extend(x_log)
-                all_y_logs.extend(y_log)
-
-        if 'bh_mass' in df_sub.columns:
-            m_raw = df_sub['bh_mass'].to_numpy()
-            mask_1d = (m_raw > 0) & np.isfinite(m_raw)
-            if np.sum(mask_1d) > 0:
-                class_data_1d[cls] = m_raw[mask_1d]
-                all_m_raw.extend(m_raw[mask_1d])
-
-if all_x_logs and all_y_logs:
-    x_bins = np.linspace(min(all_x_logs), max(all_x_logs), 100)
-    y_bins = np.linspace(min(all_y_logs), max(all_y_logs), 100)
-
-    x_cen = 10**(0.5 * (x_bins[:-1] + x_bins[1:]))
-    y_cen = 10**(0.5 * (y_bins[:-1] + y_bins[1:]))
-
-    smoothed_grids = {}
-    global_max_density = 0.0
-
-    for cls, (x_log, y_log) in class_data_2d.items():
-        counts, _, _ = np.histogram2d(x_log, y_log, bins=[x_bins, y_bins])
-        smoothed_counts = gaussian_filter(counts, sigma=2.5)
-        smoothed_grids[cls] = smoothed_counts
-        if smoothed_counts.max() > global_max_density:
-            global_max_density = smoothed_counts.max()
-
-    n_levels = 20
-    contour_levels = np.linspace(0.10 * global_max_density, 0.85 * global_max_density, n_levels)
-
-    for j, cls in enumerate(bpt_classes):
-        if cls in smoothed_grids:
-            base_rgb = mcolors.to_rgb(type_colors[j])
-
-            level_colors = []
-            for i in range(n_levels):
-                w = 0.4 + 0.6 * (i / (n_levels - 1))
-                mixed_rgb = tuple(w * c + (1.0 - w) * 1.0 for c in base_rgb)
-                level_colors.append(mixed_rgb)
-
-            level_lws = [
-                1.0 + 0.2 * (i / (n_levels - 1))
-                for i in range(n_levels)
-            ]
-
-            ax1.contour(
-                x_cen, y_cen, smoothed_grids[cls].T, 
-                levels=contour_levels, 
-                colors=level_colors, 
-                linewidths=level_lws
-            )
-
-if all_m_raw:
-    bh_bins = np.logspace(np.log10(min(all_m_raw)), np.log10(max(all_m_raw)), 45)
-
-    for j, cls in enumerate(bpt_classes):
-        if cls in class_data_1d:
-            ax2.hist(
-                class_data_1d[cls], 
-                bins=bh_bins, 
-                histtype='step', 
-                color=type_colors[j], 
-                label=legend_labels[j], 
-                linewidth=0.85,
-                zorder=-3
-            )
-
-ax1.set_xscale('log')
-ax1.set_yscale('log')
-ax1.set_xlabel(r'$n_e \mathbin{/} \mathrm{cm}^{-3}$')
-ax1.set_ylabel(r'$\sigma_{\mathrm{\raisebox{0.5pt}{\footnotesize [\raisebox{-0.5pt}{\footnotesize OIII}]}}} \mathbin{/} \mathrm{km}\kern+1pt\mathrm{s}^{-1}$')
-ax1.set_xlim(3e0, 9e2)
-ax1.set_ylim(1.8e1, 3e2)
-
-ax2.set_xscale('log')
-ax2.set_xlabel(r'$M_{\mathrm{BH}} \mathbin{/} \mathrm{M}_\odot$')
-ax2.set_ylabel(r'$N$')
-ax2.set_xlim(7e1, 1e10)
-ax2.set_ylim(0, 1e3)
-ax2.legend(loc='upper left')
-
-figures['BPT_multipanel'] = fig
-plt.close()
-
-figures['BPT_multipanel']
-
-
-# In[29]:
-
-
-sdss_classes = ['STARBURST', 'STARFORMING', 'AGN']
-legend_labels = ['SDSS SB', 'SDSS SF', 'SDSS AGN']
-type_colors = ['steelblue', 'olivedrab', 'goldenrod']
-
-fig, (ax1, ax2) = plt.subplots(1, 2, figsize=[6.69, 2.51])
-ax1.set_facecolor('white')
-ax2.set_facecolor('white')
-
-class_data_2d = {}
-class_data_1d = {}
-all_x_logs = []
-all_y_logs = []
-all_m_raw = []
-
-for cls in sdss_classes:
-    df_sub = df[df['subclass'] == cls]
-    if not df_sub.empty:
-        if 'el_gas_dens' in df_sub.columns and 'oiii_sigma' in df_sub.columns:
-            x_raw = df_sub['el_gas_dens'].to_numpy()
-            y_raw = df_sub['oiii_sigma'].to_numpy()
-            mask_2d = (x_raw > 0) & (y_raw > 0) & np.isfinite(x_raw) & np.isfinite(y_raw)
-            if np.sum(mask_2d) > 10:
-                x_log = np.log10(x_raw[mask_2d])
-                y_log = np.log10(y_raw[mask_2d])
-                class_data_2d[cls] = (x_log, y_log)
-                all_x_logs.extend(x_log)
-                all_y_logs.extend(y_log)
-
-        if 'bh_mass' in df_sub.columns:
-            m_raw = df_sub['bh_mass'].to_numpy()
-            mask_1d = (m_raw > 0) & np.isfinite(m_raw)
-            if np.sum(mask_1d) > 0:
-                class_data_1d[cls] = m_raw[mask_1d]
-                all_m_raw.extend(m_raw[mask_1d])
-
-if all_x_logs and all_y_logs:
-    x_bins = np.linspace(min(all_x_logs), max(all_x_logs), 100)
-    y_bins = np.linspace(min(all_y_logs), max(all_y_logs), 100)
-
-    x_cen = 10**(0.5 * (x_bins[:-1] + x_bins[1:]))
-    y_cen = 10**(0.5 * (y_bins[:-1] + y_bins[1:]))
-
-    smoothed_grids = {}
-    global_max_density = 0.0
-
-    for cls, (x_log, y_log) in class_data_2d.items():
-        counts, _, _ = np.histogram2d(x_log, y_log, bins=[x_bins, y_bins])
-        smoothed_counts = gaussian_filter(counts, sigma=2.5)
-        smoothed_grids[cls] = smoothed_counts
-        if smoothed_counts.max() > global_max_density:
-            global_max_density = smoothed_counts.max()
-
-    n_levels = 10
-    contour_levels = np.linspace(0.10 * global_max_density, 0.85 * global_max_density, n_levels)
-
-    for j, cls in enumerate(sdss_classes):
-        if cls in smoothed_grids:
-            base_rgb = mcolors.to_rgb(type_colors[j])
-
-            level_colors = []
-            for i in range(n_levels):
-                w = 0.4 + 0.6 * (i / (n_levels - 1))
-                mixed_rgb = tuple(w * c + (1.0 - w) * 1.0 for c in base_rgb)
-                level_colors.append(mixed_rgb)
-
-            level_lws = [
-                1.0 + 0.2 * (i / (n_levels - 1))
-                for i in range(n_levels)
-            ]
-
-            ax1.contour(
-                x_cen, y_cen, smoothed_grids[cls].T, 
-                levels=contour_levels, 
-                colors=level_colors, 
-                linewidths=level_lws
-            )
-
-if all_m_raw:
-    bh_bins = np.logspace(np.log10(min(all_m_raw)), np.log10(max(all_m_raw)), 45)
-
-    for j, cls in enumerate(sdss_classes):
-        if cls in class_data_1d:
-            ax2.hist(
-                class_data_1d[cls], 
-                bins=bh_bins, 
-                histtype='step', 
-                color=type_colors[j], 
-                label=legend_labels[j], 
-                linewidth=0.85,
-                zorder=-3
-            )
-
-ax1.set_xscale('log')
-ax1.set_yscale('log')
-ax1.set_xlabel(r'$n_e \mathbin{/} \mathrm{cm}^{-3}$')
-ax1.set_ylabel(r'$\sigma_{\mathrm{\raisebox{0.5pt}{\footnotesize [\raisebox{-0.5pt}{\footnotesize OIII}]}}} \mathbin{/} \mathrm{km}\kern+1pt\mathrm{s}^{-1}$')
-ax1.set_xlim(3e0, 1.1e3)
-ax1.set_ylim(1.8e1, 3e2)
-
-ax2.set_xscale('log')
-ax2.set_xlabel(r'$M_{\mathrm{BH}} \mathbin{/} \mathrm{M}_\odot$')
-ax2.set_ylabel(r'$N$')
-ax2.set_xlim(7e1, 1e10)
-ax2.set_ylim(0, 7e2)
-ax2.legend(loc='upper left')
-
-figures['SDSS_multipanel'] = fig
-plt.close()
-
-figures['SDSS_multipanel']
-
-
-# In[30]:
-
-
-whan_classes = ['Pure SF', 'Strong AGN', 'Weak AGN', 'Retired G']
-legend_labels = ['WHAN pSF', 'WHAN sAGN', 'WHAN wAGN', 'WHAN rGAL']
-type_colors = ['firebrick', 'goldenrod', 'olivedrab', 'steelblue']
-
-fig, (ax1, ax2) = plt.subplots(1, 2, figsize=[6.69, 2.51])
-ax1.set_facecolor('white')
-ax2.set_facecolor('white')
-
-class_data_2d = {}
-class_data_1d = {}
-all_x_logs = []
-all_y_logs = []
-all_m_raw = []
-
-for cls in whan_classes:
-    df_sub = df[df['whan_class'] == cls]
-    if not df_sub.empty:
-        if 'el_gas_dens' in df_sub.columns and 'oiii_sigma' in df_sub.columns:
-            x_raw = df_sub['el_gas_dens'].to_numpy()
-            y_raw = df_sub['oiii_sigma'].to_numpy()
-            mask_2d = (x_raw > 0) & (y_raw > 0) & np.isfinite(x_raw) & np.isfinite(y_raw)
-            if np.sum(mask_2d) > 10:
-                x_log = np.log10(x_raw[mask_2d])
-                y_log = np.log10(y_raw[mask_2d])
-                class_data_2d[cls] = (x_log, y_log)
-                all_x_logs.extend(x_log)
-                all_y_logs.extend(y_log)
-
-        if 'bh_mass' in df_sub.columns:
-            m_raw = df_sub['bh_mass'].to_numpy()
-            mask_1d = (m_raw > 0) & np.isfinite(m_raw)
-            if np.sum(mask_1d) > 0:
-                class_data_1d[cls] = m_raw[mask_1d]
-                all_m_raw.extend(m_raw[mask_1d])
-
-if all_x_logs and all_y_logs:
-    x_bins = np.linspace(np.log10(1e-1), np.log10(3e3), 100)
-    y_bins = np.linspace(np.log10(1e1), np.log10(5e2), 100)
-
-    x_cen = 10**(0.5 * (x_bins[:-1] + x_bins[1:]))
-    y_cen = 10**(0.5 * (y_bins[:-1] + y_bins[1:]))
-
-    smoothed_grids = {}
-    global_max_density = 0.0
-
-    for cls, (x_log, y_log) in class_data_2d.items():
-        counts, _, _ = np.histogram2d(x_log, y_log, bins=[x_bins, y_bins])
-        smoothed_counts = gaussian_filter(counts, sigma=2.5)
-        smoothed_grids[cls] = smoothed_counts
-        if smoothed_counts.max() > global_max_density:
-            global_max_density = smoothed_counts.max()
-
-    n_levels = 8
-    contour_levels = np.logspace(np.log10(0.02 * global_max_density), np.log10(0.98 * global_max_density), n_levels)
-
-    for j, cls in enumerate(whan_classes):
-        if cls in smoothed_grids:
-            base_rgb = mcolors.to_rgb(type_colors[j])
-
-            level_colors = []
-            for i in range(n_levels):
-                w = 0.4 + 0.5 * (i / (n_levels - 1))
-                mixed_rgb = tuple(w * c + (1.0 - w) * 1.0 for c in base_rgb)
-                level_colors.append(mixed_rgb)
-
-            level_lws = [
-                1.5 + 0.1 * (i / (n_levels - 1))
-                for i in range(n_levels)
-            ]
-
-            ax1.contour(
-                x_cen, y_cen, smoothed_grids[cls].T, 
-                levels=contour_levels, 
-                colors=level_colors, 
-                linewidths=level_lws
-            )
-
-if all_m_raw:
-    bh_bins = np.logspace(np.log10(min(all_m_raw)), np.log10(max(all_m_raw)), 45)
-
-    for j, cls in enumerate(whan_classes):
-        if cls in class_data_1d:
-            ax2.hist(
-                class_data_1d[cls], 
-                bins=bh_bins, 
-                histtype='step', 
-                color=type_colors[j], 
-                label=legend_labels[j], 
-                linewidth=1.05,
-                zorder=-3
-            )
-
-ax1.set_xscale('log')
-ax1.set_yscale('log')
-ax1.set_xlabel(r'$n_e \mathbin{/} \mathrm{cm}^{-3}$')
-ax1.set_ylabel(r'$\sigma_{\mathrm{\raisebox{0.5pt}{\footnotesize [\raisebox{-0.5pt}{\footnotesize OIII}]}}} \mathbin{/} \mathrm{km}\kern+1pt\mathrm{s}^{-1}$')
-ax1.set_xlim(4e-1, 3e3)
-ax1.set_ylim(1e1, 5e2)
-
-ax2.set_xscale('log')
-ax2.set_yscale('log')
-ax2.set_xlabel(r'$M_{\mathrm{BH}} \mathbin{/} \mathrm{M}_\odot$')
-ax2.set_ylabel(r'$N$')
-ax2.set_xlim(3e0, 1e10)
-ax2.set_ylim(2e0, 1.1e3)
-ax2.legend(loc='upper left')
-
-figures['WHAN_multipanel'] = fig
-plt.close()
-
-figures['WHAN_multipanel']
-
-
-# In[31]:
-
-
-i = 0
-for key, value in figures.items():
-    i += 1
-    print(f"{i:2.0f} | Key: {key:<15} | Value: {value}")
-
-print()
-j = 0
-for key, fig in figures.items():
-    j += 1
-    print(f"saving {j}/{i}...")
-    fig.savefig(f'assets/plots/{key}.pdf')
-print("done.")
+    ax.set_xlim(2.5, 30)
+    plain_log(ax, 'x')
+
+    ax.set_xlabel(r'$R\ /\ r_g$')
+    ax.set_ylabel(r'$t\ /\ t_g$')
+    ax.legend(ncol=2)
+
+    save(fig, 'timescales_col')
+
+
+def fig_full_domain(run):
+    path, geo = run['path'], run['geo']
+    lim = (0, geo['R_E'][-1])
+    n0 = run['all']['outs'][int(np.argmin(np.abs(run['all']['t'])))]
+    F0 = load(n0, path, geo)
+
+    sel = run['t'] >= run['t'][-1] - FULL_AVG_SPAN
+    acc = {}
+    for n in run['C']['outs'][sel]:
+        F = load(n, path, geo)
+        for key, val in [('rho', F['rho']), ('Tg', gas_temperature(F)), ('Tr', rad_temperature(F)), ('f', F['diskfrac']),
+                         ('vr', F['vx1']), ('vphi', F['vx3']), ('tau', optical_depth_from_pole(F, geo))]:
+            acc[key] = acc.get(key, 0.0) + val
+    mean = {key: val / sel.sum() for key, val in acc.items()}
+    mean['ratio'] = mean['Tg'] / np.maximum(mean['Tr'], 1.0)
+    init = {key: map_field(F0, key) for key in ('rho', 'f', 'Tg', 'ratio', 'vr', 'vphi')}
+    init['tau'] = optical_depth_from_pole(F0, geo)
+
+    Xc = geo['R_C'][:, None] * np.sin(geo['TH_C'])[None, :]
+    Zc = geo['R_C'][:, None] * np.cos(geo['TH_C'])[None, :]
+
+    def contours(ax, f, tau):
+        ax.contour(Xc, Zc, f, levels=[0.5], colors='w', linewidths=0.6)
+        if np.nanmax(tau) > 1.0:
+            ax.contour(Xc, Zc, tau, levels=[1.0], colors='w', linewidths=0.6, linestyles='--')
+
+    for key in ('rho', 'f', 'Tg', 'ratio', 'vr', 'vphi'):
+        fig, grid = map_figure(1, 2, TEXT, lim, lim)
+        im = draw_map(grid[0], init[key], key, geo, lim, lim)
+        draw_map(grid[1], mean[key], key, geo, lim, lim)
+        if key == 'rho':
+            contours(grid[0], init['f'], init['tau'])
+            contours(grid[1], mean['f'], mean['tau'])
+        map_colorbar(fig, im, grid.cbar_axes[0], key)
+        save(fig, f'domain_{key}_text')
+
+        for label, data, f, tau in [('init', init[key], init['f'], init['tau']), ('mean', mean[key], mean['f'], mean['tau'])]:
+            fig, grid = map_figure(1, 1, COL, lim, lim)
+            im = draw_map(grid[0], data, key, geo, lim, lim)
+            if key == 'rho':
+                contours(grid[0], f, tau)
+            map_colorbar(fig, im, grid.cbar_axes[0], key)
+            save(fig, f'domain_{key}_{label}_col')
+
+    return mean
+
+
+def fig_early(run, keys=('rho', 'f', 'Tg', 'ratio', 'vr', 'vphi')):
+    path, geo = run['path'], run['geo']
+    snaps = []
+    for t_req in T_EARLY:
+        n, t = nearest_out(path, t_req)
+        snaps.append((t, load(n, path, geo)))
+
+    for key in keys:
+        fig, grid = map_figure(2, 3, TEXT, (0, 20), (0, 10))
+        for ax, (t, F) in zip(grid, snaps):
+            im = draw_map(ax, map_field(F, key), key, geo, (0, 20), (0, 10))
+            time_label(ax, t)
+        map_colorbar(fig, im, grid.cbar_axes[0], key)
+        save(fig, f'early_{key}_text')
+
+
+def fig_relaxation(runs):
+    fig, ax = plt.subplots(figsize=[TEXT, 0.36 * TEXT])
+    tmax = max(run['t'][-1] for run in runs)
+
+    for run in runs:
+        Cx, t = run['C'], run['t']
+        for k, (key, name) in enumerate([('M', r'$M$'), ('M_d', r'$M_d$'), ('M_c', r'$M_c$')]):
+            ax.plot(t, Cx[key], color=f'C{k}', lw=run['lw'], label=name if run is runs[0] else None)
+
+    ax.set_yscale('log')
+    ax.set_xscale('symlog', linthresh=11e3, linscale=1.0)
+    ax.set_xlim(0, tmax)
+    ax.xaxis.set_major_locator(FixedLocator([0, 1e4]))
+    ax.xaxis.set_major_formatter(FuncFormatter(lambda v, _: '$0$' if v == 0 else rf'$10^{{{int(np.floor(np.log10(v)))}}}$'))
+    ax.xaxis.set_minor_locator(FixedLocator([k * 1e3 for k in range(1, 51) if k != 10]))
+    ax.xaxis.set_minor_formatter(NullFormatter())
+
+    ax.set_xlabel(r'$t\ /\ t_g$')
+    ax.set_ylabel(r'$M\ /\ \rho_0 r_g^3$')
+
+    ax.add_artist(ax.legend(loc='upper right'))
+    run_legend(ax, runs, loc='lower right')
+
+    save(fig, 'relax_mass_text')
+
+    fig, ax = plt.subplots(figsize=[COL, 0.7 * COL])
+    run = runs[0]
+    for k, (key, (tc, D)) in enumerate(run['D_curves'].items()):
+        ax.plot(tc, D, color=f'C{k}', label=GLOBAL_TEX[key])
+    ax.axhline(Z_CRIT, color='k', lw=0.6, ls='--', zorder=-10)
+    ax.axvline(run['t_ref'] - 0.5 * W_WINDOW, color='gray', lw=0.6, ls=':', zorder=-10)
+    ax.set_yscale('log')
+    ax.set_xlabel(r'$t_c\ /\ t_g$')
+    ax.set_ylabel(r'$D(t_c)$')
+    ax.legend(ncol=2, loc='upper right')
+    save(fig, 'relax_distance_col')
+
+
+def fig_window(runs):
+    fig, axs = plt.subplots(3, 1, figsize=[TEXT, 0.8 * TEXT], sharex=True)
+    for run in runs:
+        s = run['sel']
+        Cx, t = run['C'], run['t'][s]
+        for k, (key, name) in enumerate([('M', r'$M$'), ('M_d', r'$M_d$'), ('M_c', r'$M_c$')]):
+            axs[0].plot(t, Cx[key][s], color=f'C{k}', lw=run['lw'], label=name if run is runs[0] else None)
+        for k, (key, name) in enumerate([('E_rad', r'$E_\mathrm{rad}$'), ('E_th', r'$E_\mathrm{th}$'), ('E_kin', r'$E_\mathrm{kin}$')]):
+            axs[1].plot(t, Cx[key][s], color=f'C{k}', lw=run['lw'], label=name if run is runs[0] else None)
+        axs[2].plot(t, -Cx['mdot'][s, 0] * SCALE, color='C0', lw=run['lw'], label=r'$\dot M_\mathrm{acc}(r_\mathrm{in}) / \dot M_\mathrm{E}$' if run is runs[0] else None)
+        axs[2].plot(t, Cx['L_out'][s] * L0 / L_EDD, color='C1', lw=run['lw'], label=r'$L(r_\mathrm{out}) / L_\mathrm{E}$' if run is runs[0] else None)
+
+    axs[0].set_yscale('log')
+    axs[1].set_yscale('log')
+    axs[0].set_ylabel(r'$M\ /\ \rho_0 r_g^3$')
+    axs[1].set_ylabel(r'$E\ /\ \rho_0 c^2 r_g^3$')
+    axs[2].set_ylabel(r'$\lambda_\mathrm{E}$')
+    axs[2].set_xlabel(r'$t\ /\ t_g$')
+    axs[2].set_xlim(min(run['t_steady'] for run in runs), max(run['t'][-1] for run in runs))
+
+    axs[0].add_artist(axs[0].legend(ncol=3, loc='center left', bbox_to_anchor=(0.0, 0.62)))
+    run_legend(axs[0], runs, ncol=2, loc='center left', bbox_to_anchor=(0.0, 0.3))
+    axs[1].legend(ncol=3, loc='center left', bbox_to_anchor=(0.0, 0.62))
+    axs[2].legend(ncol=2, loc='upper left')
+
+    save(fig, 'window_text')
+
+
+def spacetime(ax, t, data, norm, cmap, r, tlim=None):
+    im = ax.pcolormesh(r, t, data, norm=norm, cmap=cmap, shading='nearest', rasterized=True)
+    ax.set_xscale('log')
+    ax.set_xlabel(r'$r\ /\ r_g$')
+    ax.set_ylabel(r'$t\ /\ t_g$')
+    if tlim is not None:
+        ax.set_ylim(*tlim)
+    plain_log(ax, 'x')
+    return im
+
+
+def fig_spacetime(run):
+    C, T, r, s = run['C'], run['t'], run['r'], run['sel']
+    TS = T[s]
+
+    mdot = -C['mdot']
+    lin = np.nanpercentile(np.abs(mdot[s]) * SCALE, 50)
+    vmax = np.nanpercentile(np.abs(mdot) * SCALE, 99.5)
+    norm = SymLogNorm(linthresh=max(lin, 11e-2), vmin=-vmax, vmax=vmax)
+
+    fig, axs = plt.subplots(1, 2, figsize=[TEXT, 0.5 * TEXT], sharex=True, sharey=True)
+    spacetime(axs[0], T, -C['mdot_d'] * SCALE, norm, 'RdBu_r', r, tlim=(TS[0], TS[-1]))
+    im = spacetime(axs[1], T, -C['mdot_c'] * SCALE, norm, 'RdBu_r', r, tlim=(TS[0], TS[-1]))
+    axs[1].set_ylabel('')
+    axs[0].set_title(r'$\mathrm{disk}$')
+    axs[1].set_title(r'$\mathrm{corona}$')
+    fig.colorbar(im, ax=axs, label=r'$\dot M_\mathrm{acc}\ /\ \dot M_\mathrm{E}$', pad=0.02)
+    save(fig, 'spacetime_mdot_text')
+
+    delta_long = C['sigma'][s] / C['sigma'][s].mean(axis=0)[None, :] - 1.0
+    amp = np.nanpercentile(np.abs(delta_long), 99)
+    dnorm = TwoSlopeNorm(vmin=-amp, vcenter=0.0, vmax=amp)
+    tlim = (max(run['S']['t'][0], run['S']['t'][-1] - 3000), run['S']['t'][-1])
+
+    fig, axs = plt.subplots(1, 2, figsize=[TEXT, 0.5 * TEXT], sharex=True)
+    spacetime(axs[0], TS, delta_long, dnorm, 'RdBu_r', r)
+    im = spacetime(axs[1], run['S']['t'], run['delta'], dnorm, 'RdBu_r', r, tlim=tlim)
+    for ax in axs:
+        ax.axvline(6.0, color='k', lw=0.5, ls=':')
+    fig.colorbar(im, ax=axs, label=r'$\delta = \Sigma / \langle\Sigma\rangle - 1$', pad=0.02)
+    save(fig, 'spacetime_delta_text')
+
+    for label, t, data, tl in [('long', TS, delta_long, None), ('dense', run['S']['t'], run['delta'], tlim)]:
+        fig, ax = plt.subplots(figsize=[COL, 1.1 * COL])
+        im = spacetime(ax, t, data, dnorm, 'RdBu_r', r, tlim=tl)
+        ax.axvline(6.0, color='k', lw=0.5, ls=':')
+        fig.colorbar(im, ax=ax, label=r'$\delta$', pad=0.02)
+        save(fig, f'spacetime_delta_{label}_col')
+
+
+def fig_profiles(runs):
+    run_main = runs[0]
+    parts = [('mdot', r'$\dot M$'), ('mdot_d', r'$\dot M_d$'), ('mdot_c', r'$\dot M_c$')]
+    flows = [('mdot_in', r'$\dot M_\mathrm{in}$'), ('mdot_out', r'$\dot M_\mathrm{out}$')]
+
+    def mdot_panel(ax):
+        for run in runs:
+            Cx, s, dt, r = run['C'], run['sel'], run['dt'], run['r']
+            for k, (key, lab) in enumerate(parts):
+                m, e = mean_se(-Cx[key][s] * SCALE, dt)
+                ax.plot(r, m, color=f'C{k}', lw=run['lw'], label=lab if run is run_main else None)
+                if run is run_main:
+                    ax.fill_between(r, m - e, m + e, color=f'C{k}', alpha=0.3, lw=0)
+            if run is run_main:
+                for k, (key, lab) in enumerate(flows):
+                    ax.plot(r, mean_se(-Cx[key][s] * SCALE, dt)[0], color=f'C{k + 3}', ls='--', lw=0.7, label=lab)
+        ax.axhline(0, color='k', lw=0.5)
+        ax.set_xscale('log')
+        ax.set_yscale('symlog', linthresh=1e-3)
+        plain_log(ax, 'x')
+        ax.set_xlabel(r'$r\ /\ r_g$')
+        ax.set_ylabel(r'$\langle\dot M_\mathrm{acc}\rangle\ /\ \dot M_\mathrm{E}$')
+        ax.add_artist(ax.legend(ncol=2, loc='lower left'))
+        run_legend(ax, runs, loc='center left')
+
+    def sigma_panel(ax):
+        for run in runs:
+            r = run['r']
+            ax.plot(r, run['sig_mean'], color=run['color'])
+            ax.fill_between(r, run['sig_mean'] - run['sig_se'], run['sig_mean'] + run['sig_se'], color=run['color'], alpha=0.3, lw=0)
+            R_ss = r[r > 6.06]
+            if run['mdot_in_mean'] > 0:
+                ax.plot(R_ss, run['mdot_in_mean'] / (3.0 * np.pi * nu_kin(R_ss)) * (1.0 - np.sqrt(6.0 / R_ss)), color=run['color'],
+                        ls='--', lw=0.7, zorder=-10)
+        ax.axvline(6.0, color='gray', lw=0.5, ls=':')
+        ax.set_xscale('log')
+        ax.set_yscale('log')
+        plain_log(ax, 'x')
+        ax.set_xlabel(r'$r\ /\ r_g$')
+        ax.set_ylabel(r'$\Sigma\ /\ \rho_0 r_g$')
+        run_table(ax, [(r'$\;\langle\Sigma\rangle$', dict()), (r'$\;\Sigma_\mathrm{ss}$', dict(ls='--', lw=0.7))],
+                  [(run['label'], run['color'], dict(color=run['color'])) for run in runs], loc='lower right', handlelength=2.0)
+
+    def alpha_panel(ax):
+        for run in runs:
+            r = run['r']
+            ratio, rel = effective_alpha(run)
+            ax.plot(r, ratio, color=run['color'])
+            ax.fill_between(r, ratio * (1 - rel), ratio * (1 + rel), color=run['color'], alpha=0.3, lw=0)
+            ax.axvline(run['R_eq_stats'][1], color=run['color'], ls=':', lw=0.6, zorder=-10)
+        ax.axhline(1.0, color='k', lw=0.5)
+        ax.set_xscale('log')
+        ax.set_yscale('log')
+        ax.set_xlim(6, run_main['r'][-1])
+        plain_log(ax, 'x')
+        plain_log(ax, 'y')
+        ax.set_xlabel(r'$R\ /\ r_g$')
+        ax.set_ylabel(r'$\alpha_\mathrm{eff} / \alpha$')
+        run_legend(ax, runs, color=True, loc='lower right')
+
+    def inflow_panel(ax):
+        for run in runs:
+            r = run['r']
+            ax.plot(r, run['mdot_in_mean'] / (2.0 * np.pi * r * run['sig_mean']), color=run['color'])
+        R_ss = run_main['r'][run_main['r'] > 6.5]
+        ax.plot(R_ss, 1.5 * nu_kin(R_ss) / R_ss / (1.0 - np.sqrt(6.0 / R_ss)), 'k--', lw=0.7, zorder=-10)
+        ax.set_xscale('log')
+        ax.set_yscale('log')
+        ax.set_xlim(6, run_main['r'][-1])
+        plain_log(ax, 'x')
+        ax.set_xlabel(r'$R\ /\ r_g$')
+        ax.set_ylabel(r'$\bar v_r\ /\ c$')
+        run_legend(ax, runs, color=True, extra=[(r'$\bar v_\mathrm{ss}$', dict(ls='--', lw=0.7))], loc='upper right')
+
+    for name, panels in [('mdot_sigma', (mdot_panel, sigma_panel)), ('alpha_inflow', (alpha_panel, inflow_panel))]:
+        fig, axs = plt.subplots(1, 2, figsize=[TEXT, 0.4 * TEXT])
+        for ax, panel in zip(axs, panels):
+            panel(ax)
+        save(fig, f'{name}_text')
+        for panel, part in zip(panels, name.split('_')):
+            fig, ax = plt.subplots(figsize=[COL, 0.78 * COL])
+            panel(ax)
+            save(fig, f'{part}_col')
+
+
+def effective_alpha(run):
+    r = run['r']
+    w = 1.0 - np.sqrt(6.0 / np.maximum(r, 6.0))
+    nu_eff = run['mdot_in_mean'] * w / (3.0 * np.pi * run['sig_mean'])
+    a_eff = nu_eff / (2.0 / 3.0 * EPS**2 * np.sqrt(r))
+    rel = np.sqrt((run['mdot_in_se'] / run['mdot_in_mean'])**2 + (run['sig_se'] / run['sig_mean'])**2)
+    return np.where(r > 6.5, a_eff / ALPHA, np.nan), rel
+
+
+def welch_len(n, dt):
+    nper = max(min(int(2 * n / (WELCH_SEG + 1)), frames(WELCH_TSEG, dt)), 8)
+    nper = min(nper, n)
+    return nper, (n - nper) // (nper // 2) + 1, max(n // nper, 1)
+
+
+def welch_kw(n, dt):
+    nper = welch_len(n, dt)[0]
+    return dict(fs=1.0 / dt, window='hann', nperseg=nper, noverlap=nper // 2, detrend='linear', axis=0)
+
+
+def peak_frequency(f, P):
+    k = int(np.argmax(P[1:])) + 1
+    if 1 < k < f.size - 1 and np.all(P[k - 1:k + 2] > 0):
+        y = np.log(P[k - 1:k + 2])
+        den = y[0] - 2.0 * y[1] + y[2]
+        shift = 0.5 * (y[0] - y[2]) / den if den != 0 else 0.0
+        return f[k] + np.clip(shift, -0.5, 0.5) * (f[1] - f[0]), f[1] - f[0]
+    return f[k], f[1] - f[0]
+
+
+def contiguous(good, i0):
+    out = np.zeros_like(good)
+    if not good[i0]:
+        return out
+    i = i0
+    while i < good.size and good[i]:
+        out[i] = True
+        i += 1
+    i = i0 - 1
+    while i >= 0 and good[i]:
+        out[i] = True
+        i -= 1
+    return out
+
+
+def line_fit(x, y, s):
+    xm = x - x.mean()
+    slope = np.sum(xm * y) / np.sum(xm**2)
+    resid = y - y.mean() - slope * xm
+    se_res = np.sqrt(np.sum(resid**2) / max(x.size - 2, 1) / np.sum(xm**2))
+    se_w = np.sqrt(1.0 / np.sum(xm**2 / np.maximum(s, 1e-6)**2))
+    return slope, max(se_res, se_w)
+
+
+def waves(run):
+    r, d, dt = run['r'], run['delta'], run['dt_s']
+    w = (r >= R_WAVE[0]) & (r <= R_WAVE[1])
+    kw = welch_kw(d.shape[0], dt)
+    f, P = signal.welch(d[:, w], **kw)
+    glob = np.concatenate([[0.0], (P[1:] / P[1:].sum(axis=0, keepdims=True)).mean(axis=1)])
+    run['f_peak'], run['df_peak'] = peak_frequency(f, glob)
+    run['f_w'], run['P_w'], run['wave'] = f, P, w
+
+    _, nseg, nind = welch_len(d.shape[0], dt)
+    i0 = int(np.argmin(np.abs(r - R_PHASE_REF)))
+    fc, P0r = signal.csd(d[:, [i0]], d, **kw)
+    _, g2 = signal.coherence(d[:, [i0]], d, **kw)
+    _, Prr = signal.welch(d, **kw)
+    k = int(np.argmin(np.abs(fc - run['f_peak'])))
+
+    lag = -np.angle(P0r[k])
+    ph = np.empty_like(lag)
+    ph[i0:] = np.unwrap(lag[i0:])
+    ph[:i0 + 1] = np.unwrap(lag[:i0 + 1][::-1])[::-1]
+    g2k = np.clip(g2[k], 1e-9, 1.0)
+    sig = np.sqrt((1.0 - g2k) / (2.0 * nind * g2k))
+    share = Prr[k] / Prr[1:].max(axis=0)
+    g2_crit = 1.0 - 0.05**(1.0 / (nind - 1)) if nind > 1 else 1.0
+    good = (g2k >= g2_crit) & (share >= P_FUND_MIN) & (r >= R_WAVE[0]) & (r <= R_WAVE[1])
+    valid = contiguous(good, i0)
+
+    om = 2.0 * np.pi * fc[k]
+    v, ev = np.full(r.size, np.nan), np.full(r.size, np.nan)
+    for i in np.nonzero(valid)[0]:
+        m = valid & (np.abs(np.log(r / r[i])) <= np.log1p(FIT_FRAC))
+        if m.sum() >= 4:
+            b, eb = line_fit(r[m], ph[m], sig[m])
+            v[i], ev[i] = om / b, abs(om / b) * eb / abs(b)
+
+    run['Ph'] = dict(ph=ph - ph[i0], valid=valid, i0=i0, g2_crit=g2_crit)
+    run['v_p'], run['v_p_err'] = v, ev
+    run['d_rms'] = np.sqrt(np.mean(d**2, axis=0))
+
+
+def fig_waves(runs):
+    for run in runs:
+        waves(run)
+    main = runs[0]
+    S = main['S']
+    rho_m, prs_m = S['rho_mid'].mean(axis=0), S['prs_mid'].mean(axis=0)
+    pr_m, vr_m = S['enr_mid'].mean(axis=0) / 3.0, S['vr_mid'].mean(axis=0)
+    r = main['r']
+    speeds = [(np.sqrt((GAMMA * prs_m + 4.0 / 3.0 * pr_m) / rho_m), r'$c_\mathrm{ad}$'),
+              (np.sqrt((prs_m + pr_m) / rho_m), r'$c_\mathrm{iso}$'),
+              (np.sqrt(GAMMA * prs_m / rho_m), r'$c_\mathrm{gas}$'),
+              (np.abs(vr_m), r'$|\langle v_r\rangle|$'),
+              (nu_kin(r) / r, r'$\nu/R$')]
+
+    f_w, P_w, w = main['f_w'], main['P_w'], main['wave']
+    fig, ax = plt.subplots(figsize=[COL, 0.8 * COL])
+    im = ax.pcolormesh(r[w], f_w[1:], P_w[1:] / P_w[1:].max(axis=0, keepdims=True), cmap='viridis', norm=LogNorm(vmin=1e-3, vmax=1.0),
+                       shading='nearest', rasterized=True)
+    fig.colorbar(im, ax=ax, label=r'$P / P_\mathrm{max}(r)$', pad=0.02)
+    ax.set_xscale('log')
+    ax.set_yscale('log')
+    ax.set_ylim(f_w[1], f_w[-1])
+    plain_log(ax, 'x')
+    ax.set_xlabel(r'$r\ /\ r_g$')
+    ax.set_ylabel(r'$\nu_f\ /\ t_g^{-1}$')
+    save(fig, 'wave_spectrum_col')
+
+    def phase_panel(ax):
+        for run in runs:
+            rr, Ph = run['r'], run['Ph']
+            v = Ph['valid']
+            ax.plot(rr[v], Ph['ph'][v], 'o', ms=2, color=run['color'])
+            ax.plot(rr[~v], Ph['ph'][~v], 'o', ms=2, mfc='none', mew=0.5, color=run['color'], alpha=0.4)
+        ax.axvline(r[main['Ph']['i0']], color='k', lw=0.5, ls=':')
+        ax.set_xscale('log')
+        ax.set_xlim(*R_WAVE)
+        plain_log(ax, 'x')
+        ax.set_xlabel(r'$r\ /\ r_g$')
+        ax.set_ylabel(r'$\varphi\ /\ \mathrm{rad}$')
+        run_table(ax, [(r'$\gamma^2 \geq \gamma^2_\mathrm{crit}$', dict(marker='o', ls='none', ms=2)),
+                       (r'$\gamma^2 < \gamma^2_\mathrm{crit}$', dict(marker='o', ls='none', ms=2, mfc='none', mew=0.5, alpha=0.4))],
+                  [(run['label'], run['color'], dict(color=run['color'])) for run in runs], loc='upper left', handlelength=1.0)
+
+    def speed_panel(ax):
+        for run in runs:
+            ax.errorbar(run['r'], run['v_p'], yerr=run['v_p_err'], fmt='o', ms=2, elinewidth=0.5, color=run['color'], ls='none')
+        for y, lab in speeds:
+            ax.plot(r, y, lw=0.8, label=lab)
+        ax.set_xscale('log')
+        ax.set_yscale('log')
+        ax.set_xlim(*R_WAVE)
+        plain_log(ax, 'x')
+        ax.set_xlabel(r'$r\ /\ r_g$')
+        ax.set_ylabel(r'$v\ /\ c$')
+        ax.add_artist(ax.legend(ncol=2, loc='lower right'))
+        run_table(ax, [(r'$v_p$', dict(marker='o', ls='none', ms=2))],
+                  [(run['label'], run['color'], dict(color=run['color'])) for run in runs], loc='upper left', handlelength=1.0)
+
+    def rms_panel(ax):
+        for run in runs:
+            ax.plot(run['r'], run['d_rms'], color=run['color'])
+        ax.axvline(6.0, color='gray', lw=0.5, ls=':')
+        ax.set_xscale('log')
+        ax.set_yscale('log')
+        plain_log(ax, 'x')
+        plain_log(ax, 'y')
+        ax.set_xlabel(r'$r\ /\ r_g$')
+        ax.set_ylabel(r'$\delta_\mathrm{rms}$')
+        run_legend(ax, runs, color=True, loc='lower right')
+
+    def cross_panel(ax):
+        drho = S['rho_mid'] / rho_m[None, :] - 1.0
+        for k, (b, lab) in enumerate([(S['vr_mid'] - vr_m[None, :], r'$\varphi_{\delta v_r} - \varphi_{\delta\rho}$'),
+                                      (S['enr_mid'] / (3.0 * pr_m[None, :]) - 1.0, r'$\varphi_{\delta E_r} - \varphi_{\delta\rho}$')]):
+            kw = welch_kw(drho.shape[0], main['dt_s'])
+            fc, P = signal.csd(drho, b, **kw)
+            _, g2 = signal.coherence(drho, b, **kw)
+            i = int(np.argmin(np.abs(fc - main['f_peak'])))
+            m = g2[i] >= main['Ph']['g2_crit']
+            ax.plot(r[m], np.angle(P[i])[m], 'o', ms=2, color=f'C{k}', label=lab)
+        ax.axhline(0, color='k', lw=0.5)
+        for y in (-np.pi / 2, np.pi / 2):
+            ax.axhline(y, color='gray', lw=0.5, ls=':')
+        ax.set_xscale('log')
+        ax.set_xlim(*R_WAVE)
+        ax.set_ylim(-np.pi, np.pi)
+        plain_log(ax, 'x')
+        ax.set_xlabel(r'$r\ /\ r_g$')
+        ax.set_ylabel(r'$\Delta\varphi(\nu_\mathrm{peak})\ /\ \mathrm{rad}$')
+        ax.legend(loc='lower left')
+
+    for name, panels in [('phase_speed', (phase_panel, speed_panel)), ('rms_cross', (rms_panel, cross_panel))]:
+        fig, axs = plt.subplots(1, 2, figsize=[TEXT, 0.4 * TEXT])
+        for ax, panel in zip(axs, panels):
+            panel(ax)
+        save(fig, f'{name}_text')
+        for panel, part in zip(panels, name.split('_')):
+            fig, ax = plt.subplots(figsize=[COL, 0.78 * COL])
+            panel(ax)
+            save(fig, f'{part}_col')
+
+
+def compton_opacity(Tg, Tr):
+    mc2 = CONST_me * CONST_c**2
+    Tr4 = Tr**4
+    low = KAPPA_ES * 4.0 * CONST_kB * Tr4 / (mc2 * (Tg + Tr) * (Tg**2 + Tr**2))
+    high = KAPPA_ES * 4.0 * CONST_kB * Tr4 * (T_COMPTON_MAX - Tr) / (mc2 * (Tg**4 - Tr4))
+    k = np.where(Tg <= T_COMPTON_MAX, low, np.where(Tr < T_COMPTON_MAX, high, 0.0))
+    return np.minimum(np.nan_to_num(k), KAPPA_ES)
+
+
+def heating_cooling(run):
+    Cx, s, r = run['C'], run['sel'], run['r']
+    rho, p = Cx['rho_mid'][s], Cx['prs_mid'][s]
+    E = np.clip(Cx['enr_mid'][s], 0.0, None)
+    Tg = K_T * p / rho
+    Tr = (E / A_RAD)**0.25
+
+    fd = np.clip((Cx['f_mid'][s] - 0.05) / 0.95, 0.0, None)
+    beta = np.sqrt(Cx['vr_mid'][s]**2 + Cx['vphi_mid'][s]**2)
+    gv = 1.0 / (1.0 + np.exp(np.minimum((beta - 0.9) / 0.03, 50.0)))
+
+    shear = r * np.gradient(Cx['vphi_mid'][s] / r, r, axis=1)
+    u_g = p / (GAMMA - 1.0)
+    excess = A_RAD * Tg**4 - E
+
+    q_plus = Cx['nu_mid'][s] * shear**2
+    L_C = rho * gv * fd * compton_opacity(Tg, Tr) * KAPPA_CODE * excess
+    L_ff = rho * gv * fd * K_FFBF * rho * RHO0 * np.maximum(Tg, 1e4)**-3.5 * KAPPA_CODE * excess
+
+    times = dict(t_heat=u_g / q_plus, t_C=u_g / L_C, t_ff=u_g / L_ff, ratio=q_plus / (L_C + L_ff))
+    return {key: np.nanpercentile(np.where(np.isfinite(val) & (val > 0), val, np.nan), [16, 50, 84], axis=0)
+            for key, val in times.items()}
+
+
+def fig_heating(runs):
+    times = [('t_heat', r'$t_\mathrm{heat}$'), ('t_C', r'$t_C$'), ('t_ff', r'$t_\mathrm{ff}$')]
+    for run in runs:
+        run['HC'] = heating_cooling(run)
+
+    def times_panel(ax):
+        for run in runs:
+            r = run['r']
+            m = r >= R_MIN_HC
+            for k, (key, _) in enumerate(times):
+                ax.plot(r[m], run['HC'][key][1][m], color=f'C{k}', lw=1.2 if run is runs[0] else 0.5)
+                if run is runs[0]:
+                    ax.fill_between(r[m], run['HC'][key][0][m], run['HC'][key][2][m], color=f'C{k}', alpha=0.2, lw=0)
+        R = runs[0]['r'][runs[0]['r'] >= R_MIN_HC]
+        ax.plot(R, 1.0 / omega_pw(R), 'k--', lw=0.6)
+        ax.set_xscale('log')
+        ax.set_yscale('log')
+        plain_log(ax, 'x')
+        ax.set_xlabel(r'$R\ /\ r_g$')
+        ax.set_ylabel(r'$t\ /\ t_g$')
+        h = [Line2D([], [], color=f'C{k}') for k in range(3)] + [Line2D([], [], color='k', ls='--', lw=0.6)]
+        l = [lab for _, lab in times] + [r'$1/\Omega$']
+        ax.add_artist(ax.legend(h, l, ncol=2, loc='upper left'))
+        run_legend(ax, [dict(label=run['label'], lw=1.2 if run is runs[0] else 0.5) for run in runs], loc='lower right')
+
+    def ratio_panel(ax):
+        for run in runs:
+            r = run['r']
+            m = r >= R_MIN_HC
+            ax.plot(r[m], run['HC']['ratio'][1][m], color=run['color'])
+            ax.fill_between(r[m], run['HC']['ratio'][0][m], run['HC']['ratio'][2][m], color=run['color'], alpha=0.2, lw=0)
+        ax.axhline(1.0, color='k', lw=0.5)
+        ax.set_xscale('log')
+        ax.set_yscale('log')
+        plain_log(ax, 'x')
+        plain_log(ax, 'y')
+        ax.set_xlabel(r'$R\ /\ r_g$')
+        ax.set_ylabel(r'$q^+ / (\Lambda_C + \Lambda_\mathrm{ff})$')
+        run_legend(ax, runs, color=True, loc='upper right')
+
+    fig, axs = plt.subplots(1, 2, figsize=[TEXT, 0.4 * TEXT])
+    times_panel(axs[0])
+    ratio_panel(axs[1])
+    save(fig, 'heating_text')
+    for panel, part in [(times_panel, 'heating_times'), (ratio_panel, 'heating_ratio')]:
+        fig, ax = plt.subplots(figsize=[COL, 0.78 * COL])
+        panel(ax)
+        save(fig, f'{part}_col')
+
+
+def shell_mass(Cx, a, b):
+    return Cx['m_hi'][:, a] + Cx['m_lo'][:, b] + np.sum(Cx['m_lo'][:, a + 1:b] + Cx['m_hi'][:, a + 1:b], axis=1)
+
+
+def cumulative_trapezoid(t, y):
+    return np.concatenate([[0.0], np.cumsum(0.5 * (y[1:] + y[:-1]) * np.diff(t))])
+
+
+def mass_budget(Cx, a, b):
+    t = Cx['t']
+    net = Cx['mdot'][:, a] - Cx['mdot'][:, b]
+    flux_int = cumulative_trapezoid(t, net)
+
+    t_e, t_o = t[0::2], t[1::2]
+    I_e = np.interp(t_e[-1], t, flux_int) - np.interp(t_e[0], t, flux_int)
+    I_o = np.interp(t_o[-1], t, flux_int) - np.interp(t_o[0], t, flux_int)
+    err = max(abs(I_e - cumulative_trapezoid(t_e, net[0::2])[-1]), abs(I_o - cumulative_trapezoid(t_o, net[1::2])[-1]))
+
+    M_ab = shell_mass(Cx, a, b)
+    dM = M_ab - M_ab[0]
+    return dict(t=t, dM=dM, flux=flux_int, floor=dM - flux_int, err=(t - t[0]) / (t[-1] - t[0]) * err)
+
+
+def fig_budget(run):
+    S, r = run['S'], run['r']
+    IA = int(np.argmin(np.abs(r - R_BUDGET[0])))
+    IB = int(np.argmin(np.abs(r - R_BUDGET[1])))
+    budgets = [('restricted', mass_budget(S, IA, IB)), ('complete', mass_budget(S, 0, r.size - 1))]
+
+    def panel(ax, B, legend):
+        ax.plot(B['t'], B['dM'], label=r'$\Delta M_{ab}$')
+        ax.plot(B['t'], B['flux'], label=r'$\int [\dot M(r_a) - \dot M(r_b)]\,\mathrm{d}t$')
+        ax.plot(B['t'], B['floor'], label=r'$\Delta M_\mathrm{floor}$')
+        ax.fill_between(B['t'], B['floor'] - B['err'], B['floor'] + B['err'], alpha=0.3, lw=0, color='firebrick', label=r'$\pm\,\sigma_I$')
+        ax.axhline(0, color='k', lw=0.5)
+        ax.set_xlabel(r'$t\ /\ t_g$')
+        ax.set_ylabel(r'$M\ /\ \rho_0 r_g^3$')
+        if legend:
+            ax.legend(loc='upper left')
+
+    fig, axs = plt.subplots(1, 2, figsize=[TEXT, 0.4 * TEXT])
+    for k, (ax, (_, B)) in enumerate(zip(axs, budgets)):
+        panel(ax, B, k == 1)
+    save(fig, 'budget_text')
+    for label, B in budgets:
+        fig, ax = plt.subplots(figsize=[COL, 0.78 * COL])
+        panel(ax, B, True)
+        save(fig, f'budget_{label}_col')
+
+
+def fig_structure(run):
+    path, geo = run['path'], run['geo']
+    R_C, TH_C, NR, NTH, DTH, COT = geo['R_C'], geo['TH_C'], geo['NR'], geo['NTH'], geo['DTH'], geo['COT']
+    outs = run['C']['outs'][run['sel']][::PROFILE_STRIDE]
+    st, ct = np.sin(TH_C)[None, :], np.cos(TH_C)[None, :]
+    lr = np.log(R_C)
+
+    def vertical(field, R0):
+        r_line = R0 / np.sin(TH_C)
+        out = np.full(NTH, np.nan)
+        for j in np.nonzero((r_line >= R_C[0]) & (r_line <= R_C[-1]))[0]:
+            out[j] = np.interp(np.log(r_line[j]), lr, field[:, j])
+        return out
+
+    PROF = {R0: {} for R0 in R_PROFILES}
+    QP, QM, NQM = np.zeros(NR), np.zeros(NR), np.zeros(NR)
+    for n in outs:
+        F = load(n, path, geo)
+        Fz = F['fr1'] * ct - F['fr2'] * st
+        gz = ct / (R_C[:, None] - 2.0)**2
+        kap = F['kappa_abs'] + F['kappa_scat']
+        fields = dict(rho=F['rho'], p_gas=F['prs'], p_rad=F['enr'] / 3.0, T_g=gas_temperature(F), T_r=rad_temperature(F),
+                      Gamma_z=np.where(gz > 0, kap * Fz / np.maximum(gz, 1e-300), np.nan), f=F['diskfrac'],
+                      v_z=F['vx1'] * ct - F['vx2'] * st)
+        for R0 in R_PROFILES:
+            for key, val in fields.items():
+                PROF[R0][key] = PROF[R0].get(key, 0.0) + vertical(val, R0)
+
+        Om = F['vx3'] / (R_C[:, None] * st)
+        shear = R_C[:, None] * np.gradient(Om, R_C, axis=0)
+        QP += np.sum(F['nu'] * shear**2 * R_C[:, None] * DTH[None, :], axis=1)
+        tau = optical_depth_from_pole(F, geo)
+        for i in range(NR):
+            j = np.argmax(tau[i] >= 1.0)
+            if tau[i, j] >= 1.0:
+                QM[i] += Fz[i, j]
+                NQM[i] += 1
+
+    for R0 in R_PROFILES:
+        for key in PROF[R0]:
+            PROF[R0][key] = PROF[R0][key] / len(outs)
+    QP /= len(outs)
+    QM = np.where(NQM > 0, QM / np.maximum(NQM, 1), np.nan)
+
+    fig, axs = plt.subplots(2, 3, figsize=[TEXT, 0.62 * TEXT], sharex=True)
+    for R0 in R_PROFILES:
+        P = PROF[R0]
+        line, = axs[0, 0].semilogy(COT, P['rho'], label=rf'$R = {R0:g}$')
+        c = line.get_color()
+        axs[0, 1].semilogy(COT, P['p_rad'], color=c)
+        axs[0, 1].semilogy(COT, P['p_gas'], color=c, ls='--')
+        axs[0, 2].semilogy(COT, P['T_r'], color=c)
+        axs[0, 2].semilogy(COT, P['T_g'], color=c, ls='--')
+        axs[1, 0].plot(COT, P['Gamma_z'], color=c)
+        axs[1, 1].plot(COT, P['v_z'], color=c)
+        axs[1, 2].plot(COT, P['f'], color=c)
+        surface = COT[np.nanargmin(np.abs(P['f'] - 0.5))]
+        for ax in axs.flat:
+            ax.axvline(surface, color=c, lw=0.5, ls=':')
+    axs[1, 0].set_yscale('symlog', linthresh=1e-1)
+    axs[0, 0].set_xlim(0, 0.6)
+    for ax, lab in zip(axs.flat, [r'$\langle\rho\rangle\ /\ \rho_0$', r'$\langle p\rangle\ /\ \rho_0 c^2$', r'$\langle T\rangle\ /\ \mathrm{K}$',
+                                  r'$\langle\Gamma_z\rangle$', r'$\langle v_z\rangle\ /\ c$', r'$\langle f\rangle$']):
+        ax.set_ylabel(lab)
+    for ax in axs[1]:
+        ax.set_xlabel(r'$z/R$')
+    axs[0, 0].legend(loc='upper right')
+    axs[0, 1].legend(handles=[Line2D([], [], color='k', label=r'$\langle p_r\rangle$'), Line2D([], [], color='k', ls='--', label=r'$\langle p_g\rangle$')],
+                     ncol=2, loc='upper right')
+    axs[0, 2].legend(handles=[Line2D([], [], color='k', label=r'$\langle T_r\rangle$'), Line2D([], [], color='k', ls='--', label=r'$\langle T_g\rangle$')],
+                     ncol=2, loc='upper right')
+    save(fig, 'vertical_text')
+
+    t_diff = KAPPA_ES * RHO0 * R_G * run['sig_mean'] / 2.0 * run['hr_mean'] * R_C
+    fig, axs = plt.subplots(1, 2, figsize=[TEXT, 0.4 * TEXT])
+    axs[0].loglog(R_C, QP, label=r'$Q^+$')
+    axs[0].loglog(R_C, np.where(QM > 0, QM, np.nan), label=r'$Q^- = F_z|_{\tau = 1}$')
+    axs[0].set_xlabel(r'$r\ /\ r_g$')
+    axs[0].set_ylabel(r'$Q\ /\ \rho_0 c^3$')
+    axs[0].legend(loc='lower left')
+    axs[1].loglog(R_C, t_diff, label=r'$t_\mathrm{diff}$')
+    axs[1].loglog(R_C, t_thermal(R_C), label=r'$t_\mathrm{th}$')
+    axs[1].loglog(R_C, t_viscous(R_C), label=r'$t_\nu$')
+    axs[1].axhline(1 / run['f_peak'], color='firebrick', ls='--', lw=0.7, label=r'$1/\nu_\mathrm{peak}$')
+    axs[1].set_xlabel(r'$r\ /\ r_g$')
+    axs[1].set_ylabel(r'$t\ /\ t_g$')
+    axs[1].legend(loc='lower right', ncol=2)
+    for ax in axs:
+        plain_log(ax, 'x')
+    save(fig, 'balance_text')
+
+
+def fig_aspect(runs):
+    fig, ax = plt.subplots(figsize=[COL, 0.78 * COL])
+    axr = ax.twinx()
+    for run in runs:
+        ax.plot(run['r'], run['hr_mean'], color=run['color'])
+        ax.fill_between(run['r'], run['hr_mean'] - run['hr_se'], run['hr_mean'] + run['hr_se'], color=run['color'], alpha=0.3, lw=0)
+        axr.plot(run['r'], run['cells_H'], color=run['color'], lw=0.5, alpha=0.6)
+    ax.axhline(EPS, color='k', ls=':', lw=0.6)
+    ax.set_xscale('log')
+    axr.set_ylim(0, None)
+    plain_log(ax, 'x')
+    ax.set_xlabel(r'$r\ /\ r_g$')
+    ax.set_ylabel(r'$\langle H/R\rangle$')
+    axr.set_ylabel(r'$\langle H/R\rangle / \Delta\theta$')
+    run_legend(ax, runs, color=True, extra=[(r'$\langle H/R\rangle$', dict()), (r'$\langle H/R\rangle / \Delta\theta$', dict(lw=0.5, alpha=0.6)),
+                                            (r'$\epsilon$', dict(ls=':', lw=0.6))], loc='upper right')
+    save(fig, 'aspect_col')
+
+
+class NegativeLog(mpl.ticker.LogFormatterSciNotation):
+    def __call__(self, x, pos=None):
+        s = super().__call__(x, pos)
+        return '$-' + s[1:] if s else s
+
+
+def angular_profiles(run):
+    geo, path = run['geo'], run['path']
+    outs = run['C']['outs'][run['sel']][::PROFILE_STRIDE]
+    idx = np.array([int(np.argmin(np.abs(geo['R_C'] - r0))) for r0 in R_ANG])
+    r = geo['R_C'][idx][:, None]
+    sth = np.sin(geo['TH_C'])[None, :]
+
+    rec = {key: [] for key in ['mdot', 'rho', 'vr', 'vphi']}
+    for n in outs:
+        F = {key: val[idx, :] for key, val in load(n, path, geo, names=('rho', 'vx1', 'vx3', 'diskfrac')).items()}
+        rec['mdot'].append(-HEMI * 2.0 * np.pi * r**2 * sth * F['rho'] * F['vx1'])
+        rec['rho'].append(F['rho'])
+        rec['vr'].append(F['vx1'])
+        rec['vphi'].append(F['vx3'])
+
+    out = dict(elev=90.0 - np.degrees(geo['TH_C']), dth=geo['DTH'])
+    for key, val in rec.items():
+        out[key], out[key + '_se'] = mean_se(np.array(val), run['dt'] * PROFILE_STRIDE)
+    total = np.sum(out['mdot'] * out['dth'][None, :], axis=1, keepdims=True)
+    out['mdot_dist'] = out['mdot'] / total * np.pi / 180.0
+    out['mdot_dist_se'] = out['mdot_se'] / np.abs(total) * np.pi / 180.0
+    return out
+
+
+def fig_angular(runs):
+    for run in runs:
+        run['ANG'] = angular_profiles(run)
+    rcol = plt.cm.viridis(np.linspace(0.0, 0.85, len(R_ANG)))
+    lws = (1.2, 0.5)
+    panels = [('mdot_dist', r'$\mathrm{d}\dot M_\mathrm{acc}/\mathrm{d}\vartheta\ /\ (\dot M_\mathrm{acc}\,\mathrm{deg}^{-1})$', 1.0),
+              ('rho', r'$\langle\rho\rangle\ /\ \rho_0$', 1.0),
+              ('vr', r'$\langle v_r\rangle\ /\ c$', -1.0),
+              ('vphi', r'$\langle v_\phi\rangle\ /\ c$', None)]
+
+    def panel(ax, key, lab, sign, legend):
+        for run, lw in zip(runs, lws):
+            A = run['ANG']
+            for k in range(len(R_ANG)):
+                y, e = A[key][k], A[key + '_se'][k]
+                lo, hi = y - e, y + e
+                if sign is not None:
+                    y, lo, hi = sign * y, np.minimum(sign * lo, sign * hi), np.maximum(sign * lo, sign * hi)
+                    y, lo, hi = (np.where(v > 0, v, np.nan) for v in (y, lo, hi))
+                    lo = np.where(np.isfinite(lo), lo, y)
+                ax.plot(A['elev'], y, color=rcol[k], lw=lw)
+                ax.fill_between(A['elev'], lo, hi, color=rcol[k], alpha=0.15, lw=0)
+        if sign is not None:
+            ax.set_yscale('log')
+        if sign == -1.0:
+            ax.yaxis.set_major_formatter(NegativeLog())
+            ax.yaxis.set_minor_formatter(NegativeLog(labelOnlyBase=False))
+        if key == 'mdot_dist':
+            top = max(np.nanmax(run['ANG']['mdot_dist']) for run in runs)
+            ax.set_ylim(top * 1e-4, top * 2.0)
+        ax.set_xscale('log')
+        ax.set_xlim(0.3, 90.0)
+        plain_log(ax, 'x', mantissas=(1, 2, 5))
+        ax.set_ylabel(lab)
+        ax.set_xlabel(r'$\vartheta\ /\ \mathrm{deg}$')
+        if legend:
+            run_table(ax, [(rf'$r = {r0:g}$', dict(color=c)) for r0, c in zip(R_ANG, rcol)],
+                      [(run['label'], 'k', dict(lw=lw)) for run, lw in zip(runs, lws)], loc='lower left', handleheight=1.2)
+
+    fig, axs = plt.subplots(2, 2, figsize=[TEXT, 0.72 * TEXT], sharex=True)
+    for k, (ax, (key, lab, sign)) in enumerate(zip(axs.flat, panels)):
+        panel(ax, key, lab, sign, k == 0)
+    for ax in axs[0]:
+        ax.set_xlabel('')
+    save(fig, 'angular_text')
+    for key, lab, sign in panels:
+        fig, ax = plt.subplots(figsize=[COL, 0.85 * COL])
+        panel(ax, key, lab, sign, key == 'mdot_dist')
+        save(fig, f'angular_{key}_col')
+
+
+def main():
+    hr = make_run(MAIN_PATH, r'$\mathrm{HR}$', 'steelblue', 1.2)
+    lr = make_run(REF_PATH, r'$\mathrm{LR}$', 'firebrick', 0.5)
+    runs = [hr, lr]
+
+    steps = [('timescales', lambda: fig_timescales()),
+             ('valid', lambda: fig_validation()),
+             ('domain', lambda: fig_full_domain(hr)),
+             ('early', lambda: fig_early(hr)),
+             ('relax', lambda: fig_relaxation(runs)),
+             ('window', lambda: fig_window(runs)),
+             ('spacetime', lambda: fig_spacetime(hr)),
+             ('profiles', lambda: fig_profiles(runs)),
+             ('waves', lambda: fig_waves(runs)),
+             ('heating', lambda: fig_heating(runs)),
+             ('budget', lambda: fig_budget(hr)),
+             ('aspect', lambda: fig_aspect(runs)),
+             ('structure', lambda: fig_structure(hr)),
+             ('angular', lambda: fig_angular(runs))]
+
+    for name, step in steps:
+        if wanted(name):
+            if name == 'structure' and 'f_peak' not in hr:
+                waves(hr)
+            step()
+
+
+if __name__ == '__main__':
+    main()
