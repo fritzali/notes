@@ -50,7 +50,7 @@ mpl.rcParams.update({
     "pgf.preamble": preamble,
     "text.usetex": True,
     "font.family": 'serif',
-    "font.size": 10,
+    "font.size": 9,
 
     "axes.prop_cycle": "cycler('color', ['steelblue', 'olivedrab', 'goldenrod', 'firebrick', 'rebeccapurple'])",
     "axes.labelsize": 'small',
