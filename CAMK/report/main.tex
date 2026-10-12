@@ -21,13 +21,13 @@
 % --- Header & Footer --- %
 
 \fancyhead[C]{\textit{Numerical Simulations of AGN Accretion Disks in PLUTO}}
-\fancyfoot[L]{Summer Student Program 2026}
-\fancyfoot[R]{CAMK PAN \& EMJM MASS}
+\fancyfoot[L]{\textit{Summer Student Program 2026}}
+\fancyfoot[R]{\textit{CAMK PAN \& EMJM MASS}}
 
 \fancypagestyle{plain}{
 	\fancyhead[C]{}
-	\fancyfoot[L]{Summer Student Program 2026}
-	\fancyfoot[R]{CAMK PAN \& EMJM MASS}
+	\fancyfoot[L]{\textit{\textls[-10]{Summer{\kern+1.5pt}Student{\kern+1.5pt}Program{\kern+1.5pt}2026}}}
+	\fancyfoot[R]{\textit{\textls[15]{CAMK{\kern+3pt}PAN{\kern+3pt}\&{\kern+3pt}EMJM{\kern+3pt}MASS}}}
 }
 
 
@@ -42,7 +42,7 @@
 
 \hypersetup{
 	pdfauthor={Fritz Ali Agildere},
-	pdftitle={Course Report – Fritz Agildere}
+	pdftitle={Internship Report – Fritz Agildere}
 }
 
 
@@ -63,7 +63,7 @@
 \newcommand{\colfig}[3]{%
 	\begin{figure}[H]
 		\centering
-		\includegraphics[width=\columnwidth, draft=false]{plots/#1}
+		\includegraphics[width=\columnwidth, draft=true]{plots/#1}
 		\caption{#2}
 		\label{#3}
 	\end{figure}}
@@ -72,7 +72,7 @@
 	\end{multicols}
 	\begin{figure}[H]
 		\centering
-		\includegraphics[width=\textwidth, draft=false]{plots/#1}
+		\includegraphics[width=\textwidth, draft=true]{plots/#1}
 		\caption{#2}
 		\label{#3}
 	\end{figure}
@@ -94,98 +94,112 @@
 	\onecolumn
 		\maketitle
 		\begin{abstract}
-			We present two dimensional radiation hydrodynamic simulations of a thin viscous accretion disk around a nonrotating
+			In this work, we present various two dimensional radiation hydrodynamic simulations of a thin viscous accretion disk around a nonrotating
 			supermassive black hole with a mass of \qty{1e8}{\solarmass} in the PLUTO code. Starting from an existing star disk setup with
-			viscosity and resistivity, we replace the central star with an absorbing inner boundary and a Paczyński–Wiita potential, and
-			add the nonrelativistic two moment radiation module with Kramers, Thomson and an effective Compton opacity. Once radiation is
-			enabled, the advected passive tracer that restricted viscosity, resistivity and opacities to the disk no longer follows the
-			disk material. We therefore develop a replacement called DiskFraction, which classifies each cell from its density relative to
-			adaptive radial reference profiles and from its rotation. We validate the classifier against the tracer in hydrodynamic,
-			magnetohydrodynamic and resistive runs without radiation, and then use it in two radiation runs at different resolutions.
+			viscosity and resistivity, we replace the central star with an absorbing inner boundary, use a Paczyński–Wiita instead of the original
+			Newtonian potential, and add the nonrelativistic two moment radiation module with Kramers, Thomson and an effective Compton opacity. Once
+			radiation is enabled, the advected passive tracer that restricted viscosity, resistivity and opacities to the disk no longer follows
+			the disk material. We therefore develop a replacement called \texttt{DiskFraction} which classifies each cell from its density relative
+			to adaptive radial reference profiles and based on its rotation. We validate this classifier against the tracer in short hydrodynamic,
+			magnetohydrodynamic and resistive runs without radiation, and then use it in two long radiation runs at different resolutions.
 			Both reach statistically steady states with accretion rates of about \num{0.07} to \num{0.09} times the Eddington rate and
-			a radiative efficiency close to \num{0.048} in both runs. They carry quasiperiodic density waves that travel outward with a period of
-			about \num{350} gravitational times, and a weak inflow stream at intermediate altitudes. We discuss which of these features
-			may be artifacts of the fixed sound speed in the viscosity prescription, of the boundaries and of the physics still missing
-			from the setup.
+			a radiative efficiency close to \num{0.048} in both cases. They carry quasiperiodic density waves that travel outward with
+			a period of about \num{350} gravitational times, and show a weak inflow stream at intermediate altitudes. We discuss which
+			of these features may be artifacts of the fixed sound speed in the viscosity prescription, of the boundaries and of the physics
+			still missing from the setup.
+
+		\textit{Acknowledgement:} This project was completed during a student internship at the Nicolaus Copernicus Astronomical Center of
+		the Polish Academy of Sciences (CAMK PAN) supported by a Erasmus Mundus Joint Master in Astrophysics and Space Science (EMJM MASS)
+		scholarship. I would like to thank Miljenko Čemeljić for the incredible opportunity to contribute to this research, and I am especially
+		grateful to Sukalpa Kundu for his ongoing motivation and guidance throughout the entire process.
+
+
+		\textit{Declaration:} The author acknowledges the use of Artificial Intelligence (AI) products by Anthropic, specifically Claude 5.5 Sonnet
+		and Claude 5.5 Opus models throughout the research and writing process. Beyond implementation and diagnostics, the AI was utilized for preliminary
+		interpretation of results as well as conceptual brainstorming. The author independently verified all outcomes and maintains full accountability
+		for the final report.
+
+
 		\end{abstract}
 
 	\begin{multicols}{2}
 
 	\section{Introduction}
 
-	Active Galactic Nuclei (AGN) are powered by accretion onto Super Massive Black Holes (SMBH). In the standard picture, the gas
-	forms a geometrically thin disk in which an effective viscosity transports angular momentum outward and converts gravitational
-	energy into heat that is radiated away locally \cite{shak1973}. For accretion rates around a tenth of the Eddington rate, the inner
-	parts of such disks are dominated by radiation pressure, and in this regime the standard disk with a viscous stress proportional
-	to the total pressure is thermally and viscously unstable \cite{ligh1974, shak1976}. Whether real disks follow this prediction,
-	and what happens to them if they do, is a question that requires following the coupled evolution of gas and radiation in time,
-	which is what numerical simulations can do.
+	Active Galactic Nuclei (AGN) are thought to be powered by accretion onto Super Massive Black Holes (SMBH) and make up some of
+	the brightest objects in the universe. In the standard picture, the surrounding gas forms a geometrically thin disk in which
+	an effective viscosity transports angular momentum outward and converts gravitational energy into heat that is radiated away
+	locally \cite{shak1973}. For accretion rates around one tenth of the Eddington rate, the inner regions of such systems are
+	dominated by radiation pressure, and in this regime the standard disk with viscous stress proportional to the pressure is
+	thermally and viscously unstable \cite{ligh1974, shak1976}. Whether real disks follow this prediction, and what happens in
+	these cases, is a question that requires following the coupled evolution of gas and radiation in time, which is what numerical
+	simulations enable us to do.
 
-	In this work, we build such a setup in the PLUTO code \cite{mign2007}. We start from an existing setup for the interaction of a
-	star with its accretion disk \cite{ceme2019}, adapt it to a black hole and then enable radiation. Along the way, we find that the
-	passive tracer used to separate disk and corona, and with it the physics restricted to the disk, stops working once radiation is
-	enabled. Most of our effort therefore went into a replacement for this tracer, the DiskFraction classifier, which we describe and
-	validate in \Cref{sec:classifier}. With this classifier, we then run the radiation setup at two resolutions until both reach a
-	steady state, and present first results in \Cref{sec:results}. The limitations of the setup are discussed in
-	\Cref{sec:discussion}. Equations of secondary importance, the analysis methods, supplementary figures and the link to all source
-	files are included in the \hyperref[sec:appendix]{appendix}.
+	With this work, we build such a setup in the PLUTO code \cite{mign2007}. We start from an existing setup for the interaction of
+	a magnetized star with its accretion disk \cite{ceme2019} and adapt it to a black hole before enabling radiation as detailed in
+	\Cref{sec:setup}. Along the way, we find that the passive tracer used to separate disk and corona, and with it the physics restricted
+	to the disk, stops working once radiation is enabled. Most of our effort therefore went into building a replacement for this tracer,
+	the \texttt{DiskFraction} classifier, which we describe and validate in \Cref{sec:classifier}. Using this implementation, we then run
+	the radiation setup at two resolutions until both reach a quasi steady state, and present first results in \Cref{sec:results}. The
+	most important limitations of this setup are discussed in \Cref{sec:discussion}. Auxiliary equations, the analysis methods, supplementary
+	figures as well as a link to all source files are included in the \hyperref[sec:appendix]{Appendix}.
 
 	\section{Numerical Setup}
 	\label{sec:setup}
 
 	All simulations use version 4.4 of PLUTO \cite{mign2007} on a two dimensional grid in spherical coordinates, with radius $r$ and
-	polar angle $\theta$ as well as axisymmetry and equatorial symmetry, so that only one hemisphere is simulated. We also use the
-	cylindrical radius $R = r \sin\theta$ and the height $z = r \cos\theta$ above the midplane in what follows.
+	polar angle $\theta$ from the origin, as well as axisymmetry and equatorial symmetry, meaning that only one hemisphere is simulated.
+	Additionally, we also use the cylindrical radius $R = r \sin\theta$ and height $z = r \cos\theta$ above the midplane throughout this text.
 
 	\subsection{Base Model}
 
-	The starting point is a star disk setup from a numerical atlas of such systems \cite{ceme2019}, which solves the equations of viscous and
-	resistive magnetohydrodynamics for a thin disk around a rotating star with a magnetic field. The initial disk follows an
-	analytic solution for a thin viscous disk \cite{kluz2000} with aspect ratio $\epsilon = H/R$ and is embedded in a corona in
-	hydrostatic equilibrium. Viscosity and resistivity follow an alpha prescription and are restricted to the disk by a passive
-	tracer, which is advected with the flow and initially equals one in the disk and zero in the corona. To keep the disk thin
+	The starting point is a stellar setup from a numerical atlas of such systems \cite{ceme2019} which solves the equations of viscous
+	and resistive magnetohydrodynamics for a thin disk around a rotating star with a magnetic field. Its initialisation follows an
+	analytic thin viscous disk \cite{kluz2000} with aspect ratio $\epsilon = H/R$ and is embedded inside a corona in
+	hydrostatic equilibrium. Viscosity and resistivity follow an $\alpha$ prescription and are restricted to the disk by a passive
+	tracer, which is advected with the flow and initially equals one in the disk and zero in the corona. To ensure the disk stays thin
 	without radiative cooling, the setup also includes an artificial cooling term, which S. Kundu and M. Čemeljić use in their setup.
-	It removes a multiple of the local viscous and Ohmic heating from the disk gas, again weighted by the tracer, wherever this
+	It removes a multiple of the local viscous and Ohmic heating from the gas, again weighted by the tracer, wherever this
 	removal stays below ten percent of the thermal energy of the cell. Its exact form is given in \Cref{app:equations}.
 
 	\subsection{Black Hole Adaptation}
 
-	Our first tests ran on the stellar setups of the atlas. For a black hole, we replace the stellar surface at the inner radial
+	Our initial tests ran on the stellar setups of the atlas. For a black hole, we replace the stellar surface at the inner radial
 	boundary with an absorbing diode condition, which copies the state of the first active cell but lets gas and radiation only
-	flow inward. The gravity of the star is replaced with the pseudo Newtonian potential \cite{pacz1980}
+	flow inward. The gravity of the central star is replaced with the pseudo Newtonian potential \cite{pacz1980}
 	\begin{equation}
 		\Phi = -\frac{G M}{r - r_s}
 	\end{equation}
-	where $r_s = 2 G M / c^2$ is the Schwarzschild radius. Within Newtonian dynamics, this potential reproduces the innermost stable
-	circular orbit of a nonrotating black hole at six gravitational radii, and with it the efficiency $\eta = 1/16$ of a disk that
-	ends there. Lengths are measured in gravitational radii $r_g = G M / c^2$ and times in gravitational times $t_g = r_g / c$ with
-	velocities in units of $c$ accordingly. Without radiation, the equations solved here contain no other scale, so all results
-	of the non radiative runs hold for any black hole mass.
+	where the term $r_s = 2 G M / c^2$ gives the Schwarzschild radius. Within Newtonian dynamics, this potential reproduces the
+	innermost stable circular orbit (ISCO) of a nonrotating black hole at six gravitational radii, and with it $\eta = 1/16$ for the
+	efficiency of a disk that ends there. Lengths are measured in gravitational radii $r_g = G M / c^2$ and times in gravitational
+	times $t_g = r_g / c$ where velocities have units of $c$ accordingly. Without radiation, the equations solved here contain no
+	other scale, so all results of the non radiative runs should hold for any black hole mass.
 
-	The domain extends from $r = 2.1$ to $r = 30$ in gravitational radii on a logarithmic radial grid and from the pole to the
-	midplane on a uniform polar grid. The initial disk has $\epsilon = 0.1$ and an inner edge at $R = 6$ in these units, while
+	The domain extends from $r = 2.{\kern-0.5pt}1$ to $r = 30$ in code units on a logarithmic radial grid and from the pole to the
+	midplane on a uniform polar grid. The initial disk has $\epsilon = 0.{\kern-0.5pt}1$ and an inner edge at $R = 6$ in these units, while
 	the corona has the density profile $\rho_c \propto r^{-3/2}$ with a normalization of \num{0.01} in code units. At the
 	outer boundary, the analytic disk is reinjected in a narrow wedge around the midplane, while inflow of coronal gas is
 	blocked at higher latitudes. All tests of the tracer and the classifier in \Cref{sec:classifier} were performed in this
 	black hole setup, that is for a nonrotating black hole under Newtonian dynamics with the pseudo potential, with and without
 	magnetic fields and resistivity.
 
-	\subsection{Radiation and Physical Units}
+	\subsection{Radiation \& Physical Units}
 
-	For radiation, we use the nonrelativistic version of the two moment radiation module of PLUTO \cite{melo2019, melo2021} with
-	the full speed of light. Radiation introduces physical scales through the opacities and the radiation constant, so the units
-	have to be fixed. We choose a black hole mass of \qty{1e8}{\solarmass} for all radiation runs, which gives $r_g \approx \qty{1.48e13}{\centi\meter}$
-	and $t_g \approx \qty{493}{\second}$ as units. The density unit $\rho_0 = \qty{5.8e-10}{\gram\per\centi\meter\cubed}$ is
-	chosen together with the viscosity parameter $\alpha = 0.5$ so that viscous heating and radiative cooling of the initial
-	disk roughly balance, which corresponds to accretion at around a tenth of the Eddington rate. A twenty times higher density
-	unit with $\alpha = 1$ gave a heating excess equivalent to strongly super Eddington accretion, and the disk was disrupted
-	within a few hundred gravitational times. In the radiation runs, the artificial cooling is removed, since the radiation now
-	carries the heat away.
+	For radiation, we use the nonrelativistic version of the two moment radiation module of PLUTO with the full speed of light
+	\cite{melo2019, melo2021}. Radiation introduces physical scales through the opacities as well as the radiation constant, so
+	the units have to be fixed. We choose a black hole mass of \qty{1e8}{\solarmass} for all radiation runs, which gives us units of
+	$r_g \approx \qty{1.48e13}{\centi\meter}$ and $t_g \approx \qty{493}{\second}$ as the normalization. The density unit then is chosen
+	to be $\rho_0 = \qty{5.8e-10}{\gram\per\centi\meter\cubed}$ together with the viscosity parameter $\alpha = 0.5$ set in such a way that
+	viscous heating and radiative cooling of the initial disk are roughly balanced, which corresponds to accretion at around a tenth of
+	the Eddington rate. A twenty times higher density unit with $\alpha = 1$ gave a heating excess equivalent to strongly super Eddington
+	accretion during a previous run, and the disk was disrupted within a few hundred gravitational times. In the radiation runs, the
+	artificial cooling is removed, since heat is now carried away by the radiation.
 
-	For the opacities, we assume a hydrogen mass fraction $X = 0.7$ and a metallicity $Z = 0.02$ and include Kramers free free and
-	bound free absorption \cite{kram1923} as well as Thomson scattering with $\kappa_\mathrm{es} = 0.2 \left(1 + X\right)$ in
-	units of square centimeters per gram. PLUTO treats scattering as coherent, so in this form electron scattering never
-	exchanges energy between gas and radiation. In AGN disks, however, it is Compton scattering that keeps the gas close to the
+	Regarding opacities, we assume a standard hydrogen mass fraction $X = 0.7$ with a metallicity $Z = 0.02$ and include Kramers
+	free free and bound free absorption \cite{kram1923} as well as a term $\kappa_\mathrm{es} = 0.2 \left(1 + X\right)$ for Thomson scattering
+	in \unit{\centi\meter\squared\per\gram} units. PLUTO treats scattering as fully coherent, so in this form electron scattering never
+	exchanges energy between gas and radiation. Inside AGN disks, however, it is Compton scattering that keeps the gas close to the
 	radiation temperature, and without it viscous heating drove the gas in the inner disk to between \num{1e10} and
 	\qty{1e11}{\kelvin} in our tests, until overpressured bubbles broke the disk apart. We therefore add an effective absorption
 	opacity
@@ -193,17 +207,17 @@
 		\kappa_C = \kappa_\mathrm{es} \frac{4 k_B T_r^4}{m_e c^2 \left(T_g + T_r\right) \left(T_g^2 + T_r^2\right)}
 		\label{eq:compton}
 	\end{equation}
-	with gas temperature $T_g$ and radiation temperature $T_r$ as inputs. With this opacity, the absorption term
+	which has gas temperature $T_g$ and radiation temperature $T_r$ as inputs. Given this opacity, including the absorption term
 	$\rho \kappa_C c \left(a_R T_g^4 - E_r\right)$ reproduces exactly the nonrelativistic Compton exchange rate
 	\begin{equation}
 		\Lambda_C = 4 \rho \kappa_\mathrm{es} c E_r \frac{k_B \left(T_g - T_r\right)}{m_e c^2}
 	\end{equation}
 	since the factor $T_g - T_r$ cancels analytically against $T_g^4 - T_r^4$ in the absorption form. This rate is the usual
-	approximation for Compton cooling and heating in radiation hydrodynamics, and a term of this form is used for example in
+	approximation for Compton cooling and heating in radiation hydrodynamics, and terms of this form are included for example in
 	radiation magnetohydrodynamic simulations of accretion disks \cite{jian2019}. The Compton part is moved from scattering to absorption, so
-	the total extinction stays that of Thomson scattering and only the energy exchange changes. Several safeguards complete the
-	opacity model and are listed in \Cref{app:equations}. They hold the Compton rate fixed above a gas temperature of
-	\qty{1e9}{\kelvin} and switch the energy exchange off in the corona and in gas that moves faster than about nine tenths of
+	the total extinction stays that of Thomson scattering and only the energy exchange changes. Several safeguards are added to complete the
+	opacity model, these are listed in \Cref{app:equations}. They hold the Compton rate fixed above gas temperatures of
+	\qty{1e9}{\kelvin} and switch energy exchange off in the corona and in gas that moves faster than about nine tenths of
 	the speed of light. A floor of \qty{1e4}{\kelvin} for the gas temperature prevents surface layers from cooling far below the
 	range in which the opacity model is valid.
 
@@ -212,123 +226,114 @@
 
 	In the base model, the passive tracer decides where viscosity, resistivity, artificial cooling and later the opacities act.
 	Once radiation is enabled, this tracer stops following the disk material in our runs. It stays at its initial distribution
-	while the disk itself evolves, as shown further below. We did not isolate the cause of this in the code. But even without
-	radiation, an advected scalar is smeared out by numerical diffusion where it has steep gradients, which on an Eulerian grid is
-	mainly the disk surface. We therefore replace the tracer with a classifier that derives the disk membership of each cell from
-	its current state alone.
+	while the disk itself evolves, as discussed further below. We did not isolate the cause of this in the code. Instead, we
+	replace the tracer with a classifier that derives the disk membership of each cell from its current state alone.
 
 	\subsection{Construction}
 
-	DiskFraction assigns each cell a value $f$ between zero for corona and one for disk from two criteria. The first compares the
+	\texttt{DiskFraction} assigns each cell a value $f$ between zero for corona and one for disk from two criteria. The first compares the
 	density $\rho$ of the cell with a corona reference density $\rho_c(r)$ and a disk reference density $\rho_d(r)$ at its radius,
 	which are stored in \num{90} logarithmic radial bins and interpolated linearly in logarithmic radius and density. With the
 	relative position of the cell between these references
 	\begin{equation}
-		s = \frac{\log \rho - \log \rho_c}{\max\left(\log \rho_d - \log \rho_c, \, 0.5\right)}
+		s = \frac{\log \rho - \log \rho_c}{\max\left(\log \rho_d - \log \rho_c\kern+1pt, 0.5\right)}
 	\end{equation}
 	and the logistic function $\sigma(x) = 1 / \left(1 + e^{-x}\right)$ the classifier reads
 	\begin{equation}
-		f = \sigma\left(\frac{s - 1/6}{0.3}\right) \sigma\left(\frac{\lvert v_\phi \rvert \sqrt{R} - 0.5}{0.1}\right)
+		f = \sigma\left(\frac{s - 1{\kern-0.5pt}/6}{0.3}\right) \sigma\left(\frac{\lvert v_\phi \rvert \sqrt{R} - 0.5}{0.{\kern-0.5pt}1}\right)
 		\label{eq:diskfrac}
 	\end{equation}
 	where the second factor compares the rotation velocity $v_\phi$ with the Newtonian Keplerian velocity $R^{-1/2}$ in code units,
 	so that only dense and rotating gas counts as disk. The midpoint of the density criterion lies one sixth of the way from the
 	corona to the disk reference in logarithmic density. At the disk reference density itself, the first factor is only about
 	\num{0.94} and $f$ therefore stays slightly below one inside the disk. At the start of a run, before any profile has been updated, the
-	classifier $f$ equals exactly the initial tracer, since both are evaluated from the same condition that sets up the disk.
+	classifier $f$ equals the initial tracer exactly, since both are evaluated from the same condition that sets up the disk itself.
 
 	By default, the references are built from the classification itself. After every time step, the corona reference of a bin
-	becomes the mean density weighted with $1 - f$ and the disk reference the mean density weighted with $f$ over all cells in the
-	bin. A disk estimate only counts if its weighted volume exceeds one thousandth of the bin volume, and bins that never had one
-	copy the nearest valid bin. Both profiles are smoothed in time by an exponential moving average, which gives each new estimate
-	the weight
+	becomes the mean density weighted with $1\kern-1pt - \kern+0.5ptf$ and the disk reference the mean density weighted with
+	$\kern+1pt f \kern-0.5pt$ over all cells in the bin. A disk estimate only counts if its weighted volume exceeds one thousandth
+	of the bin volume, and bins that never had one copy the nearest valid bin. Both profiles are smoothed in time by an exponential
+	moving average, which gives each new estimate the weight
 	\begin{equation}
-		w = 1 - \exp\left(-\frac{\Delta t}{\tau}\right)
+		w = 1\kern-0.5pt - \exp\left(-\frac{\Delta t}{\tau}\right)
 		\label{eq:ema}
 	\end{equation}
 	with the time $\Delta t$ between two updates and the time constant $\tau = 6 \, t_g$ as parameters. The state of the
 	classifier is written with every output, so that restarts continue with exactly the same classification.
 
-	\subsection{Versions and Guards}
+	\subsection{Versions \& Guards}
 
-	The first version of the classifier gave each update the fixed weight \num{0.05} instead. Updated after every step, the
-	profiles then had a memory of about twenty steps, which depends on resolution and corresponds to about \num{0.12} and
-	\num{0.17} gravitational times at the two resolutions used below. In a run with this version at the higher resolution, the
-	density criterion inverted after the disk had been disrupted. In the bins at radii between about \num{2.4} and \num{3.4} the
-	disk reference stayed about one dex below the corona reference until the end of the run. Since the references were built
-	from the classification, this inversion sustained itself, as dense gas classified as corona raised the corona reference and
-	thin gas classified as disk lowered the disk reference. The rotation criterion could not compensate, because gas plunging
-	inside the innermost stable orbit keeps its specific angular momentum of about \num{3.7} and therefore rotates two to
-	three times faster than the Newtonian Keplerian velocity there. The result was a region close to the black hole classified
-	as disk up to about \ang{45} above the midplane, while the dense plunging stream inside it lost its viscosity and its coupling
-	to the radiation.
+	A first version of the classifier gave each update the fixed weight \num{0.05} instead. Updated after every step, the
+	profiles then had a memory of about twenty steps, which depends on resolution and corresponds to approximately $0.{\kern-0.5pt}12$ and
+	$0.{\kern-0.5pt}17$ gravitational times for the two configurations described below. In a run with this version at the higher
+	resolution, the density criterion inverted after the disk had been disrupted. In bins at radii between about \num{2.4} and \num{3.4} the
+	disk reference density remained at about a factor of ten below the corona reference until the end of the run. Since the references kept
+	getting built from the classification, this inversion sustained itself, due to dense gas classified as corona raising the corona reference
+	and thin gas classified as disk lowering the mean disk value. The rotation criterion was not able to compensate, because any gas plunging
+	inside the ISCO keeps its specific angular momentum of about \num{3.7} and therefore rotates two to three times faster than
+	the Newtonian Keplerian velocity there. The result was an annular region close to the black hole classified as disk up to about \ang{45}
+	above the midplane, while the dense plunging inner stream lost its viscosity and the coupling to radiation.
 
-	The current version therefore adds three guards. The logarithmic span between the references used in the classification is
-	at least \num{0.5} dex, as already included in the denominator of $s$ above, so an inverted span can no longer flip the
+	Prompted by this, the current version adds multiple guards to the classifier. The logarithmic span between references used must be at least
+	\qty{0.5}{\dex} as the denominator of $s$ already includes above, so an inverted span can never flip the
 	density criterion. After every update, bins with a smaller span copy both references from the nearest bin with a sufficient
-	span, searching outward first, or have their disk reference raised to the minimum span if no such bin exists. Finally, the
-	smoothing uses the time constant of \Cref{eq:ema} instead of a fixed weight, so that the memory of the profiles is the same
+	span, searching outward first, or have their disk reference raised to the minimum span if no such bins exists anywhere. Finally,
+	the smoothing uses the time constant of \Cref{eq:ema} instead of a fixed weight, so that the memory of the profiles is the same
 	at every resolution and update cadence. Slight artifacts at the inner boundary still appear in this version, but the guards
 	let the classifier repair itself instead of locking an error in place.
 
-	As an option, the references can also be built without reference to the classification. The disk reference is then the
+	As a further option, the references can also be built without reference to the classification. The disk profile then takes the
 	maximum density of each bin and the corona reference the geometric mean density of the cells above $z / R = 0.5$ in that bin.
-	This mode cannot feed back on itself, but it has been tested much less than the default and is not used for the results
+	This mode cannot feed back on itself, but it has not been tested to the same degree as the default and is not used for the results
 	presented here.
 
 	\subsection{Validation}
 
-	To test the classifier, we ran the black hole setup without radiation as hydrodynamic, magnetohydrodynamic and resistive
+	In testing the classifier, we ran the black hole setup without radiation as hydrodynamic, magnetohydrodynamic and resistive
 	magnetohydrodynamic simulations with \num{90} by \num{45} cells up to $t = 1000$ in gravitational times. Each case was run
 	twice. In the tracer driven run, the tracer $f_\mathrm{tr}$ decides where viscosity, resistivity and the artificial cooling
-	act. In the classifier driven run, DiskFraction takes this role, while the tracer is still advected passively and can be
-	compared. \Cref{fig:valid_hd} shows both for the hydrodynamic case. The two runs start identically and still look alike at
-	$t = 250$ but from about $t = 500$ onward, the surface layer and the corona of the classifier driven run are thinner. Within
-	the classifier driven run, tracer and classifier mark the same disk body, while the tracer extends further into the lifted
+	act. In the classifier driven run, \texttt{DiskFraction} takes this role, while the tracer is still advected passively and
+	can be compared. \Cref{fig:valid_hd} shows both for the hydrodynamic case. The two runs start identically and still look alike
+	at $t = 250$ but from about $t = 500$ onward, the surface layer and the corona of the classifier driven run are somewhat thinner.
+	Within the classifier driven run, tracer and classifier mark the same disk body, while the tracer extends further into the lifted
 	surface layer. This gas has left the disk in density and rotation, so the classifier counts it as corona, while the tracer
 	only remembers where it came from.
 
-	\textfig{valid_hd_text.png}{Hydrodynamic black hole setup without radiation. From top to bottom: density of the run driven by the
-		passive tracer, density of the run driven by DiskFraction, and the passive tracer $f_\mathrm{tr}$ and DiskFraction $f$ within
-		the latter run.}{fig:valid_hd}
+	\textfig{valid_hd_text.png}{Hydrodynamic black hole setup without radiation. Density of the run driven by the
+		passive tracer on top with that driven by \texttt{DiskFraction} below, and the passive tracer $f_\mathrm{tr}$ versus
+		\texttt{DiskFraction} $f_\mathrm{df}$ within the latter run at the bottom.}{fig:valid_hd}
 
-	\Cref{fig:valid_agreement} quantifies this with the agreement $1 - \langle\lvert\Delta f\rvert\rangle$ where
-	$\Delta f = f - f_\mathrm{tr}$ is averaged over the domain. Weighted by mass, the agreement stays at about \num{95} percent in
-	all three cases, and most of the remaining difference is due to $f$ staying slightly below one inside the disk. Weighted by
-	volume, the agreement dips to between about \num{84} and \num{87} percent around $t = 450$ while the surface layer is most
-	disturbed, and in the hydrodynamic case falls to about \num{78} percent at the end of the run. The maps of $\Delta f$ in
-	\Cref{fig:valid_diff} show that the difference is negative almost everywhere and concentrated in the surface layer.
+	\Cref{fig:valid_agreement} quantifies this via the agreement metric $1 \kern-0.5pt - \langle\lvert\Delta f\rvert\rangle$ with
+	$\Delta f = f_\mathrm{df} - f_\mathrm{tr}$ averaged over the domain. Weighted by mass, the agreement stays around
+	\qty{95}{\percent} in all cases, and most of the remaining difference is due to $f$ remaining slightly below one
+	inside the disk region. Weighted by volume, the agreement dips to between about \qty{84}{\percent} and \qty{87}{\percent} around
+	$t = 450$ while the surface layer is most disturbed, and in the hydrodynamic case falls to about \qty{78}{\percent} at the
+	end of the run. The maps of $\Delta f$ in \Cref{fig:valid_diff} show negative differences almost everywhere, most concentrated
+	near the surface layer.
 
-	\colfig{valid_agreement_col.png}{Agreement between DiskFraction and the passive tracer in the classifier driven runs without
-		radiation, weighted by mass \textit{(solid)} and by volume \textit{(dashed)}.}{fig:valid_agreement}
+	\colfig{valid_agreement_col.png}{Match between $f_\mathrm{df}$ and $f_\mathrm{tr}$ in radiationless classifier driven runs,
+	mass \textit{(solid)} and volume \textit{(dashed)} weighted.}{fig:valid_agreement}
 
-	With radiation, the picture changes completely. \Cref{fig:valid_rad} shows the first radiation run, which still lacks
-	Compton coupling and in which DiskFraction already drives the physics. Overpressured bubbles break up the disk, and the
-	classifier marks the lifted, dense and rotating gas as disk up to large heights. The passive tracer, on the other hand, keeps
-	its initial wedge throughout and no longer follows the gas at all.
-
-	\textfig{valid_rad_text.png}{First radiation run without Compton coupling. From top to bottom: density, passive tracer
-		$f_\mathrm{tr}$ and DiskFraction $f$ of this run.}{fig:valid_rad}
+	With radiation, the picture changes completely. In the first radiation run, which still lacks any type of Compton coupling and
+	in which \texttt{DiskFraction} already determines the physics, overpressured bubbles break up the disk, and the classifier marks
+	the lifted, dense and rotating gas as disk material up to large heights. The passive tracer keeps its initial wedge throughout
+	the entire run and no longer follows the gas at all, matching the previously described error mode.\pagebreak
 
 	\section{Results}
 	\label{sec:results}
 
-	We now turn to the radiation runs with Compton coupling and the classifier. The run LR uses \num{90} by \num{45} cells and
-	reaches $t = 5 \times 10^4$ in gravitational times, with outputs every \num{50} gravitational times. The run HR uses \num{120}
-	by \num{90} cells and reaches $t = 4 \times 10^4$ with the same output cadence, which increases to every five gravitational
-	times from $t = 3 \times 10^4$ onward for the wave analysis. Apart from the resolution, the two runs differ in the version of
-	the classifier. LR still uses the first version described above, while HR uses the current version with all guards. Differences
-	between the runs can therefore not be attributed to resolution alone. For the black hole mass of our setup, the run time of HR
-	corresponds to about \num{230} days. The analysis methods are summarized in \Cref{app:methods}.
+	We now turn to the radiation runs with Compton coupling and the classifier included. The run LR uses \num{90} by \num{45} cells and
+	reaches $t = 5 \times 10^4$ in code units, with outputs every \num{50} gravitational times. The run HR uses \num{120}
+	by \num{90} cells and reaches $t = 4 \times 10^4$ with the same output cadence, which increases to \num{5} gravitational
+	times from $t = 3 \times 10^4$ onward to enable a more accurate wave analysis. Apart from the resolution, the two runs differ
+	in the version of the classifier, where LR still uses the first version described above, while HR uses the current version with
+	all guards. Differences between the runs can therefore not be attributed to resolution alone. For the black hole mass of our setup,
+	the run time of HR corresponds to about \num{230} days. The analysis methods are summarized in \Cref{app:methods}.
 
-	\subsection{Evolution and Relaxation}
+	\subsection{Evolution \& Relaxation}
 
 	In the first few hundred gravitational times, the disk adjusts to the radiation. It inflates, and a dense layer forms at its
 	surface, which then breaks up into sheets that are lifted to several gravitational radii above the midplane.
-
-	\textfig{early_rho_text.png}{Density in the early evolution of HR. The disk inflates and forms a dense surface layer that breaks
-		up.}{fig:early}
-
 	After this, the two runs evolve differently, as \Cref{fig:relax_mass} shows. In HR, the disk is blown apart. Its mass falls
 	from \num{132} to about \num{2} in units of $\rho_0 r_g^3$ by $t \approx 2000$ in gravitational times, and the disk stays
 	fragmented until about $t = 10500$ before it is rebuilt by about $t = 15000$ and settles at a mass of about \num{18} in the
@@ -337,6 +342,9 @@
 	which can smooth out the perturbations that grow into the breakup in HR, but the different classifier versions may also
 	contribute. In both runs, the corona loses most of its mass early on and is not replenished, since the outer boundary blocks
 	coronal inflow.
+
+	\textfig{early_rho_text.png}{Density in the early evolution of HR. The disk inflates and forms a dense surface layer that breaks
+		up.}{fig:early}
 
 	\colfig{relax_mass_col.png}{Total, disk and corona mass of both radiation runs, split by DiskFraction. The time axis is linear up
 		to $t = 1.1 \times 10^4$ and logarithmic beyond.}{fig:relax_mass}
