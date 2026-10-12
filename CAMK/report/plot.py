@@ -776,6 +776,12 @@ def map_colorbar(fig, im, cax, key):
 
 
 def map_grid(groups, width, name, xlim=(0, 20), ylim=(0, 10), cbar=True, yaxis=True):
+    fig = build_map_grid(groups, width, xlim, ylim, cbar, yaxis)
+    tighten_map(fig)
+    save(fig, name)
+
+
+def build_map_grid(groups, width, xlim=(0, 20), ylim=(0, 10), cbar=True, yaxis=True):
     """groups: list of (colorbar key, rows), each row a list of cells (field, key, geo, t, tag[, extra])"""
     ncol = len(groups[0][1][0])
     fig, axes, caxes = map_layout([len(rows) for _, rows in groups], ncol, width, xlim, ylim, cbar=cbar)
@@ -799,8 +805,24 @@ def map_grid(groups, width, name, xlim=(0, 20), ylim=(0, 10), cbar=True, yaxis=T
             i += 1
         if cax is not None:
             map_colorbar(fig, im, cax, cbar_key)
-    tighten_map(fig)
-    save(fig, name)
+    return fig
+
+
+def map_pair(left_fig, right_fig, names):
+    """Tighten two single panel map figures of equal width and align them for placement side by side:
+    equal panel size and height, extra horizontal space on the outer sides."""
+    figs = (left_fig, right_fig)
+    for fig in figs:
+        tighten_map(fig)
+    margins = [fig._map_spec['margins'] for fig in figs]
+    span = max(l + r for l, r, _, _ in margins)
+    bottom = max(m[2] for m in margins)
+    top = max(m[3] for m in margins)
+    (l0, r0, _, _), (l1, r1, _, _) = margins
+    place_map(left_fig, l0 + span - (l0 + r0), r0, bottom, top)
+    place_map(right_fig, l1, r1 + span - (l1 + r1), bottom, top)
+    for fig, name in zip(figs, names):
+        save(fig, name)
 
 
 SNAP_CACHE = {}
@@ -933,8 +955,9 @@ def fig_full_domain(run):
         for k, label in enumerate(('init', 'mean')):
             map_grid([(key, [[cells(key)[k]]])], COL, f'domain_{key}_{label}_col', lim, lim)
 
-    map_grid([('rho', [[cells('rho')[0]]])], COL, 'domain_rho_init_alt_col', lim, lim, cbar=False)
-    map_grid([('rho', [[cells('rho')[1]]])], COL, 'domain_rho_mean_alt_col', lim, lim, yaxis=False)
+    map_pair(build_map_grid([('rho', [[cells('rho')[0]]])], COL, lim, lim, cbar=False),
+             build_map_grid([('rho', [[cells('rho')[1]]])], COL, lim, lim, yaxis=False),
+             ('domain_rho_init_alt_col', 'domain_rho_mean_alt_col'))
 
     for name, (a, b) in [('thermal', ('Tg', 'ratio')), ('velocity', ('vr', 'vphi'))]:
         map_grid([(a, [cells(a)]), (b, [cells(b)])], TEXT, f'domain_{name}_text', lim, lim)
