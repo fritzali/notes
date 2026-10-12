@@ -21,8 +21,8 @@
 % --- Header & Footer --- %
 
 \fancyhead[C]{\textit{Numerical Simulations of AGN Accretion Disks in PLUTO}}
-\fancyfoot[L]{\textit{Summer Student Program 2026}}
-\fancyfoot[R]{\textit{CAMK PAN \& EMJM MASS}}
+\fancyfoot[L]{\textit{\textls[-10]{Summer{\kern+1.5pt}Student{\kern+1.5pt}Program{\kern+1.5pt}2026}}}
+\fancyfoot[R]{\textit{\textls[15]{CAMK{\kern+3pt}PAN{\kern+3pt}\&{\kern+3pt}EMJM{\kern+3pt}MASS}}}
 
 \fancypagestyle{plain}{
 	\fancyhead[C]{}
@@ -63,7 +63,7 @@
 \newcommand{\colfig}[3]{%
 	\begin{figure}[H]
 		\centering
-		\includegraphics[width=\columnwidth, draft=true]{plots/#1}
+		\includegraphics[width=\columnwidth, draft=false]{plots/#1}
 		\caption{#2}
 		\label{#3}
 	\end{figure}}
@@ -72,7 +72,7 @@
 	\end{multicols}
 	\begin{figure}[H]
 		\centering
-		\includegraphics[width=\textwidth, draft=true]{plots/#1}
+		\includegraphics[width=\textwidth, draft=false]{plots/#1}
 		\caption{#2}
 		\label{#3}
 	\end{figure}
@@ -317,7 +317,7 @@
 	With radiation, the picture changes completely. In the first radiation run, which still lacks any type of Compton coupling and
 	in which \texttt{DiskFraction} already determines the physics, overpressured bubbles break up the disk, and the classifier marks
 	the lifted, dense and rotating gas as disk material up to large heights. The passive tracer keeps its initial wedge throughout
-	the entire run and no longer follows the gas at all, matching the previously described error mode.\columnbreak
+	the entire run and no longer follows the gas at all, matching the previously described error mode.
 
 	\section{Results}
 	\label{sec:results}
@@ -344,7 +344,7 @@
 	contribute. In both runs, the corona loses most of its mass early on and is not replenished, since the outer boundary blocks
 	coronal inflow.
 
-	\textfig{early_rho_text.png}{Density in the early evolution of HR. The disk inflates and forms a dense surface layer that
+	\textfig{early_rho_text.png}{Density of HR in the early evolution. The disk inflates and forms a dense surface layer that
 	breaks up.}{fig:early}
 
 	To decide when a run has reached a steady state, we compare running means of the disk mass, the radiation energy, the
@@ -353,123 +353,121 @@
 	and $t = 9225$ for LR in gravitational times. All averages in the following are taken over these windows, and within them
 	the drift of the averages is consistent with zero.
 
+	\vspace{-0.5ex}
 	\colfig{relax_mass_col.png}{Mass split by \texttt{DiskFraction} for both radiation runs. Time is linear until
-	$t = 1.1 \times 10^4$ and logarithmic after.}{fig:relax_mass}
+	$t = 1.1 \times 10^4$ and logarithmic after.\vspace{-1.75ex}}{fig:relax_mass}
 
 	\subsection{Steady State}
 
-	\Cref{fig:domain} shows the initial density of HR and its average over the last \num{10000} gravitational times, together with
-	the disk surface where $f = 0.5$ and the surface where the optical depth from the pole reaches unity. In the steady state, the
-	disk is thinner than initially. At $R = 10$ its aspect ratio is about \num{0.057} in HR and \num{0.042} in LR, compared with
-	\num{0.1} initially, which means that LR resolves the disk with only about one cell per scale height against about three in HR.
-	The corona has drained down to the density floor, and the unit optical depth surface lies inside the disk.
+	\Cref{fig:domain_init} depicts the initial density setup of HR and \Cref{fig:domain_mean} its average over the last \num{10000}
+	gravitational times. In the steady state, the disk is thinner than initially. At $R = 10$ its aspect ratio is about \num{0.057}
+	in HR and \num{0.042} in LR compared with $0.{\kern-0.5pt}1$ initially, which means that LR resolves the disk with only about one cell
+	per scale height against about three in the HR run. The corona has drained down to the density floor, and the unit optical depth
+	surface lies inside the disk. The accretion rate in \Cref{fig:mdot} is flat in radius out to about $r = 17$
+	in both runs, so that the inner disk is in inflow equilibrium. Further out, the disk has not yet relaxed, which matches the
+	estimate that viscous inflow reaches radii of \num{26} and \num{30} within the HR and LR run times. Beyond $r = 17$ we get a
+	net accretion rate that is the difference of a mean inflow of roughly \num{0.2} Eddington rates and an outflow around $0.{\kern-0.5pt}13$
+	in the HR case, so the gas there circulates strongly. The corona carries twelve percent of the accretion at the inner boundary.
 
-	The accretion rate in \Cref{fig:mdot} is flat in radius out to about $r = 17$ in gravitational radii in both runs, so that the
-	inner disk is in inflow equilibrium. Further out, the disk has not yet relaxed, which matches the estimate that viscous inflow
-	reaches radii of about \num{26} and \num{30} within the run times of HR and LR. Beyond about $r = 17$ the net accretion rate
-	is the small difference of a mean inflow of about \num{0.2} times the Eddington rate and an outflow of about \num{0.13} times
-	the Eddington rate in HR, so the gas there circulates strongly. The corona carries about twelve percent of the accretion at the
-	inner boundary.
+	\colfig{mdot_col.png}{Time averaged accretion rate, positive for inflow, in total and split into disk versus corona, as well as
+	inflows and outflows. Shaded bands show HR standard errors.}{fig:mdot}
 
-	\colfig{mdot_col.png}{Time averaged accretion rate, positive for inflow, in total and split into disk and corona, as well as the
-	inflowing and outflowing parts. Shaded bands show the standard errors of HR.}{fig:mdot}
-
-	The mean accretion rate at the inner boundary is \num{0.073} times the Eddington rate in HR and \num{0.091} in LR, where the
-	Eddington rate is defined with the efficiency $\eta = 1/16$ from above. This corresponds to about \num{0.30} and
+	At the inner boundary, in Eddington normalized units, the mean accretion rate is \num{0.073} in HR and \num{0.091} in LR with the
+	Eddington rate defined via the efficiency $\eta = 1/16$ from above. In solar masses, this corresponds to about \num{0.30} and
 	\qty{0.38}{\solarmass\per\year} respectively. The luminosity leaving the outer boundary is \num{0.056} and \num{0.070} times
-	the Eddington luminosity, or about \qty{8.3e44}{\erg\per\second} and \qty{1.0e45}{\erg\per\second} for the two runs. The ratio
-	of both gives a radiative efficiency of about \num{0.048} in both runs, somewhat below the value for a disk that radiates all its
-	binding energy. The vertical flux at the photosphere matches the vertically integrated viscous heating from about $r = 8$
-	outward, but falls short of it further in, as \Cref{fig:balance} in the appendix shows. Part of the heat released close to the
-	black hole is therefore probably advected inward instead of being radiated, which would be consistent with the lower
-	efficiency.
+	the Eddington luminosity, or about \qty{8.3e44}{\erg\per\second} and $1{\kern-0.5pt}.0\times 10^{45}\kern+0.5pt\unit{\erg\per\second}$
+	between the runs. The ratio of both gives a radiative efficiency of about \num{0.048} in both runs, somewhat below the value for a disk
+	that radiates all its binding energy. The vertical flux at the photosphere matches the vertically integrated viscous heating from about
+	$r = 8$ outward, but falls short of it further in, as \Cref{fig:balance} shows. Part of the heat released close to the
+	black hole is therefore likely advected inward instead of being radiated, which is consistent with the lower efficiency.
 
 	For a steady thin disk with a stress free inner edge at six gravitational radii, the surface density follows
 	\begin{equation}
-		\Sigma_\mathrm{ss} = \frac{\dot M}{3 \pi \nu} \left(1 - \sqrt{\frac{6}{R}}\right)
+		\Sigma_\mathrm{ss} = \frac{\dot M}{3\pi\nu} \left(1 - \sqrt{6 / R}\kern+1pt\right)
 		\label{eq:sigma}
 	\end{equation}
-	with the kinematic viscosity $\nu$ of our prescription in \Cref{app:equations}. The measured surface density in
-	\Cref{fig:sigma} lies below this profile at almost all radii and has a ring like maximum at about $R = 17$ where the inflow
+	with the kinematic viscosity $\nu$ of our prescription defined in \Cref{app:equations}. The measured surface density in
+	\Cref{fig:sigma} lies below this profile at almost all radii except for a ring like maximum around $R = 17$ once the inflow
 	equilibrium ends.
 
-	\colfig{sigma_col.png}{Time averaged surface density and the steady state profile $\Sigma_\mathrm{ss}$ of \Cref{eq:sigma} for the
-	measured accretion rate. Shaded bands show the standard errors.}{fig:sigma}
+	\colfig{domain_rho_init_col.png}{Initially seeded HR density distribution.}{fig:domain_init}
 
-	A surface density below the steady state profile means that angular momentum is transported more efficiently than the
+	\setcounter{figure}{7}
+	\colfig{sigma_col.png}{Time averaged surface density with steady state profile for given accretion rate.
+	Shaded bands show errors.\vspace{-0.75em}}{fig:sigma}
+
+	A surface density below the steady state disk profile indicates that the transport of angular momentum is more efficient than the
 	prescribed viscosity alone would allow. Inverting \Cref{eq:sigma} for an effective viscosity parameter gives values of about
-	two to three times the prescribed $\alpha$ in both runs, as shown in \Cref{fig:alpha}, except for a narrow dip to about the
+	two to three times the prescribed $\alpha$ in both runs as shown in \Cref{fig:alpha} except for a narrow dip to about the
 	prescribed value at the ring. The additional transport may come from resolved flows such as the waves below, or from
-	numerical effects, which we cannot separate here.
+	numerical effects, which we cannot separate here.\vspace{-0.25em}
 
-	\colfig{alpha_col.png}{Effective viscosity parameter from the measured accretion rate and surface density, relative to the
-	prescribed value. Dotted vertical lines mark the radius of inflow equilibrium of each run.}{fig:alpha}
+	\colfig{alpha_col.png}{Effective viscosity parameter from the measured accretion rate and surface density, relative to the imposed value.
+	Dotted lines mark inflow equilibrium radii per run.}{fig:alpha}
 
-	The thermal balance of the disk is dominated by Compton exchange. \Cref{fig:heating_times} compares the time in which viscous
+	\setcounter{figure}{6}
+	\colfig{domain_rho_mean_col.png}{Averaged HR density over last $\num{10000}\, t_g$ window.}{fig:domain_mean}
+	\setcounter{figure}{9}
+
+	The thermal balance of the disk is dominated by Compton exchange. \Cref{fig:heating_times} compares the time over which viscous
 	heating would double the thermal energy of the gas at the midplane with the corresponding cooling times by Compton exchange and
-	by Kramers absorption. Between $R = 8$ and $R = 15$ the heating time is about \num{0.2} gravitational times, the Compton
+	by Kramers absorption. Between $R = 8$ and $R = 15$ the heating time sits at about \num{0.2} gravitational times, the Compton
 	cooling time slightly shorter, and the Kramers cooling time two to three orders of magnitude longer.
 
-	\colfig{heating_times_col.png}{Midplane times for viscous heating, Compton cooling and Kramers cooling, with the inverse
-	orbital frequency for comparison. Lines show medians over the steady state and bands the range between the 16th and 84th
-	percentiles for HR.}{fig:heating_times}
+	\colfig{heating_times_col.png}{Midplane times for viscous heating, Compton and Kramers cooling, with the inverse
+	orbital frequency for comparison. Lines are medians over the steady state window and bands show the standard error
+	range for the HR run.}{fig:heating_times}
 
-	Heating and cooling therefore balance closely, with a ratio of about \num{0.8} to \num{0.9} as shown in \Cref{fig:heating_ratio}.
+	Heating and cooling therefore balance closely, with a ratio of about \num{0.8} to \num{0.9} as can be seen in \Cref{fig:heating_ratio}.
 	This balance is reached far from local thermodynamic equilibrium, however. The median gas temperature at the midplane falls
-	from about \qty{1.7e8}{\kelvin} at $R = 6$ to about \qty{1e7}{\kelvin} at $R = 16$ while the radiation temperature stays at
+	from about \qty{1.7e8}{\kelvin} at $R = 6$ to roughly \qty{1e7}{\kelvin} at $R = 16$ while the radiation temperature stays at
 	about \qty{8e4}{\kelvin} so that the gas is a hundred to almost two thousand times hotter than the radiation. Since the
-	Compton rate grows with the difference of both temperatures, the gas has to heat up this much before it can radiate the
-	viscous heat, as Kramers absorption is far too weak at these temperatures.
+	Compton rate grows with the difference of both temperatures, the gas has to heat up to these values before it can radiate the
+	viscous heat, as Kramers absorption is far too weak in the present conditions.
 
-	\colfig{heating_ratio_col.png}{Ratio of viscous heating to radiative cooling at the midplane, with the range between the 16th and
-		84th percentiles as bands.}{fig:heating_ratio}
+	\colfig{heating_ratio_col.png}{Ratio of viscous heating to radiative cooling at the midplane, with the standard error range as bands.}{fig:heating_ratio}
 
-	\textfig{domain_rho_text.png}{Density of HR initially \textit{(left)} and averaged over the last \num{10000} gravitational times
-		\textit{(right)}. White solid lines mark $f = 0.5$ and white dashed lines unit optical depth from the pole.}{fig:domain}
+	\subsection{Density Waves}
 
+	Both runs in their steady states exhibit quasiperiodic density waves that travel outward. \Cref{fig:delta} shows relative surface
+	density perturbations, where they appear as ridges that start near the ISCO and propagate outward to radii of $R = 17$ and beyond.
+	Their root mean square amplitude, relative to the mean surface density, grows from about \num{0.25} near the inner
+	boundary to about \num{0.8} around $R = 9$ and beyond $R = 20$ with a dip near $R = 15$ right inside the ring anomaly, making the waves
+	strongly nonlinear. Power spectra of these perturbations peak at a frequency of roughly \num{2.9e-3} per code time in both
+	runs, equal to a period of \num{349} gravitational times or about two days for our SMBH mass.
 
-	\subsection{Outward Density Waves}
-
-	Both runs show quasiperiodic density waves in the steady state. In the relative surface density perturbation of
-	\Cref{fig:delta} they appear as ridges that start near the innermost stable orbit and travel outward to radii of about
-	\num{17} and beyond. Their amplitude grows from about a quarter of the mean surface density near the inner boundary to about
-	\num{0.8} at radii around \num{9} and beyond \num{20} in root mean square, so the waves are strongly nonlinear. Power spectra
-	of these perturbations peak at a frequency of about \num{2.9e-3} per gravitational time in both runs, which corresponds to a
-	period of about \num{349} gravitational times or about two days for our black hole mass.
+	The phase of the perturbation at this frequency grows steadily with radius as shown in \Cref{fig:phase}. Velocity and radiation energy
+	perturbations at the midplane are roughly in phase with the density perturbation between radii of \num{6} and \num{12} as for an
+	outward travelling compression, which we depict in \Cref{fig:rms_cross} in the \hyperref[sec:appendix]{Appendix}.
 
 	\colfig{spacetime_delta_dense_col.png}{Relative surface density perturbation of HR over the last \num{3000} gravitational times
 		at the dense output cadence. The dotted line marks the innermost stable orbit.}{fig:delta}
 
-	The phase of the perturbation at this frequency grows steadily with radius, as shown in \Cref{fig:phase}, so the waves
-	propagate outward. Velocity and radiation energy perturbations at the midplane are roughly in phase with the density
-	perturbation between radii of about \num{6} and \num{12} as for an outward travelling compression, which we show in
-	\Cref{fig:rms_cross} in the appendix.
-
-	\colfig{phase_col.png}{Phase of the surface density perturbation at the peak frequency relative to the reference radius
-		\textit{(dotted)}. Filled points have a significant coherence with the reference.}{fig:phase}
-
 	The phase speed in \Cref{fig:speed} is about \num{0.019} times the speed of light between radii of about \num{4} and \num{17} in
-	both runs. In HR, this is about \num{2.2} times the adiabatic sound speed including radiation pressure and about \num{6.5}
-	times the sound speed of the gas alone. The waves are therefore not plain sound waves, and we have not identified their
-	nature. That the period is the same in both runs, despite their different resolution and classifier version, suggests that
+	both runs. This is about \num{2.2} times the adiabatic sound speed including radiation pressure and \num{6.5} times the sound speed
+	of the gas in HR alone. The waves are therefore not plain sound waves, and we have not identified their
+	nature. That the periods are the same in both runs, despite their different resolutions and classifier versions, suggests that
 	it is set by the setup rather than by numerics. It is close to the thermal time $1 / (\alpha \Omega)$ of about \num{330}
 	gravitational times at the outer boundary, which may hint at an origin there, possibly together with the fixed sound speed
 	in the viscosity, but this remains to be tested. Beyond the ring at $R = 17$ the accretion rate and the enclosed mass
 	oscillate with about \num{670} gravitational times instead, roughly twice the wave period.
 
+	\colfig{phase_col.png}{Phase of the surface density perturbation at the peak frequency relative to the dotted reference radius.
+	Filled points have a significant coherence with the reference.}{fig:phase}
+
 	\colfig{speed_col.png}{Local phase speed of the waves compared with the adiabatic, isothermal and gas sound speeds, the mean radial
-		velocity and the viscous speed.}{fig:speed}
+	velocity and the viscous speed.}{fig:speed}
 
-	\subsection{Mid Altitude Inflow Stream}
+	\subsection{Inflow Stream}
 
-	Most of the accretion happens close to the midplane. In the steady state of HR, half of the net inflow passes within about
-	one to three degrees of the midplane and nine tenths within about five to eight degrees at most radii, with the radius
+	Most of the accretion happens close to the midplane. In the steady state of the HR run, half of the net inflow passes within
+	about one to three degrees of the midplane and nine tenths within about five to eight degrees at most radii, with the radius
 	\num{10} in HR as an exception at about twenty degrees, while the disk surface sits between about five and nine degrees, so
 	that about \num{90} percent of the inflow passes through the disk. Above the disk, the angular distribution of the inflow in
 	\Cref{fig:angular} shows a second, much weaker maximum between about \num{20} and \num{50} degrees of elevation, at about a
 	thousandth of the midplane value per degree. It belongs to a faint stream of gas falling toward the black hole at intermediate
-	altitudes, which is also visible as a diagonal feature in the averaged density of \Cref{fig:domain}. This stream may well be
-	an artifact of the setup. The corona starts in Newtonian hydrostatic equilibrium but evolves in the deeper pseudo potential,
+	altitudes, which is also visible as a diagonal feature in the averaged density of \Cref{fig:domain_mean}. This stream may well
+	be an artifact of the setup. The corona starts in Newtonian hydrostatic equilibrium but evolves in the deeper pseudo potential,
 	and the outer boundary changes its treatment of inflow at intermediate latitudes. We have not tested either explanation.
 
 	\colfig{angular_mdot_dist_col.png}{Distribution of the time averaged net inflow over elevation above the midplane at several
