@@ -775,10 +775,14 @@ def map_colorbar(fig, im, cax, key):
     return cb
 
 
-def map_grid(groups, width, name, xlim=(0, 20), ylim=(0, 10)):
+def map_grid(groups, width, name, xlim=(0, 20), ylim=(0, 10), cbar=True, yaxis=True):
     """groups: list of (colorbar key, rows), each row a list of cells (field, key, geo, t, tag[, extra])"""
     ncol = len(groups[0][1][0])
-    fig, axes, caxes = map_layout([len(rows) for _, rows in groups], ncol, width, xlim, ylim)
+    fig, axes, caxes = map_layout([len(rows) for _, rows in groups], ncol, width, xlim, ylim, cbar=cbar)
+    if not yaxis:
+        for ax in axes[:, 0]:
+            ax.set_ylabel('')
+            ax.tick_params(labelleft=False)
     i = 0
     for (cbar_key, rows), cax in zip(groups, caxes):
         im = None
@@ -793,7 +797,8 @@ def map_grid(groups, width, name, xlim=(0, 20), ylim=(0, 10)):
                 if tag is not None:
                     row_tag(axes[i, j], tag)
             i += 1
-        map_colorbar(fig, im, cax, cbar_key)
+        if cax is not None:
+            map_colorbar(fig, im, cax, cbar_key)
     tighten_map(fig)
     save(fig, name)
 
@@ -927,6 +932,9 @@ def fig_full_domain(run):
         map_grid([(key, [cells(key)])], TEXT, f'domain_{key}_text', lim, lim)
         for k, label in enumerate(('init', 'mean')):
             map_grid([(key, [[cells(key)[k]]])], COL, f'domain_{key}_{label}_col', lim, lim)
+
+    map_grid([('rho', [[cells('rho')[0]]])], COL, 'domain_rho_init_alt_col', lim, lim, cbar=False)
+    map_grid([('rho', [[cells('rho')[1]]])], COL, 'domain_rho_mean_alt_col', lim, lim, yaxis=False)
 
     for name, (a, b) in [('thermal', ('Tg', 'ratio')), ('velocity', ('vr', 'vphi'))]:
         map_grid([(a, [cells(a)]), (b, [cells(b)])], TEXT, f'domain_{name}_text', lim, lim)
