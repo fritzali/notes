@@ -58,8 +58,8 @@ mpl.rcParams.update({
     "axes.linewidth": 0.6,
 
     "figure.constrained_layout.use": True,
-    "figure.constrained_layout.h_pad": 0.02,
-    "figure.constrained_layout.w_pad": 0.02,
+    "figure.constrained_layout.h_pad": 0.00,
+    "figure.constrained_layout.w_pad": 0.00,
 
     "legend.fontsize": 8,
     "legend.frameon": False,

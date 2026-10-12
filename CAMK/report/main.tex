@@ -299,9 +299,9 @@
 	surface layer. This gas has left the disk in density and rotation, so the classifier counts it as corona, while the tracer
 	only remembers where it came from.
 
-	\textfig{valid_hd_text.png}{Hydrodynamic black hole setup without radiation. Density of the run driven by the
-		passive tracer on top with that driven by \texttt{DiskFraction} below, and the passive tracer $f_\mathrm{tr}$ versus
-		\texttt{DiskFraction} $f_\mathrm{df}$ within the latter run at the bottom.}{fig:valid_hd}
+	\textfig{valid_hd_text.png}{Hydrodynamic black hole setup without radiation. Density of the run driven by the passive tracer on
+	top with that driven by \texttt{DiskFraction} below, and the passive tracer $f_\mathrm{tr}$ versus \texttt{DiskFraction}
+	$f_\mathrm{df}$ within the latter run at the bottom.}{fig:valid_hd}
 
 	\Cref{fig:valid_agreement} quantifies this via the agreement metric $1 \kern-0.5pt - \langle\lvert\Delta f\rvert\rangle$ with
 	$\Delta f = f_\mathrm{df} - f_\mathrm{tr}$ averaged over the domain. Weighted by mass, the agreement stays around
@@ -317,13 +317,13 @@
 	With radiation, the picture changes completely. In the first radiation run, which still lacks any type of Compton coupling and
 	in which \texttt{DiskFraction} already determines the physics, overpressured bubbles break up the disk, and the classifier marks
 	the lifted, dense and rotating gas as disk material up to large heights. The passive tracer keeps its initial wedge throughout
-	the entire run and no longer follows the gas at all, matching the previously described error mode.\pagebreak
+	the entire run and no longer follows the gas at all, matching the previously described error mode.\columnbreak
 
 	\section{Results}
 	\label{sec:results}
 
-	We now turn to the radiation runs with Compton coupling and the classifier included. The run LR uses \num{90} by \num{45} cells and
-	reaches $t = 5 \times 10^4$ in code units, with outputs every \num{50} gravitational times. The run HR uses \num{120}
+	We now turn to the radiation runs with Compton coupling and the classifier included. The LR run uses \num{90} by \num{45} cells and
+	reaches $t = 5 \times 10^4$ in code units, with outputs every \num{50} gravitational times. The HR run uses \num{120}
 	by \num{90} cells and reaches $t = 4 \times 10^4$ with the same output cadence, which increases to \num{5} gravitational
 	times from $t = 3 \times 10^4$ onward to enable a more accurate wave analysis. Apart from the resolution, the two runs differ
 	in the version of the classifier, where LR still uses the first version described above, while HR uses the current version with
@@ -332,28 +332,29 @@
 
 	\subsection{Evolution \& Relaxation}
 
-	In the first few hundred gravitational times, the disk adjusts to the radiation. It inflates, and a dense layer forms at its
+	In the first few hundred gravitational times, the disk adjusts to the radiation. It starts to inflate, and a dense layer forms at its
 	surface, which then breaks up into sheets that are lifted to several gravitational radii above the midplane.
-	After this, the two runs evolve differently, as \Cref{fig:relax_mass} shows. In HR, the disk is blown apart. Its mass falls
-	from \num{132} to about \num{2} in units of $\rho_0 r_g^3$ by $t \approx 2000$ in gravitational times, and the disk stays
+
+	After this, the two runs evolve differently, as \Cref{fig:relax_mass} shows. In the HR case, the disk is blown apart. Its mass falls
+	from \num{132} to about \num{2} in units of $\rho_0 r_g^3$ by $t \approx 2000$ gravitational times, and the disk stays
 	fragmented until about $t = 10500$ before it is rebuilt by about $t = 15000$ and settles at a mass of about \num{18} in the
-	same units. In LR, the disk mass instead declines smoothly from \num{143} to about \num{22} by $t \approx 5000$ without any
+	same units. For LR the disk mass instead declines smoothly from \num{143} to about \num{22} by $t \approx 5000$ without any
 	breakup. We think this is most probably due to the stronger numerical viscosity, diffusivity and damping at lower resolution,
-	which can smooth out the perturbations that grow into the breakup in HR, but the different classifier versions may also
+	which can smooth out the perturbations that grow into the HR breakup, although the different classifier versions may also
 	contribute. In both runs, the corona loses most of its mass early on and is not replenished, since the outer boundary blocks
 	coronal inflow.
 
-	\textfig{early_rho_text.png}{Density in the early evolution of HR. The disk inflates and forms a dense surface layer that breaks
-		up.}{fig:early}
-
-	\colfig{relax_mass_col.png}{Total, disk and corona mass of both radiation runs, split by DiskFraction. The time axis is linear up
-		to $t = 1.1 \times 10^4$ and logarithmic beyond.}{fig:relax_mass}
+	\textfig{early_rho_text.png}{Density in the early evolution of HR. The disk inflates and forms a dense surface layer that
+	breaks up.}{fig:early}
 
 	To decide when a run has reached a steady state, we compare running means of the disk mass, the radiation energy, the
 	accretion rate at the inner boundary and the luminosity at the outer boundary with their mean over the last fifth of the run.
 	The steady state begins when all four stay within two standard errors of the reference, which happens at $t = 23725$ for HR
 	and $t = 9225$ for LR in gravitational times. All averages in the following are taken over these windows, and within them
 	the drift of the averages is consistent with zero.
+
+	\colfig{relax_mass_col.png}{Mass split by \texttt{DiskFraction} for both radiation runs. Time is linear until
+	$t = 1.1 \times 10^4$ and logarithmic after.}{fig:relax_mass}
 
 	\subsection{Steady State}
 
@@ -363,9 +364,6 @@
 	\num{0.1} initially, which means that LR resolves the disk with only about one cell per scale height against about three in HR.
 	The corona has drained down to the density floor, and the unit optical depth surface lies inside the disk.
 
-	\textfig{domain_rho_text.png}{Density of HR initially \textit{(left)} and averaged over the last \num{10000} gravitational times
-		\textit{(right)}. White solid lines mark $f = 0.5$ and white dashed lines unit optical depth from the pole.}{fig:domain}
-
 	The accretion rate in \Cref{fig:mdot} is flat in radius out to about $r = 17$ in gravitational radii in both runs, so that the
 	inner disk is in inflow equilibrium. Further out, the disk has not yet relaxed, which matches the estimate that viscous inflow
 	reaches radii of about \num{26} and \num{30} within the run times of HR and LR. Beyond about $r = 17$ the net accretion rate
@@ -374,7 +372,7 @@
 	inner boundary.
 
 	\colfig{mdot_col.png}{Time averaged accretion rate, positive for inflow, in total and split into disk and corona, as well as the
-		inflowing and outflowing parts. Shaded bands show the standard errors of HR.}{fig:mdot}
+	inflowing and outflowing parts. Shaded bands show the standard errors of HR.}{fig:mdot}
 
 	The mean accretion rate at the inner boundary is \num{0.073} times the Eddington rate in HR and \num{0.091} in LR, where the
 	Eddington rate is defined with the efficiency $\eta = 1/16$ from above. This corresponds to about \num{0.30} and
@@ -396,7 +394,7 @@
 	equilibrium ends.
 
 	\colfig{sigma_col.png}{Time averaged surface density and the steady state profile $\Sigma_\mathrm{ss}$ of \Cref{eq:sigma} for the
-		measured accretion rate. Shaded bands show the standard errors.}{fig:sigma}
+	measured accretion rate. Shaded bands show the standard errors.}{fig:sigma}
 
 	A surface density below the steady state profile means that angular momentum is transported more efficiently than the
 	prescribed viscosity alone would allow. Inverting \Cref{eq:sigma} for an effective viscosity parameter gives values of about
@@ -405,16 +403,16 @@
 	numerical effects, which we cannot separate here.
 
 	\colfig{alpha_col.png}{Effective viscosity parameter from the measured accretion rate and surface density, relative to the
-		prescribed value. Dotted vertical lines mark the radius of inflow equilibrium of each run.}{fig:alpha}
+	prescribed value. Dotted vertical lines mark the radius of inflow equilibrium of each run.}{fig:alpha}
 
 	The thermal balance of the disk is dominated by Compton exchange. \Cref{fig:heating_times} compares the time in which viscous
 	heating would double the thermal energy of the gas at the midplane with the corresponding cooling times by Compton exchange and
 	by Kramers absorption. Between $R = 8$ and $R = 15$ the heating time is about \num{0.2} gravitational times, the Compton
 	cooling time slightly shorter, and the Kramers cooling time two to three orders of magnitude longer.
 
-	\colfig{heating_times_col.png}{Midplane times for viscous heating, Compton cooling and Kramers cooling, with the inverse orbital
-		frequency for comparison. Lines show medians over the steady state and bands the range between the 16th and 84th
-		percentiles for HR.}{fig:heating_times}
+	\colfig{heating_times_col.png}{Midplane times for viscous heating, Compton cooling and Kramers cooling, with the inverse
+	orbital frequency for comparison. Lines show medians over the steady state and bands the range between the 16th and 84th
+	percentiles for HR.}{fig:heating_times}
 
 	Heating and cooling therefore balance closely, with a ratio of about \num{0.8} to \num{0.9} as shown in \Cref{fig:heating_ratio}.
 	This balance is reached far from local thermodynamic equilibrium, however. The median gas temperature at the midplane falls
@@ -425,6 +423,10 @@
 
 	\colfig{heating_ratio_col.png}{Ratio of viscous heating to radiative cooling at the midplane, with the range between the 16th and
 		84th percentiles as bands.}{fig:heating_ratio}
+
+	\textfig{domain_rho_text.png}{Density of HR initially \textit{(left)} and averaged over the last \num{10000} gravitational times
+		\textit{(right)}. White solid lines mark $f = 0.5$ and white dashed lines unit optical depth from the pole.}{fig:domain}
+
 
 	\subsection{Outward Density Waves}
 
