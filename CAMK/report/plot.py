@@ -682,7 +682,8 @@ def place_map(fig, left, right, bottom, top):
             if k < n - 1:
                 y -= MAP_GAP
         cb_left = left + ncol * w + (ncol - 1) * MAP_GAP + CB_PAD
-        caxes[g].set_position([cb_left / width, y / height, CB_WIDTH / width, (group_top - y) / height])
+        if caxes[g] is not None:
+            caxes[g].set_position([cb_left / width, y / height, CB_WIDTH / width, (group_top - y) / height])
         y -= GROUP_GAP
     spec['margins'] = (left, right, bottom, top)
 
@@ -697,7 +698,7 @@ def tighten_map(fig, pad=0.01, passes=2):
         place_map(fig, *(m - s + pad for m, s in zip((left, right, bottom, top), slack)))
 
 
-def map_layout(groups, ncol, width, xlim, ylim):
+def map_layout(groups, ncol, width, xlim, ylim, cbar=True):
     nrow = sum(groups)
     fig = plt.figure(figsize=[width, width], layout='none')
     axes = np.empty((nrow, ncol), dtype=object)
@@ -705,10 +706,10 @@ def map_layout(groups, ncol, width, xlim, ylim):
         for j in range(ncol):
             share = axes[0, 0] if i or j else None
             axes[i, j] = fig.add_axes([0, 0, 1, 1], sharex=share, sharey=share)
-    caxes = [fig.add_axes([0, 0, 1, 1]) for _ in groups]
+    caxes = [fig.add_axes([0, 0, 1, 1]) if cbar else None for _ in groups]
     fig._map_spec = dict(groups=groups, ncol=ncol, width=width, aspect=(ylim[1] - ylim[0]) / (xlim[1] - xlim[0]),
                          axes=axes, caxes=caxes)
-    place_map(fig, MAP_LEFT, CB_PAD + CB_WIDTH + CB_RIGHT, MAP_BOTTOM, MAP_TOP)
+    place_map(fig, MAP_LEFT, CB_PAD + CB_WIDTH + CB_RIGHT if cbar else 0.1, MAP_BOTTOM, MAP_TOP)
 
     for i in range(nrow):
         for j in range(ncol):
@@ -919,20 +920,8 @@ def fig_full_domain(run):
     init = {key: map_field(F0, key) for key in ('rho', 'f', 'Tg', 'ratio', 'vr', 'vphi')}
     init['tau'] = optical_depth_from_pole(F0, geo)
 
-    Xc = geo['R_C'][:, None] * np.sin(geo['TH_C'])[None, :]
-    Zc = geo['R_C'][:, None] * np.cos(geo['TH_C'])[None, :]
-
-    def contours(ax, f, tau):
-        ax.contour(Xc, Zc, f, levels=[0.5], colors='w', linewidths=0.6)
-        if np.nanmax(tau) > 1.0:
-            ax.contour(Xc, Zc, tau, levels=[1.0], colors='w', linewidths=0.6, linestyles='--')
-
     def cells(key):
-        extra = {}
-        if key == 'rho':
-            extra = dict(init=lambda ax: contours(ax, init['f'], init['tau']), mean=lambda ax: contours(ax, mean['f'], mean['tau']))
-        return [(init[key], key, geo, None, None) + ((extra['init'],) if extra else ()),
-                (mean[key], key, geo, None, None) + ((extra['mean'],) if extra else ())]
+        return [(init[key], key, geo, None, None), (mean[key], key, geo, None, None)]
 
     for key in ('rho', 'f', 'Tg', 'ratio', 'vr', 'vphi'):
         map_grid([(key, [cells(key)])], TEXT, f'domain_{key}_text', lim, lim)
@@ -942,7 +931,35 @@ def fig_full_domain(run):
     for name, (a, b) in [('thermal', ('Tg', 'ratio')), ('velocity', ('vr', 'vphi'))]:
         map_grid([(a, [cells(a)]), (b, [cells(b)])], TEXT, f'domain_{name}_text', lim, lim)
 
+    states = [(init['f'], init['tau']), (mean['f'], mean['tau'])]
+    outline_figure(states, geo, lim, TEXT, 'domain_outline_text')
+    for state, label in zip(states, ('init', 'mean')):
+        outline_figure([state], geo, lim, COL, f'domain_outline_{label}_col')
+
     return mean
+
+
+def outline_map(ax, f, tau, geo, lim):
+    Xc = geo['R_C'][:, None] * np.sin(geo['TH_C'])[None, :]
+    Zc = geo['R_C'][:, None] * np.cos(geo['TH_C'])[None, :]
+    ax.set_facecolor('w')
+    ax.contour(Xc, Zc, f, levels=[0.5], colors='k', linewidths=1.0)
+    if np.nanmax(tau) > 1.0:
+        ax.contour(Xc, Zc, tau, levels=[1.0], colors='k', linewidths=1.0, linestyles='--')
+    th = np.linspace(0.0, 0.5 * np.pi, 200)
+    ax.plot(geo['R_E'][-1] * np.sin(th), geo['R_E'][-1] * np.cos(th), 'k-', lw=1.0)
+    ax.add_patch(plt.Circle((0, 0), geo['R_E'][0], color='k', zorder=3))
+    ax.set_xlim(*lim)
+    ax.set_ylim(*lim)
+    ax.set_aspect('equal')
+
+
+def outline_figure(states, geo, lim, width, name):
+    fig, axes, _ = map_layout([1], len(states), width, lim, lim, cbar=False)
+    for ax, (f, tau) in zip(axes[0], states):
+        outline_map(ax, f, tau, geo, lim)
+    tighten_map(fig)
+    save(fig, name)
 
 
 def fig_early(run, keys=('rho', 'f', 'Tg', 'ratio', 'vr', 'vphi')):
