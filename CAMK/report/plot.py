@@ -113,6 +113,7 @@ T_VALID = [0.0, 250.0, 500.0, 750.0]
 T_EARLY = [100, 200, 300, 400, 500, 600]
 FULL_AVG_SPAN = 1.0e4
 DOMAIN_PAIR_SQUASH = 1.0
+DOMAIN_FIT_HEIGHT = 3.10
 
 W_WINDOW = 2500.0
 BLOCK = 1000.0
@@ -839,6 +840,20 @@ def map_pair(left_fig, right_fig, names, height=None, squash=1.0):
         save(fig, name)
 
 
+def fit_height(fig, height):
+    """Tighten a map figure, then shrink its panels at fixed aspect until the figure has the given height,
+    splitting the freed width equally between both outer sides."""
+    tighten_map(fig)
+    spec = fig._map_spec
+    left, right, bottom, top = spec['margins']
+    groups, ncol = spec['groups'], spec['ncol']
+    nrow = sum(groups)
+    h = (height - bottom - top - (nrow - len(groups)) * MAP_GAP - (len(groups) - 1) * GROUP_GAP) / nrow
+    extra = spec['width'] - left - right - ncol * h / spec['aspect'] - (ncol - 1) * MAP_GAP
+    if extra > 0:
+        place_map(fig, left + 0.5 * extra, right + 0.5 * extra, bottom, top)
+
+
 SNAP_CACHE = {}
 
 
@@ -968,6 +983,10 @@ def fig_full_domain(run):
         map_grid([(key, [cells(key)])], TEXT, f'domain_{key}_text', lim, lim)
         for k, label in enumerate(('init', 'mean')):
             map_grid([(key, [[cells(key)[k]]])], COL, f'domain_{key}_{label}_col', lim, lim)
+
+    fig = build_map_grid([('rho', [cells('rho')])], TEXT, lim, lim)
+    fit_height(fig, DOMAIN_FIT_HEIGHT)
+    save(fig, 'domain_rho_fit_text')
 
     map_pair(build_map_grid([('rho', [[cells('rho')[0]]])], COL, lim, lim, cbar=False),
              build_map_grid([('rho', [[cells('rho')[1]]])], COL, lim, lim, yaxis=False),
