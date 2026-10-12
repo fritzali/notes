@@ -661,30 +661,54 @@ def map_field(F, key):
     raise KeyError(key)
 
 
-def map_layout(groups, ncol, width, xlim, ylim):
-    right = CB_PAD + CB_WIDTH + CB_RIGHT
-    w = (width - MAP_LEFT - right - (ncol - 1) * MAP_GAP) / ncol
-    h = w * (ylim[1] - ylim[0]) / (xlim[1] - xlim[0])
+def place_map(fig, left, right, bottom, top):
+    spec = fig._map_spec
+    groups, ncol, width, aspect = spec['groups'], spec['ncol'], spec['width'], spec['aspect']
+    axes, caxes = spec['axes'], spec['caxes']
+    w = (width - left - right - (ncol - 1) * MAP_GAP) / ncol
+    h = w * aspect
     nrow = sum(groups)
-    height = MAP_BOTTOM + MAP_TOP + nrow * h + (nrow - len(groups)) * MAP_GAP + (len(groups) - 1) * GROUP_GAP
+    height = bottom + top + nrow * h + (nrow - len(groups)) * MAP_GAP + (len(groups) - 1) * GROUP_GAP
 
-    fig = plt.figure(figsize=[width, height], layout='none')
-    axes = np.empty((nrow, ncol), dtype=object)
-    caxes = []
-    y, i = height - MAP_TOP, 0
-    for n in groups:
-        top = y
+    fig.set_size_inches(width, height)
+    y, i = height - top, 0
+    for g, n in enumerate(groups):
+        group_top = y
         for k in range(n):
             for j in range(ncol):
-                rect = [(MAP_LEFT + j * (w + MAP_GAP)) / width, (y - h) / height, w / width, h / height]
-                share = axes[0, 0] if i or j else None
-                axes[i, j] = fig.add_axes(rect, sharex=share, sharey=share)
+                axes[i, j].set_position([(left + j * (w + MAP_GAP)) / width, (y - h) / height, w / width, h / height])
             y -= h
             i += 1
             if k < n - 1:
                 y -= MAP_GAP
-        caxes.append(fig.add_axes([(width - right + CB_PAD) / width, y / height, CB_WIDTH / width, (top - y) / height]))
+        cb_left = left + ncol * w + (ncol - 1) * MAP_GAP + CB_PAD
+        caxes[g].set_position([cb_left / width, y / height, CB_WIDTH / width, (group_top - y) / height])
         y -= GROUP_GAP
+    spec['margins'] = (left, right, bottom, top)
+
+
+def tighten_map(fig, pad=0.01, passes=2):
+    for _ in range(passes):
+        fig.draw_without_rendering()
+        bb = fig.get_tightbbox(fig._get_renderer())
+        width, height = fig.get_size_inches()
+        left, right, bottom, top = fig._map_spec['margins']
+        slack = (bb.x0, width - bb.x1, bb.y0, height - bb.y1)
+        place_map(fig, *(m - s + pad for m, s in zip((left, right, bottom, top), slack)))
+
+
+def map_layout(groups, ncol, width, xlim, ylim):
+    nrow = sum(groups)
+    fig = plt.figure(figsize=[width, width], layout='none')
+    axes = np.empty((nrow, ncol), dtype=object)
+    for i in range(nrow):
+        for j in range(ncol):
+            share = axes[0, 0] if i or j else None
+            axes[i, j] = fig.add_axes([0, 0, 1, 1], sharex=share, sharey=share)
+    caxes = [fig.add_axes([0, 0, 1, 1]) for _ in groups]
+    fig._map_spec = dict(groups=groups, ncol=ncol, width=width, aspect=(ylim[1] - ylim[0]) / (xlim[1] - xlim[0]),
+                         axes=axes, caxes=caxes)
+    place_map(fig, MAP_LEFT, CB_PAD + CB_WIDTH + CB_RIGHT, MAP_BOTTOM, MAP_TOP)
 
     for i in range(nrow):
         for j in range(ncol):
@@ -769,6 +793,7 @@ def map_grid(groups, width, name, xlim=(0, 20), ylim=(0, 10)):
                     row_tag(axes[i, j], tag)
             i += 1
         map_colorbar(fig, im, cax, cbar_key)
+    tighten_map(fig)
     save(fig, name)
 
 
