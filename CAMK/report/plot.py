@@ -778,7 +778,9 @@ def map_colorbar(fig, im, cax, key):
 def map_grid(groups, width, name, xlim=(0, 20), ylim=(0, 10), cbar=True, yaxis=True):
     fig = build_map_grid(groups, width, xlim, ylim, cbar, yaxis)
     tighten_map(fig)
+    height = fig.get_size_inches()[1]
     save(fig, name)
+    return height
 
 
 def build_map_grid(groups, width, xlim=(0, 20), ylim=(0, 10), cbar=True, yaxis=True):
@@ -808,9 +810,10 @@ def build_map_grid(groups, width, xlim=(0, 20), ylim=(0, 10), cbar=True, yaxis=T
     return fig
 
 
-def map_pair(left_fig, right_fig, names):
+def map_pair(left_fig, right_fig, names, height=None):
     """Tighten two single panel map figures of equal width and align them for placement side by side:
-    equal panel size and height, extra horizontal space on the outer sides."""
+    equal panel size and height, extra horizontal space on the outer sides. With a target height, the
+    panels shrink at fixed aspect until both figures have exactly that height."""
     figs = (left_fig, right_fig)
     for fig in figs:
         tighten_map(fig)
@@ -818,6 +821,10 @@ def map_pair(left_fig, right_fig, names):
     span = max(l + r for l, r, _, _ in margins)
     bottom = max(m[2] for m in margins)
     top = max(m[3] for m in margins)
+    if height is not None:
+        spec = left_fig._map_spec
+        panel = (height - bottom - top) / spec['aspect']
+        span = max(span, spec['width'] - panel)
     (l0, r0, _, _), (l1, r1, _, _) = margins
     place_map(left_fig, l0 + span - (l0 + r0), r0, bottom, top)
     place_map(right_fig, l1, r1 + span - (l1 + r1), bottom, top)
@@ -950,14 +957,15 @@ def fig_full_domain(run):
     def cells(key):
         return [(init[key], key, geo, None, None), (mean[key], key, geo, None, None)]
 
+    col_height = {}
     for key in ('rho', 'f', 'Tg', 'ratio', 'vr', 'vphi'):
         map_grid([(key, [cells(key)])], TEXT, f'domain_{key}_text', lim, lim)
         for k, label in enumerate(('init', 'mean')):
-            map_grid([(key, [[cells(key)[k]]])], COL, f'domain_{key}_{label}_col', lim, lim)
+            col_height[key, label] = map_grid([(key, [[cells(key)[k]]])], COL, f'domain_{key}_{label}_col', lim, lim)
 
     map_pair(build_map_grid([('rho', [[cells('rho')[0]]])], COL, lim, lim, cbar=False),
              build_map_grid([('rho', [[cells('rho')[1]]])], COL, lim, lim, yaxis=False),
-             ('domain_rho_init_alt_col', 'domain_rho_mean_alt_col'))
+             ('domain_rho_init_alt_col', 'domain_rho_mean_alt_col'), height=col_height['rho', 'init'])
 
     for name, (a, b) in [('thermal', ('Tg', 'ratio')), ('velocity', ('vr', 'vphi'))]:
         map_grid([(a, [cells(a)]), (b, [cells(b)])], TEXT, f'domain_{name}_text', lim, lim)
