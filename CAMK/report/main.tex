@@ -68,6 +68,11 @@
 		\label{#3}
 	\end{figure}}
 
+\newcommand{\colfigtight}[3]{%
+	{\setlength{\intextsep}{6pt plus 1pt minus 1pt}%
+	\captionsetup{skip=4pt}%
+	\colfig{#1}{#2}{#3}}}
+
 \newcommand{\textfig}[3]{%
 	\end{multicols}
 	\begin{figure}[H]
@@ -390,10 +395,10 @@
 	\Cref{fig:sigma} lies below this profile at almost all radii except for a ring like maximum around $R = 17$ once the inflow
 	equilibrium ends.
 
-	\colfig{domain_rho_init_alt_col.png}{Initially seeded HR density distribution.}{fig:domain_init}
+	\colfigtight{domain_rho_init_alt_col.png}{Initially seeded HR density distribution.}{fig:domain_init}
 
 	\setcounter{figure}{7}
-	\colfig{sigma_col.png}{Time averaged surface density with steady state profile for given accretion rate.
+	\colfigtight{sigma_col.png}{Time averaged surface density with steady state profile for given accretion rate.
 	Shaded bands show errors.\vspace{-0.75em}}{fig:sigma}
 
 	A surface density below the steady state disk profile indicates that the transport of angular momentum is more efficient than the
@@ -402,11 +407,11 @@
 	prescribed value at the ring. The additional transport may come from resolved flows such as the waves below, or from
 	numerical effects, which we cannot separate here.\vspace{-0.25em}
 
-	\colfig{alpha_col.png}{Effective viscosity parameter from the measured accretion rate and surface density, relative to the imposed value.
+	\colfigtight{alpha_col.png}{Effective viscosity parameter from the measured accretion rate and surface density, relative to the imposed value.
 	Dotted lines mark inflow equilibrium radii per run.}{fig:alpha}
 
 	\setcounter{figure}{6}
-	\colfig{domain_rho_mean_alt_col.png}{Averaged HR density over last $\num{10000}\, t_g$ window.}{fig:domain_mean}
+	\colfigtight{domain_rho_mean_alt_col.png}{Averaged HR density over last $\num{10000}\, t_g$ window.}{fig:domain_mean}
 	\setcounter{figure}{9}
 
 	The thermal balance of the disk is dominated by Compton exchange. \Cref{fig:heating_times} compares the time over which viscous
@@ -414,7 +419,7 @@
 	by Kramers absorption. Between $R = 8$ and $R = 15$ the heating time sits at about \num{0.2} gravitational times, the Compton
 	cooling time slightly shorter, and the Kramers cooling time two to three orders of magnitude longer.
 
-	\colfig{heating_times_col.png}{Midplane times for viscous heating, Compton and Kramers cooling, with the inverse
+	\colfigtight{heating_times_col.png}{Midplane times for viscous heating, Compton and Kramers cooling, with the inverse
 	orbital frequency for comparison. Lines are medians over the steady state window and bands show the standard error
 	range for the HR run.}{fig:heating_times}
 

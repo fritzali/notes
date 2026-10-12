@@ -112,6 +112,7 @@ RAD_TRACER_RUN = DATA / 'BH_VISC_RAD_HD_TRC'
 T_VALID = [0.0, 250.0, 500.0, 750.0]
 T_EARLY = [100, 200, 300, 400, 500, 600]
 FULL_AVG_SPAN = 1.0e4
+DOMAIN_PAIR_SQUASH = 1.0
 
 W_WINDOW = 2500.0
 BLOCK = 1000.0
@@ -810,11 +811,17 @@ def build_map_grid(groups, width, xlim=(0, 20), ylim=(0, 10), cbar=True, yaxis=T
     return fig
 
 
-def map_pair(left_fig, right_fig, names, height=None):
+def map_pair(left_fig, right_fig, names, height=None, squash=1.0):
     """Tighten two single panel map figures of equal width and align them for placement side by side:
     equal panel size and height, extra horizontal space on the outer sides. With a target height, the
-    panels shrink at fixed aspect until both figures have exactly that height."""
+    panels shrink at fixed aspect until both figures have exactly that height. A squash below one
+    compresses the panels vertically by that factor instead, keeping their full width."""
     figs = (left_fig, right_fig)
+    for fig in figs:
+        fig._map_spec['aspect'] *= squash
+        if squash != 1.0:
+            for ax in fig._map_spec['axes'].flat:
+                ax.set_aspect(squash)
     for fig in figs:
         tighten_map(fig)
     margins = [fig._map_spec['margins'] for fig in figs]
@@ -957,15 +964,14 @@ def fig_full_domain(run):
     def cells(key):
         return [(init[key], key, geo, None, None), (mean[key], key, geo, None, None)]
 
-    col_height = {}
     for key in ('rho', 'f', 'Tg', 'ratio', 'vr', 'vphi'):
         map_grid([(key, [cells(key)])], TEXT, f'domain_{key}_text', lim, lim)
         for k, label in enumerate(('init', 'mean')):
-            col_height[key, label] = map_grid([(key, [[cells(key)[k]]])], COL, f'domain_{key}_{label}_col', lim, lim)
+            map_grid([(key, [[cells(key)[k]]])], COL, f'domain_{key}_{label}_col', lim, lim)
 
     map_pair(build_map_grid([('rho', [[cells('rho')[0]]])], COL, lim, lim, cbar=False),
              build_map_grid([('rho', [[cells('rho')[1]]])], COL, lim, lim, yaxis=False),
-             ('domain_rho_init_alt_col', 'domain_rho_mean_alt_col'), height=col_height['rho', 'init'])
+             ('domain_rho_init_alt_col', 'domain_rho_mean_alt_col'), squash=DOMAIN_PAIR_SQUASH)
 
     for name, (a, b) in [('thermal', ('Tg', 'ratio')), ('velocity', ('vr', 'vphi'))]:
         map_grid([(a, [cells(a)]), (b, [cells(b)])], TEXT, f'domain_{name}_text', lim, lim)
