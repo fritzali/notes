@@ -73,6 +73,20 @@
 	\captionsetup{skip=4pt}%
 	\colfig{#1}{#2}{#3}}}
 
+\newcommand{\textfigtight}[3]{%
+	\setlength{\multicolsep}{6pt plus 1pt minus 1pt}%
+	\end{multicols}
+	{\setlength{\intextsep}{6pt plus 1pt minus 1pt}%
+	\captionsetup{skip=4pt}%
+	\begin{figure}[H]
+		\centering
+		\includegraphics[width=\textwidth, draft=false]{plots/#1}
+		\caption{#2}
+		\label{#3}
+	\end{figure}}
+	\begin{multicols}{2}%
+	\setlength{\multicolsep}{12pt plus 4pt minus 3pt}}
+
 \newcommand{\textfig}[3]{%
 	\end{multicols}
 	\begin{figure}[H]
@@ -364,7 +378,7 @@
 
 	\subsection{Steady State}
 
-	\Cref{fig:domain_init} depicts the initial density setup of HR and \Cref{fig:domain_mean} its average over the last \num{10000}
+	\Cref{fig:domain} depicts the initial density setup of HR and its average over the last \num{10000}
 	gravitational times. In the steady state, the disk is thinner than initially. At $R = 10$ its aspect ratio is about \num{0.057}
 	in HR and \num{0.042} in LR compared with $0.{\kern-0.5pt}1$ initially, which means that LR resolves the disk with only about one cell
 	per scale height against about three in the HR run. The corona has drained down to the density floor, and the unit optical depth
@@ -395,9 +409,9 @@
 	\Cref{fig:sigma} lies below this profile at almost all radii except for a ring like maximum around $R = 17$ once the inflow
 	equilibrium ends.
 
-	\colfigtight{domain_rho_init_alt_col.png}{Initially seeded HR density distribution.}{fig:domain_init}
+	\textfigtight{domain_rho_fit_text.png}{HR density initially \textit{(left)} and averaged over the last \num{10000} gravitational
+		times \textit{(right)}.}{fig:domain}
 
-	\setcounter{figure}{7}
 	\colfigtight{sigma_col.png}{Time averaged surface density with steady state profile for given accretion rate.
 	Shaded bands show errors.\vspace{-0.75em}}{fig:sigma}
 
@@ -409,10 +423,6 @@
 
 	\colfigtight{alpha_col.png}{Effective viscosity parameter from the measured accretion rate and surface density, relative to the imposed value.
 	Dotted lines mark inflow equilibrium radii per run.}{fig:alpha}
-
-	\setcounter{figure}{6}
-	\colfigtight{domain_rho_mean_alt_col.png}{Averaged HR density over last $\num{10000}\, t_g$ window.}{fig:domain_mean}
-	\setcounter{figure}{9}
 
 	The thermal balance of the disk is dominated by Compton exchange. \Cref{fig:heating_times} compares the time over which viscous
 	heating would double the thermal energy of the gas at the midplane with the corresponding cooling times by Compton exchange and
@@ -471,7 +481,7 @@
 	that about \num{90} percent of the inflow passes through the disk. Above the disk, the angular distribution of the inflow in
 	\Cref{fig:angular} shows a second, much weaker maximum between about \num{20} and \num{50} degrees of elevation, at about a
 	thousandth of the midplane value per degree. It belongs to a faint stream of gas falling toward the black hole at intermediate
-	altitudes, which is also visible as a diagonal feature in the averaged density of \Cref{fig:domain_mean}. This stream may well
+	altitudes, which is also visible as a diagonal feature in the averaged density of \Cref{fig:domain}. This stream may well
 	be an artifact of the setup. The corona starts in Newtonian hydrostatic equilibrium but evolves in the deeper pseudo potential,
 	and the outer boundary changes its treatment of inflow at intermediate latitudes. We have not tested either explanation.
 
