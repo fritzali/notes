@@ -128,7 +128,7 @@
 			still missing from the setup.
 
 		\textit{Acknowledgment:} This project was completed during a student internship at the Nicolaus Copernicus Astronomical Center of
-		the Polish Academy of Sciences (CAMK PAN) supported by a Erasmus Mundus Joint Master in Astrophysics and Space Science (EMJM MASS)
+		the Polish Academy of Sciences (CAMK PAN) supported by an Erasmus Mundus Joint Master in Astrophysics and Space Science (EMJM MASS)
 		scholarship. I would like to thank Miljenko Čemeljić for the incredible opportunity to contribute to this research, and I am especially
 		grateful to Sukalpa Kundu for his ongoing motivation and guidance throughout the entire process.
 
@@ -296,7 +296,7 @@
 	Prompted by this, the current version adds multiple guards to the classifier. The logarithmic span between references used must be at least
 	\qty{0.5}{\dex} as the denominator of $s$ already includes above, so an inverted span can never flip the
 	density criterion. After every update, bins with a smaller span copy both references from the nearest bin with a sufficient
-	span, searching outward first, or have their disk reference raised to the minimum span if no such bins exists anywhere. Finally,
+	span, searching outward first, or have their disk reference raised to the minimum span if no such bins exist anywhere. Finally,
 	the smoothing uses the time constant of \Cref{eq:ema} instead of a fixed weight, so that the memory of the profiles is the same
 	at every resolution and update cadence. Slight artifacts at the inner boundary still appear in this version, but the guards
 	let the classifier repair itself instead of locking an error in place.
@@ -461,8 +461,8 @@
 	The phase speed in \Cref{fig:speed} is about \num{0.019} times the speed of light between radii of about \num{4} and \num{17} in
 	both runs. This is about \num{2.2} times the adiabatic sound speed including radiation pressure and \num{6.5} times the sound speed
 	of the gas in HR alone. The waves are therefore not plain sound waves, and we have not identified their
-	nature. That the periods are the same in both runs, despite their different resolutions and classifier versions, suggests that
-	it is set by the setup rather than by numerics. It is close to the thermal time $1 / (\alpha \Omega)$ of about \num{330}
+	nature. That the period is unchanged in both runs, despite their different resolutions and classifier versions, suggests that
+	it is set by the setup rather than by the numerics. It is close to the thermal time $1 / (\alpha \Omega)$ with about \num{330}
 	gravitational times at the outer boundary, which may hint at an origin there, possibly together with the fixed sound speed
 	in the viscosity, but this remains to be tested. Beyond the ring at $R = 17$ the accretion rate and the enclosed mass
 	oscillate with about \num{670} gravitational times instead, roughly twice the wave period.
@@ -555,7 +555,7 @@
 
 	We adapted a viscous and resistive star disk setup in PLUTO to a nonrotating supermassive black hole and added radiation with
 	effective Compton coupling. Since the passive tracer that restricts the disk physics fails once radiation is enabled, we developed the
-	\texttt{DiskFraction} classifier, which agrees with the tracer to about \qty{95}{\percent} percent by mass in runs without radiation, follows the
+	\texttt{DiskFraction} classifier, which agrees with the passive tracer to about \qty{95}{\percent} by mass in runs without radiation, follows the
 	disk material with radiation, and in its current version repairs its own errors. With it, two radiation runs at different
 	resolutions reach steady states at roughly a tenth of the Eddington rate, in which Compton exchange balances the viscous heating
 	closely, with a gas temperature far above the radiation temperature and the effective viscosity far exceeding the prescribed one by a factor
@@ -733,31 +733,32 @@
 
 	$\,$
 
-	\textfig{valid_mhd_text.png}{Magnetohydrodynamic black hole setup without radiation, arranged as in \Cref{fig:valid_hd}.}{fig:valid_mhd}
+	\textfig{valid_mhd_text.png}{Magnetohydrodynamic black hole setup without radiation, top row driven by tracer, below by
+	classifier, bottom tracer and classifier comparison.}{fig:valid_mhd}
 
-	\textfig{valid_rmhd_text.png}{Resistive magnetohydrodynamic black hole setup without radiation, arranged as in
-		\Cref{fig:valid_hd}.}{fig:valid_rmhd}
+	\textfig{valid_rmhd_text.png}{Resistive magnetohydrodynamic black hole setup without radiation, top row driven by tracer, below by
+	classifier, bottom tracer and classifier comparison.}{fig:valid_rmhd}
 
-	\textfig{valid_diff_text.png}{Difference $\Delta f = f - f_\mathrm{tr}$ between DiskFraction and the passive tracer in the
-		classifier driven hydrodynamic, magnetohydrodynamic and resistive runs.}{fig:valid_diff}
+	\textfig{valid_diff_text.png}{Difference $\Delta f = f_\mathrm{df} - f_\mathrm{tr}$ between \texttt{DiskFraction} and the advected
+	tracer in the classifier driven hydrodynamic, magnetohydrodynamic and resistive runs.\vspace{-5ex}}{fig:valid_diff}
 
-	\textfig{domain_disk_text.png}{DiskFraction \textit{(top)} as well as the disk surface where $f = 0.5$ holds \textit{(solid)} and
-		unit optical depth from the pole \textit{(dashed)} \textit{(bottom)} of HR initially \textit{(left)} and averaged over the last
-		\num{10000} gravitational times \textit{(right)}.}{fig:domain_f}
+	\textfig{domain_disk_text.png}{Classifier \textit{(top)} as well as contours \textit{(bottom)} of the disk surface where $f = 0.5$
+	holds \textit{(solid)} and unit optical depth $\tau = 1$ from the pole \textit{(dashed)} of HR initially \textit{(left)} and averaged
+	\textit{(right)} over the last \num{10000} gravitational times.}{fig:domain_f}
 
-	\textfig{domain_thermal_text.png}{Gas temperature \textit{(top)} and ratio of gas to radiation temperature \textit{(bottom)} of
-		HR, arranged as in \Cref{fig:domain_f}.}{fig:domain_thermal}
+	\textfig{domain_thermal_text.png}{Gas temperature \textit{(top)} and ratio of gas to radiation temperature \textit{(bottom)} of the
+	HR run initially \textit{(left)} and averaged \textit{(right)} over the last \num{10000} gravitational times.}{fig:domain_thermal}
 
-	\textfig{domain_velocity_text.png}{Radial \textit{(top)} and rotation velocity \textit{(bottom)} of HR, arranged as in
-		\Cref{fig:domain_f}.}{fig:domain_velocity}
+	\textfig{domain_velocity_text.png}{Radial \textit{(top)} and rotation velocity \textit{(bottom)} of the HR run initially \textit{(left)}
+	and averaged \textit{(right)} over the last \num{10000} gravitational times.}{fig:domain_velocity}
 
-	\textfig{early_f_text.png}{DiskFraction in the early evolution of HR at the times of \Cref{fig:early}.}{fig:early_f}
+	\textfig{early_f_text.png}{Evolution of \texttt{DiskFraction} in HR at early times.}{fig:early_f}
 
-	\textfig{early_thermal_text.png}{Gas temperature \textit{(upper two rows)} and ratio of gas to radiation temperature
-		\textit{(lower two rows)} in the early evolution of HR at the times of \Cref{fig:early}.}{fig:early_thermal}
+	\textfig{early_thermal_text.png}{Gas temperature \textit{(top)} and ratio of gas to radiation temperature
+	\textit{(bottom)} in the early HR evolution.}{fig:early_thermal}
 
-	\textfig{early_velocity_text.png}{Radial \textit{(upper two rows)} and rotation velocity \textit{(lower two rows)} in the early
-		evolution of HR at the times of \Cref{fig:early}.}{fig:early_velocity}
+	\textfig{early_velocity_text.png}{Radial \textit{(top)} and rotation velocity \textit{(bottom)} in the early
+	HR evolution.}{fig:early_velocity}
 
 	\textfig{window_text.png}{Masses, energies and Eddington ratios of accretion and luminosity of both runs in their steady
 		states.}{fig:window}
@@ -765,34 +766,39 @@
 	\textfig{spacetime_mdot_text.png}{Accretion rate of disk \textit{(left)} and corona \textit{(right)} in HR over the steady
 		state.}{fig:spacetime_mdot}
 
-	\textfig{rms_cross_text.png}{\textit{Left:} Root mean square of the surface density perturbation of both runs.
-		\textit{Right:} Phase differences of radial velocity and radiation energy relative to density at the midplane at the peak
-		frequency in HR.}{fig:rms_cross}
+	\textfig{rms_cross_text.png}{Root mean square of the surface density perturbation of both runs \textit{(left)} next to phase differences
+	of radial velocity and radiation energy relative to density at the midplane \textit{(right)} in HR at the peak frequency.}{fig:rms_cross}
 
-	\textfig{budget_text.png}{Mass budget of HR between the radii \num{2.5} and \num{25} \textit{(left)} and for the full domain
-		\textit{(right)}.}{fig:budget}
+	\textfig{budget_text.png}{Mass budget of HR between radii \num{2.5} to \num{25} \textit{(left)} and for the
+	full \textit{(right)} domain.}{fig:budget}
 
-	\textfig{balance_text.png}{\textit{Left:} Vertically integrated viscous heating and the vertical flux at unit optical depth in
-		HR. \textit{Right:} Diffusion, thermal and viscous times compared with the wave period.}{fig:balance}
+	\textfig{balance_text.png}{Vertically integrated viscous heating and vertical flux in HR at unit optical depth \textit{(left)} as well as
+	diffusion, thermal and viscous times \textit{(right)} compared with the wave period.}{fig:balance}
 
-	\textfig{vertical_text.png}{Time averaged vertical profiles of HR at three cylindrical radii. Dotted lines mark the disk surface
-		where $f = 0.5$ holds.}{fig:vertical}
+	\textfig{vertical_text.png}{Time averaged vertical profiles of HR at different cylindrical radii, dotted lines mark
+	the $f = 0.5$ disk surface.}{fig:vertical}
 
-	\textfig{angular_text.png}{Time averaged angular profiles of net inflow, density, radial and rotation velocity at several radii
-		for HR \textit{(thick)} and LR \textit{(thin)}.}{fig:angular}
+	\textfig{angular_text.png}{Time averaged angular profiles of net inflow, density, radial and rotation velocity at
+	several radii.}{fig:angular}
 
-	\colfig{timescales_col.png}{Orbital, thermal, sound crossing and viscous times of the initial disk.}{fig:timescales}
+	$\,$
 
-	\colfig{relax_distance_col.png}{Relaxation statistic of the four global quantities of HR. The dashed line marks the threshold and
-		the dotted line the start of the reference period.}{fig:relax_distance}
+	\colfig{inflow_col.png}{Mean radial inflow speed from accretion rate and surface density, compared with the steady state value
+	of the prescribed viscosity used in our model.}{fig:inflow}
+
+	\colfig{timescales_col.png}{Orbital, thermal, sound crossing and viscous times of the disk seeding at initial time.}{fig:timescales}
+
+	\colfig{relax_distance_col.png}{Relaxation statistic of global HR quantities, the dashed line marks the threshold and
+	the dotted line the start of the reference period.}{fig:relax_distance}
 
 	\colfig{aspect_col.png}{Time averaged aspect ratio of the disk and its resolution in cells per scale height.}{fig:aspect}
 
-	\colfig{inflow_col.png}{Mean radial inflow speed from accretion rate and surface density, compared with the steady state value
-		of the prescribed viscosity.}{fig:inflow}
+	\colfig{wave_spectrum_col.png}{Power spectrum of surface density perturbation in HR at each radius, normalized to its
+	maximum.}{fig:wave_spectrum}
 
-	\colfig{wave_spectrum_col.png}{Power spectrum of the surface density perturbation of HR at each radius, normalized to its
-		maximum.}{fig:wave_spectrum}
+	$\,$
+
+	$\,$
 
 	\end{multicols}
 
