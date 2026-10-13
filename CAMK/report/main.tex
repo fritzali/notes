@@ -127,7 +127,7 @@
 			of these features may be artifacts of the fixed sound speed in the viscosity prescription, of the boundaries and of the physics
 			still missing from the setup.
 
-		\textit{Acknowledgement:} This project was completed during a student internship at the Nicolaus Copernicus Astronomical Center of
+		\textit{Acknowledgment:} This project was completed during a student internship at the Nicolaus Copernicus Astronomical Center of
 		the Polish Academy of Sciences (CAMK PAN) supported by a Erasmus Mundus Joint Master in Astrophysics and Space Science (EMJM MASS)
 		scholarship. I would like to thank Miljenko Čemeljić for the incredible opportunity to contribute to this research, and I am especially
 		grateful to Sukalpa Kundu for his ongoing motivation and guidance throughout the entire process.
@@ -173,7 +173,7 @@
 	\subsection{Base Model}
 
 	The starting point is a stellar setup from a numerical atlas of such systems \cite{ceme2019} which solves the equations of viscous
-	and resistive magnetohydrodynamics for a thin disk around a rotating star with a magnetic field. Its initialisation follows an
+	and resistive magnetohydrodynamics for a thin disk around a rotating star with a magnetic field. Its initialization follows an
 	analytic thin viscous disk \cite{kluz2000} with aspect ratio $\epsilon = H/R$ and is embedded inside a corona in
 	hydrostatic equilibrium. Viscosity and resistivity follow an $\alpha$ prescription and are restricted to the disk by a passive
 	tracer, which is advected with the flow and initially equals one in the disk and zero in the corona. To ensure the disk stays thin
@@ -378,9 +378,9 @@
 
 	\subsection{Steady State}
 
-	\Cref{fig:domain} depicts the initial density setup of HR and its average over the last \num{10000}
+	\Cref{fig:domain} depicts the initial density setup of HR next to its average over the last \num{10000}
 	gravitational times. In the steady state, the disk is thinner than initially. At $R = 10$ its aspect ratio is about \num{0.057}
-	in HR and \num{0.042} in LR compared with $0.{\kern-0.5pt}1$ initially, which means that LR resolves the disk with only about one cell
+	in HR and \num{0.042} in LR compared with $0.{\kern-0.5pt}1$ at the start, which means that LR resolves the disk with only about one cell
 	per scale height against about three in the HR run. The corona has drained down to the density floor, and the unit optical depth
 	surface lies inside the disk. The accretion rate in \Cref{fig:mdot} is flat in radius out to about $r = 17$
 	in both runs, so that the inner disk is in inflow equilibrium. Further out, the disk has not yet relaxed, which matches the
@@ -409,8 +409,8 @@
 	\Cref{fig:sigma} lies below this profile at almost all radii except for a ring like maximum around $R = 17$ once the inflow
 	equilibrium ends.
 
-	\textfigtight{domain_rho_fit_text.png}{HR density initially \textit{(left)} and averaged over the last \num{10000} gravitational
-		times \textit{(right)}.}{fig:domain}
+	\textfigtight{domain_rho_fit_text.png}{Density of HR run initially \textit{(left)} and averaged \textit{(right)} over the last
+	\num{10000} gravitational times.}{fig:domain}
 
 	\colfigtight{sigma_col.png}{Time averaged surface density with steady state profile for given accretion rate.
 	Shaded bands show errors.\vspace{-0.75em}}{fig:sigma}
@@ -419,10 +419,10 @@
 	prescribed viscosity alone would allow. Inverting \Cref{eq:sigma} for an effective viscosity parameter gives values of about
 	two to three times the prescribed $\alpha$ in both runs as shown in \Cref{fig:alpha} except for a narrow dip to about the
 	prescribed value at the ring. The additional transport may come from resolved flows such as the waves below, or from
-	numerical effects, which we cannot separate here.\vspace{-0.25em}
+	numerical effects, which we cannot separate here.\vspace{0.25em}
 
 	\colfigtight{alpha_col.png}{Effective viscosity parameter from the measured accretion rate and surface density, relative to the imposed value.
-	Dotted lines mark inflow equilibrium radii per run.}{fig:alpha}
+	Dotted lines mark inflow equilibrium radii per run.\vspace{-0.5em}}{fig:alpha}
 
 	The thermal balance of the disk is dominated by Compton exchange. \Cref{fig:heating_times} compares the time over which viscous
 	heating would double the thermal energy of the gas at the midplane with the corresponding cooling times by Compton exchange and
@@ -453,7 +453,7 @@
 
 	The phase of the perturbation at this frequency grows steadily with radius as shown in \Cref{fig:phase}. Velocity and radiation energy
 	perturbations at the midplane are roughly in phase with the density perturbation between radii of \num{6} and \num{12} as for an
-	outward travelling compression, which we depict in \Cref{fig:rms_cross} in the \hyperref[sec:appendix]{Appendix}.
+	outward traveling compression, which we depict in \Cref{fig:rms_cross} in the \hyperref[sec:appendix]{Appendix}.
 
 	\colfig{spacetime_delta_dense_col.png}{Relative surface density perturbation of HR over the last \num{3000} gravitational times
 		at the dense output cadence. The dotted line marks the innermost stable orbit.}{fig:delta}
@@ -475,42 +475,42 @@
 
 	\subsection{Inflow Stream}
 
-	Most of the accretion happens close to the midplane. In the steady state of the HR run, half of the net inflow passes within
-	about one to three degrees of the midplane and nine tenths within about five to eight degrees at most radii, with the radius
-	\num{10} in HR as an exception at about twenty degrees, while the disk surface sits between about five and nine degrees, so
-	that about \num{90} percent of the inflow passes through the disk. Above the disk, the angular distribution of the inflow in
-	\Cref{fig:angular} shows a second, much weaker maximum between about \num{20} and \num{50} degrees of elevation, at about a
-	thousandth of the midplane value per degree. It belongs to a faint stream of gas falling toward the black hole at intermediate
-	altitudes, which is also visible as a diagonal feature in the averaged density of \Cref{fig:domain}. This stream may well
-	be an artifact of the setup. The corona starts in Newtonian hydrostatic equilibrium but evolves in the deeper pseudo potential,
-	and the outer boundary changes its treatment of inflow at intermediate latitudes. We have not tested either explanation.
+	Most of the accretion happens close to the midplane. In the steady state of the HR run, roughly half of the net inflow passes within
+	about one to three degrees of the midplane and nine tenths within about five to eight degrees at most radii, with $r = {\kern-0.5pt}10$
+	as an exception in HR at about twenty degrees, while the disk surface sits between five and nine degrees, so that about \qty{90}{\percent}
+	of the inflow passes through the disk. Above the disk, the angular distribution of the inflow in \Cref{fig:angular} shows a second,
+	much weaker maximum between about \num{20} and \num{50} degrees of elevation, at around a thousandth of the midplane value per degree.
+	It belongs to a faint stream falling toward the central black hole at intermediate altitudes.
+	This feature is also visible as a diagonal shape in the averaged density of \Cref{fig:domain} and may well be an artifact of the setup.
+	The corona begins from Newtonian hydrostatic equilibrium but evolves in the deeper modified potential, and the outer boundary changes its
+	treatment of flows into the domain at intermediate latitudes. We have not tested either explanation.
 
 	\subsection{Resolution Comparison}
 
-	\Cref{tab:runs} summarizes the main quantities of both runs. The efficiency, the radius of inflow equilibrium and the wave
-	properties agree within a few percent, while the accretion rate and luminosity of LR are about a quarter higher, its disk is
-	thinner, and it survives the early evolution without breaking up. Since the classifier version changes together with the
-	resolution, we cannot say which of these differences are due to resolution.
+	\Cref{tab:runs} summarizes the main quantities of our radiative runs. The efficiency, the radius of inflow equilibrium and the wave
+	properties agree within a few percent, while the accretion rate and luminosity of LR are somewhat higher by about a quarter, its disk is
+	thinner, and it survives the early evolution without breaking up. Since the classifier version changes, we cannot definitively say which
+	of these differences are due to resolution.
 
 	\begin{table}[H]
 		\centering
-		\caption{Steady state quantities of both radiation runs. Times are in gravitational times, rates in Eddington units and
-				 radii in gravitational radii.}
+		\caption{Steady state quantities of both runs. Gravitational units are used for radii and times, rates
+		are given in Eddington units, and velocities in terms of the speed of light.}
 		\begin{tabular}{l r r}
 			\toprule
 			Quantity & HR & LR \\
 			\midrule
-			Cells                     & $120 \times 90$ & $90 \times 45$ \\
-			Classifier                & current         & first \\
-			Steady state from         & \num{23725}     & \num{9225} \\
-			Accretion rate            & \num{0.073}     & \num{0.091} \\
+			Cells $(r \times \theta)$ & $120 \times 90$ & $90 \times 45$ \\
+			Classifier Version        & current         & first \\
+			Steady State Start        & \num{23725}     & \num{9225} \\
+			Accretion Rate            & \num{0.073}     & \num{0.091} \\
 			Luminosity                & \num{0.056}     & \num{0.070} \\
 			Efficiency                & \num{0.048}     & \num{0.049} \\
-			Equilibrium radius        & \num{17.4}      & \num{17.9} \\
-			Aspect ratio at 10        & \num{0.057}     & \num{0.042} \\
-			Cells per scale height    & \num{3.3}       & \num{1.2} \\
-			Wave period in $t_g$      & \num{349}       & \num{349} \\
-			Phase speed in $c$        & \num{0.0190}    & \num{0.0195} \\
+			Equilibrium Radius        & \num{17.4}      & \num{17.9} \\
+			Aspect Ratio $(R =\kern-0.5pt 10)$   & \num{0.057}     & \num{0.042} \\
+			Cells / Scale Height      & \num{3.3}       & $1{\kern-0.5pt}.2$ \\
+			Wave Period               & \num{349}       & \num{349} \\
+			Phase Speed               & \num{0.0190}    & \num{0.0195} \\
 			\bottomrule
 		\end{tabular}
 		\label{tab:runs}
@@ -519,47 +519,47 @@
 	\section{Discussion and Outlook}
 	\label{sec:discussion}
 
-	Several features of the setup limit how far the results can be interpreted physically. The most important one concerns the
-	viscosity. Its sound speed is not taken from the evolving gas but from the initial disk profile at the same position, so it
-	does not depend on pressure. The stress therefore cannot grow when the disk heats up, which removes exactly the feedback
-	that drives the thermal and viscous instability of radiation pressure dominated disks \cite{ligh1974, shak1976}. The stability
+	Several features of the setup limit how far the results can be interpreted physically. Perhaps the most important one concerns the
+	viscosity. Its sound speed is not derived from the evolving gas but instead from the initial disk profile at the same position, meaning it
+	does not depend on pressure and is fixed in time. Stresses therefore cannot grow when the material heats up, which removes exactly
+	the feedback responsible for driving the thermal and viscous instability of radiation pressure dominated disks \cite{ligh1974, shak1976}. The stability
 	of our steady states is thus no test of this instability.
 
 	The boundaries also affect the results. The disk reinjected at the outer boundary and the blocked coronal inflow set the
-	supply of gas, the corona drains early and is not replenished, and the inflow stream above as well as the wave period may
+	supply of gas, the corona drains early and is not replenished, and the inflow stream discussed above as well as the wave period may
 	originate there. The mass budget of the steady state does not close either. The change of enclosed mass and the integrated
 	fluxes through the boundaries differ by about three percent between the radii \num{2.5} and \num{25} and by about \num{18}
 	percent for the full domain, far beyond the sampling error and with a sign that the density floors, which can only add mass,
 	cannot explain. This points to the boundary treatment or to the cell centered fluxes used in our diagnostic, as discussed in
 	\Cref{app:methods}.
 
-	Further limitations concern the physics. The gas temperatures are probably too high for our setup to be trusted. In the disk,
-	the gas stays two to three orders of magnitude hotter than the radiation, because only the Compton exchange can carry its heat
-	away, and the corona reaches up to about \qty{1e11}{\kelvin} in our runs, where $k_B T$ is about \num{46} times the electron
-	rest energy. The nonrelativistic Compton rate is far outside its validity there, which is why we hold it fixed above
-	\qty{1e9}{\kelvin} in the opacity model. The setup also includes neither relativistic corrections to Compton scattering nor
-	pair production, which would both matter at these temperatures. With Newtonian dynamics in the pseudo potential, the plunging
-	gas inside about four gravitational radii moves faster than light, with radial velocities of about one and a half to two
-	times and rotation velocities of about \num{1.4} times the speed of light at $r = 2.5$ in gravitational radii. The radiation
+	Further limitations are due to suspicious or missing physics. The gas temperatures are probably too high for our setup to be fully trusted.
+	Inside the disk, the matter stays two to three orders of magnitude hotter than the radiation, because only the Compton exchange can carry
+	its heat away, and the corona reaches up to about ${\kern-0.5pt}10^{1{\kern-1pt}1}\unit{\kelvin}$ in our runs, where $k_B T$ is about
+	\num{46} times the electron rest energy. The nonrelativistic Compton rate is far outside its validity there, which is why we hold it
+	fixed above \qty{1e9}{\kelvin} in the opacity model. The setup also includes neither relativistic corrections to the Compton scattering
+	nor pair production, which would both matter at these temperatures. With Newtonian dynamics in the pseudo potential, the plunging
+	gas inside about four gravitational radii moves superluminally, with radial velocities of up to about two times and rotation
+	velocities of ${\kern-0.5pt}1{\kern-0.5pt}.4$ times the speed of light at $r = 2.5$ in gravitational radii. The radiation
 	there is decoupled from the gas to keep the nonrelativistic radiation module stable, but the dynamics of this region are
 	unphysical. Finally, the simulations are axisymmetric and hydrodynamic, so turbulence driven by the magnetorotational
-	instability is replaced by the alpha prescription, and LR resolves the disk vertically with only about one cell per scale
+	instability is replaced by the $\alpha$ prescription, and LR barely resolves the disk vertically with only about one cell per scale
 	height.
 
-	Natural next steps are a viscosity with a sound speed derived from the evolving total pressure, which would allow the disk to
-	become thermally unstable, a larger domain that moves the outer boundary away from the region of interest, and an initial disk
+	Natural next steps would be a viscosity which derives its sound speed from the evolving total pressure, and thereby allows the disk to
+	become thermally unstable, a larger coarse domain that moves the outer boundary away from the region of interest, and an initial disk
 	that is better suited to radiation pressure dominated accretion, such as a disk built from the standard thin disk solution
 	\cite{shak1973}.
 
 	\section{Conclusions}
 
 	We adapted a viscous and resistive star disk setup in PLUTO to a nonrotating supermassive black hole and added radiation with
-	Compton coupling. Since the passive tracer that restricts the disk physics fails once radiation is enabled, we developed the
-	DiskFraction classifier, which agrees with the tracer to about \num{95} percent by mass in runs without radiation, follows the
+	effective Compton coupling. Since the passive tracer that restricts the disk physics fails once radiation is enabled, we developed the
+	\texttt{DiskFraction} classifier, which agrees with the tracer to about \qty{95}{\percent} percent by mass in runs without radiation, follows the
 	disk material with radiation, and in its current version repairs its own errors. With it, two radiation runs at different
-	resolutions reach steady states at roughly a tenth of the Eddington rate, in which Compton exchange balances viscous heating
-	closely at gas temperatures far above the radiation temperature, the effective viscosity exceeds the prescribed one by a factor
-	of two to three, and strongly nonlinear density waves with a period of about \num{350} gravitational times travel outward.
+	resolutions reach steady states at roughly a tenth of the Eddington rate, in which Compton exchange balances the viscous heating
+	closely, with a gas temperature far above the radiation temperature and the effective viscosity far exceeding the prescribed one by a factor
+	of two to three, as well as strongly nonlinear density waves with a period of about \num{350} gravitational times traveling outward.
 	Whether these features and the weak inflow stream at intermediate altitudes are physical or artifacts of the fixed sound speed,
 	the boundaries and the missing high temperature physics has to be tested with the improvements outlined above.
 
@@ -574,7 +574,7 @@
 		\pagenumbering{roman}
 		\setcounter{page}{1}
 
-		This section contains the equations of secondary importance, the analysis methods and supplementary graphics. All
+		This section contains auxiliary equations, the analysis methods, and supplementary graphics. All
 		simulation setups, the analysis notebook and the plotting script for this report are found in this
 		\href{https://github.com/fritzali/notes/tree/main/CAMK}{repository}.
 		\vspace{\baselineskip}
@@ -590,41 +590,42 @@
 		C = \frac{2}{5 \epsilon^2} \left(\frac{1}{r} - \frac{1 - 5 \epsilon^2 / 2}{R}\right)
 	\end{equation}
 	the disk has the pressure $p = \epsilon^2 C^{5/2}$ and density $\rho = C^{3/2}$ wherever its pressure exceeds that of the
-	corona and $R > 6$ holds. Its velocities follow the same analytic solution \cite{kluz2000}. In the radiation runs, the pressure of the analytic disk is
-	shared between gas and radiation at a common temperature, which makes the initial disk radiation pressure dominated.
+	corona and $R > 6$ holds, and its velocities follow the same analytic solution \cite{kluz2000}. In the radiation runs,
+	the pressure of the analytic disk is shared between gas and radiation at a common temperature, which makes the initial
+	disk radiation pressure dominated.
 
 	The dynamic shear viscosity is
 	\begin{equation}
 		\eta_\nu = \frac{2}{3} \alpha \rho \epsilon^2 C R^{3/2} f
 	\end{equation}
 	where $\epsilon^2 C$ is the squared sound speed of the initial disk at the position of the cell, which is fixed in time. At
-	the midplane, this gives the kinematic viscosity $\nu = 2 \alpha \epsilon^2 \sqrt{R} / 3$ used in \Cref{eq:sigma}. In the
-	magnetic runs, the viscosity is also switched off where the ratio of thermal to poloidal magnetic pressure falls below
+	the midplane, this produces the kinematic viscosity $\nu = 2 / 3 \,\alpha \epsilon^2 R^{1{\kern-0.5pt}/2}$ that \Cref{eq:sigma} uses.
+	In the magnetic runs, the viscosity is also switched off where the ratio of thermal to poloidal magnetic pressure falls below
 	\num{0.5} in a cell, and the resistivity follows an alpha prescription of the same form. In the tracer driven runs, the tracer takes
-	the place of $f$ here and in the cooling below.
+	the place of $f$ here and in the cooling.
 
 	The artificial cooling of S. Kundu and M. Čemeljić removes in each step the energy
 	\begin{equation}
 		\Delta E = k \, \Delta t \, f \, q
 	\end{equation}
-	from a cell, where $q$ is the local viscous or Ohmic heating rate with $k = 2$ for viscous and $k = 1$ for Ohmic heating.
-	The removal is only applied where it is smaller than one tenth of the thermal energy density $p / (\gamma - 1)$ of the cell.
+	from a cell, where $q$ is the local viscous or Ohmic heating rate with $k = 2$ for viscous and $k = 1$ for Ohmic contributions.
+	The removal is only applied where it is less than one tenth of the thermal energy density $p / (\gamma - 1)$ of the cell.
 	It is not used in the radiation runs.
 
-	The Kramers opacity in cgs units is
+	The Kramers opacity in \unit{\cgs} units is
 	\begin{equation}
 		\kappa_K = \left(K_\mathrm{ff} + K_\mathrm{bf}\right) \rho \, T_g^{-7/2}
 	\end{equation}
-	with $K_\mathrm{ff} = 3.68 \times 10^{22} \left(1 - Z\right) \left(1 + X\right)$ and
-	$K_\mathrm{bf} = 4.34 \times 10^{25} Z \left(1 + X\right) / 10$ as coefficients, where the factor ten in the second is a
-	guillotine factor, and the gas temperature in this expression is at least \qty{1e4}{\kelvin} in all cases. Above
-	$T_\mathrm{max} = \qty{1e9}{\kelvin}$ the Compton opacity of \Cref{eq:compton} is replaced by
+	with $K_\mathrm{ff} = 3.68 \times 10^{22} \left(1 - Z\right) \left(1 + X\right)$ the free free and
+	$K_\mathrm{bf} = 4.34 \times 10^{25} Z \left(1 + X\right) \!/ 10$ the bound free coefficients, where the factor ten in the second is a
+	guillotine factor, and the gas temperature in this expression has at least \qty{1e4}{\kelvin} in all cases. Above the
+	$T_\mathrm{max} = \qty{1e9}{\kelvin}$ threshold, the Compton opacity of \Cref{eq:compton} is replaced by
 	\begin{equation}
 		\kappa_C = \kappa_\mathrm{es} \frac{4 k_B T_r^4 \left(T_\mathrm{max} - T_r\right)}{m_e c^2 \left(T_g^4 - T_r^4\right)}
 	\end{equation}
-	which holds the exchange rate at its value for $T_g = T_\mathrm{max}$ and matches \Cref{eq:compton} there. It vanishes if the
-	radiation temperature itself exceeds the cap, and in all cases $\kappa_C$ is limited to $\kappa_\mathrm{es}$ so that the
-	scattering opacity stays non negative. Since the rotation criterion never vanishes completely, DiskFraction leaves a value of
+	which holds the exchange rate at its $T_g = T_\mathrm{max}$ value and matches \Cref{eq:compton} there. It vanishes completely once the
+	radiation temperature itself were to exceed the cap, while the code limits $\kappa_C$ to $\kappa_\mathrm{es}$ in all cases so that the
+	scattering opacity stays non negative. Since the rotation criterion never vanishes completely, \texttt{DiskFraction} leaves a value of
 	about one thousandth in the corona. Together with the hot coronal gas, this was enough to Compton cool the corona in our tests,
 	so the energy exchange uses the gated fraction
 	\begin{equation}
@@ -638,14 +639,14 @@
 	with the gas speed $\beta = \lvert \mathbf{v} \rvert / c$ as input. The absorption and scattering opacities passed to PLUTO
 	are then
 	\begin{align}
-		\kappa_\mathrm{abs} &= g_v f_d \left(\kappa_K + \kappa_C\right) \\
+		\kappa_\mathrm{abs} &= g_v \,f_d \left(\kappa_K + \kappa_C\right) \\
 		\kappa_\mathrm{sc} &= g_v \left(\kappa_\mathrm{es} - f_d \kappa_C\right)
 	\end{align}
-	so that Thomson scattering acts on all gas. In an earlier version, scattering was also multiplied by DiskFraction. Radiation
-	could then only push on gas classified as disk, and gas lifted across the disk surface lost its support and piled up into a
-	dense sheet there, which motivated this change.
+	so that only Thomson scattering acts on all gas. In an earlier version, scattering was multiplying by \texttt{DiskFraction} also.
+	Radiation could then only push on gas classified as disk, and gas lifted across the disk surface lost its support and piled up into
+	a dense sheet there, which motivated this change, although there was little change during short runs.
 
-	The density floor is $\rho = \num{5e-7}$ in code units, applied with constant sound speed and momentum. At the inner
+	The density floor is set to $\rho = \num{5e-7}$ in code units, applied with a constant sound speed and momentum. At the inner
 	boundary, all variables are copied from the first active cell, with radial velocity and radiation flux limited to inflow. At
 	the outer boundary, density is extrapolated with a limited logarithmic slope that may not rise outward, the pressure follows
 	adiabatically, and radiation leaves freely. Within an angle of $\arctan(1.25 \epsilon)$ from the midplane the analytic disk
@@ -654,38 +655,39 @@
 	\subsection{Analysis Methods}
 	\label{app:methods}
 
-	Time averages use the regular output cadence of \num{50} gravitational times, and their standard errors are estimated from
+	Time averages use the regular coarse output cadence of \num{50} gravitational times, and their standard errors are estimated from
 	the scatter of block averages over \num{1000} gravitational times \cite{flyv1989}, which accounts for the correlation between
 	consecutive outputs.
 
-	For the relaxation of a global quantity $X$ we compute running means $\bar X_W$ over windows of $W = 2500$ gravitational
+	For the relaxation of a global quantity $X$ we compute running means $\bar X_W$ over windows of $W\kern-1pt = 2500$ gravitational
 	times, centered on $t_c$ and compare them with the mean $X_\mathrm{ref}$ over the last fifth of the run through the statistic
 	\begin{equation}
 		D(t_c) = \frac{\lvert \bar X_W(t_c) - X_\mathrm{ref} \rvert}{\sigma}
 	\end{equation}
-	where $\sigma$ combines the standard errors of both means. A quantity counts as relaxed from the first window after which
-	$D$ stays below two until the reference period, and the steady state begins when all four quantities in
-	\Cref{sec:results} are relaxed. \Cref{fig:relax_distance} shows this statistic for HR.
+	where $\sigma$ combines the standard errors of both means. Any quantity counts as relaxed from the first window after which
+	$D$ stays below two until the reference period, and the steady state begins when all four quantities in \Cref{sec:results}
+	are relaxed. \Cref{fig:relax_distance} shows this statistic for the HR run.
 
 	The radius of inflow equilibrium is the largest radius out to which the running mean of the accretion rate stays within
-	twenty percent of its value inside six gravitational radii, and we quote the median over the steady state. The viscous
+	twenty percent of its value inside six gravitational radii, and we quote here the median over the steady state window. The viscous
 	estimate in \Cref{sec:results} solves $t = R^2 / \nu$ for the radius.
 
-	Power spectra and cross spectra of the surface density perturbation $\delta = \Sigma / \langle \Sigma \rangle - 1$ use the
-	averaged periodogram method \cite{welc1967} with Hann windows, half overlapping segments of at most \num{2500} gravitational times and linear
-	detrending. The peak frequency is refined by parabolic interpolation in logarithmic power. The phase of the cross spectrum
-	with the reference radius $r = 7$ at the peak frequency is unwrapped in radius, and only radii with a coherence above its five
-	percent significance level and a sufficient share of power at the peak are used. The local phase speed follows from a linear
-	fit of phase against radius over a range of fifteen percent in radius as
+	Power spectra as well as cross spectra of the surface density perturbation $\delta = \Sigma / \langle \Sigma \rangle - 1$ use the
+	averaged periodogram method \cite{welc1967} with Hann windows, half overlapping segments of at most \num{2500} gravitational timescales and linear
+	detrending. The found peak frequency is refined by parabolic interpolation in logarithmic power. The phase of the cross spectrum
+	with reference radius $r = 7$ at the peak frequency is unwrapped in radius, and only those radii with a coherence above its five
+	percent significance level as well as a sufficient share of power at the peak are used. The local phase speed follows from a linear
+	fit of the phase against radius over a range of fifteen percent in radius as
 	$v_p = \omega / (\mathrm{d}\varphi / \mathrm{d}r)$ with the angular frequency $\omega$ of the peak.
 
 	The mass budget compares the change of mass between two radii with the time integral of the accretion rates through them.
-	Both are taken from the dense outputs of HR, where the accretion rates are evaluated at cell centers. Their difference would
+	Both are taken from the dense outputs of HR where the accretion rates are evaluated at cell centers. Their difference would
 	be the mass added by the density floor, and the error of the time integration is estimated from integrals over even and odd
 	outputs separately. \Cref{fig:budget} shows that this difference is negative, which the floor cannot cause.
 
-	The heating and cooling times of \Cref{fig:heating_times} use the viscous heating rate $q^+ = \eta_\nu \left(R \, \partial_R \Omega\right)^2$ at the midplane and the exchange terms of the gated Compton and Kramers opacities with the same
-	gates as in the simulation, each relative to the thermal energy density of the gas.
+	The heating and cooling times of \Cref{fig:heating_times} use the viscous heating rate term
+	$q^+ = \eta_\nu \left(R \, \partial_R \Omega\right)^2$ at the midplane and the exchange terms of the gated Compton and Kramers
+	opacities with the same gates as in the simulation, each relative to the thermal energy density of the gas.
 
 	\subsection{Runs}
 	\label{app:runs}
@@ -693,10 +695,10 @@
 	\begin{table}[H]
 		\centering
 		\small
-		\caption{Simulations used in this work. Runs marked with TRC are driven by DiskFraction, the others by the tracer.}
+		\caption{Simulations used in this work. Runs marked with \texttt{TRC} are driven by \texttt{DiskFraction} and the others by the tracer.}
 		\begin{tabular}{l r r}
 			\toprule
-			Directory & Cells & End in $t_g$ \\
+			Directory & Cells & End \\
 			\midrule
 			\verb|BH_VISC_HD|                  & $90 \times 45$  & \num{1000} \\
 			\verb|BH_VISC_HD_TRC|              & $90 \times 45$  & \num{1000} \\
@@ -712,15 +714,24 @@
 		\label{tab:dirs}
 	\end{table}
 
-	The last two are LR and HR. The first radiation run uses a twenty times higher density unit, the viscosity parameter $\alpha = 1$ and no Compton
-	coupling. The runs without radiation use the same equations in code units, so their physical units do not matter.
+	The last two are our LR and HR runs. In the first radiation run, a twenty times higher density unit is used, as well as a larger viscosity
+	parameter $\alpha = 1$ and no Compton coupling. The runs without radiation use the same equations in code units, so their physical units
+	do not matter.
 
 	\subsection{Supplementary Figures}
 	\label{app:figures}
 
 	The validation of the classifier for the magnetohydrodynamic and resistive cases is shown in
 	\Cref{fig:valid_mhd,fig:valid_rmhd}, and the difference between classifier and tracer for all three cases in
-	\Cref{fig:valid_diff}.
+	\Cref{fig:valid_diff}. Then follow global maps and early evolution panels of different quantities, as well as
+	additional analysis metrics, such as accretion rates, amplitudes and phases of the waves, budgets and balances,
+	vertical and angular profiles, relaxation statistics, and power spectra.
+
+	$\,$
+
+	$\,$
+
+	$\,$
 
 	\textfig{valid_mhd_text.png}{Magnetohydrodynamic black hole setup without radiation, arranged as in \Cref{fig:valid_hd}.}{fig:valid_mhd}
 
@@ -729,9 +740,6 @@
 
 	\textfig{valid_diff_text.png}{Difference $\Delta f = f - f_\mathrm{tr}$ between DiskFraction and the passive tracer in the
 		classifier driven hydrodynamic, magnetohydrodynamic and resistive runs.}{fig:valid_diff}
-
-	The following maps show DiskFraction, the temperatures and the velocities of HR, initially and in the steady state as well as
-	in the early evolution.
 
 	\textfig{domain_f_text.png}{DiskFraction of HR initially \textit{(left)} and averaged over the last \num{10000} gravitational
 		times \textit{(right)}.}{fig:domain_f}
@@ -750,10 +758,6 @@
 	\textfig{early_velocity_text.png}{Radial \textit{(upper two rows)} and rotation velocity \textit{(lower two rows)} in the early
 		evolution of HR at the times of \Cref{fig:early}.}{fig:early_velocity}
 
-	The global quantities of both runs in their steady states are shown in \Cref{fig:window}, and the accretion rate of disk and
-	corona over time in \Cref{fig:spacetime_mdot}. The amplitude and the phase relations of the waves follow in
-	\Cref{fig:rms_cross}.
-
 	\textfig{window_text.png}{Masses, energies and Eddington ratios of accretion and luminosity of both runs in their steady
 		states.}{fig:window}
 
@@ -763,9 +767,6 @@
 	\textfig{rms_cross_text.png}{\textit{Left:} Root mean square of the surface density perturbation of both runs.
 		\textit{Right:} Phase differences of radial velocity and radiation energy relative to density at the midplane at the peak
 		frequency in HR.}{fig:rms_cross}
-
-	The mass budget and the energy balance of HR are shown in \Cref{fig:budget,fig:balance}, followed by vertical and angular
-	profiles in \Cref{fig:vertical,fig:angular_full}.
 
 	\textfig{budget_text.png}{Mass budget of HR between the radii \num{2.5} and \num{25} \textit{(left)} and for the full domain
 		\textit{(right)}.}{fig:budget}
@@ -777,10 +778,7 @@
 		where $f = 0.5$ holds.}{fig:vertical}
 
 	\textfig{angular_text.png}{Time averaged angular profiles of net inflow, density, radial and rotation velocity at several radii
-		for HR \textit{(thick)} and LR \textit{(thin)}.}{fig:angular_full}
-
-	Finally, \Cref{fig:timescales,fig:relax_distance,fig:aspect,fig:inflow,fig:wave_spectrum} show the time scales of the initial
-	disk, the relaxation statistic, the aspect ratio, the inflow speed and the power spectrum of the waves.
+		for HR \textit{(thick)} and LR \textit{(thin)}.}{fig:angular}
 
 	\colfig{timescales_col.png}{Orbital, thermal, sound crossing and viscous times of the initial disk.}{fig:timescales}
 
