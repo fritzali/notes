@@ -763,8 +763,11 @@ def contrast_color(ax, x0, x1, y0, y1):
     return 'k' if lum > 0.45 else 'w'
 
 
-def time_label(ax, t):
-    color = contrast_color(ax, 0.55, 1.0, 0.75, 1.0)
+TIME_COLOR = {'rho': 'w', 'f': 'w', 'tr': 'w', 'ratio': 'w', 'vr': 'w', 'vphi': 'w', 'Tg': 'k'}
+
+
+def time_label(ax, t, key=None):
+    color = TIME_COLOR.get(key) or contrast_color(ax, 0.55, 1.0, 0.75, 1.0)
     ax.text(0.96, 0.93, rf'$t = \num{{{t:.0f}}}\,t_g$', color=color, ha='right', va='top', transform=ax.transAxes, fontsize=8)
 
 
@@ -813,7 +816,7 @@ def build_map_grid(groups, width, xlim=(0, 20), ylim=(0, 10), cbar=True, yaxis=T
                 if len(cell) > 5:
                     cell[5](axes[i, j])
                 if t is not None:
-                    time_label(axes[i, j], t)
+                    time_label(axes[i, j], t, key)
                 if tag is not None:
                     row_tag(axes[i, j], tag)
             i += 1
@@ -1049,7 +1052,7 @@ def fig_early(run, keys=('rho', 'f', 'Tg', 'ratio', 'vr', 'vphi')):
         map_grid([(key, rows(key))], TEXT, f'early_{key}_text')
 
     for name, (a, b) in [('thermal', ('Tg', 'ratio')), ('velocity', ('vr', 'vphi'))]:
-        map_grid([(a, rows(a)), (b, rows(b, False))], TEXT, f'early_{name}_text')
+        map_grid([(a, rows(a)), (b, rows(b))], TEXT, f'early_{name}_text')
 
 
 def fig_relaxation(runs):
