@@ -1,0 +1,588 @@
+\input{../header.tex}
+
+\hypersetup{
+    pdftitle={Numerical Simulations of AGN Accretion Disks in PLUTO - Fritz Ali Agildere},
+}
+
+\author[F. A. Agildere]{Fritz Ali Agildere}
+
+\date[Oct. 13, 2026]{October 13, 2026}
+
+\title{Numerical Simulations of AGN Accretion Disks in PLUTO}
+\subtitle{\textsc{CAMK PAN Summer Student Program}}
+
+\institute[CAMK]{}
+
+\DeclareSIUnit\dex{dex}
+\DeclareSIUnit\year{yr}
+
+\newcommand{\plot}[1]{\includegraphics{content/#1.pdf}}
+
+\begin{document}
+	\begin{frame}[noframenumbering]
+		\titlepage
+	\end{frame}
+
+	\begin{frame}
+		\frametitle{Overview}
+		\begin{columns}[T]
+			\begin{column}{0.45\textwidth}
+				\bfseries{Numerical Setup}\\[1.5pt]
+				\hspace*{3ex}\mdseries{Black Hole Adaptation}\\
+				\hspace*{3ex}\mdseries{Radiation Physics}\\[3.0pt]
+				\bfseries{Disk Classifier}\\[1.5pt]
+				\hspace*{3ex}\mdseries{Passive Tracer}\\
+				\hspace*{3ex}\mdseries{Construction \& Validation}\\[3.0pt]
+			\end{column}
+			\begin{column}{0.45\textwidth}
+				\bfseries{Results}\\[1.5pt]
+				\hspace*{3ex}\mdseries{Relaxation}\\
+				\hspace*{3ex}\mdseries{Steady State}\\
+				\hspace*{3ex}\mdseries{Density Waves}\\[3.0pt]
+				\bfseries{Discussion}\\[1.5pt]
+				\hspace*{3ex}\mdseries{Limitations}\\
+				\hspace*{3ex}\mdseries{Outlook}\\[3.0pt]
+			\end{column}
+		\end{columns}
+	\end{frame}
+
+	\section{Numerical Setup}
+
+	\begin{frame}
+		\frametitle{Black Hole Adaptation}
+		\begin{itemize}
+			\item<2-> Adapted Viscous Star Disk Setup from Numerical Atlas to Nonrotating SMBH
+			\begin{itemize}
+				\item<3-> Solved 2.5D on Spherical Grid in $r$ and $\theta$ with Axial \& Equatorial Symmetry
+				\item<4-> Replaced Stellar Surface with Absorbing Diode Inner Boundary
+				\item<5-> Replaced Newtonian with Paczyński–Wiita Potential to Reproduce ISCO
+						  $$\Phi = -\frac{GM}{r - r_s}$$
+				\item<6-> Measured Lengths and Times in Gravitational Units with $c$ for Velocities
+						  \begin{align*}&&&& r_g = GM / c^2 && t_g = r_g / c &&&&\end{align*}
+				\item<7-> Embedded Kluźniak–Kita Disk from $R = 6$ with $\epsilon = 0.1$ in Hydrostatic Corona
+				\item<8-> Reinjected Analytic Disk at Outer Boundary and Blocked Coronal Inflow
+			\end{itemize}
+		\end{itemize}
+	\end{frame}
+
+	\begin{frame}
+		\frametitle{Radiation Physics}
+		\begin{itemize}
+			\item<2-> Enabled Nonrelativistic Two Moment Radiation Module with Full Speed of Light
+			\begin{itemize}
+				\item<3-> Fixed Physical Units by Black Hole Mass of \qty{1e8}{\solarmass} and Density Unit
+						  \begin{align*}&&&& r_g \approx \qty{1.48e13}{\centi\meter} && t_g \approx \qty{493}{\second} &&
+						  \rho_0 = \qty{5.8e-10}{\gram\per\centi\meter\cubed} &&&&\end{align*}
+				\item<4-> Balanced Initial Viscous Heating and Radiative Cooling at $\alpha = 0.5$
+				\item<5-> Included Kramers Absorption as well as Thomson Scattering Opacities
+			\end{itemize}
+			\item<6-> Added Effective Compton Opacity since PLUTO Treats Scattering as Coherent
+					  $$\kappa_C = \kappa_\mathrm{es} \frac{4 k_B T_r^4}{m_e c^2 \left(T_g + T_r\right) \left(T_g^2 + T_r^2\right)}$$
+			\vspace{-1.5ex}
+			\begin{itemize}
+				\item<7-> Reproduces Compton Exchange Rate and Prevents Gas Heating up to \qty{1e11}{\kelvin}
+				\item<8-> Rate Capped above \qty{1e9}{\kelvin}, Decoupled above $0.9 \, c$ and Gas Floor at \qty{1e4}{\kelvin}
+			\end{itemize}
+		\end{itemize}
+	\end{frame}
+
+	\section{Disk Classifier}
+
+	\begin{frame}
+		\frametitle{Passive Tracer}
+		\begin{itemize}
+			\item<2-> Advected Tracer Switches Viscosity, Resistivity, Cooling and Opacities to Disk
+					  $$\partial_t q + \mathbf{v} \cdot \nabla q = 0$$
+			\vspace{-1.5ex}
+			\begin{itemize}
+				\item<3-> Stays at Initial Wedge Once Radiation Enabled while Disk Evolves
+				\item<4-> Cause Not Isolated in Code, Only Restricted Physics Affected
+			\end{itemize}
+			\item<5-> Replaced Tracer by Classifier Built from Current State of Each Cell Alone
+			\begin{itemize}
+				\item<6-> Same Disk Condition as Initial Setup, Identical to Tracer at Start
+				\item<7-> Robust to Restarts by Writing Classifier State with Every Output
+			\end{itemize}
+		\end{itemize}
+	\end{frame}
+
+	\begin{frame}
+		\frametitle{Radiation Enabled – Tracer \& Classifier}
+		\centering
+		\only<1|handout:0>{\plot{rad_tracer_0}}%
+		\only<2|handout:0>{\plot{rad_tracer_1}}%
+		\only<3>{\plot{rad_tracer_2}}%
+		\only<4|handout:0>{\plot{rad_tracer_3}}%
+	\end{frame}
+
+	\begin{frame}
+		\frametitle{Construction}
+		\begin{itemize}
+			\item<2-> Classified Cells by \texttt{DiskFraction} $f \in [0, 1]$ from Density and Rotation
+			\begin{itemize}
+				\item<3-> Stored Disk and Corona Reference Densities in \num{90} Logarithmic Radial Bins
+				\item<4-> Located Cell Density between References on Logarithmic Scale
+						  $$s = \frac{\log \rho - \log \rho_c}{\max\left(\log \rho_d - \log \rho_c\kern+1pt, 0.5\right)}$$
+				\item<5-> Multiplied Density and Keplerian Rotation Criteria with Logistic Function
+						  $$f = \sigma\left(\frac{s - 1{\kern-0.5pt}/6}{0.3}\right) \sigma\left(\frac{\lvert v_\phi \rvert \sqrt{R} - 0.5}{0.{\kern-0.5pt}1}\right)$$
+				\item<6-> Updated References as $f$ and $1 - f$ Weighted Means via Moving Average with\break
+						  Weight $w = 1\kern-0.5pt - \exp\left(-\Delta t / \tau\right)$ and Time Constant $\tau = 6 \, t_g$
+			\end{itemize}
+		\end{itemize}
+	\end{frame}
+
+	\begin{frame}
+		\frametitle{Versions \& Guards}
+		\begin{itemize}
+			\item<2-> First Version Used Fixed Weight per Step and Inverted after Disk Disruption
+			\begin{itemize}
+				\item<3-> Disk Reference Ten Times below Corona Reference at Radii from \num{2.4} to \num{3.4}
+				\item<4-> Inversion Sustained Itself since References Built from Classification
+				\item<5-> Plunging Gas inside ISCO Rotates Faster than Keplerian and Counted as Disk
+			\end{itemize}
+			\item<6-> Current Version Repairs Itself instead of Locking Error in Place
+			\begin{itemize}
+				\item<7-> Enforced Minimum Span of \qty{0.5}{\dex} between Disk and Corona References
+				\item<8-> Copied References from Nearest Valid Bin, Searching Outward First
+				\item<9-> Smoothed with Time Constant for Same Memory at Every Resolution
+			\end{itemize}
+		\end{itemize}
+	\end{frame}
+
+	\begin{frame}
+		\frametitle{Validation – Hydrodynamics}
+		\centering
+		\only<1|handout:0>{\plot{valid_hd_0}}%
+		\only<2|handout:0>{\plot{valid_hd_1}}%
+		\only<3>{\plot{valid_hd_2}}%
+		\only<4|handout:0>{\plot{valid_hd_3}}%
+	\end{frame}
+
+	\begin{frame}
+		\frametitle{Validation – Agreement}
+		\centering
+		\plot{valid_agreement}
+	\end{frame}
+
+	\section{Results}
+
+	\begin{frame}
+		\frametitle{Radiation Runs}
+		\begin{itemize}
+			\item<2-> Simulated Radiation Setup with Compton Coupling at Two Resolutions
+			\begin{itemize}
+				\item<3-> LR with $90 \times 45$ Cells up to $t = 5 \times 10^4$ and First Classifier Version
+				\item<4-> HR with $120 \times 90$ Cells up to $t = 4 \times 10^4$ and Current Classifier Version
+				\item<5-> Output Every \num{50} Gravitational Times, Refined to \num{5} for Last \num{10000}
+			\end{itemize}
+			\item<6-> Inflated Disk and Broke up Dense Surface Layer during First Hundreds of $t_g$
+			\begin{itemize}
+				\item<7-> HR Disk Blown Apart and Rebuilt by $t \approx 15000$, LR Declined Smoothly
+				\item<8-> Corona Drained Early and Not Replenished due to Blocked Inflow
+			\end{itemize}
+			\item<9-> Steady State when Disk Mass, Radiation Energy, Accretion Rate and\break
+					  Luminosity Remain within Two Standard Errors of Final Fifth
+			\begin{itemize}
+				\item<10-> Reached at $t = 23725$ for HR and $t = 9225$ for LR
+			\end{itemize}
+		\end{itemize}
+	\end{frame}
+
+	\begin{frame}
+		\frametitle{Early Evolution – Density}
+		\centering
+		\only<1|handout:0>{\plot{early_rho_0}}%
+		\only<2|handout:0>{\plot{early_rho_1}}%
+		\only<3>{\plot{early_rho_2}}%
+		\only<4|handout:0>{\plot{early_rho_3}}%
+		\only<5|handout:0>{\plot{early_rho_4}}%
+		\only<6|handout:0>{\plot{early_rho_5}}%
+	\end{frame}
+
+	\begin{frame}
+		\frametitle{Relaxation – Mass}
+		\centering
+		\plot{relax_mass}
+	\end{frame}
+
+	\begin{frame}
+		\frametitle{Steady State –
+					\only<1-2|handout:1>{Density}%
+					\only<3-4|handout:2>{Disk Surface}%
+					\only<5|handout:3>{Gas Temperature}%
+					\only<6|handout:4>{Temperature Ratio}}
+		\centering
+		\only<1|handout:0>{\plot{domain_rho_init}}%
+		\only<2|handout:1>{\plot{domain_rho_mean}}%
+		\only<3|handout:0>{\plot{domain_outline_init}}%
+		\only<4|handout:2>{\plot{domain_outline_mean}}%
+		\only<5|handout:3>{\plot{domain_Tg_mean}}%
+		\only<6|handout:4>{\plot{domain_ratio_mean}}%
+	\end{frame}
+
+	\begin{frame}
+		\frametitle{Steady State}
+		\begin{itemize}
+			\item<2-> Thinner Disk with Aspect Ratio \num{0.057} in HR and \num{0.042} in LR at $R = 10$
+			\item<3-> Inflow Equilibrium out to $r \approx 17$ with Strong Circulation Further Out
+			\begin{itemize}
+				\item<4-> Accretion Rate \num{0.073} and \num{0.091} in Eddington Units, about \qty{0.3}{\solarmass\per\year}
+				\item<5-> Luminosity \num{0.056} and \num{0.070} with Radiative Efficiency $\eta \approx 0.048$
+			\end{itemize}
+			\item<6-> Surface Density below Steady Thin Disk Profile
+					  $$\Sigma_\mathrm{ss} = \frac{\dot M}{3\pi\nu} \left(1 - \sqrt{6 / R}\kern+1pt\right)$$
+			\vspace{-1.5ex}
+			\begin{itemize}
+				\item<7-> Effective Viscosity Two to Three Times Higher than Prescribed $\alpha$
+			\end{itemize}
+			\item<8-> Viscous Heating Balanced by Compton Cooling, Ratio of \num{0.8} to \num{0.9}
+			\begin{itemize}
+				\item<9-> Gas a Hundred to Two Thousand Times Hotter than Radiation at Midplane
+			\end{itemize}
+		\end{itemize}
+	\end{frame}
+
+	\begin{frame}
+		\frametitle{Steady State –
+					\only<1|handout:1>{Accretion}%
+					\only<2|handout:2>{Surface Density}%
+					\only<3|handout:3>{Effective Viscosity}%
+					\only<4|handout:4>{Heating \& Cooling Times}%
+					\only<5|handout:5>{Heating \& Cooling Ratio}}
+		\centering
+		\only<1|handout:1>{\plot{mdot}}%
+		\only<2|handout:2>{\plot{sigma}}%
+		\only<3|handout:3>{\plot{alpha}}%
+		\only<4|handout:4>{\plot{heating_times}}%
+		\only<5|handout:5>{\plot{heating_ratio}}%
+	\end{frame}
+
+	\begin{frame}
+		\frametitle{Density Waves}
+		\begin{itemize}
+			\item<2-> Found Quasiperiodic Density Waves Traveling Outward in Both Runs
+			\begin{itemize}
+				\item<3-> Starting near ISCO and Propagating to $R = 17$ and Beyond
+				\item<4-> Strongly Nonlinear with Relative Amplitude from \num{0.25} up to \num{0.8}
+				\item<5-> Period of \num{349} Gravitational Times, about Two Days for Our SMBH
+			\end{itemize}
+			\item<6-> Phase Speed of $0.019 \, c$ Steady between Radii of \num{4} and \num{17}
+			\begin{itemize}
+				\item<7-> \num{2.2} Times Adiabatic Sound Speed with Radiation, so Not Plain Sound Waves
+				\item<8-> Same Period at Both Resolutions Suggests Origin in Setup rather than Numerics
+				\item<9-> Close to Thermal Time $1 / (\alpha \Omega)$ of \num{330} $t_g$ at Outer Boundary
+			\end{itemize}
+		\end{itemize}
+	\end{frame}
+
+	\begin{frame}
+		\frametitle{Density Waves –
+					\only<1|handout:1>{Perturbation}%
+					\only<2|handout:2>{Power Spectrum}}
+		\centering
+		\only<1|handout:1>{\plot{spacetime_delta}}%
+		\only<2|handout:2>{\plot{wave_spectrum}}%
+	\end{frame}
+
+	\begin{frame}
+		\frametitle{Density Waves –
+					\only<1|handout:1>{Phase}%
+					\only<2|handout:2>{Phase Speed}}
+		\centering
+		\only<1|handout:1>{\plot{phase}}%
+		\only<2|handout:2>{\plot{speed}}%
+	\end{frame}
+
+	\begin{frame}
+		\frametitle{Resolution Comparison}
+		\centering
+		\renewcommand{\arraystretch}{0.92}
+		\begin{tabular}{l r r}
+			\toprule
+			\bfseries{Quantity} & \bfseries{HR} & \bfseries{LR} \\
+			\midrule
+			Cells $(r \times \theta)$          & $120 \times 90$ & $90 \times 45$ \\
+			Classifier Version                 & Current         & First \\
+			Steady State Start $/ \, t_g$      & \num{23725}     & \num{9225} \\
+			Accretion Rate $/ \, \dot M_E$     & \num{0.073}     & \num{0.091} \\
+			Luminosity $/ \, L_E$              & \num{0.056}     & \num{0.070} \\
+			Efficiency                         & \num{0.048}     & \num{0.049} \\
+			Equilibrium Radius $/ \, r_g$      & \num{17.4}      & \num{17.9} \\
+			Aspect Ratio $(R = 10)$            & \num{0.057}     & \num{0.042} \\
+			Cells per Scale Height             & \num{3.3}       & \num{1.2} \\
+			Wave Period $/ \, t_g$             & \num{349}       & \num{349} \\
+			Phase Speed $/ \, c$               & \num{0.0190}    & \num{0.0195} \\
+			\bottomrule
+		\end{tabular}
+	\end{frame}
+
+	\section{Discussion}
+
+	\begin{frame}
+		\frametitle{Limitations}
+		\begin{itemize}
+			\item<2-> Viscosity Uses Sound Speed of Initial Disk, Fixed in Time
+			\begin{itemize}
+				\item<3-> Removes Feedback Driving Thermal and Viscous Instability, so Stability No Test
+			\end{itemize}
+			\item<4-> Boundaries Set Gas Supply and May Cause Inflow Stream and Wave Period
+			\begin{itemize}
+				\item<5-> Mass Budget Open by \qty{3}{\percent} between $r = 2.5$ and \num{25}, \qty{18}{\percent} for Full Domain
+			\end{itemize}
+			\item<6-> Gas Temperatures Likely Too High for Setup to Be Fully Trusted
+			\begin{itemize}
+				\item<7-> Corona up to \qty{1e11}{\kelvin} with $k_B T$ about \num{46} Times Electron Rest Energy
+				\item<8-> Neither Relativistic Compton Corrections nor Pair Production Included
+			\end{itemize}
+			\item<9-> Plunging Gas inside about Four $r_g$ Moves Superluminally in Pseudo Potential
+			\item<10-> Axisymmetric Hydrodynamics Replaces MRI Turbulence by $\alpha$ Prescription
+		\end{itemize}
+	\end{frame}
+
+	\begin{frame}
+		\frametitle{Outlook \& Conclusions}
+		\begin{itemize}
+			\item<2-> Next Steps for More Physical Setup
+			\begin{itemize}
+				\item<3-> Derive Viscous Sound Speed from Evolving Total Pressure
+				\item<4-> Extend Coarse Domain to Move Outer Boundary Away from Region of Interest
+				\item<5-> Start from Standard Thin Disk Solution Suited to Radiation Pressure
+			\end{itemize}
+			\item<6-> Built Working SMBH Radiation Setup in PLUTO with Effective Compton Coupling
+			\begin{itemize}
+				\item<7-> \texttt{DiskFraction} Agrees with Tracer to \qty{95}{\percent} by Mass and Follows Disk with Radiation
+				\item<8-> Steady States at about a Tenth of Eddington Rate with Compton Balanced Heating
+				\item<9-> Nonlinear Density Waves with Period of about \num{350} $t_g$ Traveling Outward
+			\end{itemize}
+		\end{itemize}
+	\end{frame}
+
+	\section{Bibliography}
+
+	\begin{frame}
+		\begin{center}\usebeamerfont{title}\textcolor{MASS}{\resizebox{0.25\linewidth}{!}{Thank You!}}\end{center}\vspace{2ex}
+		\begin{itemize}
+			\item A. Mignone et al., {\itshape{\href{https://ui.adsabs.harvard.edu/abs/2007ApJS..170..228M}
+													{PLUTO: A Numerical Code for Computational Astrophysics}}} (ApJS) 2007
+			\item M. Čemeljić, {\itshape{\href{https://ui.adsabs.harvard.edu/abs/2019A\%26A...624A..31C}
+											  {Atlas of Numerical Solutions for Star-Disk Magnetospheric Interaction}}} (A\&A) 2019
+			\item J. D. Melon Fuksman et al., {\itshape{\href{https://ui.adsabs.harvard.edu/abs/2021ApJ...906...78M}
+											  {A Two-Moment Radiation Hydrodynamics Scheme Applicable to\break
+											   Simulations of Planet Formation in Circumstellar Disks}}} (ApJ) 2021
+			\item B. Paczyński, P. J. Wiita, {\itshape{\href{https://ui.adsabs.harvard.edu/abs/1980A\%26A....88...23P}
+											  {Thick Accretion Disks and Supercritical Luminosities}}} (A\&A) 1980
+			\item Y.-F. Jiang et al., {\itshape{\href{https://ui.adsabs.harvard.edu/abs/2019ApJ...880...67J}
+											  {Super-Eddington Accretion Disks around Supermassive Black Holes}}} (ApJ) 2019
+		\end{itemize}
+		\vspace{2ex}
+		Resources on GitHub: \href{https://github.com/fritzali/notes/tree/main/CAMK}{here}
+	\end{frame}
+
+	\appendix
+
+	\setbeamertemplate{footline}{
+		\leavevmode
+		\begin{beamercolorbox}[
+			wd=\footerleftwidth,
+			ht=4ex,
+			dp=10pt,
+			leftskip=15pt,
+		]{author in head/foot}
+			{\usebeamerfont{author in head/foot}\insertshortauthor}~|~{\usebeamerfont{date in head/foot}\insertshortdate}
+		\end{beamercolorbox}
+		\begin{beamercolorbox}[
+			wd=\footercenterwidth,
+			ht=3ex,
+			dp=10pt,
+			center,
+		]{section in head/foot}
+			\usebeamerfont{section in head/foot}\insertsection\vphantom{lip}
+		\end{beamercolorbox}
+		\begin{beamercolorbox}[
+			wd=\footerrightwidth,
+			ht=4ex,
+			dp=10pt,
+		]{frame}
+			\raggedleft
+			\usebeamerfont{framenumber}\romannumeral\value{framenumber}~/~\romannumeral\inserttotalframenumber\relax
+		\end{beamercolorbox}
+	}
+
+	\section{Appendix}
+
+	\begin{frame}
+		\frametitle{Model Equations}
+		\begin{itemize}
+			\item Initial Disk Pressure and Density from Analytic Solution of Kluźniak \& Kita
+				  \begin{align*}&&&& C = \frac{2}{5 \epsilon^2} \left(\frac{1}{r} - \frac{1 - 5 \epsilon^2 / 2}{R}\right) &&
+				  p = \epsilon^2 C^{5/2} && \rho = C^{3/2} &&&&\end{align*}
+			\item Corona in Hydrostatic Equilibrium with $\rho_c = 0.01$ in Code Units
+				  \begin{align*}&&&& \rho = \rho_c r^{-3/2} && p = 0.4 \rho_c r^{-5/2} &&&&\end{align*}
+			\item Shear Viscosity with Sound Speed of Initial Disk, Restricted by Classifier
+				  \begin{align*}&&&& \eta_\nu = \frac{2}{3} \alpha \rho \epsilon^2 C R^{3/2} f && \nu = \frac{2}{3} \alpha \epsilon^2 R^{1{\kern-0.5pt}/2} &&&&\end{align*}
+			\item Density Floor at \num{5e-7} in Code Units with Constant Sound Speed and Momentum
+		\end{itemize}
+	\end{frame}
+
+	\begin{frame}
+		\frametitle{Opacity Model}
+		\begin{itemize}
+			\item Kramers Free Free and Bound Free Absorption with Guillotine Factor
+				  \begin{align*}&&&& \kappa_K = \left(K_\mathrm{ff} + K_\mathrm{bf}\right) \rho \, T_g^{-7/2} && \kappa_\mathrm{es} = 0.2 \left(1 + X\right) &&&&\end{align*}
+			\item Compton Exchange Held at Cap above $T_\mathrm{max} = \qty{1e9}{\kelvin}$
+				  $$\kappa_C = \kappa_\mathrm{es} \frac{4 k_B T_r^4 \left(T_\mathrm{max} - T_r\right)}{m_e c^2 \left(T_g^4 - T_r^4\right)}$$
+			\item Gated by Classifier and Decoupled near Speed of Light, Thomson Scattering on All Gas
+				  \begin{align*}&&&& f_d = \max\left(\frac{f - 0.05}{0.95}, \, 0\right) &&
+				  g_v = \left[1 + \exp\left(\frac{\beta - 0.9}{0.03}\right)\right]^{-1} &&&& \\
+				  &&&& \kappa_\mathrm{abs} = g_v \,f_d \left(\kappa_K + \kappa_C\right) &&
+				  \kappa_\mathrm{sc} = g_v \left(\kappa_\mathrm{es} - f_d \kappa_C\right) &&&&\end{align*}
+		\end{itemize}
+	\end{frame}
+
+	\begin{frame}
+		\frametitle{Classifier Details}
+		\begin{itemize}
+			\item Corona Reference as $1 - f$ and Disk Reference as $f$ Weighted Mean Density per Bin
+			\begin{itemize}
+				\item Disk Estimate Counts Only above One Thousandth of Bin Volume
+				\item Bins without Valid Estimate Copy Nearest Valid Bin
+			\end{itemize}
+			\item Guards Added after Inversion in First Version
+			\begin{itemize}
+				\item Span below \qty{0.5}{\dex} Copies Both References from Nearest Sufficient Bin
+				\item Disk Reference Raised to Minimum Span if No Such Bin Exists
+				\item Fixed Weight \num{0.05} per Step Replaced by Time Constant $\tau$
+			\end{itemize}
+			\item Optional Geometric Mode Independent of Classification
+			\begin{itemize}
+				\item Disk Reference from Maximum Density, Corona from Geometric Mean above $z / R = 0.5$
+			\end{itemize}
+		\end{itemize}
+	\end{frame}
+
+	\begin{frame}
+		\frametitle{Analysis Methods}
+		\begin{itemize}
+			\item Standard Errors from Block Averages over \num{1000} Gravitational Times
+			\item Relaxation from Running Means over $W = 2500$ Compared with Final Fifth
+				  $$D(t_c) = \frac{\lvert \bar X_W(t_c) - X_\mathrm{ref} \rvert}{\sigma}$$
+			\item Inflow Equilibrium where Accretion Rate within \qty{20}{\percent} of Inner Value
+			\item Welch Spectra of Surface Density Perturbation $\delta = \Sigma / \langle \Sigma \rangle - 1$
+			\begin{itemize}
+				\item Phase at Peak Frequency Relative to $r = 7$ for Significant Coherence Only
+				\item Local Phase Speed from Linear Fits over \qty{15}{\percent} in Radius
+					  $$v_p = \omega \, / \, \frac{\mathrm{d}\varphi}{\mathrm{d}r}$$
+			\end{itemize}
+		\end{itemize}
+	\end{frame}
+
+	\begin{frame}
+		\frametitle{Validation –
+					\only<1-4|handout:1>{Magnetohydrodynamics}%
+					\only<5-8|handout:2>{Resistive Magnetohydrodynamics}%
+					\only<9-12|handout:3>{Classifier Minus Tracer}}
+		\centering
+		\only<1|handout:0>{\plot{valid_mhd_0}}%
+		\only<2|handout:0>{\plot{valid_mhd_1}}%
+		\only<3|handout:1>{\plot{valid_mhd_2}}%
+		\only<4|handout:0>{\plot{valid_mhd_3}}%
+		\only<5|handout:0>{\plot{valid_rmhd_0}}%
+		\only<6|handout:0>{\plot{valid_rmhd_1}}%
+		\only<7|handout:2>{\plot{valid_rmhd_2}}%
+		\only<8|handout:0>{\plot{valid_rmhd_3}}%
+		\only<9|handout:0>{\plot{valid_diff_0}}%
+		\only<10|handout:0>{\plot{valid_diff_1}}%
+		\only<11|handout:3>{\plot{valid_diff_2}}%
+		\only<12|handout:0>{\plot{valid_diff_3}}%
+	\end{frame}
+
+	\begin{frame}
+		\frametitle{Early Evolution –
+					\only<1-6|handout:1>{DiskFraction}%
+					\only<7-12|handout:2>{Gas Temperature}%
+					\only<13-18|handout:3>{Temperature Ratio}%
+					\only<19-24|handout:4>{Radial Velocity}%
+					\only<25-30|handout:5>{Rotation Velocity}}
+		\centering
+		\only<1|handout:0>{\plot{early_f_0}}%
+		\only<2|handout:0>{\plot{early_f_1}}%
+		\only<3|handout:1>{\plot{early_f_2}}%
+		\only<4|handout:0>{\plot{early_f_3}}%
+		\only<5|handout:0>{\plot{early_f_4}}%
+		\only<6|handout:0>{\plot{early_f_5}}%
+		\only<7|handout:0>{\plot{early_Tg_0}}%
+		\only<8|handout:0>{\plot{early_Tg_1}}%
+		\only<9|handout:2>{\plot{early_Tg_2}}%
+		\only<10|handout:0>{\plot{early_Tg_3}}%
+		\only<11|handout:0>{\plot{early_Tg_4}}%
+		\only<12|handout:0>{\plot{early_Tg_5}}%
+		\only<13|handout:0>{\plot{early_ratio_0}}%
+		\only<14|handout:0>{\plot{early_ratio_1}}%
+		\only<15|handout:3>{\plot{early_ratio_2}}%
+		\only<16|handout:0>{\plot{early_ratio_3}}%
+		\only<17|handout:0>{\plot{early_ratio_4}}%
+		\only<18|handout:0>{\plot{early_ratio_5}}%
+		\only<19|handout:0>{\plot{early_vr_0}}%
+		\only<20|handout:0>{\plot{early_vr_1}}%
+		\only<21|handout:4>{\plot{early_vr_2}}%
+		\only<22|handout:0>{\plot{early_vr_3}}%
+		\only<23|handout:0>{\plot{early_vr_4}}%
+		\only<24|handout:0>{\plot{early_vr_5}}%
+		\only<25|handout:0>{\plot{early_vphi_0}}%
+		\only<26|handout:0>{\plot{early_vphi_1}}%
+		\only<27|handout:5>{\plot{early_vphi_2}}%
+		\only<28|handout:0>{\plot{early_vphi_3}}%
+		\only<29|handout:0>{\plot{early_vphi_4}}%
+		\only<30|handout:0>{\plot{early_vphi_5}}%
+	\end{frame}
+
+	\begin{frame}
+		\frametitle{Steady State –
+					\only<1-2|handout:1>{DiskFraction}%
+					\only<3-4|handout:2>{Gas Temperature}%
+					\only<5-6|handout:3>{Temperature Ratio}%
+					\only<7-8|handout:4>{Radial Velocity}%
+					\only<9-10|handout:5>{Rotation Velocity}}
+		\centering
+		\only<1|handout:0>{\plot{domain_f_init}}%
+		\only<2|handout:1>{\plot{domain_f_mean}}%
+		\only<3|handout:0>{\plot{domain_Tg_init}}%
+		\only<4|handout:2>{\plot{domain_Tg_mean}}%
+		\only<5|handout:0>{\plot{domain_ratio_init}}%
+		\only<6|handout:3>{\plot{domain_ratio_mean}}%
+		\only<7|handout:0>{\plot{domain_vr_init}}%
+		\only<8|handout:4>{\plot{domain_vr_mean}}%
+		\only<9|handout:0>{\plot{domain_vphi_init}}%
+		\only<10|handout:5>{\plot{domain_vphi_mean}}%
+	\end{frame}
+
+	\begin{frame}
+		\frametitle{Steady State –
+					\only<1|handout:1>{Accretion Rate Map}%
+					\only<2|handout:2>{Inflow Speed}%
+					\only<3|handout:3>{Angular Profiles}%
+					\only<4|handout:4>{Vertical Profiles}%
+					\only<5|handout:5>{Aspect Ratio}}
+		\centering
+		\only<1|handout:1>{\plot{spacetime_mdot}}%
+		\only<2|handout:2>{\plot{inflow}}%
+		\only<3|handout:3>{\plot{angular}}%
+		\only<4|handout:4>{\plot{vertical}}%
+		\only<5|handout:5>{\plot{aspect}}%
+	\end{frame}
+
+	\begin{frame}
+		\frametitle{Diagnostics –
+					\only<1|handout:1>{Relaxation Statistic}%
+					\only<2|handout:2>{Mass Budget}%
+					\only<3|handout:3>{Energy Balance}%
+					\only<4|handout:4>{Wave Amplitude \& Cross Phase}%
+					\only<5|handout:5>{Timescales}}
+		\centering
+		\only<1|handout:1>{\plot{relax_distance}}%
+		\only<2|handout:2>{\plot{budget}}%
+		\only<3|handout:3>{\plot{balance}}%
+		\only<4|handout:4>{\plot{rms_cross}}%
+		\only<5|handout:5>{\plot{timescales}}%
+	\end{frame}
+\end{document}
