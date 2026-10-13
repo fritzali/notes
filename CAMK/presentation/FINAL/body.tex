@@ -25,25 +25,17 @@
 
 	\begin{frame}
 		\frametitle{Overview}
-		\begin{columns}[T]
-			\begin{column}{0.45\textwidth}
-				\bfseries{Numerical Setup}\\[1.5pt]
-				\hspace*{3ex}\mdseries{Black Hole Adaptation}\\
-				\hspace*{3ex}\mdseries{Radiation Physics}\\[3.0pt]
-				\bfseries{Disk Classifier}\\[1.5pt]
-				\hspace*{3ex}\mdseries{Passive Tracer}\\
-				\hspace*{3ex}\mdseries{Construction \& Validation}\\[3.0pt]
-			\end{column}
-			\begin{column}{0.45\textwidth}
-				\bfseries{Results}\\[1.5pt]
-				\hspace*{3ex}\mdseries{Relaxation}\\
-				\hspace*{3ex}\mdseries{Steady State}\\
-				\hspace*{3ex}\mdseries{Density Waves}\\[3.0pt]
-				\bfseries{Discussion}\\[1.5pt]
-				\hspace*{3ex}\mdseries{Limitations}\\
-				\hspace*{3ex}\mdseries{Outlook}\\[3.0pt]
-			\end{column}
-		\end{columns}
+		\centering
+		\begin{tabular}{@{}l@{\hspace{0.12\textwidth}}l@{}}
+			\bfseries{Numerical Setup}                  & \bfseries{Results}                       \\[1.5pt]
+			\hspace*{3ex}\mdseries{Black Hole Adaptation} & \hspace*{3ex}\mdseries{Relaxation}     \\
+			\hspace*{3ex}\mdseries{Radiation Physics}     & \hspace*{3ex}\mdseries{Steady State}   \\
+			\hspace*{3ex}\mdseries{Compton Coupling}      & \hspace*{3ex}\mdseries{Density Waves}  \\[3.0pt]
+			\bfseries{Disk Classifier}                  & \bfseries{Discussion}                    \\[1.5pt]
+			\hspace*{3ex}\mdseries{Passive Tracer}        & \hspace*{3ex}\mdseries{Limitations}    \\
+			\hspace*{3ex}\mdseries{Construction}          & \hspace*{3ex}\mdseries{Outlook}        \\
+			\hspace*{3ex}\mdseries{Validation}            & \hspace*{3ex}\mdseries{Conclusions}    \\
+		\end{tabular}
 	\end{frame}
 
 	\section{Numerical Setup}
@@ -206,18 +198,10 @@
 	\end{frame}
 
 	\begin{frame}
-		\frametitle{Steady State –
-					\only<1-2|handout:1>{Density}%
-					\only<3-4|handout:2>{Disk Surface}%
-					\only<5|handout:3>{Gas Temperature}%
-					\only<6|handout:4>{Temperature Ratio}}
+		\frametitle{Steady State – Density}
 		\centering
 		\only<1|handout:0>{\plot{domain_rho_init}}%
-		\only<2|handout:1>{\plot{domain_rho_mean}}%
-		\only<3|handout:0>{\plot{domain_outline_init}}%
-		\only<4|handout:2>{\plot{domain_outline_mean}}%
-		\only<5|handout:3>{\plot{domain_Tg_mean}}%
-		\only<6|handout:4>{\plot{domain_ratio_mean}}%
+		\only<2>{\plot{domain_rho_mean}}%
 	\end{frame}
 
 	\begin{frame}
@@ -247,14 +231,16 @@
 					\only<1|handout:1>{Accretion}%
 					\only<2|handout:2>{Surface Density}%
 					\only<3|handout:3>{Effective Viscosity}%
-					\only<4|handout:4>{Heating \& Cooling Times}%
-					\only<5|handout:5>{Heating \& Cooling Ratio}}
+					\only<4|handout:4>{Inflow Speed}%
+					\only<5|handout:5>{Heating \& Cooling Times}%
+					\only<6|handout:6>{Heating \& Cooling Ratio}}
 		\centering
 		\only<1|handout:1>{\plot{mdot}}%
 		\only<2|handout:2>{\plot{sigma}}%
 		\only<3|handout:3>{\plot{alpha}}%
-		\only<4|handout:4>{\plot{heating_times}}%
-		\only<5|handout:5>{\plot{heating_ratio}}%
+		\only<4|handout:4>{\plot{inflow}}%
+		\only<5|handout:5>{\plot{heating_times}}%
+		\only<6|handout:6>{\plot{heating_ratio}}%
 	\end{frame}
 
 	\begin{frame}
@@ -538,37 +524,29 @@
 
 	\begin{frame}
 		\frametitle{Steady State –
-					\only<1-2|handout:1>{DiskFraction}%
-					\only<3-4|handout:2>{Gas Temperature}%
-					\only<5-6|handout:3>{Temperature Ratio}%
-					\only<7-8|handout:4>{Radial Velocity}%
-					\only<9-10|handout:5>{Rotation Velocity}}
+					\only<1-2|handout:1>{DiskFraction \& Disk Surface}%
+					\only<3-4|handout:2>{Temperatures}%
+					\only<5-6|handout:3>{Velocities}}
 		\centering
-		\only<1|handout:0>{\plot{domain_f_init}}%
-		\only<2|handout:1>{\plot{domain_f_mean}}%
-		\only<3|handout:0>{\plot{domain_Tg_init}}%
-		\only<4|handout:2>{\plot{domain_Tg_mean}}%
-		\only<5|handout:0>{\plot{domain_ratio_init}}%
-		\only<6|handout:3>{\plot{domain_ratio_mean}}%
-		\only<7|handout:0>{\plot{domain_vr_init}}%
-		\only<8|handout:4>{\plot{domain_vr_mean}}%
-		\only<9|handout:0>{\plot{domain_vphi_init}}%
-		\only<10|handout:5>{\plot{domain_vphi_mean}}%
+		\only<1|handout:0>{\plot{domain_disk_init}}%
+		\only<2|handout:1>{\plot{domain_disk_mean}}%
+		\only<3|handout:0>{\plot{domain_thermal_init}}%
+		\only<4|handout:2>{\plot{domain_thermal_mean}}%
+		\only<5|handout:0>{\plot{domain_velocity_init}}%
+		\only<6|handout:3>{\plot{domain_velocity_mean}}%
 	\end{frame}
 
 	\begin{frame}
 		\frametitle{Steady State –
 					\only<1|handout:1>{Accretion Rate Map}%
-					\only<2|handout:2>{Inflow Speed}%
-					\only<3|handout:3>{Angular Profiles}%
-					\only<4|handout:4>{Vertical Profiles}%
-					\only<5|handout:5>{Aspect Ratio}}
+					\only<2|handout:2>{Angular Profiles}%
+					\only<3|handout:3>{Vertical Profiles}%
+					\only<4|handout:4>{Aspect Ratio}}
 		\centering
 		\only<1|handout:1>{\plot{spacetime_mdot}}%
-		\only<2|handout:2>{\plot{inflow}}%
-		\only<3|handout:3>{\plot{angular}}%
-		\only<4|handout:4>{\plot{vertical}}%
-		\only<5|handout:5>{\plot{aspect}}%
+		\only<2|handout:2>{\plot{angular}}%
+		\only<3|handout:3>{\plot{vertical}}%
+		\only<4|handout:4>{\plot{aspect}}%
 	\end{frame}
 
 	\begin{frame}
