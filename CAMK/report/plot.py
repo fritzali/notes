@@ -58,8 +58,8 @@ mpl.rcParams.update({
     "axes.linewidth": 0.6,
 
     "figure.constrained_layout.use": True,
-    "figure.constrained_layout.h_pad": 0.00,
-    "figure.constrained_layout.w_pad": 0.00,
+    "figure.constrained_layout.h_pad": 0.6 / 72,
+    "figure.constrained_layout.w_pad": 0.6 / 72,
 
     "legend.fontsize": 8,
     "legend.frameon": False,
@@ -114,6 +114,7 @@ T_EARLY = [100, 200, 300, 400, 500, 600]
 FULL_AVG_SPAN = 1.0e4
 DOMAIN_PAIR_SQUASH = 1.0
 DOMAIN_FIT_HEIGHT = 3.10
+FRAME_PAD = mpl.rcParams['axes.linewidth'] / 72
 
 W_WINDOW = 2500.0
 BLOCK = 1000.0
@@ -690,7 +691,11 @@ def place_map(fig, left, right, bottom, top):
     spec['margins'] = (left, right, bottom, top)
 
 
-def tighten_map(fig, pad=0.01, passes=2):
+def tighten_map(fig, pad=None, passes=2):
+    """The tight bounding box ends at the axes edges, while the frame lines are centred on them, so the pad
+    keeps at least half a frame line plus one pixel inside the figure."""
+    if pad is None:
+        pad = 0.5 * FRAME_PAD + 1.0 / DPI
     for _ in range(passes):
         fig.draw_without_rendering()
         bb = fig.get_tightbbox(fig._get_renderer())
@@ -708,10 +713,11 @@ def map_layout(groups, ncol, width, xlim, ylim, cbar=True):
         for j in range(ncol):
             share = axes[0, 0] if i or j else None
             axes[i, j] = fig.add_axes([0, 0, 1, 1], sharex=share, sharey=share)
-    caxes = [fig.add_axes([0, 0, 1, 1]) if cbar else None for _ in groups]
+    cbars = list(cbar) if isinstance(cbar, (list, tuple)) else [cbar] * len(groups)
+    caxes = [fig.add_axes([0, 0, 1, 1]) if c else None for c in cbars]
     fig._map_spec = dict(groups=groups, ncol=ncol, width=width, aspect=(ylim[1] - ylim[0]) / (xlim[1] - xlim[0]),
                          axes=axes, caxes=caxes)
-    place_map(fig, MAP_LEFT, CB_PAD + CB_WIDTH + CB_RIGHT if cbar else 0.1, MAP_BOTTOM, MAP_TOP)
+    place_map(fig, MAP_LEFT, CB_PAD + CB_WIDTH + CB_RIGHT if any(cbars) else 0.1, MAP_BOTTOM, MAP_TOP)
 
     for i in range(nrow):
         for j in range(ncol):
@@ -788,7 +794,8 @@ def map_grid(groups, width, name, xlim=(0, 20), ylim=(0, 10), cbar=True, yaxis=T
 def build_map_grid(groups, width, xlim=(0, 20), ylim=(0, 10), cbar=True, yaxis=True):
     """groups: list of (colorbar key, rows), each row a list of cells (field, key, geo, t, tag[, extra])"""
     ncol = len(groups[0][1][0])
-    fig, axes, caxes = map_layout([len(rows) for _, rows in groups], ncol, width, xlim, ylim, cbar=cbar)
+    cbars = [cbar and key is not None for key, _ in groups]
+    fig, axes, caxes = map_layout([len(rows) for _, rows in groups], ncol, width, xlim, ylim, cbar=cbars)
     if not yaxis:
         for ax in axes[:, 0]:
             ax.set_ylabel('')
@@ -799,6 +806,9 @@ def build_map_grid(groups, width, xlim=(0, 20), ylim=(0, 10), cbar=True, yaxis=T
         for row in rows:
             for j, cell in enumerate(row):
                 field, key, geo, t, tag = cell[:5]
+                if key == 'outline':
+                    outline_map(axes[i, j], *field, geo, xlim)
+                    continue
                 im = draw_map(axes[i, j], field, key, geo, xlim, ylim)
                 if len(cell) > 5:
                     cell[5](axes[i, j])
@@ -996,6 +1006,8 @@ def fig_full_domain(run):
         map_grid([(a, [cells(a)]), (b, [cells(b)])], TEXT, f'domain_{name}_text', lim, lim)
 
     states = [(init['f'], init['tau']), (mean['f'], mean['tau'])]
+    map_grid([('f', [cells('f')]), (None, [[(state, 'outline', geo, None, None) for state in states]])],
+             TEXT, 'domain_disk_text', lim, lim)
     outline_figure(states, geo, lim, TEXT, 'domain_outline_text')
     for state, label in zip(states, ('init', 'mean')):
         outline_figure([state], geo, lim, COL, f'domain_outline_{label}_col')
