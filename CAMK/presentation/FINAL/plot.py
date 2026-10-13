@@ -20,6 +20,8 @@ spec.loader.exec_module(R)
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 
+from matplotlib.ticker import MaxNLocator
+
 
 # --- Slide Geometry & Fonts --- #
 
@@ -224,15 +226,101 @@ def slides_domain(run):
     init = {key: R.map_field(F0, key) for key in ('rho', 'f', 'Tg', 'ratio', 'vr', 'vphi')}
     init['tau'] = R.optical_depth_from_pole(F0, geo)
 
-    items = []
+    singles, pairs = [], []
     for label, tag, state in (('init', 'Initial', init), ('mean', 'Average', mean)):
-        for key in ('rho', 'f', 'Tg', 'ratio', 'vr', 'vphi'):
-            fig = R.build_map_grid([(key, [[(state[key], key, geo, None, tag)]])], SLIDE_W, lim, lim)
-            items.append((fig, f'domain_{key}_{label}'))
-        fig = R.build_map_grid([(None, [[((state['f'], state['tau']), 'outline', geo, None, None)]])], SLIDE_W, lim, lim)
-        fig.axes[0].text(0.04, 0.93, tag, color='k', ha='left', va='top', transform=fig.axes[0].transAxes, fontsize=8)
-        items.append((fig, f'domain_outline_{label}'))
-    map_group(items)
+        fig = R.build_map_grid([('rho', [[(state['rho'], 'rho', geo, None, None)]])], SLIDE_W, lim, lim)
+        corner_tag(fig._map_spec['axes'][0, 0], tag)
+        singles.append((fig, f'domain_rho_{label}'))
+        for name, cells in [('disk', [(state['f'], 'f'), ((state['f'], state['tau']), 'outline')]),
+                            ('thermal', [(state['Tg'], 'Tg'), (state['ratio'], 'ratio')]),
+                            ('velocity', [(state['vr'], 'vr'), (state['vphi'], 'vphi')])]:
+            pairs.append((pair_map(cells, geo, lim, tag), f'domain_{name}_{label}'))
+    map_group(singles)
+    pair_group(pairs)
+
+
+def corner_tag(ax, text):
+    """The top right corner of the quarter disk lies outside the domain, on the light background."""
+    ax.text(0.96, 0.93, text, color='k', ha='right', va='top', transform=ax.transAxes, fontsize=8)
+
+
+PAIR_GAP = 0.16
+
+
+def pair_map(cells, geo, lim, tag):
+    """Two square quarter disk panels side by side, each with its own colorbar on its right, where an outline
+    panel keeps an empty colorbar slot so that all pairs share the same layout."""
+    fig = plt.figure(figsize=[SLIDE_W, SLIDE_H], layout='none')
+    ax0 = fig.add_axes([0, 0, 1, 1])
+    ax1 = fig.add_axes([0, 0, 1, 1], sharex=ax0, sharey=ax0)
+    caxes = []
+    for ax, (field, key) in zip((ax0, ax1), cells):
+        if key == 'outline':
+            R.outline_map(ax, *field, geo, lim)
+            caxes.append(None)
+        else:
+            im = R.draw_map(ax, field, key, geo, lim, lim)
+            cax = fig.add_axes([0, 0, 1, 1])
+            R.map_colorbar(fig, im, cax, key)
+            caxes.append(cax)
+        ax.tick_params(which='both', direction='out', color='k', top=False, right=False, length=2.5)
+        ax.tick_params(which='minor', length=1.5)
+        ax.set_xlabel(r'$R\ /\ r_g$')
+        corner_tag(ax, tag)
+    ax0.set_ylabel(r'$z\ /\ r_g$')
+    ax1.tick_params(labelleft=False)
+    ax0.xaxis.set_major_locator(MaxNLocator(5))
+    ax0.yaxis.set_major_locator(MaxNLocator(5))
+    fig._pair = dict(axes=(ax0, ax1), caxes=caxes)
+    place_pair(fig, 0.4, 0.4, 1.6, 0.6, 0.0)
+    return fig
+
+
+def place_pair(fig, left, bottom, h, lab, offset):
+    (ax0, ax1), caxes = fig._pair['axes'], fig._pair['caxes']
+    W, H = fig.get_size_inches()
+    x0 = offset + left
+    x1 = x0 + h + R.CB_PAD + R.CB_WIDTH + lab + PAIR_GAP
+    for ax, cax, x in ((ax0, caxes[0], x0), (ax1, caxes[1], x1)):
+        ax.set_position([x / W, bottom / H, h / W, h / H])
+        if cax is not None:
+            cax.set_position([(x + h + R.CB_PAD) / W, bottom / H, R.CB_WIDTH / W, h / H])
+
+
+def pair_group(items, width=SLIDE_W, height=SLIDE_H):
+    """Measure label extents of all pair figures, take the largest of each and place every figure with the
+    same panel size and positions, centred on canvases of the same size."""
+    pad = 0.5 * R.FRAME_PAD + 1.0 / R.DPI
+    need = []
+    for fig, _ in items:
+        fig.draw_without_rendering()
+        r = fig._get_renderer()
+        (ax0, ax1), caxes = fig._pair['axes'], fig._pair['caxes']
+        inch = lambda a: a.get_tightbbox(r).transformed(fig.dpi_scale_trans.inverted())
+        box = lambda a: a.get_position().transformed(fig.transFigure).transformed(fig.dpi_scale_trans.inverted())
+        parts = [a for a in (ax0, ax1, *caxes) if a is not None]
+        labs = [inch(c).x1 - box(c).x1 if c is not None else 0.0 for c in caxes]
+        need.append((box(ax0).x0 - inch(ax0).x0,
+                     max(box(a).y0 - inch(a).y0 for a in parts),
+                     max(inch(a).y1 - box(a).y1 for a in parts),
+                     labs[0], labs[1]))
+    left, bottom, top, lab0, lab1 = np.max(need, axis=0)
+    left, bottom, top = left + pad, bottom + pad, max(top, 0.0) + pad
+    fixed = left + 2.0 * (R.CB_PAD + R.CB_WIDTH) + lab0 + PAIR_GAP + lab1 + pad
+    h = min(height - bottom - top, 0.5 * (width - fixed))
+    offset = 0.5 * (width - fixed - 2.0 * h)
+    for fig, name in items:
+        place_pair(fig, left, bottom, h, lab0, offset)
+        write(fig, name)
+
+
+def shrink_legends(fig, size=6.5, ncol=None):
+    for ax in fig.axes:
+        for handles, _, _, kw in ax.__dict__.get('_pending_legends', []):
+            kw.update(fontsize=size, handlelength=min(kw.get('handlelength', 1.5), 1.2), columnspacing=0.6,
+                      labelspacing=0.3, handletextpad=0.4)
+            if ncol is not None and len(handles) > 4:
+                kw['ncol'] = ncol
 
 
 # --- Profiles & Statistics --- #
@@ -267,10 +355,13 @@ def slides_curves(runs, agreement=None):
     single(*take('aspect_col'), 'aspect', (PLOT_W, SLIDE_H))
     R.fig_structure(hr)
     vertical, balance = take('vertical_text', 'balance_text')
+    shrink_legends(vertical)
     single(vertical, 'vertical', (SLIDE_W, SLIDE_H))
     single(balance, 'balance', (SLIDE_W, SLIDE_H))
     R.fig_angular(runs)
-    single(*take('angular_text'), 'angular', (SLIDE_W, SLIDE_H))
+    angular, = take('angular_text')
+    shrink_legends(angular, ncol=2)
+    single(angular, 'angular', (SLIDE_W, SLIDE_H))
 
 
 def main():
