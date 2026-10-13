@@ -17,7 +17,7 @@ ROOT = Path(__file__).resolve().parent
 DATA = ROOT.parent / 'PLUTO' / 'Simulation_Main'
 OUT = ROOT / 'plots'
 
-FORMAT = os.environ.get('PLOT_FORMAT', 'png')
+FORMAT = os.environ.get('PLOT_FORMAT', 'pdf')
 DPI = int(os.environ.get('PLOT_DPI', '600'))
 ONLY = [s for s in os.environ.get('PLOT_ONLY', '').split(',') if s]
 
