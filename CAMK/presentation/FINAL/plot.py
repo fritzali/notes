@@ -226,16 +226,14 @@ def slides_domain(run):
     init = {key: R.map_field(F0, key) for key in ('rho', 'f', 'Tg', 'ratio', 'vr', 'vphi')}
     init['tau'] = R.optical_depth_from_pole(F0, geo)
 
-    singles, pairs = [], []
+    rho = [(init['rho'], 'rho'), (mean['rho'], 'rho')]
+    pairs = [(pair_map(rho, geo, lim, ('Initial', 'Average'), right=False), 'domain_rho_init'),
+             (pair_map(rho, geo, lim, ('Initial', 'Average')), 'domain_rho_both')]
     for label, tag, state in (('init', 'Initial', init), ('mean', 'Average', mean)):
-        fig = R.build_map_grid([('rho', [[(state['rho'], 'rho', geo, None, None)]])], SLIDE_W, lim, lim)
-        corner_tag(fig._map_spec['axes'][0, 0], tag)
-        singles.append((fig, f'domain_rho_{label}'))
         for name, cells in [('disk', [(state['f'], 'f'), ((state['f'], state['tau']), 'outline')]),
                             ('thermal', [(state['Tg'], 'Tg'), (state['ratio'], 'ratio')]),
                             ('velocity', [(state['vr'], 'vr'), (state['vphi'], 'vphi')])]:
             pairs.append((pair_map(cells, geo, lim, tag), f'domain_{name}_{label}'))
-    map_group(singles)
     pair_group(pairs)
 
 
@@ -247,14 +245,16 @@ def corner_tag(ax, text):
 PAIR_GAP = 0.16
 
 
-def pair_map(cells, geo, lim, tag):
+def pair_map(cells, geo, lim, tag, right=True):
     """Two square quarter disk panels side by side, each with its own colorbar on its right, where an outline
-    panel keeps an empty colorbar slot so that all pairs share the same layout."""
+    panel keeps an empty colorbar slot so that all pairs share the same layout. The tag is one text for both
+    panels or one per panel, and without the right panel only the left one is shown at its usual place."""
+    tags = (tag, tag) if isinstance(tag, str) else tag
     fig = plt.figure(figsize=[SLIDE_W, SLIDE_H], layout='none')
     ax0 = fig.add_axes([0, 0, 1, 1])
     ax1 = fig.add_axes([0, 0, 1, 1], sharex=ax0, sharey=ax0)
     caxes = []
-    for ax, (field, key) in zip((ax0, ax1), cells):
+    for ax, (field, key), text in zip((ax0, ax1), cells, tags):
         if key == 'outline':
             R.outline_map(ax, *field, geo, lim)
             caxes.append(None)
@@ -266,11 +266,15 @@ def pair_map(cells, geo, lim, tag):
         ax.tick_params(which='both', direction='out', color='k', top=False, right=False, length=2.5)
         ax.tick_params(which='minor', length=1.5)
         ax.set_xlabel(r'$R\ /\ r_g$')
-        corner_tag(ax, tag)
+        corner_tag(ax, text)
     ax0.set_ylabel(r'$z\ /\ r_g$')
     ax1.tick_params(labelleft=False)
     ax0.xaxis.set_major_locator(MaxNLocator(5))
     ax0.yaxis.set_major_locator(MaxNLocator(5))
+    if not right:
+        for a in (ax1, caxes[1]):
+            if a is not None:
+                a.set_visible(False)
     fig._pair = dict(axes=(ax0, ax1), caxes=caxes)
     place_pair(fig, 0.4, 0.4, 1.6, 0.6, 0.0)
     return fig
@@ -298,8 +302,8 @@ def pair_group(items, width=SLIDE_W, height=SLIDE_H):
         (ax0, ax1), caxes = fig._pair['axes'], fig._pair['caxes']
         inch = lambda a: a.get_tightbbox(r).transformed(fig.dpi_scale_trans.inverted())
         box = lambda a: a.get_position().transformed(fig.transFigure).transformed(fig.dpi_scale_trans.inverted())
-        parts = [a for a in (ax0, ax1, *caxes) if a is not None]
-        labs = [inch(c).x1 - box(c).x1 if c is not None else 0.0 for c in caxes]
+        parts = [a for a in (ax0, ax1, *caxes) if a is not None and a.get_visible()]
+        labs = [inch(c).x1 - box(c).x1 if c is not None and c.get_visible() else 0.0 for c in caxes]
         need.append((box(ax0).x0 - inch(ax0).x0,
                      max(box(a).y0 - inch(a).y0 for a in parts),
                      max(inch(a).y1 - box(a).y1 for a in parts),
