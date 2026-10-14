@@ -154,7 +154,7 @@ def slides_tracer():
         return
     items = []
     for k, t in enumerate(T_RAD):
-        groups = [('f', [[cell(path, 'tr', t, tag=r'$f_\mathrm{tr}$'), cell(path, 'f', t, False, r'$f_\mathrm{df}$')]])]
+        groups = [('f', [[cell(path, 'tr', t, tag=r'$f_{tr}$'), cell(path, 'f', t, False, r'$f_{df}$')]])]
         items.append((R.build_map_grid(groups, SLIDE_W), f'rad_tracer_{k}'))
     map_group(items)
 
@@ -167,7 +167,7 @@ def slides_validation():
             continue
         for k, t in enumerate(R.T_VALID):
             groups = [('rho', [[cell(tracer_path, 'rho', t, tag='Tracer Run'), cell(df_path, 'rho', t, False, 'Classifier Run')]]),
-                      ('f', [[cell(df_path, 'tr', t, False, r'$f_\mathrm{tr}$'), cell(df_path, 'f', t, False, r'$f_\mathrm{df}$')]])]
+                      ('f', [[cell(df_path, 'tr', t, False, r'$f_{tr}$'), cell(df_path, 'f', t, False, r'$f_{d{\kern-0.5pt}f}$')]])]
             items.append((R.build_map_grid(groups, SLIDE_W), f'valid_{label.lower()}_{k}'))
     if items:
         map_group(items)
