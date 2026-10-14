@@ -90,13 +90,10 @@ from matplotlib.lines import Line2D
 from matplotlib.text import Text
 from matplotlib.legend_handler import HandlerBase
 from matplotlib.collections import LineCollection, PolyCollection, QuadMesh
-from matplotlib.path import Path as MplPath
 
 from scipy import signal
 from scipy.ndimage import uniform_filter1d
-from scipy.interpolate import CubicSpline
 
-import statsmodels.api as sm
 
 import pyPLUTO as pp
 
@@ -153,12 +150,17 @@ LEGEND_LOCS = ['upper right', 'upper left', 'lower left', 'lower right', 'center
                'lower center', 'upper center', 'center']
 
 
+PENDING_LEGENDS = {}
+
+
 def place_legend(ax, handles=None, labels=None, loc=None, **kw):
     if handles is None:
         handles, labels = ax.get_legend_handles_labels()
     elif labels is None:
         labels = [h.get_label() for h in handles]
-    ax.__dict__.setdefault('_pending_legends', []).append((handles, labels, loc, kw))
+    if ax not in PENDING_LEGENDS:
+        PENDING_LEGENDS[ax] = []
+    PENDING_LEGENDS[ax].append((handles, labels, loc, kw))
 
 
 def densify(xy, step=1.5):
@@ -260,7 +262,7 @@ def best_legend(ax, handles, labels, loc, kw, others, name):
 
 def finalize_legends(fig, name):
     for ax in fig.axes:
-        pending = ax.__dict__.pop('_pending_legends', [])
+        pending = PENDING_LEGENDS.pop(ax, [])
         placed = []
         for k, (handles, labels, loc, kw) in enumerate(pending):
             leg, box = best_legend(ax, handles, labels, loc, kw, placed, name)
@@ -277,12 +279,16 @@ def save(fig, name):
     print(f'wrote {name}.{FORMAT}')
 
 
+def plain_label(v, pos):
+    return f'${v:g}$'
+
+
 def plain_log(ax, axis='x', mantissas=(1, 2, 3, 4, 6)):
     a = ax.xaxis if axis == 'x' else ax.yaxis
     lo, hi = sorted(ax.get_xlim() if axis == 'x' else ax.get_ylim())
     ticks = [m * 10.0**k for k in range(int(np.floor(np.log10(lo))) - 1, int(np.ceil(np.log10(hi))) + 1) for m in mantissas]
     a.set_major_locator(FixedLocator([t for t in ticks if lo <= t <= hi]))
-    a.set_major_formatter(FuncFormatter(lambda v, pos: f'${v:g}$'))
+    a.set_major_formatter(FuncFormatter(plain_label))
     a.set_minor_formatter(NullFormatter())
 
 
@@ -692,8 +698,6 @@ def place_map(fig, left, right, bottom, top):
 
 
 def tighten_map(fig, pad=None, passes=2):
-    """The tight bounding box ends at the axes edges, while the frame lines are centred on them, so the pad
-    keeps at least half a frame line plus one pixel inside the figure."""
     if pad is None:
         pad = 0.5 * FRAME_PAD + 1.0 / DPI
     for _ in range(passes):
@@ -795,7 +799,6 @@ def map_grid(groups, width, name, xlim=(0, 20), ylim=(0, 10), cbar=True, yaxis=T
 
 
 def build_map_grid(groups, width, xlim=(0, 20), ylim=(0, 10), cbar=True, yaxis=True):
-    """groups: list of (colorbar key, rows), each row a list of cells (field, key, geo, t, tag[, extra])"""
     ncol = len(groups[0][1][0])
     cbars = [cbar and key is not None for key, _ in groups]
     fig, axes, caxes = map_layout([len(rows) for _, rows in groups], ncol, width, xlim, ylim, cbar=cbars)
@@ -826,10 +829,6 @@ def build_map_grid(groups, width, xlim=(0, 20), ylim=(0, 10), cbar=True, yaxis=T
 
 
 def map_pair(left_fig, right_fig, names, height=None, squash=1.0):
-    """Tighten two single panel map figures of equal width and align them for placement side by side:
-    equal panel size and height, extra horizontal space on the outer sides. With a target height, the
-    panels shrink at fixed aspect until both figures have exactly that height. A squash below one
-    compresses the panels vertically by that factor instead, keeping their full width."""
     figs = (left_fig, right_fig)
     for fig in figs:
         fig._map_spec['aspect'] *= squash
@@ -854,8 +853,6 @@ def map_pair(left_fig, right_fig, names, height=None, squash=1.0):
 
 
 def fit_height(fig, height):
-    """Tighten a map figure, then shrink its panels at fixed aspect until the figure has the given height,
-    splitting the freed width equally between both outer sides."""
     tighten_map(fig)
     spec = fig._map_spec
     left, right, bottom, top = spec['margins']
@@ -971,6 +968,10 @@ def fig_timescales():
     save(fig, 'timescales_col')
 
 
+def domain_cells(init, mean, geo, key):
+    return [(init[key], key, geo, None, None), (mean[key], key, geo, None, None)]
+
+
 def fig_full_domain(run):
     path, geo = run['path'], run['geo']
     lim = (0, geo['R_E'][-1])
@@ -989,27 +990,24 @@ def fig_full_domain(run):
     init = {key: map_field(F0, key) for key in ('rho', 'f', 'Tg', 'ratio', 'vr', 'vphi')}
     init['tau'] = optical_depth_from_pole(F0, geo)
 
-    def cells(key):
-        return [(init[key], key, geo, None, None), (mean[key], key, geo, None, None)]
-
     for key in ('rho', 'f', 'Tg', 'ratio', 'vr', 'vphi'):
-        map_grid([(key, [cells(key)])], TEXT, f'domain_{key}_text', lim, lim)
+        map_grid([(key, [domain_cells(init, mean, geo, key)])], TEXT, f'domain_{key}_text', lim, lim)
         for k, label in enumerate(('init', 'mean')):
-            map_grid([(key, [[cells(key)[k]]])], COL, f'domain_{key}_{label}_col', lim, lim)
+            map_grid([(key, [[domain_cells(init, mean, geo, key)[k]]])], COL, f'domain_{key}_{label}_col', lim, lim)
 
-    fig = build_map_grid([('rho', [cells('rho')])], TEXT, lim, lim)
+    fig = build_map_grid([('rho', [domain_cells(init, mean, geo, 'rho')])], TEXT, lim, lim)
     fit_height(fig, DOMAIN_FIT_HEIGHT)
     save(fig, 'domain_rho_fit_text')
 
-    map_pair(build_map_grid([('rho', [[cells('rho')[0]]])], COL, lim, lim, cbar=False),
-             build_map_grid([('rho', [[cells('rho')[1]]])], COL, lim, lim, yaxis=False),
+    map_pair(build_map_grid([('rho', [[domain_cells(init, mean, geo, 'rho')[0]]])], COL, lim, lim, cbar=False),
+             build_map_grid([('rho', [[domain_cells(init, mean, geo, 'rho')[1]]])], COL, lim, lim, yaxis=False),
              ('domain_rho_init_alt_col', 'domain_rho_mean_alt_col'), squash=DOMAIN_PAIR_SQUASH)
 
     for name, (a, b) in [('thermal', ('Tg', 'ratio')), ('velocity', ('vr', 'vphi'))]:
-        map_grid([(a, [cells(a)]), (b, [cells(b)])], TEXT, f'domain_{name}_text', lim, lim)
+        map_grid([(a, [domain_cells(init, mean, geo, a)]), (b, [domain_cells(init, mean, geo, b)])], TEXT, f'domain_{name}_text', lim, lim)
 
     states = [(init['f'], init['tau']), (mean['f'], mean['tau'])]
-    map_grid([('f', [cells('f')]), (None, [[(state, 'outline', geo, None, None) for state in states]])],
+    map_grid([('f', [domain_cells(init, mean, geo, 'f')]), (None, [[(state, 'outline', geo, None, None) for state in states]])],
              TEXT, 'domain_disk_text', lim, lim)
     outline_figure(states, geo, lim, TEXT, 'domain_outline_text')
     for state, label in zip(states, ('init', 'mean')):
@@ -1041,18 +1039,25 @@ def outline_figure(states, geo, lim, width, name):
     save(fig, name)
 
 
+def early_rows(path, key, labels=True):
+    half = len(T_EARLY) // 2
+    return [time_row(path, key, T_EARLY[:half], labels), time_row(path, key, T_EARLY[half:], labels)]
+
+
 def fig_early(run, keys=('rho', 'f', 'Tg', 'ratio', 'vr', 'vphi')):
     path = run['path']
-    half = len(T_EARLY) // 2
-
-    def rows(key, labels=True):
-        return [time_row(path, key, T_EARLY[:half], labels), time_row(path, key, T_EARLY[half:], labels)]
 
     for key in keys:
-        map_grid([(key, rows(key))], TEXT, f'early_{key}_text')
+        map_grid([(key, early_rows(path, key))], TEXT, f'early_{key}_text')
 
     for name, (a, b) in [('thermal', ('Tg', 'ratio')), ('velocity', ('vr', 'vphi'))]:
-        map_grid([(a, rows(a)), (b, rows(b))], TEXT, f'early_{name}_text')
+        map_grid([(a, early_rows(path, a)), (b, early_rows(path, b))], TEXT, f'early_{name}_text')
+
+
+def power_label(v, pos):
+    if v == 0:
+        return '$0$'
+    return rf'$10^{{{int(np.floor(np.log10(v)))}}}$'
 
 
 def fig_relaxation(runs):
@@ -1069,7 +1074,7 @@ def fig_relaxation(runs):
         ax.set_xscale('symlog', linthresh=11e3, linscale=1.0)
         ax.set_xlim(0, tmax)
         ax.xaxis.set_major_locator(FixedLocator([0, 1e4]))
-        ax.xaxis.set_major_formatter(FuncFormatter(lambda v, _: '$0$' if v == 0 else rf'$10^{{{int(np.floor(np.log10(v)))}}}$'))
+        ax.xaxis.set_major_formatter(FuncFormatter(power_label))
         ax.xaxis.set_minor_locator(FixedLocator([k * 1e3 for k in range(1, 51) if k != 10]))
         ax.xaxis.set_minor_formatter(NullFormatter())
 
@@ -1172,89 +1177,110 @@ def fig_spacetime(run):
         save(fig, f'spacetime_delta_{label}_col')
 
 
-def fig_profiles(runs):
+def mdot_panel(ax, runs):
     run_main = runs[0]
     parts = [('mdot', r'$\dot M$'), ('mdot_d', r'$\dot M_d$'), ('mdot_c', r'$\dot M_c$')]
     flows = [('mdot_in', r'$\dot M_\mathrm{in}$'), ('mdot_out', r'$\dot M_\mathrm{out}$')]
-
-    def mdot_panel(ax):
-        for run in runs:
-            Cx, s, dt, r = run['C'], run['sel'], run['dt'], run['r']
-            for k, (key, lab) in enumerate(parts):
-                m, e = mean_se(-Cx[key][s] * SCALE, dt)
-                ax.plot(r, m, color=f'C{k}', lw=run['lw'], label=lab if run is run_main else None)
-                if run is run_main:
-                    ax.fill_between(r, m - e, m + e, color=f'C{k}', alpha=0.3, lw=0)
+    for run in runs:
+        Cx, s, dt, r = run['C'], run['sel'], run['dt'], run['r']
+        for k, (key, lab) in enumerate(parts):
+            m, e = mean_se(-Cx[key][s] * SCALE, dt)
+            ax.plot(r, m, color=f'C{k}', lw=run['lw'], label=lab if run is run_main else None)
             if run is run_main:
-                for k, (key, lab) in enumerate(flows):
-                    ax.plot(r, mean_se(-Cx[key][s] * SCALE, dt)[0], color=f'C{k + 3}', ls='--', lw=0.7, label=lab)
-        ax.axhline(0, color='k', lw=0.5)
-        ax.set_xscale('log')
-        ax.set_yscale('symlog', linthresh=1e-3)
-        plain_log(ax, 'x')
-        ax.set_xlabel(r'$r\ /\ r_g$')
-        ax.set_ylabel(r'$\langle\dot M_\mathrm{acc}\rangle\ /\ \dot M_\mathrm{E}$')
-        place_legend(ax, ncol=2, loc='lower left')
-        run_legend(ax, runs, ncol=2)
+                ax.fill_between(r, m - e, m + e, color=f'C{k}', alpha=0.3, lw=0)
+        if run is run_main:
+            for k, (key, lab) in enumerate(flows):
+                ax.plot(r, mean_se(-Cx[key][s] * SCALE, dt)[0], color=f'C{k + 3}', ls='--', lw=0.7, label=lab)
+    ax.axhline(0, color='k', lw=0.5)
+    ax.set_xscale('log')
+    ax.set_yscale('symlog', linthresh=1e-3)
+    plain_log(ax, 'x')
+    ax.set_xlabel(r'$r\ /\ r_g$')
+    ax.set_ylabel(r'$\langle\dot M_\mathrm{acc}\rangle\ /\ \dot M_\mathrm{E}$')
+    place_legend(ax, ncol=2, loc='lower left')
+    run_legend(ax, runs, ncol=2)
 
-    def sigma_panel(ax):
-        for run in runs:
-            r = run['r']
-            ax.plot(r, run['sig_mean'], color=run['color'])
-            ax.fill_between(r, run['sig_mean'] - run['sig_se'], run['sig_mean'] + run['sig_se'], color=run['color'], alpha=0.3, lw=0)
-            R_ss = r[r > 6.06]
-            if run['mdot_in_mean'] > 0:
-                ax.plot(R_ss, run['mdot_in_mean'] / (3.0 * np.pi * nu_kin(R_ss)) * (1.0 - np.sqrt(6.0 / R_ss)), color=run['color'],
-                        ls='--', lw=0.7, zorder=-10)
-        ax.axvline(6.0, color='gray', lw=0.5, ls=':')
-        ax.set_xscale('log')
-        ax.set_yscale('log')
-        plain_log(ax, 'x')
-        ax.set_xlabel(r'$r\ /\ r_g$')
-        ax.set_ylabel(r'$\Sigma\ /\ \rho_0 r_g$')
-        run_table(ax, [(r'$\;\langle\Sigma\rangle$', dict()), (r'$\;\Sigma_\mathrm{ss}$', dict(ls='--', lw=0.7))],
-                  [(run['label'], run['color'], dict(color=run['color'])) for run in runs], loc='lower right', handlelength=2.0)
 
-    def alpha_panel(ax):
-        for run in runs:
-            r = run['r']
-            ratio, rel = effective_alpha(run)
-            ax.plot(r, ratio, color=run['color'])
-            ax.fill_between(r, ratio * (1 - rel), ratio * (1 + rel), color=run['color'], alpha=0.3, lw=0)
-            ax.axvline(run['R_eq_stats'][1], color=run['color'], ls=':', lw=0.6, zorder=-10)
-        ax.axhline(1.0, color='k', lw=0.5)
-        ax.set_xscale('log')
-        ax.set_yscale('log')
-        ax.set_xlim(6, run_main['r'][-1])
-        plain_log(ax, 'x')
-        plain_log(ax, 'y')
-        ax.set_xlabel(r'$R\ /\ r_g$')
-        ax.set_ylabel(r'$\alpha_\mathrm{eff} / \alpha$')
-        run_legend(ax, runs, color=True, loc='lower right')
+def sigma_panel(ax, runs):
+    for run in runs:
+        r = run['r']
+        ax.plot(r, run['sig_mean'], color=run['color'])
+        ax.fill_between(r, run['sig_mean'] - run['sig_se'], run['sig_mean'] + run['sig_se'], color=run['color'], alpha=0.3, lw=0)
+        R_ss = r[r > 6.06]
+        if run['mdot_in_mean'] > 0:
+            ax.plot(R_ss, run['mdot_in_mean'] / (3.0 * np.pi * nu_kin(R_ss)) * (1.0 - np.sqrt(6.0 / R_ss)), color=run['color'],
+                    ls='--', lw=0.7, zorder=-10)
+    ax.axvline(6.0, color='gray', lw=0.5, ls=':')
+    ax.set_xscale('log')
+    ax.set_yscale('log')
+    plain_log(ax, 'x')
+    ax.set_xlabel(r'$r\ /\ r_g$')
+    ax.set_ylabel(r'$\Sigma\ /\ \rho_0 r_g$')
+    run_table(ax, [(r'$\;\langle\Sigma\rangle$', dict()), (r'$\;\Sigma_\mathrm{ss}$', dict(ls='--', lw=0.7))],
+              [(run['label'], run['color'], dict(color=run['color'])) for run in runs], loc='lower right', handlelength=2.0)
 
-    def inflow_panel(ax):
-        for run in runs:
-            r = run['r']
-            ax.plot(r, run['mdot_in_mean'] / (2.0 * np.pi * r * run['sig_mean']), color=run['color'])
-        R_ss = run_main['r'][run_main['r'] > 6.5]
-        ax.plot(R_ss, 1.5 * nu_kin(R_ss) / R_ss / (1.0 - np.sqrt(6.0 / R_ss)), 'k--', lw=0.7, zorder=-10)
-        ax.set_xscale('log')
-        ax.set_yscale('log')
-        ax.set_xlim(6, run_main['r'][-1])
-        plain_log(ax, 'x')
-        ax.set_xlabel(r'$R\ /\ r_g$')
-        ax.set_ylabel(r'$\bar v_r\ /\ c$')
-        run_legend(ax, runs, color=True, extra=[(r'$\bar v_\mathrm{ss}$', dict(ls='--', lw=0.7))], loc='upper right')
 
-    for name, panels in [('mdot_sigma', (mdot_panel, sigma_panel)), ('alpha_inflow', (alpha_panel, inflow_panel))]:
-        fig, axs = plt.subplots(1, 2, figsize=[TEXT, 0.34 * TEXT])
-        for ax, panel in zip(axs, panels):
-            panel(ax)
-        save(fig, f'{name}_text')
-        for panel, part in zip(panels, name.split('_')):
-            fig, ax = plt.subplots(figsize=[COL, 0.62 * COL])
-            panel(ax)
-            save(fig, f'{part}_col')
+def alpha_panel(ax, runs):
+    run_main = runs[0]
+    for run in runs:
+        r = run['r']
+        ratio, rel = effective_alpha(run)
+        ax.plot(r, ratio, color=run['color'])
+        ax.fill_between(r, ratio * (1 - rel), ratio * (1 + rel), color=run['color'], alpha=0.3, lw=0)
+        ax.axvline(run['R_eq_stats'][1], color=run['color'], ls=':', lw=0.6, zorder=-10)
+    ax.axhline(1.0, color='k', lw=0.5)
+    ax.set_xscale('log')
+    ax.set_yscale('log')
+    ax.set_xlim(6, run_main['r'][-1])
+    plain_log(ax, 'x')
+    plain_log(ax, 'y')
+    ax.set_xlabel(r'$R\ /\ r_g$')
+    ax.set_ylabel(r'$\alpha_\mathrm{eff} / \alpha$')
+    run_legend(ax, runs, color=True, loc='lower right')
+
+
+def inflow_panel(ax, runs):
+    run_main = runs[0]
+    for run in runs:
+        r = run['r']
+        ax.plot(r, run['mdot_in_mean'] / (2.0 * np.pi * r * run['sig_mean']), color=run['color'])
+    R_ss = run_main['r'][run_main['r'] > 6.5]
+    ax.plot(R_ss, 1.5 * nu_kin(R_ss) / R_ss / (1.0 - np.sqrt(6.0 / R_ss)), 'k--', lw=0.7, zorder=-10)
+    ax.set_xscale('log')
+    ax.set_yscale('log')
+    ax.set_xlim(6, run_main['r'][-1])
+    plain_log(ax, 'x')
+    ax.set_xlabel(r'$R\ /\ r_g$')
+    ax.set_ylabel(r'$\bar v_r\ /\ c$')
+    run_legend(ax, runs, color=True, extra=[(r'$\bar v_\mathrm{ss}$', dict(ls='--', lw=0.7))], loc='upper right')
+
+
+def fig_profiles(runs):
+    fig, axs = plt.subplots(1, 2, figsize=[TEXT, 0.34 * TEXT])
+    mdot_panel(axs[0], runs)
+    sigma_panel(axs[1], runs)
+    save(fig, 'mdot_sigma_text')
+
+    fig, ax = plt.subplots(figsize=[COL, 0.62 * COL])
+    mdot_panel(ax, runs)
+    save(fig, 'mdot_col')
+
+    fig, ax = plt.subplots(figsize=[COL, 0.62 * COL])
+    sigma_panel(ax, runs)
+    save(fig, 'sigma_col')
+
+    fig, axs = plt.subplots(1, 2, figsize=[TEXT, 0.34 * TEXT])
+    alpha_panel(axs[0], runs)
+    inflow_panel(axs[1], runs)
+    save(fig, 'alpha_inflow_text')
+
+    fig, ax = plt.subplots(figsize=[COL, 0.62 * COL])
+    alpha_panel(ax, runs)
+    save(fig, 'alpha_col')
+
+    fig, ax = plt.subplots(figsize=[COL, 0.62 * COL])
+    inflow_panel(ax, runs)
+    save(fig, 'inflow_col')
 
 
 def effective_alpha(run):
@@ -1351,22 +1377,21 @@ def waves(run):
     run['d_rms'] = np.sqrt(np.mean(d**2, axis=0))
 
 
-def fig_waves(runs):
-    for run in runs:
-        waves(run)
-    main = runs[0]
-    S = main['S']
+def wave_speeds(main):
+    S, r = main['S'], main['r']
     rho_m, prs_m = S['rho_mid'].mean(axis=0), S['prs_mid'].mean(axis=0)
     pr_m, vr_m = S['enr_mid'].mean(axis=0) / 3.0, S['vr_mid'].mean(axis=0)
-    r = main['r']
-    speeds = [(np.sqrt((GAMMA * prs_m + 4.0 / 3.0 * pr_m) / rho_m), r'$c_\mathrm{ad}$'),
-              (np.sqrt((prs_m + pr_m) / rho_m), r'$c_\mathrm{iso}$'),
-              (np.sqrt(GAMMA * prs_m / rho_m), r'$c_\mathrm{gas}$'),
-              (np.abs(vr_m), r'$|\langle v_r\rangle|$'),
-              (nu_kin(r) / r, r'$\nu/R$')]
+    return [(np.sqrt((GAMMA * prs_m + 4.0 / 3.0 * pr_m) / rho_m), r'$c_\mathrm{ad}$'),
+            (np.sqrt((prs_m + pr_m) / rho_m), r'$c_\mathrm{iso}$'),
+            (np.sqrt(GAMMA * prs_m / rho_m), r'$c_\mathrm{gas}$'),
+            (np.abs(vr_m), r'$|\langle v_r\rangle|$'),
+            (nu_kin(r) / r, r'$\nu/R$')]
 
+
+def spectrum_figure(main, width, height):
+    r = main['r']
     f_w, P_w, w = main['f_w'], main['P_w'], main['wave']
-    fig, ax = plt.subplots(figsize=[COL, 0.62 * COL])
+    fig, ax = plt.subplots(figsize=[width, height])
     im = ax.pcolormesh(r[w], f_w[1:], P_w[1:] / P_w[1:].max(axis=0, keepdims=True), cmap='viridis', norm=LogNorm(vmin=1e-3, vmax=1.0),
                        shading='nearest', rasterized=True)
     fig.colorbar(im, ax=ax, label=r'$P / P_\mathrm{max}(r)$', pad=0.02)
@@ -1376,81 +1401,116 @@ def fig_waves(runs):
     plain_log(ax, 'x')
     ax.set_xlabel(r'$r\ /\ r_g$')
     ax.set_ylabel(r'$\nu_f\ /\ t_g^{-1}$')
+    return fig
+
+
+def phase_panel(ax, runs):
+    main = runs[0]
+    for run in runs:
+        rr, Ph = run['r'], run['Ph']
+        v = Ph['valid']
+        ax.plot(rr[v], Ph['ph'][v], 'o', ms=2, color=run['color'])
+        ax.plot(rr[~v], Ph['ph'][~v], 'o', ms=2, mfc='none', mew=0.5, color=run['color'], alpha=0.4)
+    ax.axvline(main['r'][main['Ph']['i0']], color='k', lw=0.5, ls=':')
+    ax.set_xscale('log')
+    ax.set_xlim(*R_WAVE)
+    plain_log(ax, 'x')
+    ax.set_xlabel(r'$r\ /\ r_g$')
+    ax.set_ylabel(r'$\varphi\ /\ \mathrm{rad}$')
+    run_table(ax, [(r'$\gamma^2 \geq \gamma^2_\mathrm{crit}$', dict(marker='o', ls='none', ms=2)),
+                   (r'$\gamma^2 < \gamma^2_\mathrm{crit}$', dict(marker='o', ls='none', ms=2, mfc='none', mew=0.5, alpha=0.4))],
+              [(run['label'], run['color'], dict(color=run['color'])) for run in runs], loc='upper left', handlelength=1.0)
+
+
+def speed_panel(ax, runs):
+    r = runs[0]['r']
+    for run in runs:
+        ax.errorbar(run['r'], run['v_p'], yerr=run['v_p_err'], fmt='o', ms=2, elinewidth=0.5, color=run['color'], ls='none')
+    for y, lab in wave_speeds(runs[0]):
+        ax.plot(r, y, lw=0.8, label=lab)
+    ax.set_xscale('log')
+    ax.set_yscale('log')
+    ax.set_xlim(*R_WAVE)
+    plain_log(ax, 'x')
+    ax.set_xlabel(r'$r\ /\ r_g$')
+    ax.set_ylabel(r'$v\ /\ c$')
+    place_legend(ax, ncol=3, loc='lower right')
+    run_table(ax, [(r'$v_p$', dict(marker='o', ls='none', ms=2))],
+              [(run['label'], run['color'], dict(color=run['color'])) for run in runs], loc='upper left', handlelength=1.0)
+
+
+def rms_panel(ax, runs):
+    for run in runs:
+        ax.plot(run['r'], run['d_rms'], color=run['color'])
+    ax.axvline(6.0, color='gray', lw=0.5, ls=':')
+    ax.set_xscale('log')
+    ax.set_yscale('log')
+    plain_log(ax, 'x')
+    plain_log(ax, 'y')
+    ax.set_xlabel(r'$r\ /\ r_g$')
+    ax.set_ylabel(r'$\delta_\mathrm{rms}$')
+    run_legend(ax, runs, color=True, loc='lower right')
+
+
+def cross_panel(ax, main):
+    S, r = main['S'], main['r']
+    rho_m = S['rho_mid'].mean(axis=0)
+    pr_m, vr_m = S['enr_mid'].mean(axis=0) / 3.0, S['vr_mid'].mean(axis=0)
+    drho = S['rho_mid'] / rho_m[None, :] - 1.0
+    pairs = [(S['vr_mid'] - vr_m[None, :], r'$\varphi_{\delta v_r} - \varphi_{\delta\rho}$'),
+             (S['enr_mid'] / (3.0 * pr_m[None, :]) - 1.0, r'$\varphi_{\delta E_r} - \varphi_{\delta\rho}$')]
+    for k, (b, lab) in enumerate(pairs):
+        kw = welch_kw(drho.shape[0], main['dt_s'])
+        fc, P = signal.csd(drho, b, **kw)
+        _, g2 = signal.coherence(drho, b, **kw)
+        i = int(np.argmin(np.abs(fc - main['f_peak'])))
+        m = g2[i] >= main['Ph']['g2_crit']
+        ax.plot(r[m], np.angle(P[i])[m], 'o', ms=2, color=f'C{k}', label=lab)
+    ax.axhline(0, color='k', lw=0.5)
+    for y in (-np.pi / 2, np.pi / 2):
+        ax.axhline(y, color='gray', lw=0.5, ls=':')
+    ax.set_xscale('log')
+    ax.set_xlim(*R_WAVE)
+    ax.set_ylim(-np.pi, np.pi)
+    plain_log(ax, 'x')
+    ax.set_xlabel(r'$r\ /\ r_g$')
+    ax.set_ylabel(r'$\Delta\varphi(\nu_\mathrm{peak})\ /\ \mathrm{rad}$')
+    place_legend(ax, loc='lower left')
+
+
+def fig_waves(runs):
+    for run in runs:
+        waves(run)
+    main = runs[0]
+
+    fig = spectrum_figure(main, COL, 0.62 * COL)
     save(fig, 'wave_spectrum_col')
 
-    def phase_panel(ax):
-        for run in runs:
-            rr, Ph = run['r'], run['Ph']
-            v = Ph['valid']
-            ax.plot(rr[v], Ph['ph'][v], 'o', ms=2, color=run['color'])
-            ax.plot(rr[~v], Ph['ph'][~v], 'o', ms=2, mfc='none', mew=0.5, color=run['color'], alpha=0.4)
-        ax.axvline(r[main['Ph']['i0']], color='k', lw=0.5, ls=':')
-        ax.set_xscale('log')
-        ax.set_xlim(*R_WAVE)
-        plain_log(ax, 'x')
-        ax.set_xlabel(r'$r\ /\ r_g$')
-        ax.set_ylabel(r'$\varphi\ /\ \mathrm{rad}$')
-        run_table(ax, [(r'$\gamma^2 \geq \gamma^2_\mathrm{crit}$', dict(marker='o', ls='none', ms=2)),
-                       (r'$\gamma^2 < \gamma^2_\mathrm{crit}$', dict(marker='o', ls='none', ms=2, mfc='none', mew=0.5, alpha=0.4))],
-                  [(run['label'], run['color'], dict(color=run['color'])) for run in runs], loc='upper left', handlelength=1.0)
+    fig, axs = plt.subplots(1, 2, figsize=[TEXT, 0.34 * TEXT])
+    phase_panel(axs[0], runs)
+    speed_panel(axs[1], runs)
+    save(fig, 'phase_speed_text')
 
-    def speed_panel(ax):
-        for run in runs:
-            ax.errorbar(run['r'], run['v_p'], yerr=run['v_p_err'], fmt='o', ms=2, elinewidth=0.5, color=run['color'], ls='none')
-        for y, lab in speeds:
-            ax.plot(r, y, lw=0.8, label=lab)
-        ax.set_xscale('log')
-        ax.set_yscale('log')
-        ax.set_xlim(*R_WAVE)
-        plain_log(ax, 'x')
-        ax.set_xlabel(r'$r\ /\ r_g$')
-        ax.set_ylabel(r'$v\ /\ c$')
-        place_legend(ax, ncol=3, loc='lower right')
-        run_table(ax, [(r'$v_p$', dict(marker='o', ls='none', ms=2))],
-                  [(run['label'], run['color'], dict(color=run['color'])) for run in runs], loc='upper left', handlelength=1.0)
+    fig, ax = plt.subplots(figsize=[COL, 0.62 * COL])
+    phase_panel(ax, runs)
+    save(fig, 'phase_col')
 
-    def rms_panel(ax):
-        for run in runs:
-            ax.plot(run['r'], run['d_rms'], color=run['color'])
-        ax.axvline(6.0, color='gray', lw=0.5, ls=':')
-        ax.set_xscale('log')
-        ax.set_yscale('log')
-        plain_log(ax, 'x')
-        plain_log(ax, 'y')
-        ax.set_xlabel(r'$r\ /\ r_g$')
-        ax.set_ylabel(r'$\delta_\mathrm{rms}$')
-        run_legend(ax, runs, color=True, loc='lower right')
+    fig, ax = plt.subplots(figsize=[COL, 0.62 * COL])
+    speed_panel(ax, runs)
+    save(fig, 'speed_col')
 
-    def cross_panel(ax):
-        drho = S['rho_mid'] / rho_m[None, :] - 1.0
-        for k, (b, lab) in enumerate([(S['vr_mid'] - vr_m[None, :], r'$\varphi_{\delta v_r} - \varphi_{\delta\rho}$'),
-                                      (S['enr_mid'] / (3.0 * pr_m[None, :]) - 1.0, r'$\varphi_{\delta E_r} - \varphi_{\delta\rho}$')]):
-            kw = welch_kw(drho.shape[0], main['dt_s'])
-            fc, P = signal.csd(drho, b, **kw)
-            _, g2 = signal.coherence(drho, b, **kw)
-            i = int(np.argmin(np.abs(fc - main['f_peak'])))
-            m = g2[i] >= main['Ph']['g2_crit']
-            ax.plot(r[m], np.angle(P[i])[m], 'o', ms=2, color=f'C{k}', label=lab)
-        ax.axhline(0, color='k', lw=0.5)
-        for y in (-np.pi / 2, np.pi / 2):
-            ax.axhline(y, color='gray', lw=0.5, ls=':')
-        ax.set_xscale('log')
-        ax.set_xlim(*R_WAVE)
-        ax.set_ylim(-np.pi, np.pi)
-        plain_log(ax, 'x')
-        ax.set_xlabel(r'$r\ /\ r_g$')
-        ax.set_ylabel(r'$\Delta\varphi(\nu_\mathrm{peak})\ /\ \mathrm{rad}$')
-        place_legend(ax, loc='lower left')
+    fig, axs = plt.subplots(1, 2, figsize=[TEXT, 0.34 * TEXT])
+    rms_panel(axs[0], runs)
+    cross_panel(axs[1], main)
+    save(fig, 'rms_cross_text')
 
-    for name, panels in [('phase_speed', (phase_panel, speed_panel)), ('rms_cross', (rms_panel, cross_panel))]:
-        fig, axs = plt.subplots(1, 2, figsize=[TEXT, 0.34 * TEXT])
-        for ax, panel in zip(axs, panels):
-            panel(ax)
-        save(fig, f'{name}_text')
-        for panel, part in zip(panels, name.split('_')):
-            fig, ax = plt.subplots(figsize=[COL, 0.62 * COL])
-            panel(ax)
-            save(fig, f'{part}_col')
+    fig, ax = plt.subplots(figsize=[COL, 0.62 * COL])
+    rms_panel(ax, runs)
+    save(fig, 'rms_col')
+
+    fig, ax = plt.subplots(figsize=[COL, 0.62 * COL])
+    cross_panel(ax, main)
+    save(fig, 'cross_col')
 
 
 def compton_opacity(Tg, Tr):
@@ -1486,54 +1546,62 @@ def heating_cooling(run):
             for key, val in times.items()}
 
 
+HEATING_TIMES = [('t_heat', r'$t_\mathrm{heat}$'), ('t_C', r'$t_C$'), ('t_ff', r'$t_\mathrm{ff}$')]
+
+
+def heating_times_panel(ax, runs):
+    for run in runs:
+        r = run['r']
+        m = r >= R_MIN_HC
+        for k, (key, _) in enumerate(HEATING_TIMES):
+            ax.plot(r[m], run['HC'][key][1][m], color=f'C{k}', lw=1.2 if run is runs[0] else 0.5)
+            if run is runs[0]:
+                ax.fill_between(r[m], run['HC'][key][0][m], run['HC'][key][2][m], color=f'C{k}', alpha=0.2, lw=0)
+    R = runs[0]['r'][runs[0]['r'] >= R_MIN_HC]
+    ax.plot(R, 1.0 / omega_pw(R), 'k--', lw=0.6)
+    ax.set_xscale('log')
+    ax.set_yscale('log')
+    plain_log(ax, 'x')
+    ax.set_xlabel(r'$R\ /\ r_g$')
+    ax.set_ylabel(r'$t\ /\ t_g$')
+    handles = [Line2D([], [], color=f'C{k}') for k in range(3)] + [Line2D([], [], color='k', ls='--', lw=0.6)]
+    labels = [lab for _, lab in HEATING_TIMES] + [r'$1/\Omega$']
+    place_legend(ax, handles, labels, ncol=2, loc='upper left')
+    run_legend(ax, [dict(label=run['label'], lw=1.2 if run is runs[0] else 0.5) for run in runs], loc='lower right')
+
+
+def heating_ratio_panel(ax, runs):
+    for run in runs:
+        r = run['r']
+        m = r >= R_MIN_HC
+        ax.plot(r[m], run['HC']['ratio'][1][m], color=run['color'])
+        ax.fill_between(r[m], run['HC']['ratio'][0][m], run['HC']['ratio'][2][m], color=run['color'], alpha=0.2, lw=0)
+    ax.axhline(1.0, color='k', lw=0.5)
+    ax.set_xscale('log')
+    ax.set_yscale('log')
+    plain_log(ax, 'x')
+    plain_log(ax, 'y')
+    ax.set_xlabel(r'$R\ /\ r_g$')
+    ax.set_ylabel(r'$q^+ / (\Lambda_C + \Lambda_\mathrm{ff})$')
+    run_legend(ax, runs, color=True, loc='upper right')
+
+
 def fig_heating(runs):
-    times = [('t_heat', r'$t_\mathrm{heat}$'), ('t_C', r'$t_C$'), ('t_ff', r'$t_\mathrm{ff}$')]
     for run in runs:
         run['HC'] = heating_cooling(run)
 
-    def times_panel(ax):
-        for run in runs:
-            r = run['r']
-            m = r >= R_MIN_HC
-            for k, (key, _) in enumerate(times):
-                ax.plot(r[m], run['HC'][key][1][m], color=f'C{k}', lw=1.2 if run is runs[0] else 0.5)
-                if run is runs[0]:
-                    ax.fill_between(r[m], run['HC'][key][0][m], run['HC'][key][2][m], color=f'C{k}', alpha=0.2, lw=0)
-        R = runs[0]['r'][runs[0]['r'] >= R_MIN_HC]
-        ax.plot(R, 1.0 / omega_pw(R), 'k--', lw=0.6)
-        ax.set_xscale('log')
-        ax.set_yscale('log')
-        plain_log(ax, 'x')
-        ax.set_xlabel(r'$R\ /\ r_g$')
-        ax.set_ylabel(r'$t\ /\ t_g$')
-        h = [Line2D([], [], color=f'C{k}') for k in range(3)] + [Line2D([], [], color='k', ls='--', lw=0.6)]
-        l = [lab for _, lab in times] + [r'$1/\Omega$']
-        place_legend(ax, h, l, ncol=2, loc='upper left')
-        run_legend(ax, [dict(label=run['label'], lw=1.2 if run is runs[0] else 0.5) for run in runs], loc='lower right')
-
-    def ratio_panel(ax):
-        for run in runs:
-            r = run['r']
-            m = r >= R_MIN_HC
-            ax.plot(r[m], run['HC']['ratio'][1][m], color=run['color'])
-            ax.fill_between(r[m], run['HC']['ratio'][0][m], run['HC']['ratio'][2][m], color=run['color'], alpha=0.2, lw=0)
-        ax.axhline(1.0, color='k', lw=0.5)
-        ax.set_xscale('log')
-        ax.set_yscale('log')
-        plain_log(ax, 'x')
-        plain_log(ax, 'y')
-        ax.set_xlabel(r'$R\ /\ r_g$')
-        ax.set_ylabel(r'$q^+ / (\Lambda_C + \Lambda_\mathrm{ff})$')
-        run_legend(ax, runs, color=True, loc='upper right')
-
     fig, axs = plt.subplots(1, 2, figsize=[TEXT, 0.34 * TEXT])
-    times_panel(axs[0])
-    ratio_panel(axs[1])
+    heating_times_panel(axs[0], runs)
+    heating_ratio_panel(axs[1], runs)
     save(fig, 'heating_text')
-    for panel, part in [(times_panel, 'heating_times'), (ratio_panel, 'heating_ratio')]:
-        fig, ax = plt.subplots(figsize=[COL, 0.62 * COL])
-        panel(ax)
-        save(fig, f'{part}_col')
+
+    fig, ax = plt.subplots(figsize=[COL, 0.62 * COL])
+    heating_times_panel(ax, runs)
+    save(fig, 'heating_times_col')
+
+    fig, ax = plt.subplots(figsize=[COL, 0.62 * COL])
+    heating_ratio_panel(ax, runs)
+    save(fig, 'heating_ratio_col')
 
 
 def shell_mass(Cx, a, b):
@@ -1559,46 +1627,53 @@ def mass_budget(Cx, a, b):
     return dict(t=t, dM=dM, flux=flux_int, floor=dM - flux_int, err=(t - t[0]) / (t[-1] - t[0]) * err)
 
 
+def budget_panel(ax, B, legend):
+    ax.plot(B['t'], B['dM'], label=r'$\Delta M_{ab}$')
+    ax.plot(B['t'], B['flux'], label=r'$\int [\dot M(r_a) - \dot M(r_b)]\,\mathrm{d}t$')
+    ax.plot(B['t'], B['floor'], label=r'$\Delta M_\mathrm{floor}$')
+    ax.fill_between(B['t'], B['floor'] - B['err'], B['floor'] + B['err'], alpha=0.3, lw=0, color='firebrick', label=r'$\pm\,\sigma_I$')
+    ax.axhline(0, color='k', lw=0.5)
+    ax.set_xlabel(r'$t\ /\ t_g$')
+    ax.set_ylabel(r'$M\ /\ \rho_0 r_g^3$')
+    if legend:
+        place_legend(ax, loc='upper left')
+
+
 def fig_budget(run):
     S, r = run['S'], run['r']
     IA = int(np.argmin(np.abs(r - R_BUDGET[0])))
     IB = int(np.argmin(np.abs(r - R_BUDGET[1])))
-    budgets = [('restricted', mass_budget(S, IA, IB)), ('complete', mass_budget(S, 0, r.size - 1))]
-
-    def panel(ax, B, legend):
-        ax.plot(B['t'], B['dM'], label=r'$\Delta M_{ab}$')
-        ax.plot(B['t'], B['flux'], label=r'$\int [\dot M(r_a) - \dot M(r_b)]\,\mathrm{d}t$')
-        ax.plot(B['t'], B['floor'], label=r'$\Delta M_\mathrm{floor}$')
-        ax.fill_between(B['t'], B['floor'] - B['err'], B['floor'] + B['err'], alpha=0.3, lw=0, color='firebrick', label=r'$\pm\,\sigma_I$')
-        ax.axhline(0, color='k', lw=0.5)
-        ax.set_xlabel(r'$t\ /\ t_g$')
-        ax.set_ylabel(r'$M\ /\ \rho_0 r_g^3$')
-        if legend:
-            place_legend(ax, loc='upper left')
+    restricted = mass_budget(S, IA, IB)
+    complete = mass_budget(S, 0, r.size - 1)
 
     fig, axs = plt.subplots(1, 2, figsize=[TEXT, 0.34 * TEXT])
-    for k, (ax, (_, B)) in enumerate(zip(axs, budgets)):
-        panel(ax, B, k == 1)
+    budget_panel(axs[0], restricted, False)
+    budget_panel(axs[1], complete, True)
     save(fig, 'budget_text')
-    for label, B in budgets:
-        fig, ax = plt.subplots(figsize=[COL, 0.62 * COL])
-        panel(ax, B, True)
-        save(fig, f'budget_{label}_col')
+
+    fig, ax = plt.subplots(figsize=[COL, 0.62 * COL])
+    budget_panel(ax, restricted, True)
+    save(fig, 'budget_restricted_col')
+
+    fig, ax = plt.subplots(figsize=[COL, 0.62 * COL])
+    budget_panel(ax, complete, True)
+    save(fig, 'budget_complete_col')
+
+
+def vertical_profile(field, R0, geo):
+    R_C, TH_C = geo['R_C'], geo['TH_C']
+    r_line = R0 / np.sin(TH_C)
+    out = np.full(geo['NTH'], np.nan)
+    for j in np.nonzero((r_line >= R_C[0]) & (r_line <= R_C[-1]))[0]:
+        out[j] = np.interp(np.log(r_line[j]), np.log(R_C), field[:, j])
+    return out
 
 
 def fig_structure(run):
     path, geo = run['path'], run['geo']
-    R_C, TH_C, NR, NTH, DTH, COT = geo['R_C'], geo['TH_C'], geo['NR'], geo['NTH'], geo['DTH'], geo['COT']
+    R_C, TH_C, NR, DTH, COT = geo['R_C'], geo['TH_C'], geo['NR'], geo['DTH'], geo['COT']
     outs = run['C']['outs'][run['sel']][::PROFILE_STRIDE]
     st, ct = np.sin(TH_C)[None, :], np.cos(TH_C)[None, :]
-    lr = np.log(R_C)
-
-    def vertical(field, R0):
-        r_line = R0 / np.sin(TH_C)
-        out = np.full(NTH, np.nan)
-        for j in np.nonzero((r_line >= R_C[0]) & (r_line <= R_C[-1]))[0]:
-            out[j] = np.interp(np.log(r_line[j]), lr, field[:, j])
-        return out
 
     PROF = {R0: {} for R0 in R_PROFILES}
     QP, QM, NQM = np.zeros(NR), np.zeros(NR), np.zeros(NR)
@@ -1612,7 +1687,7 @@ def fig_structure(run):
                       v_z=F['vx1'] * ct - F['vx2'] * st)
         for R0 in R_PROFILES:
             for key, val in fields.items():
-                PROF[R0][key] = PROF[R0].get(key, 0.0) + vertical(val, R0)
+                PROF[R0][key] = PROF[R0].get(key, 0.0) + vertical_profile(val, R0, geo)
 
         Om = F['vx3'] / (R_C[:, None] * st)
         shear = R_C[:, None] * np.gradient(Om, R_C, axis=0)
@@ -1727,55 +1802,62 @@ def angular_profiles(run):
     return out
 
 
+ANGULAR_PANELS = [('mdot_dist', r'$\mathrm{d}\dot M_\mathrm{acc}/\mathrm{d}\vartheta\ /\ (\dot M_\mathrm{acc}\,\mathrm{deg}^{-1})$', 1.0),
+                  ('rho', r'$\langle\rho\rangle\ /\ \rho_0$', 1.0),
+                  ('vr', r'$\langle v_r\rangle\ /\ c$', -1.0),
+                  ('vphi', r'$\langle v_\phi\rangle\ /\ c$', None)]
+ANGULAR_WIDTHS = (1.2, 0.5)
+
+
+def angular_panel(ax, runs, key, lab, sign, legend):
+    rcol = plt.cm.viridis(np.linspace(0.0, 0.85, len(R_ANG)))
+    for run, lw in zip(runs, ANGULAR_WIDTHS):
+        A = run['ANG']
+        for k in range(len(R_ANG)):
+            y, e = A[key][k], A[key + '_se'][k]
+            lo, hi = y - e, y + e
+            if sign is not None:
+                y, lo, hi = sign * y, np.minimum(sign * lo, sign * hi), np.maximum(sign * lo, sign * hi)
+                y = np.where(y > 0, y, np.nan)
+                lo = np.where(lo > 0, lo, np.nan)
+                hi = np.where(hi > 0, hi, np.nan)
+                lo = np.where(np.isfinite(lo), lo, y)
+            ax.plot(A['elev'], y, color=rcol[k], lw=lw)
+            ax.fill_between(A['elev'], lo, hi, color=rcol[k], alpha=0.15, lw=0)
+    if sign is not None:
+        ax.set_yscale('log')
+    if sign == -1.0:
+        ax.yaxis.set_major_formatter(NegativeLog())
+        ax.yaxis.set_minor_formatter(NegativeLog(labelOnlyBase=False))
+    if key == 'mdot_dist':
+        top = max(np.nanmax(run['ANG']['mdot_dist']) for run in runs)
+        ax.set_ylim(top * 1e-4, top * 2.0)
+    ax.set_xscale('log')
+    ax.set_xlim(0.3, 90.0)
+    plain_log(ax, 'x', mantissas=(1, 2, 5))
+    ax.set_ylabel(lab)
+    ax.set_xlabel(r'$\vartheta\ /\ \mathrm{deg}$')
+    if legend:
+        place_legend(ax, [Line2D([], [], color=c, label=rf'$r = {r0:g}$') for r0, c in zip(R_ANG, rcol)], ncol=3,
+                     handlelength=1.0, columnspacing=0.8, loc='lower left')
+        run_legend(ax, [dict(label=run['label'], lw=lw) for run, lw in zip(runs, ANGULAR_WIDTHS)], ncol=2)
+
+
 def fig_angular(runs):
     for run in runs:
         run['ANG'] = angular_profiles(run)
-    rcol = plt.cm.viridis(np.linspace(0.0, 0.85, len(R_ANG)))
-    lws = (1.2, 0.5)
-    panels = [('mdot_dist', r'$\mathrm{d}\dot M_\mathrm{acc}/\mathrm{d}\vartheta\ /\ (\dot M_\mathrm{acc}\,\mathrm{deg}^{-1})$', 1.0),
-              ('rho', r'$\langle\rho\rangle\ /\ \rho_0$', 1.0),
-              ('vr', r'$\langle v_r\rangle\ /\ c$', -1.0),
-              ('vphi', r'$\langle v_\phi\rangle\ /\ c$', None)]
-
-    def panel(ax, key, lab, sign, legend):
-        for run, lw in zip(runs, lws):
-            A = run['ANG']
-            for k in range(len(R_ANG)):
-                y, e = A[key][k], A[key + '_se'][k]
-                lo, hi = y - e, y + e
-                if sign is not None:
-                    y, lo, hi = sign * y, np.minimum(sign * lo, sign * hi), np.maximum(sign * lo, sign * hi)
-                    y, lo, hi = (np.where(v > 0, v, np.nan) for v in (y, lo, hi))
-                    lo = np.where(np.isfinite(lo), lo, y)
-                ax.plot(A['elev'], y, color=rcol[k], lw=lw)
-                ax.fill_between(A['elev'], lo, hi, color=rcol[k], alpha=0.15, lw=0)
-        if sign is not None:
-            ax.set_yscale('log')
-        if sign == -1.0:
-            ax.yaxis.set_major_formatter(NegativeLog())
-            ax.yaxis.set_minor_formatter(NegativeLog(labelOnlyBase=False))
-        if key == 'mdot_dist':
-            top = max(np.nanmax(run['ANG']['mdot_dist']) for run in runs)
-            ax.set_ylim(top * 1e-4, top * 2.0)
-        ax.set_xscale('log')
-        ax.set_xlim(0.3, 90.0)
-        plain_log(ax, 'x', mantissas=(1, 2, 5))
-        ax.set_ylabel(lab)
-        ax.set_xlabel(r'$\vartheta\ /\ \mathrm{deg}$')
-        if legend:
-            place_legend(ax, [Line2D([], [], color=c, label=rf'$r = {r0:g}$') for r0, c in zip(R_ANG, rcol)], ncol=3,
-                         handlelength=1.0, columnspacing=0.8, loc='lower left')
-            run_legend(ax, [dict(label=run['label'], lw=lw) for run, lw in zip(runs, lws)], ncol=2)
 
     fig, axs = plt.subplots(2, 2, figsize=[TEXT, 0.66 * TEXT], sharex=True)
-    for k, (ax, (key, lab, sign)) in enumerate(zip(axs.flat, panels)):
-        panel(ax, key, lab, sign, k == 0)
+    for k in range(4):
+        key, lab, sign = ANGULAR_PANELS[k]
+        angular_panel(axs.flat[k], runs, key, lab, sign, k == 0)
     for ax in axs[0]:
         ax.set_xlabel('')
     save(fig, 'angular_text')
-    for key, lab, sign in panels:
+
+    for key, lab, sign in ANGULAR_PANELS:
         fig, ax = plt.subplots(figsize=[COL, 0.62 * COL])
-        panel(ax, key, lab, sign, key == 'mdot_dist')
+        angular_panel(ax, runs, key, lab, sign, key == 'mdot_dist')
         save(fig, f'angular_{key}_col')
 
 
@@ -1784,26 +1866,36 @@ def main():
     lr = make_run(REF_PATH, r'$\mathrm{LR}$', 'firebrick', 0.5)
     runs = [hr, lr]
 
-    steps = [('timescales', lambda: fig_timescales()),
-             ('valid', lambda: fig_validation()),
-             ('domain', lambda: fig_full_domain(hr)),
-             ('early', lambda: fig_early(hr)),
-             ('relax', lambda: fig_relaxation(runs)),
-             ('window', lambda: fig_window(runs)),
-             ('spacetime', lambda: fig_spacetime(hr)),
-             ('profiles', lambda: fig_profiles(runs)),
-             ('waves', lambda: fig_waves(runs)),
-             ('heating', lambda: fig_heating(runs)),
-             ('budget', lambda: fig_budget(hr)),
-             ('aspect', lambda: fig_aspect(runs)),
-             ('structure', lambda: fig_structure(hr)),
-             ('angular', lambda: fig_angular(runs))]
-
-    for name, step in steps:
-        if wanted(name):
-            if name == 'structure' and 'f_peak' not in hr:
-                waves(hr)
-            step()
+    if wanted('timescales'):
+        fig_timescales()
+    if wanted('valid'):
+        fig_validation()
+    if wanted('domain'):
+        fig_full_domain(hr)
+    if wanted('early'):
+        fig_early(hr)
+    if wanted('relax'):
+        fig_relaxation(runs)
+    if wanted('window'):
+        fig_window(runs)
+    if wanted('spacetime'):
+        fig_spacetime(hr)
+    if wanted('profiles'):
+        fig_profiles(runs)
+    if wanted('waves'):
+        fig_waves(runs)
+    if wanted('heating'):
+        fig_heating(runs)
+    if wanted('budget'):
+        fig_budget(hr)
+    if wanted('aspect'):
+        fig_aspect(runs)
+    if wanted('structure'):
+        if 'f_peak' not in hr:
+            waves(hr)
+        fig_structure(hr)
+    if wanted('angular'):
+        fig_angular(runs)
 
 
 if __name__ == '__main__':
