@@ -6,7 +6,7 @@
 
 \author[F. A. Agildere]{Fritz Ali Agildere}
 
-\date[Oct. 13, 2026]{October 13, 2026}
+\date[Oct. 14, 2026]{October 14, 2026}
 
 \title{Numerical Simulations of AGN Accretion Disks in PLUTO}
 \subtitle{\textsc{CAMK PAN Summer Student Program}}
@@ -273,7 +273,7 @@
 
 	\begin{frame}
 		\frametitle{Density Waves –
-					\only<1|handout:1>{Phase Amplitude}%
+					\only<1|handout:1>{Phase Angle}%
 					\only<2|handout:2>{Phase Speed}}
 		\centering
 		\only<1|handout:1>{\plot{phase}}%
@@ -404,9 +404,10 @@
 				  \begin{align*}&&&& C = \frac{2}{5 \epsilon^2} \left(\frac{1}{r} - \frac{1 - 5 \epsilon^2 / 2}{R}\right) &&
 				  p = \epsilon^2 C^{5/2} && \rho = C^{3/2} &&&&\end{align*}
 			\item Corona in Hydrostatic Equilibrium with $\rho_c = 0.01$ in Code Units
-				  \begin{align*}&&&& \rho = \rho_c r^{-3/2} && p = 0.4 \rho_c r^{-5/2} &&&&\end{align*}
-			\item Shear Viscosity with Sound Speed of Initial Disk, Restricted by Classifier
-				  \begin{align*}&&&& \eta_\nu = \frac{2}{3} \alpha \rho \epsilon^2 C R^{3/2} f && \nu = \frac{2}{3} \alpha \epsilon^2 R^{1{\kern-0.5pt}/2} &&&&\end{align*}
+				  \begin{align*}&&&& \rho = \rho_c r^{-3/2} && p = \frac{2}{5} \rho_c r^{-5/2} &&&&\end{align*}
+			\item Shear Viscosity with Sound Speed of Initial Disk with Restriction by Classifier
+				  \begin{align*}&&&& \eta_\nu = \frac{2}{3} \alpha \rho \epsilon^2 C R^{3/2} f &&
+				  \nu = \frac{2}{3} \alpha \epsilon^2 R^{1{\kern-0.5pt}/2} &&&&\end{align*}
 			\item Density Floor at \num{5e-7} in Code Units with Constant Sound Speed and Momentum
 		\end{itemize}
 	\end{frame}
@@ -415,14 +416,15 @@
 		\frametitle{Opacity Model}
 		\begin{itemize}
 			\item Kramers Free Free and Bound Free Absorption with Guillotine Factor
-				  \begin{align*}&&&& \kappa_K = \left(K_\mathrm{ff} + K_\mathrm{bf}\right) \rho \, T_g^{-7/2} && \kappa_\mathrm{es} = 0.2 \left(1 + X\right) &&&&\end{align*}
-			\item Compton Exchange Held at Cap above $T_\mathrm{max} = \qty{1e9}{\kelvin}$
-				  $$\kappa_C = \kappa_\mathrm{es} \frac{4 k_B T_r^4 \left(T_\mathrm{max} - T_r\right)}{m_e c^2 \left(T_g^4 - T_r^4\right)}$$
-			\item Gated by Classifier and Decoupled near Speed of Light, Thomson Scattering on All Gas
-				  \begin{align*}&&&& f_d = \max\left(\frac{f - 0.05}{0.95}, \, 0\right) &&
-				  g_v = \left[1 + \exp\left(\frac{\beta - 0.9}{0.03}\right)\right]^{-1} &&&& \\
-				  &&&& \kappa_\mathrm{abs} = g_v \,f_d \left(\kappa_K + \kappa_C\right) &&
-				  \kappa_\mathrm{sc} = g_v \left(\kappa_\mathrm{es} - f_d \kappa_C\right) &&&&\end{align*}
+				  \begin{align*}&&&& \kappa_K = \left(K_{f{\kern-0.5pt}f} + K_{b{\kern-0.5pt}f}\right) \rho \, T_g^{-7/2} &&
+				  \kappa_{es} = \frac{1}{5} \left(1 + X\right) &&&&\end{align*}
+			\item Compton Exchange Held at Cap above $T_{max} = \qty{e9}{\kelvin}$
+				  $$\kappa_C = \kappa_{es} \frac{4 k_B T_r^4 \left(T_{max} - T_r\right)}{m_e c^2 \left(T_g^4 - T_r^4\right)}$$
+			\item Gated by Classifier and Decoupled near Speed of Light with Thomson Scattering on All Gas
+				  \begin{align*}&&&& f_d = \symup{max}\left(\frac{f - 0.05}{0.95}, \, 0\right) &&
+				  g_v = \left[1 + \symup{exp}\left(\frac{\beta - 0.9}{0.03}\right)\right]^{-1} &&&& \\
+				  &&&& \kappa_{abs} = g_v \,f_d \left(\kappa_K + \kappa_C\right) &&
+				  \kappa_{sc} = g_v \left(\kappa_{es} - f_d \kappa_C\right) &&&&\end{align*}
 		\end{itemize}
 	\end{frame}
 
@@ -442,7 +444,8 @@
 			\end{itemize}
 			\item Optional Geometric Mode Independent of Classification
 			\begin{itemize}
-				\item Disk Reference from Maximum Density, Corona from Geometric Mean above $z / R = 0.5$
+				\item Disk Reference from Maximum Density
+				\item Corona from Geometric Mean above $z / R = 0.5$
 			\end{itemize}
 		\end{itemize}
 	\end{frame}
@@ -452,13 +455,13 @@
 		\begin{itemize}
 			\item Standard Errors from Block Averages over \num{1000} Gravitational Times
 			\item Relaxation from Running Means over $W = 2500$ Compared with Final Fifth
-				  $$D(t_c) = \frac{\lvert \bar X_W(t_c) - X_\mathrm{ref} \rvert}{\sigma}$$
+				  $$D(t_c) = \frac{\lvert \bar X_W(t_c) - X_{ref} \rvert}{\sigma}$$
 			\item Inflow Equilibrium where Accretion Rate within \qty{20}{\percent} of Inner Value
 			\item Welch Spectra of Surface Density Perturbation $\delta = \Sigma / \langle \Sigma \rangle - 1$
 			\begin{itemize}
 				\item Phase at Peak Frequency Relative to $r = 7$ for Significant Coherence Only
 				\item Local Phase Speed from Linear Fits over \qty{15}{\percent} in Radius
-					  $$v_p = \omega \, / \, \frac{\mathrm{d}\varphi}{\mathrm{d}r}$$
+					  $$v_p = \omega \, / \, \frac{d\varphi}{dr}$$
 			\end{itemize}
 		\end{itemize}
 	\end{frame}
@@ -485,7 +488,7 @@
 
 	\begin{frame}
 		\frametitle{Early Evolution –
-					\only<1-6|handout:1>{DiskFraction}%
+					\only<1-6|handout:1>{Constructed Classifier}%
 					\only<7-12|handout:2>{Gas Temperature}%
 					\only<13-18|handout:3>{Temperature Ratio}%
 					\only<19-24|handout:4>{Radial Velocity}%
@@ -525,7 +528,7 @@
 
 	\begin{frame}
 		\frametitle{Steady State –
-					\only<1-2|handout:1>{DiskFraction \& Disk Surface}%
+					\only<1-2|handout:1>{Classification \& Disk Surface}%
 					\only<3-4|handout:2>{Temperatures}%
 					\only<5-6|handout:3>{Velocities}}
 		\centering

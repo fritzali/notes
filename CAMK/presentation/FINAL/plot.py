@@ -536,7 +536,7 @@ def relaxation(t, X, dt):
     return np.where(tail_ok.any(axis=0), tc[judged][first], np.nan), tc, D, t_ref
 
 
-GLOBAL_TEX = {'M_d': r'$M_d$', 'E_rad': r'$E_\mathrm{rad}$', 'mdot_in': r'$\dot M_\mathrm{acc}(r_\mathrm{in})$', 'L_out': r'$L(r_\mathrm{out})$'}
+GLOBAL_TEX = {'M_d': r'$M_d$', 'E_rad': r'$E_{rad}$', 'mdot_in': r'$\dot M_{acc}(r_{i{\kern-0.25pt}n})$', 'L_out': r'$L(r_{out})$'}
 
 
 def global_series(Cx):
@@ -1075,7 +1075,7 @@ def spacetime(ax, t, data, norm, cmap, r, tlim=None):
 def mdot_panel(ax, runs):
     run_main = runs[0]
     parts = [('mdot', r'$\dot M$'), ('mdot_d', r'$\dot M_d$'), ('mdot_c', r'$\dot M_c$')]
-    flows = [('mdot_in', r'$\dot M_\mathrm{in}$'), ('mdot_out', r'$\dot M_\mathrm{out}$')]
+    flows = [('mdot_in', r'$\dot M_{i{\kern-0.25pt}n}$'), ('mdot_out', r'$\dot M_{out}$')]
     for run in runs:
         Cx, s, dt, r = run['C'], run['sel'], run['dt'], run['r']
         for k, (key, lab) in enumerate(parts):
@@ -1091,7 +1091,7 @@ def mdot_panel(ax, runs):
     ax.set_yscale('symlog', linthresh=1e-3)
     plain_log(ax, 'x')
     ax.set_xlabel(r'$r\ /\ r_g$')
-    ax.set_ylabel(r'$\langle\dot M_\mathrm{acc}\rangle\ /\ \dot M_\mathrm{E}$')
+    ax.set_ylabel(r'$\langle\dot M_{acc}\rangle\ /\ \dot M_{E}$')
     place_legend(ax, ncol=2, loc='lower left')
     run_legend(ax, runs, ncol=2)
 
@@ -1111,7 +1111,7 @@ def sigma_panel(ax, runs):
     plain_log(ax, 'x')
     ax.set_xlabel(r'$r\ /\ r_g$')
     ax.set_ylabel(r'$\Sigma\ /\ \rho_0 r_g$')
-    run_table(ax, [(r'$\;\langle\Sigma\rangle$', dict()), (r'$\;\Sigma_\mathrm{ss}$', dict(ls='--', lw=0.7))],
+    run_table(ax, [(r'$\;\langle\Sigma\rangle$', dict()), (r'$\;\Sigma_{ss}$', dict(ls='--', lw=0.7))],
               [(run['label'], run['color'], dict(color=run['color'])) for run in runs], loc='lower right', handlelength=2.0)
 
 
@@ -1130,7 +1130,7 @@ def alpha_panel(ax, runs):
     plain_log(ax, 'x')
     plain_log(ax, 'y')
     ax.set_xlabel(r'$R\ /\ r_g$')
-    ax.set_ylabel(r'$\alpha_\mathrm{eff} / \alpha$')
+    ax.set_ylabel(r'$\alpha_{ef{\kern-0.5pt}f} / \alpha$')
     run_legend(ax, runs, color=True, loc='lower right')
 
 
@@ -1147,16 +1147,16 @@ def inflow_panel(ax, runs):
     plain_log(ax, 'x')
     ax.set_xlabel(r'$R\ /\ r_g$')
     ax.set_ylabel(r'$\bar v_r\ /\ c$')
-    run_legend(ax, runs, color=True, extra=[(r'$\bar v_\mathrm{ss}$', dict(ls='--', lw=0.7))], loc='upper right')
+    run_legend(ax, runs, color=True, extra=[(r'$\bar v_{ss}$', dict(ls='--', lw=0.7))], loc='upper right')
 
 
 def wave_speeds(main):
     S, r = main['S'], main['r']
     rho_m, prs_m = S['rho_mid'].mean(axis=0), S['prs_mid'].mean(axis=0)
     pr_m, vr_m = S['enr_mid'].mean(axis=0) / 3.0, S['vr_mid'].mean(axis=0)
-    return [(np.sqrt((GAMMA * prs_m + 4.0 / 3.0 * pr_m) / rho_m), r'$c_\mathrm{ad}$'),
-            (np.sqrt((prs_m + pr_m) / rho_m), r'$c_\mathrm{iso}$'),
-            (np.sqrt(GAMMA * prs_m / rho_m), r'$c_\mathrm{gas}$'),
+    return [(np.sqrt((GAMMA * prs_m + 4.0 / 3.0 * pr_m) / rho_m), r'$c_{ad}$'),
+            (np.sqrt((prs_m + pr_m) / rho_m), r'$c_{i{\kern-0.25pt}so}$'),
+            (np.sqrt(GAMMA * prs_m / rho_m), r'$c_{gas}$'),
             (np.abs(vr_m), r'$|\langle v_r\rangle|$'),
             (nu_kin(r) / r, r'$\nu/R$')]
 
@@ -1174,8 +1174,8 @@ def phase_panel(ax, runs):
     plain_log(ax, 'x')
     ax.set_xlabel(r'$r\ /\ r_g$')
     ax.set_ylabel(r'$\varphi\ /\ \mathrm{rad}$')
-    run_table(ax, [(r'$\gamma^2 \geq \gamma^2_\mathrm{crit}$', dict(marker='o', ls='none', ms=2)),
-                   (r'$\gamma^2 < \gamma^2_\mathrm{crit}$', dict(marker='o', ls='none', ms=2, mfc='none', mew=0.5, alpha=0.4))],
+    run_table(ax, [(r'$\gamma^2 \geq \gamma^2_{crit}$', dict(marker='o', ls='none', ms=2)),
+                   (r'$\gamma^2 < \gamma^2_{crit}$', dict(marker='o', ls='none', ms=2, mfc='none', mew=0.5, alpha=0.4))],
               [(run['label'], run['color'], dict(color=run['color'])) for run in runs], loc='upper left', handlelength=1.0)
 
 
@@ -1205,7 +1205,7 @@ def rms_panel(ax, runs):
     plain_log(ax, 'x')
     plain_log(ax, 'y')
     ax.set_xlabel(r'$r\ /\ r_g$')
-    ax.set_ylabel(r'$\delta_\mathrm{rms}$')
+    ax.set_ylabel(r'$\delta_{rms}$')
     run_legend(ax, runs, color=True, loc='lower right')
 
 
@@ -1231,11 +1231,11 @@ def cross_panel(ax, main):
     ax.set_ylim(-np.pi, np.pi)
     plain_log(ax, 'x')
     ax.set_xlabel(r'$r\ /\ r_g$')
-    ax.set_ylabel(r'$\Delta\varphi(\nu_\mathrm{peak})\ /\ \mathrm{rad}$')
+    ax.set_ylabel(r'$\Delta\varphi(\nu_{peak})\ /\ \mathrm{rad}$')
     place_legend(ax, loc='lower left')
 
 
-HEATING_TIMES = [('t_heat', r'$t_\mathrm{heat}$'), ('t_C', r'$t_C$'), ('t_ff', r'$t_\mathrm{ff}$')]
+HEATING_TIMES = [('t_heat', r'$t_{h{\kern-0.25pt}eat}$'), ('t_C', r'$t_C$'), ('t_ff', r'$t_{f{\kern-0.5pt}f}$')]
 
 
 def heating_times_panel(ax, runs):
@@ -1271,14 +1271,14 @@ def heating_ratio_panel(ax, runs):
     plain_log(ax, 'x')
     plain_log(ax, 'y')
     ax.set_xlabel(r'$R\ /\ r_g$')
-    ax.set_ylabel(r'$q^+ / (\Lambda_C + \Lambda_\mathrm{ff})$')
+    ax.set_ylabel(r'$q^+ / (\Lambda_C + \Lambda_{ff})$')
     run_legend(ax, runs, color=True, loc='upper right')
 
 
 def budget_panel(ax, B, legend):
     ax.plot(B['t'], B['dM'], label=r'$\Delta M_{ab}$')
-    ax.plot(B['t'], B['flux'], label=r'$\int [\dot M(r_a) - \dot M(r_b)]\,\mathrm{d}t$')
-    ax.plot(B['t'], B['floor'], label=r'$\Delta M_\mathrm{floor}$')
+    ax.plot(B['t'], B['flux'], label=r'$\int [\dot M(r_a) - \dot M(r_b)]\,dt$')
+    ax.plot(B['t'], B['floor'], label=r'$\Delta M_{f{\kern-0.25pt}loor}$')
     ax.fill_between(B['t'], B['floor'] - B['err'], B['floor'] + B['err'], alpha=0.3, lw=0, color='firebrick', label=r'$\pm\,\sigma_I$')
     ax.axhline(0, color='k', lw=0.5)
     ax.set_xlabel(r'$t\ /\ t_g$')
@@ -1287,7 +1287,7 @@ def budget_panel(ax, B, legend):
         place_legend(ax, loc='upper left')
 
 
-ANGULAR_PANELS = [('mdot_dist', r'$\mathrm{d}\dot M_\mathrm{acc}/\mathrm{d}\vartheta\ /\ (\dot M_\mathrm{acc}\,\mathrm{deg}^{-1})$', 1.0),
+ANGULAR_PANELS = [('mdot_dist', r'$d\dot M/ d\vartheta\ /\ (\dot M\,\mathrm{deg}^{-1})$', 1.0),
                   ('rho', r'$\langle\rho\rangle\ /\ \rho_0$', 1.0),
                   ('vr', r'$\langle v_r\rangle\ /\ c$', -1.0),
                   ('vphi', r'$\langle v_\phi\rangle\ /\ c$', None)]
@@ -1399,7 +1399,7 @@ def slides_tracer():
     items = []
     for k, t in enumerate(T_RAD):
         row = [cell(path, 'tr', t, tag=r'$f_{tr}$'),
-               cell(path, 'f', t, False, r'$f_{df}$')]
+               cell(path, 'f', t, False, r'$f_{d{\kern-0.5pt}f}$')]
         fig = build_map_grid([('f', [row])], SLIDE_W)
         items.append((fig, f'rad_tracer_{k}'))
     map_group(items)
@@ -1663,8 +1663,8 @@ def plot_timescales():
     fig, ax = plt.subplots(figsize=[PLOT_W, SLIDE_H])
 
     ax.axvline(6.0, color='gray', lw=0.6, ls=':')
-    ax.plot(R, t_orbit(R), label=r'$t_\mathrm{orb}$')
-    ax.plot(R, t_thermal(R), label=r'$t_\mathrm{th}$')
+    ax.plot(R, t_orbit(R), label=r'$t_{orb}$')
+    ax.plot(R, t_thermal(R), label=r'$t_{th}$')
     ax.plot(R, t_sound(R), label=r'$t_{c_s}$')
     ax.plot(R, t_viscous(R), label=r'$t_\nu$')
 
@@ -1691,7 +1691,7 @@ def plot_spectrum(main):
     fig, ax = plt.subplots(figsize=[WIDE_W, SLIDE_H])
     im = ax.pcolormesh(r[w], f_w[1:], P_w[1:] / P_w[1:].max(axis=0, keepdims=True), cmap='viridis', norm=LogNorm(vmin=1e-3, vmax=1.0),
                        shading='nearest', rasterized=True)
-    fig.colorbar(im, ax=ax, label=r'$P / P_\mathrm{max}(r)$', pad=0.02)
+    fig.colorbar(im, ax=ax, label=r'$P / P_{max}(r)$', pad=0.02)
     ax.set_xscale('log')
     ax.set_yscale('log')
     ax.set_ylim(f_w[1], f_w[-1])
@@ -1737,7 +1737,7 @@ def plot_spacetime_mdot(run):
     axs[1].set_ylabel('')
     axs[0].set_title(r'$\dot M_d$')
     axs[1].set_title(r'$\dot M_c$')
-    fig.colorbar(im, ax=axs, label=r'$\dot M\ /\ \dot M_\mathrm{E}$', pad=0.02)
+    fig.colorbar(im, ax=axs, label=r'$\dot M\ /\ \dot M_E$', pad=0.02)
     return fig
 
 
@@ -1859,10 +1859,10 @@ def plot_balance(run, QP, QM):
     axs[0].set_ylabel(r'$Q\ /\ \rho_0 c^3$')
     place_legend(axs[0], loc='lower left')
 
-    axs[1].loglog(R_C, t_diff, label=r'$t_\mathrm{diff}$')
-    axs[1].loglog(R_C, t_thermal(R_C), label=r'$t_\mathrm{th}$')
+    axs[1].loglog(R_C, t_diff, label=r'$t_{d{\kern-0.25pt}i{\kern-0.5pt}f{\kern-0.5pt}f}$')
+    axs[1].loglog(R_C, t_thermal(R_C), label=r'$t_{th}$')
     axs[1].loglog(R_C, t_viscous(R_C), label=r'$t_\nu$')
-    axs[1].axhline(1 / run['f_peak'], color='firebrick', ls='--', lw=0.7, label=r'$1/\nu_\mathrm{peak}$')
+    axs[1].axhline(1 / run['f_peak'], color='firebrick', ls='--', lw=0.7, label=r'$1/\nu_{peak}$')
     axs[1].set_xlabel(r'$r\ /\ r_g$')
     axs[1].set_ylabel(r'$t\ /\ t_g$')
     place_legend(axs[1], ncol=2, loc='lower right')
