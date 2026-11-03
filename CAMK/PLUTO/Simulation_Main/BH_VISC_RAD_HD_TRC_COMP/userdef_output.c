@@ -130,4 +130,4 @@ void ChangeOutputVar ()
   /* SetOutputVar("x1",     PARTICLES_FLT_OUTPUT, NO); */
   /* SetOutputVar("vx1",    PARTICLES_FLT_OUTPUT, NO); */
 #endif
-}
+} 

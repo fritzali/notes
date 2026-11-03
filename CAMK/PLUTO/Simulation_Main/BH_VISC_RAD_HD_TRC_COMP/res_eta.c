@@ -120,4 +120,4 @@ void Resistive_eta(double *v, double x1, double x2, double x3,
   eta[IDIR] = eta0;
   eta[JDIR] = eta0;
   eta[KDIR] = eta0;
-}
+} 

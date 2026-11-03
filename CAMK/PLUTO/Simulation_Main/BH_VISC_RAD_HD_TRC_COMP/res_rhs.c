@@ -210,4 +210,4 @@ void ResistiveRHS (const Data *d, Data_Arr dU, double **dcoeff,
   StoreAMRFlux (res_flx, aflux,-1, ENG, ENG, beg-1, end, grid);
   #endif
   #endif
-}
+} 
