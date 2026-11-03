@@ -32,3 +32,4 @@ void UserDefOpacitiesAt(double *v, double x1, double x2, double *abs, double *sc
 #endif
 
 #endif
+

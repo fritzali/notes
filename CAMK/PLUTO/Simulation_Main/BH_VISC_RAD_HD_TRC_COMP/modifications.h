@@ -30,4 +30,4 @@ double DiskFraction (double *v, double x1, double x2);
 void UserDefOpacitiesAt(double *v, double x1, double x2, double *abs, double *scat);
 #endif
 
-#endif /* MODIFICATIONS_H */
+#endif /* MODIFICATIONS_H */ 

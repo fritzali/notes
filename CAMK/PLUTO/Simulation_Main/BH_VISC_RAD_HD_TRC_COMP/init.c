@@ -1107,4 +1107,4 @@ void UserDefOpacities(double *v, double *abs, double *scat)
 
     UserDefOpacitiesAt(v, x1, x2, abs, scat);
 }
-#endif /* RADIATION_VAR_OPACITIES */
+#endif /* RADIATION_VAR_OPACITIES */ 
