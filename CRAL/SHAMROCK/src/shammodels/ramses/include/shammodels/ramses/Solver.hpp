@@ -1,0 +1,164 @@
+// -------------------------------------------------------//
+//
+// SHAMROCK code for hydrodynamics
+// Copyright (c) 2021-2026 Timothée David--Cléris <tim.shamrock@proton.me>
+// SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
+// Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
+//
+// -------------------------------------------------------//
+
+#pragma once
+
+/**
+ * @file Solver.hpp
+ * @author Benoit Commercon (benoit.commercon@ens-lyon.fr)
+ * @author Léodasce Sewanou (leodasce.sewanou@ens-lyon.fr)
+ * @author Timothée David--Cléris (tim.shamrock@proton.me)
+ * @author Yona Lapeyre (yona.lapeyre@ens-lyon.fr)
+ * @brief
+ *
+ */
+
+#include "shambackends/vec.hpp"
+#include "shamcomm/logs.hpp"
+#include "shammodels/common/SolverLog.hpp"
+#include "shammodels/common/amr/AMRBlock.hpp"
+#include "shammodels/ramses/SolverConfig.hpp"
+#include "shammodels/ramses/modules/SolverStorage.hpp"
+#include "shamrock/scheduler/SerialPatchTree.hpp"
+#include "shamrock/scheduler/ShamrockCtx.hpp"
+#include "shamsolvergraph/edge/IDataEdgeSerializable.hpp"
+#include <algorithm>
+#include <functional>
+#include <optional>
+#include <vector>
+
+namespace shammodels::basegodunov {
+    template<class Tvec, class TgridVec>
+    class Solver {
+        public:
+        using Tscal              = shambase::VecComponent<Tvec>;
+        using Tgridscal          = shambase::VecComponent<TgridVec>;
+        static constexpr u32 dim = shambase::VectorProperties<Tvec>::dimension;
+
+        using u_morton = u64;
+        using Config   = SolverConfig<Tvec, TgridVec>;
+
+        using AMRBlock = typename Config::AMRBlock;
+
+        ShamrockCtx &context;
+        inline PatchScheduler &scheduler() { return shambase::get_check_ref(context.sched); }
+
+        Config solver_config;
+        SolverLog solve_logs;
+
+        SolverStorage<Tvec, TgridVec, u_morton> storage{};
+
+        /// Access synchronized simulation time (scheduler edge "time")
+        inline Tscal &time_edge_value() {
+            return scheduler()
+                .synchronized_data
+                .template get_edge_ref<shamrock::solvergraph::IDataEdgeSerializable<Tscal>>("time")
+                .data;
+        }
+
+        /// Access synchronized next dt (scheduler edge "dt")
+        inline Tscal &dt_edge_value() {
+            return scheduler()
+                .synchronized_data
+                .template get_edge_ref<shamrock::solvergraph::IDataEdgeSerializable<Tscal>>("dt")
+                .data;
+        }
+
+        inline Tscal get_time() { return time_edge_value(); }
+        inline void set_time(Tscal t) { time_edge_value() = t; }
+        inline Tscal get_dt() { return dt_edge_value(); }
+        inline void set_next_dt(Tscal dt) { dt_edge_value() = dt; }
+
+        /// Register time/dt synchronized edges if missing (idempotent)
+        inline void ensure_time_state_edges() {
+            auto &sync    = scheduler().synchronized_data;
+            auto names    = sync.get_edge_names();
+            auto has_edge = [&](const std::string &name) {
+                return std::find(names.begin(), names.end(), name) != names.end();
+            };
+
+            if (!has_edge("time")) {
+                auto edge = sync.register_edge(
+                    "time", shamrock::solvergraph::IDataEdgeSerializable<Tscal>("time", "t"));
+                edge->data = 0;
+            }
+            if (!has_edge("dt")) {
+                auto edge = sync.register_edge(
+                    "dt", shamrock::solvergraph::IDataEdgeSerializable<Tscal>("dt", "dt"));
+                edge->data = 0;
+            }
+        }
+
+        struct SolverStepCallback {
+            std::optional<std::function<void(void)>> step_begin_callback;
+            std::optional<std::function<void(void)>> step_end_callback;
+        };
+        std::vector<SolverStepCallback> timestep_callbacks{};
+
+        inline void init_required_fields() { solver_config.set_layout(context.get_pdl_write()); }
+
+        Solver(ShamrockCtx &context) : context(context) {}
+
+        void do_debug_vtk_dump(std::string filename);
+
+        inline void print_timestep_logs() {
+            if (shamcomm::world_rank() == 0) {
+                // logger::info_ln("Godunov", "iteration since start :",
+                // solve_logs.get_iteration_count());
+                logger::info_ln(
+                    "Godunov", "time since start :", shambase::details::get_wtime(), "(s)");
+            }
+        }
+
+        void evolve_once();
+
+        inline Tscal evolve_once_time_expl(Tscal t_current, Tscal dt_input) {
+            set_time(t_current);
+            set_next_dt(dt_input);
+            evolve_once();
+            return get_dt();
+        }
+
+        inline bool evolve_until(Tscal target_time, i32 niter_max) {
+            auto step = [&]() {
+                Tscal dt = get_dt();
+                Tscal t  = get_time();
+
+                if (t > target_time) {
+                    throw shambase::make_except_with_loc<std::invalid_argument>(
+                        "the target time is lower than the current time");
+                }
+
+                if (t + dt > target_time) {
+                    set_next_dt(target_time - t);
+                }
+                evolve_once();
+            };
+
+            i32 iter_count = 0;
+
+            while (get_time() < target_time) {
+                step();
+                iter_count++;
+
+                if ((iter_count >= niter_max) && (niter_max != -1)) {
+                    logger::info_ln("SPH", "stopping evolve until because of niter =", iter_count);
+                    return false;
+                }
+            }
+
+            print_timestep_logs();
+
+            return true;
+        }
+
+        void init_solver_graph();
+    };
+
+} // namespace shammodels::basegodunov

@@ -1,0 +1,18 @@
+3.14.3 | packaged by conda-forge | (main, Feb  9 2026, 21:56:02) [GCC 14.3.0]
+2.3.5 3.10.8 12.1.1
+PY=/home/fritz/.local/miniforge3/envs/notes/bin/python
+pyscript end
+-----------------------------------
+[2m-----------------------------------------------------[0m 
+ - MPI finalize 
+Exiting ...
+ 
+ Hopefully it was quick :')
+ 
+[31mError[0m: xxx ( logger::err )                                                           [2m [xxx][rank=0][0m 
+embedded: 3.14.9 (main, Oct 25 2026, 14:52:47) [GCC 16.2.1 20260810]
+numpy 2.3.5 /home/fritz/.local/miniforge3/envs/notes/lib/python3.14/site-packages/numpy/__init__.py
+[notice] A new release of pip is available: 26.2.2 -> 26.3
+[notice] To update, run: /home/fritz/work/codes/shamrock-build/.pyvenv/bin/python3 -m pip install --upgrade pip
+3.14.9 (main, Oct 25 2026, 14:52:47) [GCC 16.2.1 20260810]
+2.5.4 3.11.2 13.0.0

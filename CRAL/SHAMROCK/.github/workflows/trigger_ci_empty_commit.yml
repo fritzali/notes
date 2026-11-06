@@ -1,0 +1,24 @@
+name: trigger-ci-empty-commit
+
+on:
+  pull_request_target:
+    types: [labeled]
+
+concurrency:
+  group: trigger-ci-${{ github.event.pull_request.number }}
+  cancel-in-progress: false
+
+jobs:
+  trigger_ci:
+    name: Trigger CI with empty commit
+    if: ${{ github.event.label.name == 'trigger-ci' }}
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: write
+      issues: write
+
+    steps:
+      - uses: Shamrock-code/action-trigger-ci-empty-commit@9a063c4ed1422c79624755d0fe493e3c20beb8e2
+        with:
+          github_token: ${{ secrets.GHACTION_PAT }}

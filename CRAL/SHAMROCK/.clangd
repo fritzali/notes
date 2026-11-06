@@ -1,0 +1,33 @@
+CompileFlags:
+  Remove: [
+      -fsycl,
+      -fsycl-targets=*,
+      --hipsycl-targets=*,
+      --hipsycl-platform=*,
+      --hipsycl-config-file=*,
+      --hipsycl-cpu-cxx=*,
+      --acpp-targets=*
+    ]
+  Add: [
+      -Wconversion
+    ]
+
+Diagnostics:
+  # >= clangd-14
+  UnusedIncludes: Strict
+  # >= clangd-17
+  MissingIncludes: None
+  # >=clangd-12 - Enable clang-tidy and read configuration from .clang-tidy
+  ClangTidy: {}
+
+Hover:
+  # >= clangd-14
+  ShowAKA: true
+
+Completion:
+  # >= clangd-21
+  HeaderInsertion: Never
+
+Documentation:
+  # >= clangd-22
+  CommentFormat: Doxygen

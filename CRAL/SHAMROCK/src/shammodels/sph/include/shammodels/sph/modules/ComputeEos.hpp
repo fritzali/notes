@@ -1,0 +1,74 @@
+// -------------------------------------------------------//
+//
+// SHAMROCK code for hydrodynamics
+// Copyright (c) 2021-2026 Timothée David--Cléris <tim.shamrock@proton.me>
+// SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
+// Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
+//
+// -------------------------------------------------------//
+
+#pragma once
+
+/**
+ * @file ComputeEos.hpp
+ * @author Timothée David--Cléris (tim.shamrock@proton.me)
+ * @author Yona Lapeyre (yona.lapeyre@ens-lyon.fr) --no git blame--
+ * @brief
+ *
+ */
+
+#include "shambackends/typeAliasVec.hpp"
+#include "shambackends/vec.hpp"
+#include "shammodels/sph/SolverConfig.hpp"
+#include "shammodels/sph/modules/SolverStorage.hpp"
+#include "shamrock/scheduler/ShamrockCtx.hpp"
+#include "shamrock/solvergraph/IFieldSpan.hpp"
+#include "shamrock/solvergraph/Indexes.hpp"
+#include "shamsolvergraph/edge/IDataEdge.hpp"
+#include <memory>
+#include <optional>
+
+namespace shammodels::sph::modules {
+
+    /**
+     * @brief Module for computing equation of state quantities
+     * @tparam Tvec Vector type for positions
+     * @tparam SPHKernel SPH kernel template
+     */
+    template<class Tvec, template<class> class SPHKernel>
+    class ComputeEos {
+        public:
+        using Tscal              = shambase::VecComponent<Tvec>;
+        static constexpr u32 dim = shambase::VectorProperties<Tvec>::dimension;
+        using Kernel             = SPHKernel<Tscal>;
+
+        using Config  = SolverConfig<Tvec, SPHKernel>;
+        using Storage = SolverStorage<Tvec, u32>;
+
+        ShamrockCtx &context;
+        Config &solver_config;
+        Storage &storage;
+
+        ComputeEos(ShamrockCtx &context, Config &solver_config, Storage &storage)
+            : context(context), solver_config(solver_config), storage(storage) {}
+
+        /// @brief Computes pressure and sound speed from equation of state
+        void compute_eos();
+
+        private:
+        void compute_eos_internal(
+            const std::shared_ptr<shamrock::solvergraph::IDataEdge<Tscal>> &hfactd,
+            const std::shared_ptr<shamrock::solvergraph::IDataEdge<Tscal>> &pmass,
+            const std::optional<std::shared_ptr<shamrock::solvergraph::IFieldSpan<Tscal>>>
+                &spans_rho,
+            const std::optional<std::shared_ptr<shamrock::solvergraph::IFieldSpan<Tscal>>> &spans_h,
+            const std::optional<std::shared_ptr<shamrock::solvergraph::IFieldSpan<Tscal>>>
+                &spans_uint,
+            const std::shared_ptr<shamrock::solvergraph::Indexes<u32>> &sizes,
+            const std::shared_ptr<shamrock::solvergraph::IFieldSpan<Tscal>> &spans_pressure,
+            const std::shared_ptr<shamrock::solvergraph::IFieldSpan<Tscal>> &spans_soundspeed);
+
+        inline PatchScheduler &scheduler() { return shambase::get_check_ref(context.sched); }
+    };
+
+} // namespace shammodels::sph::modules

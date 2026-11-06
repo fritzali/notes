@@ -1,0 +1,90 @@
+// -------------------------------------------------------//
+//
+// SHAMROCK code for hydrodynamics
+// Copyright (c) 2021-2026 Timothée David--Cléris <tim.shamrock@proton.me>
+// SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
+// Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
+//
+// -------------------------------------------------------//
+
+#pragma once
+
+/**
+ * @file CopyPatchDataFieldFromLayer.hpp
+ * @author Timothée David--Cléris (tim.shamrock@proton.me)
+ * @brief Defines the CopyPatchDataFieldFromLayer class for copying fields between patch data
+ * layers.
+ *
+ */
+
+#include "shambase/DistributedData.hpp"
+#include "shambase/exception.hpp"
+#include "shamrock/patch/PatchDataFieldSpan.hpp"
+#include "shamrock/patch/PatchDataLayer.hpp"
+#include "shamrock/patch/PatchDataLayerLayout.hpp"
+#include "shamrock/solvergraph/IFieldRefs.hpp"
+#include "shamrock/solvergraph/IFieldSpan.hpp"
+#include "shamrock/solvergraph/IPatchDataLayerRefs.hpp"
+#include "shamrock/solvergraph/PatchDataLayerEdge.hpp"
+#include "shamsolvergraph/node/INode.hpp"
+#include <memory>
+
+#define NODE_EDGES(X_RO, X_RW)                                                                     \
+    X_RO(shamrock::solvergraph::IPatchDataLayerRefs, original)                                     \
+    X_RW(shamrock::solvergraph::IFieldRefs<T>, target)
+
+namespace shamrock::solvergraph {
+
+    template<class T>
+    class CopyPatchDataFieldFromLayer : public INode {
+
+        u32 field_idx;
+
+        public:
+        CopyPatchDataFieldFromLayer(u32 field_idx) : field_idx(field_idx) {}
+
+        CopyPatchDataFieldFromLayer(
+            shamrock::patch::PatchDataLayerLayout &layout, const std::string &field_name)
+            : CopyPatchDataFieldFromLayer(layout.get_field_idx<T>(field_name)) {}
+
+        CopyPatchDataFieldFromLayer(
+            const std::shared_ptr<shamrock::patch::PatchDataLayerLayout> &layout,
+            const std::string &field_name)
+            : CopyPatchDataFieldFromLayer(shambase::get_check_ref(layout), field_name) {}
+
+        EXPAND_NODE_EDGES(NODE_EDGES)
+
+        inline void _impl_evaluate_internal() {
+
+            __shamrock_stack_entry();
+
+            auto edges = get_edges();
+
+            auto source_refs = edges.original.get_const_refs();
+
+            // Collect the sizes & resize the target field if it support resizing
+            shambase::DistributedData<u32> sizes{};
+
+            source_refs.for_each([&](u64 id_patch, const patch::PatchDataLayer &pdat) {
+                sizes.add_obj(id_patch, pdat.get_obj_cnt());
+            });
+
+            edges.target.ensure_sizes(sizes);
+
+            // perform the actual copy
+            auto target_refs = edges.target.get_refs();
+
+            source_refs.for_each([&](u64 id_patch, const patch::PatchDataLayer &source) {
+                PatchDataField<T> &dest = target_refs.get(id_patch).get();
+                dest.overwrite(source.get_field<T>(field_idx), source.get_obj_cnt());
+            });
+        }
+
+        std::string _impl_get_label() const { return "CopyPatchDataFieldFromLayer"; }
+
+        std::string _impl_get_tex() const { return "TODO"; }
+    };
+
+} // namespace shamrock::solvergraph
+
+#undef NODE_EDGES

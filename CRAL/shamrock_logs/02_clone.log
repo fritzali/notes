@@ -1,0 +1,53 @@
+Cloning into 'Shamrock'...
+Submodule 'doc/mkdocs/docs/assets/large-figures' (https://github.com/Shamrock-code/doc-figures.git) registered for path 'doc/mkdocs/docs/assets/large-figures'
+Submodule 'doc/sphinx/source/_static/large-figures' (https://github.com/Shamrock-code/doc-figures.git) registered for path 'doc/sphinx/source/_static/large-figures'
+Submodule 'external/NVTX' (https://github.com/Shamrock-code/NVTX.git) registered for path 'external/NVTX'
+Submodule 'external/cpptrace' (https://github.com/jeremy-rifkin/cpptrace.git) registered for path 'external/cpptrace'
+Submodule 'external/fmt' (https://github.com/fmtlib/fmt.git) registered for path 'external/fmt'
+Submodule 'external/mdspan' (https://github.com/kokkos/mdspan.git) registered for path 'external/mdspan'
+Submodule 'external/json' (https://github.com/nlohmann/json.git) registered for path 'external/nlohmann_json'
+Submodule 'external/plf_nanotimer' (https://github.com/mattreecebentley/plf_nanotimer.git) registered for path 'external/plf_nanotimer'
+Submodule 'external/pybind11' (https://github.com/pybind/pybind11.git) registered for path 'external/pybind11'
+Cloning into '/home/fritz/work/notebooks/CRAL/Shamrock/doc/mkdocs/docs/assets/large-figures'...
+Cloning into '/home/fritz/work/notebooks/CRAL/Shamrock/doc/sphinx/source/_static/large-figures'...
+Cloning into '/home/fritz/work/notebooks/CRAL/Shamrock/external/NVTX'...
+Cloning into '/home/fritz/work/notebooks/CRAL/Shamrock/external/cpptrace'...
+Cloning into '/home/fritz/work/notebooks/CRAL/Shamrock/external/fmt'...
+Cloning into '/home/fritz/work/notebooks/CRAL/Shamrock/external/mdspan'...
+Cloning into '/home/fritz/work/notebooks/CRAL/Shamrock/external/nlohmann_json'...
+Cloning into '/home/fritz/work/notebooks/CRAL/Shamrock/external/plf_nanotimer'...
+Cloning into '/home/fritz/work/notebooks/CRAL/Shamrock/external/pybind11'...
+Submodule path 'doc/mkdocs/docs/assets/large-figures': checked out '3124b0bddfa0cdda8fe57cba86d7eaa9692972b1'
+Submodule path 'doc/sphinx/source/_static/large-figures': checked out '3124b0bddfa0cdda8fe57cba86d7eaa9692972b1'
+Submodule path 'external/NVTX': checked out 'b44f81c3d294223ec3c1f3965ac16ab12b1f6e24'
+From https://github.com/jeremy-rifkin/cpptrace
+ * branch            829d06a054bf8365750fba17c0520f1267cd5a2d -> FETCH_HEAD
+Submodule path 'external/cpptrace': checked out '829d06a054bf8365750fba17c0520f1267cd5a2d'
+From https://github.com/fmtlib/fmt
+ * branch            8303d140a1a11f19b982a9f664bbe59a1ccda3f4 -> FETCH_HEAD
+Submodule path 'external/fmt': checked out '8303d140a1a11f19b982a9f664bbe59a1ccda3f4'
+From https://github.com/kokkos/mdspan
+ * branch            414a5dccf5c775b2eecc13d408b256e94f23d1d2 -> FETCH_HEAD
+Submodule path 'external/mdspan': checked out '414a5dccf5c775b2eecc13d408b256e94f23d1d2'
+From https://github.com/nlohmann/json
+ * branch            55f93686c01528224f448c19128836e7df245f72 -> FETCH_HEAD
+Submodule path 'external/nlohmann_json': checked out '55f93686c01528224f448c19128836e7df245f72'
+From https://github.com/mattreecebentley/plf_nanotimer
+ * branch            55e0fcb135ec8db874a0656f94d1f1780d7c75a7 -> FETCH_HEAD
+Submodule path 'external/plf_nanotimer': checked out '55e0fcb135ec8db874a0656f94d1f1780d7c75a7'
+From https://github.com/pybind/pybind11
+ * branch            a2e59f0e7065404b44dfe92a28aca47ba1378dc4 -> FETCH_HEAD
+Submodule path 'external/pybind11': checked out 'a2e59f0e7065404b44dfe92a28aca47ba1378dc4'
+renamed Shamrock -> SHAMROCK
+shamrock f09b23795efc2374e54a5e6bbd2911b046dde652 Thu Nov 5 19:16:19 2026 +0000
+ 3124b0bddfa0cdda8fe57cba86d7eaa9692972b1 doc/mkdocs/docs/assets/large-figures (heads/main)
+ 3124b0bddfa0cdda8fe57cba86d7eaa9692972b1 doc/sphinx/source/_static/large-figures (heads/main)
+ b44f81c3d294223ec3c1f3965ac16ab12b1f6e24 external/NVTX (heads/release-v3)
+ 829d06a054bf8365750fba17c0520f1267cd5a2d external/cpptrace (829d06a)
+ 8303d140a1a11f19b982a9f664bbe59a1ccda3f4 external/fmt (8303d14)
+ 414a5dccf5c775b2eecc13d408b256e94f23d1d2 external/mdspan (414a5dc)
+ 55f93686c01528224f448c19128836e7df245f72 external/nlohmann_json (55f9368)
+ 55e0fcb135ec8db874a0656f94d1f1780d7c75a7 external/plf_nanotimer (55e0fcb)
+ a2e59f0e7065404b44dfe92a28aca47ba1378dc4 external/pybind11 (a2e59f0)
+git metadata removed
+62M	.

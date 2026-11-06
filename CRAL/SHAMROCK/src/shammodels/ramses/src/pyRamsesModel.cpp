@@ -1,0 +1,652 @@
+// -------------------------------------------------------//
+//
+// SHAMROCK code for hydrodynamics
+// Copyright (c) 2021-2026 Timothée David--Cléris <tim.shamrock@proton.me>
+// SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
+// Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
+//
+// -------------------------------------------------------//
+
+/**
+ * @file pyRamsesModel.cpp
+ * @author Benoit Commercon (benoit.commercon@ens-lyon.fr)
+ * @author Léodasce Sewanou (leodasce.sewanou@ens-lyon.fr)
+ * @author Timothée David--Cléris (tim.shamrock@proton.me)
+ * @author Yona Lapeyre (yona.lapeyre@ens-lyon.fr)
+ * @brief
+ *
+ */
+
+#include "shambase/exception.hpp"
+#include "shambindings/pybindaliases.hpp"
+#include "shambindings/pytypealias.hpp"
+#include "shamcomm/logs.hpp"
+#include "shamcomm/worldInfo.hpp"
+#include "shammodels/common/shamrock_json_to_py_json.hpp"
+#include "shammodels/ramses/Model.hpp"
+#include "shammodels/ramses/Solver.hpp"
+#include "shammodels/ramses/modules/AnalysisSodTube.hpp"
+#include "shammodels/ramses/modules/render/GridRender.hpp"
+#include <pybind11/functional.h>
+#include <pybind11/numpy.h>
+#include <memory>
+
+namespace shammodels::basegodunov {
+    template<class Tvec, class TgridVec>
+    void add_instance(py::module &m, std::string name_config, std::string name_model) {
+
+        using Tscal     = shambase::VecComponent<Tvec>;
+        using Tgridscal = shambase::VecComponent<TgridVec>;
+
+        using T                = Model<Tvec, TgridVec>;
+        using TConfig          = typename T::Solver::Config;
+        using TAnalysisSodTube = shammodels::basegodunov::modules::AnalysisSodTube<Tvec, TgridVec>;
+
+        shamlog_debug_ln("[Py]", "registering class :", name_config, typeid(T).name());
+        shamlog_debug_ln("[Py]", "registering class :", name_model, typeid(T).name());
+
+        py::class_<TConfig> config_cls(m, name_config.c_str());
+
+        shammodels::common::add_json_defs<TConfig>(config_cls);
+
+        config_cls
+            .def(
+                "set_scale_factor",
+                [](TConfig &self, Tscal scale_factor) {
+                    self.grid_coord_to_pos_fact = scale_factor;
+                })
+            .def(
+                "set_Csafe",
+                [](TConfig &self, Tscal Csafe) {
+                    self.Csafe = Csafe;
+                })
+            .def(
+                "set_eos_gamma",
+                [](TConfig &self, Tscal eos_gamma) {
+                    self.set_eos_gamma(eos_gamma);
+                })
+            .def(
+                "set_eos_adiabatic",
+                [](TConfig &self, Tscal gamma) {
+                    self.eos_config.set_adiabatic(gamma);
+                })
+            .def(
+                "set_eos_barotropic",
+                [](TConfig &self, Tscal rho_crit, Tscal cs0, Tscal gamma) {
+                    self.eos_config.set_barotropic(rho_crit, cs0, gamma);
+                },
+                py::kw_only(),
+                py::arg("rho_crit"),
+                py::arg("cs0"),
+                py::arg("gamma"))
+            .def(
+                "set_eos_reset_barotropic",
+                [](TConfig &self, Tscal rho_crit, Tscal cs0, Tscal gamma_baro, Tscal gamma) {
+                    self.eos_config.set_reset_barotropic(rho_crit, cs0, gamma_baro, gamma);
+                },
+                py::kw_only(),
+                py::arg("rho_crit"),
+                py::arg("cs0"),
+                py::arg("gamma_baro"),
+                py::arg("gamma"))
+            .def(
+                "set_riemann_solver_hll",
+                [](TConfig &self) {
+                    self.riemann_config = HLL;
+                })
+            .def(
+                "set_riemann_solver_hllc_pvrs",
+                [](TConfig &self) {
+                    self.riemann_config = HLLC_PVRS;
+                },
+                R"==(
+    Set the HLLC Riemann solver, with wave speeds estimated from the primitive variable
+    Riemann solver (PVRS) star pressure, following Toro (Riemann Solvers and Numerical
+    Methods for Fluid Dynamics, chapter 10).
+)==")
+            .def(
+                "set_riemann_solver_hllc",
+                [](TConfig & /*self*/) {
+                    const std::string msg
+                        = ".set_riemann_solver_hllc() has been removed, as several HLLC variants "
+                          "are now available. Select one explicitly:\n"
+                          "    -> .set_riemann_solver_hllc_pvrs() : the previous behaviour of "
+                          ".set_riemann_solver_hllc()\n"
+                          "    -> .set_riemann_solver_hllc_davis()";
+                    ON_RANK_0(shamcomm::logs::err_ln("Ramses", msg));
+                    shambase::throw_with_loc<std::runtime_error>(msg);
+                },
+                R"==(
+    Removed, raises an error.
+
+    It was replaced by :py:meth:`set_riemann_solver_hllc_pvrs` (same solver as before) to lift
+    the ambiguity on the HLLC variant; see also :py:meth:`set_riemann_solver_hllc_davis`.
+)==")
+            .def(
+                "set_riemann_solver_hllc_davis",
+                [](TConfig &self) {
+                    self.riemann_config = HLLC_Davis;
+                },
+                R"==(
+    Set the HLLC Riemann solver, using the Davis (1988) wave speed estimate
+    s_l = min(v_l - c_l, v_r - c_r), s_r = max(v_l + c_l, v_r + c_r).
+)==")
+            .def(
+                "set_riemann_solver_rusanov",
+                [](TConfig &self) {
+                    self.riemann_config = Rusanov;
+                })
+            .def(
+                "set_slope_lim_none",
+                [](TConfig &self) {
+                    self.slope_config = None;
+                })
+            .def(
+                "set_slope_lim_vanleer_f",
+                [](TConfig &self) {
+                    self.slope_config = VanLeer_f;
+                })
+            .def(
+                "set_slope_lim_vanleer_std",
+                [](TConfig &self) {
+                    self.slope_config = VanLeer_std;
+                })
+            .def(
+                "set_slope_lim_vanleer_sym",
+                [](TConfig &self) {
+                    self.slope_config = VanLeer_sym;
+                })
+            .def(
+                "set_slope_lim_minmod",
+                [](TConfig &self) {
+                    self.slope_config = Minmod;
+                })
+            .def(
+                "set_scheduler_config",
+                [](TConfig &self, u64 split_crit, u64 merge_crit) {
+                    self.scheduler_conf.split_load_value = split_crit;
+                    self.scheduler_conf.merge_load_value = merge_crit;
+                },
+                py::kw_only(),
+                py::arg("split_load_value"),
+                py::arg("merge_load_value"))
+            .def(
+                "set_face_time_interpolation",
+                [](TConfig &self, bool face_time_interpolate) {
+                    self.face_half_time_interpolation = face_time_interpolate;
+                })
+            .def(
+                "set_boundary_condition",
+                [](TConfig &self, const std::string &axis, const std::string &bc_type) {
+                    BCConfig::GhostType ghost_type;
+                    if (bc_type == "periodic") {
+                        ghost_type = BCConfig::GhostType::Periodic;
+                    } else if (bc_type == "reflective") {
+                        ghost_type = BCConfig::GhostType::Reflective;
+                    } else if (bc_type == "outflow") {
+                        ghost_type = BCConfig::GhostType::Outflow;
+                    } else {
+                        throw std::invalid_argument(
+                            "Unsupported boundary condition type: " + bc_type);
+                    }
+
+                    if (axis == "x") {
+                        self.bc_config.set_x(ghost_type);
+                    } else if (axis == "y") {
+                        self.bc_config.set_y(ghost_type);
+                    } else if (axis == "z") {
+                        self.bc_config.set_z(ghost_type);
+                    } else {
+                        throw std::invalid_argument("Unsupported axis: " + axis);
+                    }
+                },
+                py::arg("axis"),
+                py::arg("bc_type"))
+            .def(
+                "set_dust_mode_dhll",
+                [](TConfig &self, u32 ndust) {
+                    self.dust_config = {DHLL, ndust};
+                })
+            .def(
+                "set_dust_mode_hb",
+                [](TConfig &self, u32 ndust) {
+                    self.dust_config = {HB, ndust};
+                })
+            .def(
+                "set_dust_mode_none",
+                [](TConfig &self) {
+                    self.dust_config = {NoDust, 0};
+                })
+            .def(
+                "set_alpha_values",
+                [](TConfig &self, f32 alpha_values) {
+                    return self.set_alphas_static(alpha_values);
+                })
+            .def(
+                "set_drag_mode_no_drag",
+                [](TConfig &self) {
+                    self.drag_config.drag_solver_config        = NoDrag;
+                    self.drag_config.enable_frictional_heating = false;
+                })
+            .def(
+                "set_drag_mode_irk1",
+                [](TConfig &self, bool frictional_status) {
+                    self.drag_config.drag_solver_config        = IRK1;
+                    self.drag_config.enable_frictional_heating = frictional_status;
+                })
+            .def(
+                "set_drag_mode_irk2",
+                [](TConfig &self, bool frictional_status) {
+                    self.drag_config.drag_solver_config        = IRK2;
+                    self.drag_config.enable_frictional_heating = frictional_status;
+                })
+            .def(
+                "set_drag_mode_expo",
+                [](TConfig &self, bool frictional_status) {
+                    self.drag_config.drag_solver_config        = EXPO;
+                    self.drag_config.enable_frictional_heating = frictional_status;
+                })
+            .def(
+                "set_amr_mode_none",
+                [](TConfig &self) {
+                    self.amr_mode.set_refine_none();
+                })
+            .def(
+                "set_amr_mode_density_based",
+                [](TConfig &self, Tscal crit_mass) {
+                    self.amr_mode.set_refine_density_based(crit_mass);
+                },
+                py::kw_only(),
+                py::arg("crit_mass"))
+            .def(
+                "set_amr_mode_pseudo_gradient_based",
+                [](TConfig &self, Tscal error_min, Tscal error_max) {
+                    self.amr_mode.set_refine_pseudo_gradient_based(error_min, error_max);
+                },
+                py::kw_only(),
+                py::arg("error_min"),
+                py::arg("error_max"))
+            .def(
+                "set_amr_mode_jeans_length_based",
+                [](TConfig &self, u32 N_jeans) {
+                    self.amr_mode.set_refine_jeans_length_based(N_jeans);
+                },
+                py::kw_only(),
+                py::arg("N_jeans"),
+                R"==(
+    Refine the blocks where the Jeans length is resolved by less than ``N_jeans`` cells.
+
+    A block is refined if one of its cells has :math:`N_J \Delta x > \lambda_J =
+    \sqrt{\pi c_s^2 / (G \rho)}`, with the sound speed of the equation of state (of the
+    barotrope for ``cfg.set_eos_reset_barotropic``) and the gravitational constant of the unit
+    system (``cfg.set_units``). It is derefined if the cells twice larger would still resolve the
+    Jeans length by more than :math:`\sqrt{2} N_J` cells.
+
+    Only implemented in the new AMR (``cfg.set_amr_mode_old(False)``).
+)==")
+            .def(
+                "set_amr_mode_shear_based",
+                [](TConfig &self, Tscal threshold) {
+                    self.amr_mode.set_refine_shear_based(threshold);
+                },
+                py::kw_only(),
+                py::arg("Threshold"))
+            .def(
+                "set_amr_mode_old",
+                [](TConfig &self, bool use_old_amr) {
+                    self.amr_mode.old_amr = use_old_amr;
+                })
+            .def(
+                "set_first_order_interpolation_mode",
+                [](TConfig &self) {
+                    self.amr_interp_mode = FIRST_ORDER;
+                })
+            .def(
+                "set_second_order_interpolation_mode",
+                [](TConfig &self) {
+                    self.amr_interp_mode = SECOND_ORDER;
+                })
+            .def(
+                "set_gravity_mode_no_gravity",
+                [](TConfig &self) {
+                    self.gravity_config.gravity_mode = NoGravity;
+                })
+            .def(
+                "set_gravity_mode_cg",
+                [](TConfig &self) {
+                    self.gravity_config.gravity_mode = CG;
+                },
+                R"==(
+    Enable self-gravity, with the Jacobi preconditioned conjugate gradient Poisson solver.
+
+    Self-gravity is applied as an external force and requires the trapezoidal coupling
+    (``cfg.set_ext_force_coupling(ExtForceCoupling.Trapezoidal)``). The gravitational constant
+    is the one of the unit system (``cfg.set_units``).
+)==")
+            .def(
+                "set_gravity_mode_pcg",
+                [](TConfig &self) {
+                    self.gravity_config.gravity_mode = PCG;
+                })
+            .def(
+                "set_gravity_mode_bicgstab",
+                [](TConfig &self) {
+                    self.gravity_config.gravity_mode = BICGSTAB;
+                },
+                R"==(
+    Enable self-gravity, with the BiCGSTAB Poisson solver.
+
+    Self-gravity is applied as an external force and requires the trapezoidal coupling
+    (``cfg.set_ext_force_coupling(ExtForceCoupling.Trapezoidal)``). The gravitational constant
+    is the one of the unit system (``cfg.set_units``).
+)==")
+            .def(
+                "set_units",
+                &TConfig::set_units,
+                py::arg("units"),
+                R"==(
+    Set the unit system of the simulation (SI if not set).
+
+    It sets the gravitational constant used by self-gravity.
+)==")
+            .def(
+                "set_self_gravity_Niter_max",
+                [](TConfig &self, u32 Niter) {
+                    self.gravity_config.Niter_max = Niter;
+                },
+                py::arg("Niter"),
+                R"==(
+    Set the maximum number of iterations of the self-gravity Poisson solver.
+)==")
+            .def(
+                "set_self_gravity_tol",
+                [](TConfig &self, Tscal tol) {
+                    self.gravity_config.tol = tol;
+                },
+                py::arg("tol"),
+                R"==(
+    Set the convergence tolerance of the self-gravity Poisson solver.
+
+    The solver stops when the L2 norm of the residual is below tol relative to the
+    one of the right-hand side.
+)==")
+            .def(
+                "set_self_gravity_happy_breakdown_tol",
+                [](TConfig &self, Tscal tol) {
+                    self.gravity_config.tol_hp_bk = tol;
+                },
+                py::arg("tol"),
+                R"==(
+    Set the tolerance of the BiCGSTAB lucky breakdown test.
+
+    BiCGSTAB restarts (shadow residual and search direction reset to the residual)
+    when |<r_k, r'_0>| < tol |r_k| |r'_0|.
+)==")
+            .def(
+                "add_ext_force_constant_gravity",
+                [](TConfig &self, Tvec g) {
+                    self.ext_force_config.add_constant_gravity(g);
+                },
+                py::arg("g"))
+            .def(
+                "set_ext_force_coupling",
+                [](TConfig &self, ExtForceCoupling mode) {
+                    self.ext_force_config.set_coupling(mode);
+                },
+                py::arg("mode"),
+                R"==(
+    Set the time quadrature coupling the external forces to the solver.
+
+    Parameters
+    ----------
+    mode : ExtForceCoupling
+        Either ``ExtForceCoupling.Midpoint`` (the default) or ``ExtForceCoupling.Trapezoidal``,
+        as obtained from ``from shamrock.model_ramses import ExtForceCoupling``.
+)==")
+            .def("set_npscal_gas", [](TConfig &self, u32 npscal_gas) {
+                self.npscal_gas_config.npscal_gas = npscal_gas;
+            });
+
+        std::string sod_tube_analysis_name = name_model + "_AnalysisSodTube";
+        py::class_<TAnalysisSodTube>(m, sod_tube_analysis_name.c_str())
+            .def("compute_L2_dist", [](TAnalysisSodTube &self) -> std::tuple<Tscal, Tvec, Tscal> {
+                auto ret = self.compute_L2_dist();
+                return {ret.rho, ret.v, ret.P};
+            });
+
+        py::class_<T>(m, name_model.c_str())
+            .def("init", &T::init)
+            .def("init_scheduler", &T::init_scheduler)
+            .def("make_base_grid", &T::make_base_grid)
+            .def("dump_vtk", &T::dump_vtk)
+            .def("dump", &T::dump)
+            .def("load_from_dump", &T::load_from_dump)
+            .def("evolve_once_override_time", &T::evolve_once_time_expl)
+            .def("evolve_once", &T::evolve_once)
+            .def(
+                "evolve_until",
+                [](T &self, f64 target_time, i32 niter_max) {
+                    return self.evolve_until(target_time, niter_max);
+                },
+                py::arg("target_time"),
+                py::kw_only(),
+                py::arg("niter_max") = -1)
+            .def("timestep", &T::timestep)
+            .def("solver_logs_last_rate", &T::solver_logs_last_rate)
+            .def("solver_logs_last_obj_count", &T::solver_logs_last_obj_count)
+            .def(
+                "solver_logs_last_system_metrics",
+                [](T &self) {
+                    auto system_metrics = self.solver.solve_logs.get_last_system_metrics();
+                    py::dict ret;
+                    ret["duration"] = system_metrics.wall_time;
+                    if (system_metrics.rank_energy_consummed.has_value()) {
+                        ret["rank_energy_consummed"] = system_metrics.rank_energy_consummed.value();
+                    }
+                    if (system_metrics.gpu_energy_consummed.has_value()) {
+                        ret["gpu_energy_consummed"] = system_metrics.gpu_energy_consummed.value();
+                    }
+                    if (system_metrics.cpu_energy_consummed.has_value()) {
+                        ret["cpu_energy_consummed"] = system_metrics.cpu_energy_consummed.value();
+                    }
+                    if (system_metrics.dram_energy_consummed.has_value()) {
+                        ret["dram_energy_consummed"] = system_metrics.dram_energy_consummed.value();
+                    }
+                    return ret;
+                })
+            .def(
+                "set_field_value_lambda_f64",
+                [](T &self,
+                   std::string field_name,
+                   const std::function<f64(Tvec, Tvec)> pos_to_val,
+                   const i32 offset) {
+                    return self.template set_field_value_lambda<f64>(
+                        field_name, pos_to_val, offset);
+                },
+                py::arg("field_name"),
+                py::arg("pos_to_val"),
+                py::arg("offset") = 0)
+            .def(
+                "set_field_value_lambda_f64_3",
+                [](T &self,
+                   std::string field_name,
+                   const std::function<f64_3(Tvec, Tvec)> pos_to_val,
+                   const i32 offset) {
+                    return self.template set_field_value_lambda<f64_3>(
+                        field_name, pos_to_val, offset);
+                },
+                py::arg("field_name"),
+                py::arg("pos_to_val"),
+                py::arg("offset") = 0)
+            .def(
+                "gen_default_config",
+                [](T &self) -> TConfig {
+                    return TConfig();
+                })
+            .def(
+                "set_solver_config",
+                [](T &self, TConfig cfg) {
+                    if (self.ctx.is_scheduler_initialized()) {
+                        shambase::throw_with_loc<std::runtime_error>(
+                            "Cannot change solver config after scheduler is initialized");
+                    }
+                    cfg.check_config();
+                    self.solver.solver_config = cfg;
+                })
+            .def(
+                "get_cell_coords",
+                [](T &self, std::pair<TgridVec, TgridVec> block_coord, u32 cell_local_id) {
+                    return self.get_cell_coords(block_coord, cell_local_id);
+                })
+            .def(
+                "make_analysis_sodtube",
+                [](T &self,
+                   shamphys::SodTube sod,
+                   Tvec direction,
+                   Tscal time_val,
+                   Tscal x_ref,
+                   Tscal x_min,
+                   Tscal x_max) {
+                    return std::make_unique<TAnalysisSodTube>(
+                        self.ctx,
+                        self.solver.solver_config,
+                        self.solver.storage,
+                        sod,
+                        direction,
+                        time_val,
+                        x_ref,
+                        x_min,
+                        x_max);
+                })
+            .def(
+                "add_timestep_callback",
+                [](T &self,
+                   std::optional<std::function<void(void)>> step_begin_callback,
+                   std::optional<std::function<void(void)>> step_end_callback) {
+                    self.solver.timestep_callbacks.push_back(
+                        {std::move(step_begin_callback), std::move(step_end_callback)});
+                },
+                py::kw_only(),
+                py::arg("step_begin") = std::nullopt,
+                py::arg("step_end")   = std::nullopt)
+            .def(
+                "get_solver_tex",
+                [](T &self) {
+                    return shambase::get_check_ref(self.solver.storage.solver_sequence).get_tex();
+                })
+            .def(
+                "get_solver_dot_graph",
+                [](T &self) {
+                    return shambase::get_check_ref(self.solver.storage.solver_sequence)
+                        .get_dot_graph();
+                })
+            .def(
+                "render_slice",
+                [](T &self, std::string name, std::string field_type, std::vector<Tvec> positions)
+                    -> std::variant<std::vector<f64>, std::vector<f64_3>> {
+                    if (field_type == "f64") {
+                        ramses::modules::GridRender<Tvec, TgridVec, f64> render(
+                            self.ctx, self.solver.solver_config, self.solver.storage);
+                        return render.compute_slice(name, positions).copy_to_stdvec();
+                    }
+
+                    if (field_type == "f64_3") {
+                        ramses::modules::GridRender<Tvec, TgridVec, f64_3> render(
+                            self.ctx, self.solver.solver_config, self.solver.storage);
+                        return render.compute_slice(name, positions).copy_to_stdvec();
+                    }
+
+                    throw shambase::make_except_with_loc<std::runtime_error>("unknown field type");
+                })
+            .def(
+                "get_time",
+                [](T &self) {
+                    return self.solver.get_time();
+                })
+            .def(
+                "get_dt",
+                [](T &self) {
+                    return self.solver.get_dt();
+                })
+            .def(
+                "set_time",
+                [](T &self, Tscal t) {
+                    return self.solver.set_time(t);
+                })
+            .def("set_next_dt", [](T &self, Tscal dt) {
+                return self.solver.set_next_dt(dt);
+            });
+    }
+} // namespace shammodels::basegodunov
+
+ON_PYTHON_INIT {
+    auto &m = root_module;
+
+    py::module mramses = m.def_submodule("model_ramses", "Shamrock Ramses solver");
+
+    std::string base_name = "RamsesModel";
+    using namespace shammodels::basegodunov;
+
+    py::enum_<ExtForceCoupling>(
+        mramses,
+        "ExtForceCoupling",
+        R"==(
+    Time quadrature used to couple the external forces source term to the solver.
+    Both modes are second order in time, and give the same momentum update for a constant
+    acceleration.
+
+    Usage
+    -----
+    >>> from shamrock.model_ramses import ExtForceCoupling
+    >>> cfg.set_ext_force_coupling(ExtForceCoupling.Trapezoidal)
+)==")
+        .value(
+            "Midpoint",
+            ExtForceCoupling::Midpoint,
+            R"==(
+    Explicit midpoint rule. This is the default.
+
+    The forces are evaluated once, at :math:`t^{n+1/2}`, from the time centered state (e.g.
+    :math:`\rho^{n+1/2} = \rho^n + \frac{\Delta t}{2} \partial_t \rho`, and the momentum for a
+    velocity dependent force), and applied over the whole time step.
+)==")
+        .value(
+            "Trapezoidal",
+            ExtForceCoupling::Trapezoidal,
+            R"==(
+    Trapezoidal rule (time centred source term, as in RAMSES).
+
+    The forces are evaluated at :math:`t^n` and :math:`t^{n+1}`, each with the state at the same
+    time, and the average of the two source terms is applied over the whole time step:
+    :math:`\Delta (\rho \mathbf{v}) = \Delta t \, \frac{1}{2}
+    (\rho^n \mathbf{a}^n + \rho^{n+1} \mathbf{a}^{n+1})`.
+    A force evaluated at :math:`t^{n+1}` may only depend on the density there (e.g.
+    self-gravity), since it is known before the kick.
+)==");
+
+    add_instance<f64_3, i64_3>(
+        mramses, base_name + "_f64_3_i64_3_SolverConfig", base_name + "_f64_3_i64_3_Model");
+
+    using VariantAMRGodunovBind = std::variant<std::unique_ptr<Model<f64_3, i64_3>>>;
+
+    m.def(
+        "get_Model_Ramses",
+        [](ShamrockCtx &ctx,
+           std::string vector_type,
+           std::string grid_repr) -> VariantAMRGodunovBind {
+            VariantAMRGodunovBind ret;
+
+            if (vector_type == "f64_3" && grid_repr == "i64_3") {
+                ret = std::make_unique<Model<f64_3, i64_3>>(ctx);
+            } else {
+                throw shambase::make_except_with_loc<std::invalid_argument>(
+                    "unknown combination of representation and grid_repr");
+            }
+
+            return ret;
+        },
+        py::kw_only(),
+        py::arg("context"),
+        py::arg("vector_type"),
+        py::arg("grid_repr"));
+}

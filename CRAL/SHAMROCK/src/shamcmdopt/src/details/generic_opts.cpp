@@ -1,0 +1,168 @@
+// -------------------------------------------------------//
+//
+// SHAMROCK code for hydrodynamics
+// Copyright (c) 2021-2026 Timothée David--Cléris <tim.shamrock@proton.me>
+// SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
+// Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
+//
+// -------------------------------------------------------//
+
+/**
+ * @file generic_opts.cpp
+ * @author Timothée David--Cléris (tim.shamrock@proton.me)
+ * @brief This file handler generic cli & env options
+ *
+ */
+
+#include "shambase/SourceLocation.hpp"
+#include "shambase/exception.hpp"
+#include "shambase/print.hpp"
+#include "shambase/string.hpp"
+#include "shambase/term_colors.hpp"
+#include "sham/term/color.hpp"
+#include "sham/term/env.hpp"
+#include "sham/term/tty.hpp"
+#include "shamcmdopt/cmdopt.hpp"
+#include "shamcmdopt/details/generic_opts.hpp"
+#include "shamcmdopt/env.hpp"
+#include <string_view>
+#include <optional>
+#include <stdexcept>
+#include <string>
+#include <vector>
+
+namespace {
+
+    auto term_parse_error_callback(const char *what, std::source_location where)
+        -> std::invalid_argument {
+        return shambase::make_except_with_loc<std::invalid_argument>(what, SourceLocation{where});
+    };
+
+} // namespace
+
+namespace shamcmdopt {
+
+    void register_cmdopt_generic_opts() {
+
+        register_opt("--nocolor", {}, "disable colored output");
+        register_opt("--color", {}, "force colored output");
+        register_opt("--help", {}, "show this message");
+
+        register_env_var_doc("NO_COLOR", "Disable colors (if no color cli args are passed)");
+        register_env_var_doc("CLICOLOR_FORCE", "Enable colors (if no color cli args are passed)");
+        register_env_var_doc("TERM", "Terminal emulator identifier");
+        register_env_var_doc("COLORTERM", "Terminal color support identifier");
+        register_env_var_doc("COLUMN", "Set tty assumed column count");
+        register_env_var_doc("LC_ALL", "Locale override, used to detect UTF-8 support");
+        register_env_var_doc(
+            "LC_CTYPE", "Character classification locale, used to detect UTF-8 support");
+        register_env_var_doc("LANG", "Default locale, used to detect UTF-8 support");
+        register_env_var_doc("NO_UTF8", "Disable UTF-8 output (overrides locale detection)");
+        register_env_var_doc("FORCE_UTF8", "Force UTF-8 output (overrides locale detection)");
+    }
+
+    /**
+     * @brief Detect if the current process should use colored output or not
+     *
+     * Colors are disabled by the cli flag `--nocolor` or env variable `NO_COLOR`
+     * Colors are enabled by the cli flag `--color` or env variable `CLICOLOR_FORCE`
+     * If no options are set we enable colors if in tty mode and
+     *   if the terminal support colored output
+     *
+     * - We first check cli args as they are dominant over env variables
+     * - We then check if some env variables are set
+     * - If nothing is set we enable color if term_support_color() and is_a_tty()
+     *     returns true
+     *
+     */
+    void process_env_vars() {
+
+        bool has_opt_nocolor = has_option("--nocolor");
+        bool has_opt_color   = has_option("--color");
+
+        if (has_opt_color && has_opt_nocolor) {
+            throw shambase::make_except_with_loc<std::invalid_argument>(
+                "You can not pass --nocolor and --color simultaneously");
+        }
+
+        auto TERM           = getenv_str_view("TERM");
+        auto COLORTERM      = getenv_str_view("COLORTERM");
+        auto NO_COLOR       = getenv_str_view("NO_COLOR");
+        auto CLICOLOR_FORCE = getenv_str_view("CLICOLOR_FORCE");
+
+        auto COLUMN = getenv_str_view("COLUMN");
+
+        auto LANG     = getenv_str_view("LANG");
+        auto lc_all   = getenv_str_view("LC_ALL");
+        auto lc_ctype = getenv_str_view("LC_CTYPE");
+
+        auto NO_UTF8    = getenv_str_view("NO_UTF8");
+        auto FORCE_UTF8 = getenv_str_view("FORCE_UTF8");
+
+        sham::term::parse_terminal_support(
+            {
+                .TERM           = TERM,
+                .COLORTERM      = COLORTERM,
+                .NO_COLOR       = NO_COLOR,
+                .CLICOLOR_FORCE = CLICOLOR_FORCE,
+                .COLUMN         = COLUMN,
+                .LANG           = LANG,
+                .lc_all         = lc_all,
+                .lc_ctype       = lc_ctype,
+                .NO_UTF8        = NO_UTF8,
+                .FORCE_UTF8     = FORCE_UTF8,
+            },
+            term_parse_error_callback);
+
+        if (has_opt_nocolor) {
+            shambase::term_colors::disable_colors();
+        } else if (has_opt_color) {
+            shambase::term_colors::enable_colors();
+        }
+    }
+
+    void process_cmdopt_generic_opts() {
+
+        process_env_vars();
+
+        if (has_option("--help")) {
+            print_help();
+
+            shambase::println("\nEnv deduced vars :");
+
+            if (sham::term::is_a_tty()) {
+                shambase::println("  isatty = Yes");
+            } else {
+                shambase::println("  isatty = No");
+            }
+
+            if (shambase::term_colors::colors_enabled()) {
+                shambase::println("  color = enabled");
+            } else {
+                shambase::println("  color = disabled");
+            }
+
+            if (sham::term::support_utf8()) {
+                shambase::println("  utf8 = enabled");
+            } else {
+                shambase::println("  utf8 = disabled");
+            }
+
+            const char *color_level_str = "unknown";
+            switch (sham::term::color_level()) {
+            case sham::term::ColorLevel::NoColor  : color_level_str = "0 (none)"; break;
+            case sham::term::ColorLevel::Basic    : color_level_str = "1 (ANSI/16 colors)"; break;
+            case sham::term::ColorLevel::ANSI256  : color_level_str = "2 (256 colors)"; break;
+            case sham::term::ColorLevel::TrueColor: color_level_str = "3 (truecolor)"; break;
+            }
+            shambase::println(sham::format("  colorlevel = {}", color_level_str));
+
+            shambase::println(
+                sham::format(
+                    "  tty size = {}x{}",
+                    sham::term::get_tty_lines(),
+                    sham::term::get_tty_columns()));
+        }
+    }
+
+} // namespace shamcmdopt

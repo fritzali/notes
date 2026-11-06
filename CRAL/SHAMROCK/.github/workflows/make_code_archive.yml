@@ -1,0 +1,18 @@
+name: Archive workflow
+
+on:
+  workflow_call:
+
+jobs:
+  make_code_archive:
+    name: Make code archive
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7 # only to resolve the local action
+
+      - uses: ./.github/actions/extract_version
+        id: version
+
+      - uses: Shamrock-code/action-make-code-archive@v1.1
+        with:
+          output_name: shamrock-${{ steps.version.outputs.version }}.tar.gz

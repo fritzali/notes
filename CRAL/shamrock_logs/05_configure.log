@@ -1,0 +1,195 @@
+-- The C compiler identification is Clang 20.1.8
+-- The CXX compiler identification is Clang 20.1.8
+-- Detecting C compiler ABI info
+-- Detecting C compiler ABI info - done
+-- Check for working C compiler: /usr/lib/llvm20/bin/clang - skipped
+-- Detecting C compile features
+-- Detecting C compile features - done
+-- Detecting CXX compiler ABI info
+-- Detecting CXX compiler ABI info - done
+-- Check for working CXX compiler: /home/fritz/work/codes/shamrock-build/.env/acpp-installdir/bin/acpp - skipped
+-- Detecting CXX compile features
+-- Detecting CXX compile features - done
+-- Shamrock version : 2025.10.0+git.424c520.main
+   ---- c++ config section ----
+-- Performing Test COMPILER_SUPPORT_MARCHNATIVE
+-- Performing Test COMPILER_SUPPORT_MARCHNATIVE - Success
+-- Performing Test COMPILER_SUPPORT_PEDANTIC
+-- Performing Test COMPILER_SUPPORT_PEDANTIC - Success
+-- Performing Test COMPILER_SUPPORT_COLOR_DIAGNOSTIC
+-- Performing Test COMPILER_SUPPORT_COLOR_DIAGNOSTIC - Success
+-- Performing Test COMPILER_SUPPORT_ERROR_RETURN_TYPE
+-- Performing Test COMPILER_SUPPORT_ERROR_RETURN_TYPE - Success
+-- Performing Test CXX_VALARRAY_COMPILE
+-- Performing Test CXX_VALARRAY_COMPILE - Success
+-- CMAKE_CXX_STANDARD             : 20
+-- CMAKE_CXX_FLAGS                :  --acpp-targets='omp' -pedantic-errors -fcolor-diagnostics -Werror=return-type
+-- CMAKE_CXX_FLAGS_DEBUG          : -g
+-- CMAKE_CXX_FLAGS_RELEASE        : -O3 -DNDEBUG -march=native
+-- CMAKE_CXX_FLAGS_RELWITHDEBINFO : -O3 -g -DNDEBUG
+-- current build type : CMAKE_BUILD_TYPE=Release
+-- SHAMROCK_COMPILE_FLAGS :  --acpp-targets='omp' -pedantic-errors -fcolor-diagnostics -Werror=return-type -O3 -DNDEBUG -march=native
+   ---- SYCL config section ----
+-- Shamrock configure SYCL backend
+-- Chosen SYCL implementation : ACPPDirect
+-- Performing Test SYCL_COMPILER_IS_ACPP
+-- Performing Test SYCL_COMPILER_IS_ACPP - Success
+-- fetching acpp compiler id string from /home/fritz/work/codes/shamrock-build/.env/acpp-installdir/bin/acpp --version and --acpp-version
+-- Performing Test SYCL2020_FEATURE_ISINF
+-- Performing Test SYCL2020_FEATURE_ISINF - Success
+-- Performing Test SYCL2020_FEATURE_CLZ
+-- Performing Test SYCL2020_FEATURE_CLZ - Success
+-- Performing Test SYCL2020_FEATURE_REDUCTION
+-- Performing Test SYCL2020_FEATURE_REDUCTION - Success
+-- Performing Test SYCL2020_FEATURE_GROUP_REDUCTION
+-- Performing Test SYCL2020_FEATURE_GROUP_REDUCTION - Success
+-- Performing Test HAS_ACPP_HEADER_FOLDER
+-- Performing Test HAS_ACPP_HEADER_FOLDER - Success
+-- Performing Test HAS_OpenSYCL_HEADER_FOLDER
+-- Performing Test HAS_OpenSYCL_HEADER_FOLDER - Failed
+-- Performing Test HAS_hipSYCL_HEADER_FOLDER
+-- Performing Test HAS_hipSYCL_HEADER_FOLDER - Failed
+-- Performing Test ACPP_HAS_FAST_MATH
+-- Performing Test ACPP_HAS_FAST_MATH - Success
+ ---- Acpp compiler direct config ---- 
+  ACPP_PATH : /home/fritz/work/codes/shamrock-build/.env/acpp-installdir
+  HAS_ACPP_HEADER_FOLDER : 1
+  HAS_OpenSYCL_HEADER_FOLDER : 
+  HAS_hipSYCL_HEADER_FOLDER : 
+  ACPP_FAST_MATH : OFF
+ ------------------------------------- 
+ ---- Shamrock SYCL backend config ---- 
+  SYCL_COMPILER : ACPP
+  sycl 2020 reduction : ON
+  sycl 2020 group reduction : ON
+  sycl 2020 isinf : 1
+  sycl 2020 clz : 1
+  SHAMROCK_LOOP_DEFAULT : PARALLEL_FOR_ROUND
+  SHAMROCK_LOOP_GSIZE : 256
+ -------------------------------------- 
+-- Shamrock configure SYCL backend - done
+   ---- MPI section ----
+-- Found MPI_C: /usr/lib64/libmpi.so (found version "3.1")
+-- Found MPI: TRUE (found version "3.1") found components: C
+-- MPI_CXX_SKIP_MPICXX : true
+-- MPI include dir : /usr/include
+-- SHAM_CXX_MPI_FLAGS : -DOMPI_SKIP_MPICXX
+   ---- Pybind11 section ----
+CMake Warning at cmake/ShamConfigurePybind11.cmake:15 (message):
+  PYTHON_EXECUTABLE is not defined, please set it as follows:
+
+  -DPYTHON_EXECUTABLE=$(python3 -c "import sys; print(sys.executable)")
+Call Stack (most recent call first):
+  CMakeLists.txt:78 (include)
+
+
+-- Trying to autodetect python executable: python3
+-- PYTHON_EXECUTABLE : /usr/bin/python3
+-- Using git submodule pybind11
+CMake Warning (deprecated) at external/pybind11/CMakeLists.txt:13 (cmake_minimum_required):
+  Compatibility with CMake < 3.10 will be removed from a future version of
+  CMake.
+
+  Update the VERSION argument <min> value.  Or, use the <min>...<max> syntax
+  to tell CMake that the project requires at least <min> but has been updated
+  to work with policies introduced by <max> or earlier.
+This warning is for project developers.  Use -Wno-author or -Wno-deprecated
+to suppress it.
+
+-- pybind11 v2.13.6 
+CMake Warning (deprecated) at external/pybind11/tools/FindPythonLibsNew.cmake:110 (cmake_policy):
+  The OLD behavior for policy CMP0148 will be removed from a future version
+  of CMake.
+
+  The cmake-policies(7) manual explains that the OLD behaviors of all
+  policies are deprecated and that a policy should be set to OLD only under
+  specific short-term circumstances.  Projects should be ported to the NEW
+  behavior and not rely on setting a policy to OLD.
+Call Stack (most recent call first):
+  external/pybind11/tools/pybind11Tools.cmake:50 (find_package)
+  external/pybind11/tools/pybind11Common.cmake:228 (include)
+  external/pybind11/CMakeLists.txt:251 (include)
+This warning is for project developers.  Use -Wno-author or -Wno-deprecated
+to suppress it.
+
+-- Found PythonInterp: /usr/bin/python3 (found suitable version "3.14.9", minimum required is "3.7")
+-- Found PythonLibs: /usr/lib/libpython3.14.so
+-- Performing Test HAS_FLTO_THIN
+-- Performing Test HAS_FLTO_THIN - Success
+   ---- NVTX section ----
+-- SHAMROCK_USE_NVTX : ON
+   ---- fmtlib section ----
+-- SHAMROCK_EXTERNAL_FMTLIB : OFF
+-- SHAMROCK_FMT_HEADER_ONLY : OFF
+-- Using git submodule fmtlib
+-- {fmt} version: 11.1.2
+-- Build type: Release
+-- Performing Test HAS_NULLPTR_WARNING
+-- Performing Test HAS_NULLPTR_WARNING - Success
+-- SHAMROCK_FMT_TARGET : fmt::fmt
+   ---- nlohmann_json section ----
+-- SHAMROCK_EXTERNAL_JSON : OFF
+-- Using the multi-header code from /home/fritz/work/notebooks/CRAL/SHAMROCK/external/nlohmann_json/include/
+   ---- plf_nanotimer section ----
+   ---- MDSPAN section ----
+   ---- CPPTRACE section ----
+-- SHAMROCK_USE_CPPTRACE : OFF
+   ---- GUI libs section ----
+-- SHAMROCK_BUILD_GUI : OFF
+   ---- SUMARRY ----
+-- CMAKE_C_COMPILER        : /usr/lib/llvm20/bin/clang
+-- CMAKE_CXX_COMPILER      : /home/fritz/work/codes/shamrock-build/.env/acpp-installdir/bin/acpp
+-- CMAKE_CXX_FLAGS         :  --acpp-targets='omp' -pedantic-errors -fcolor-diagnostics -Werror=return-type  -DSYCL_COMP_ACPP -isystem /home/fritz/work/codes/shamrock-build/.env/acpp-installdir/include/AdaptiveCpp -DSYCL2020_FEATURE_REDUCTION -DSYCL2020_FEATURE_GROUP_REDUCTION -DSYCL2020_FEATURE_ISINF -DSYCL2020_FEATURE_CLZ -DSHAMROCK_LOOP_DEFAULT_PARALLEL_FOR_ROUND -DSHAMROCK_LOOP_GSIZE=256 -DOMPI_SKIP_MPICXX -DSHAMROCK_USE_NVTX -DSHAMROCK_USE_PROFILING
+-- CMAKE_EXE_LINKER_FLAGS  : 
+-- SHAMROCK_USE_PROFILING  : ON
+-- SHAMROCK_USE_NVTX       : ON
+-- SHAMROCK_USE_PCH        : OFF
+-- SHAMROCK_USE_SHARED_LIB : On
+-- CMAKE_BUILD_TYPE        : Release
+-- BUILD_TEST              : Yes
+-- PYTHON_EXECUTABLE       : /usr/bin/python3
+   ---- targets section ----
+-- adding shamformat target (Shared lib)
+-- adding shamterm target (Shared lib)
+-- adding shamunits target (interface lib)
+-- adding shambase target (Shared lib)
+-- current assert type : SHAM_ASSERT_MODE=NONE
+-- adding shambindings target (Shared lib)
+-- PYTHON_EXECUTABLE : /usr/bin/python3
+-- pylib paths list (auto-detected) :
+--   /home/fritz/work/notebooks/CRAL/SHAMROCK/src/pylib
+-- adding shamcmdopt target (Shared lib)
+-- adding shamcomm target (Shared lib)
+-- adding shambackends target (Shared lib)
+-- adding shammath target (Shared lib)
+-- adding shamsolvergraph target (Shared lib)
+-- adding shamalgs target (Shared lib)
+-- adding shamphys target (Shared lib)
+-- adding shamsys target (Shared lib)
+-- Looking for C++ include geopm/PlatformIO.hpp
+-- Looking for C++ include geopm/PlatformIO.hpp - not found
+-- adding shamtree target (Shared lib)
+-- adding shamlib target (Shared lib)
+-- adding shampylib target (Shared lib)
+-- adding shammodels_common target (Shared lib)
+-- adding shammodels_zeus target (Shared lib)
+-- adding shammodels_ramses target (Shared lib)
+-- adding shammodels_sph target (Shared lib)
+CMake Warning (deprecated) at src/shammodels/gsph/CMakeLists.txt:8 (cmake_minimum_required):
+  Compatibility with CMake < 3.10 will be removed from a future version of
+  CMake.
+
+  Update the VERSION argument <min> value.  Or, use the <min>...<max> syntax
+  to tell CMake that the project requires at least <min> but has been updated
+  to work with policies introduced by <max> or earlier.
+This warning is for project developers.  Use -Wno-author or -Wno-deprecated
+to suppress it.
+
+-- adding shammodels_gsph target (Shared lib)
+-- adding shamrock target
+-- adding shamrock_test target
+-- using native find_package for Doxygen: Doxygen;QUIET
+-- Configuring done (16.2s)
+-- Generating done (0.0s)
+-- Build files have been written to: /home/fritz/work/codes/shamrock-build
+rc=0

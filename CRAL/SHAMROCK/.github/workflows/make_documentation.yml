@@ -1,0 +1,108 @@
+name: Documentation
+
+on:
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+
+  workflow_call:
+
+
+jobs:
+
+  #make shamrock documentation
+  make_documentation:
+    name: "Build : Documentation"
+    runs-on: ubuntu-latest
+
+    container:
+      image: ghcr.io/shamrock-code/shamrock-ci:ubuntu-latest
+
+    steps:
+
+      #### Checkout part ####
+      # Checkout merge commit if PR otherwise default
+      - name : Reconfigure git
+        run:  |
+          git config --global --add safe.directory '*'
+          git config --global --list
+      - uses: actions/checkout@v7
+        if: github.event_name == 'pull_request_target'
+        with:
+          fetch-depth: 0
+          submodules: recursive
+          ref: "refs/pull/${{ github.event.number }}/merge"
+
+      - uses: actions/checkout@v7
+        if: github.event_name != 'pull_request_target'
+        with:
+          fetch-depth: 0
+          submodules: recursive
+
+      - name: Show diff against main
+        if: github.event_name == 'pull_request_target'
+        run: git diff ${{ github.event.pull_request.base.sha }} HEAD
+      #### End Checkout part ####
+
+      - name : Install pck (doxygen)
+        run: |
+          sudo apt update && \
+          sudo apt install -y -qq doxygen graphviz
+
+      - name : Install slim texlive packages
+        run: |
+          sudo apt install -y \
+            texlive-latex-base \
+            texlive-latex-recommended \
+            texlive-latex-extra \
+            texlive-fonts-recommended \
+            cm-super \
+            dvipng \
+            ghostscript
+
+      - name: create venv
+        shell: bash
+        run: |
+          python3 -m venv .pyvenv
+          source .pyvenv/bin/activate
+
+      - name: pip install packages (mkdocs)
+        shell: bash
+        run: |
+          source .pyvenv/bin/activate
+          pip install matplotlib numpy scipy mkdocs-material mkdocs-git-committers-plugin-2 mkdocs-git-authors-plugin mkdocs-git-revision-date-plugin mkdocs-git-revision-date-localized-plugin
+
+
+      - name: Gen doc
+        shell: bash
+        run: |
+          source .pyvenv/bin/activate
+          cd doc
+          sh make_doc.sh
+
+      - name: 'Tar doc'
+        run: tar -cvf documentation.tar.gz doc/_build
+
+      - name: Archive generated doc
+        uses: actions/upload-artifact@v7
+        with:
+          name: shamrock_documentation
+          path: documentation.tar.gz
+
+      - name: Archive generated doc (Warning doxygen)
+        uses: actions/upload-artifact@v7
+        with:
+          name: doxygen_warning
+          path: doc/_build/doxygen/warn_doxygen.txt
+
+      - name: Write doxygen warning count metric
+        shell: bash
+        run: |
+          warn_count=$(wc -l < doc/_build/doxygen/warn_doxygen.txt | tr -d '[:space:]')
+          printf '{"doxygen_warning_count":%s}\n' "${warn_count}" > metric__doxygen_warn.json
+          cat metric__doxygen_warn.json
+
+      - name: Upload doxygen warning count metric
+        uses: actions/upload-artifact@v7
+        with:
+          name: metric__doxygen_warn.json
+          path: metric__doxygen_warn.json

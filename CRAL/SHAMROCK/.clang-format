@@ -1,0 +1,66 @@
+---
+BasedOnStyle: LLVM
+IndentWidth: 4
+ColumnLimit: 100
+AccessModifierOffset: 0
+
+Language: Cpp
+Standard: c++20
+UseTab: Never
+
+AlignConsecutiveAssignments:
+  Enabled: true
+  AcrossEmptyLines: false
+  AcrossComments: false
+  AlignCompound: false
+  AlignFunctionPointers: false
+  PadOperators: true
+
+AlignConsecutiveShortCaseStatements:
+  Enabled: true
+  AcrossEmptyLines: false
+  AcrossComments: false
+  AlignCaseArrows: false
+  AlignCaseColons: true
+
+
+AlignAfterOpenBracket: AlwaysBreak
+AlignEscapedNewlines: Right
+AlignOperands:   true
+AlignTrailingComments: true
+
+AllowShortCaseLabelsOnASingleLine : true
+AllowShortLambdasOnASingleLine: Empty
+
+AlwaysBreakTemplateDeclarations: Yes
+
+BinPackArguments: false
+BinPackParameters: false
+BreakBeforeConceptDeclarations : true
+BreakBeforeBinaryOperators: All
+BreakConstructorInitializers: BeforeColon
+
+IncludeBlocks: Merge
+
+EmptyLineBeforeAccessModifier : Always
+
+NamespaceIndentation: All
+
+IndentPPDirectives: BeforeHash
+
+#SeparateDefinitionBlocks: Leave
+SpaceAfterTemplateKeyword: false
+SpaceAfterCStyleCast: true
+InsertNewlineAtEOF: true
+
+PenaltyReturnTypeOnItsOwnLine: 1000
+
+
+IncludeCategories:
+  - Regex:           '^"(shambase)/'
+    Priority:        0
+  - Regex:           '<[[:alnum:].]+>'
+    Priority:        4
+  - Regex:           '.*'
+    Priority:        1
+    SortPriority:    0

@@ -1,0 +1,176 @@
+site_name: Shamrock
+
+repo_url: https://github.com/Shamrock-code/Shamrock
+repo_name: Shamrock
+
+copyright: Copyright (c) 2021-2026 Timothée David--Cléris
+
+nav:
+  - 'Mkdocs documentation': 'index.md'
+  - 'Doxygen documentation': 'doxygen.md'
+
+  - 'Features':
+    - 'SPH model':
+      - 'Phantom conformance': 'features/sph/conformance_phantom.md'
+      - 'Sink particles': 'features/sph/sinks.md'
+
+  - 'User Documentation' :
+    - 'QuickStart' : 'usermanual/quickstart.md'
+    - 'Install' :
+      - 'Install (From source)' : 'usermanual/quickstart/install_from_source.md'
+      - 'Install (Spack)' : 'usermanual/quickstart/install_spack.md'
+      - 'Install (Homebrew)' : 'usermanual/quickstart/install_brew.md'
+      - 'Install (Docker)' : 'usermanual/quickstart/install_docker.md'
+      - 'Recommended Configurations' :
+        - 'Linux' : 'usermanual/quickstart/recommended_config/linux_debian.md'
+        - 'macOS' : 'usermanual/quickstart/recommended_config/macos.md'
+        - 'Conda' : 'usermanual/quickstart/recommended_config/conda.md'
+    - 'Environments' : 'usermanual/envs.md'
+    - 'Usage' : 'usermanual/usage.md'
+    - 'Shamrock as python lib' : 'usermanual/python_lib.md'
+    - 'First simulation' : 'usermanual/firstcalculation.md'
+    - 'Configuration' : 'usermanual/configuration.md'
+    - 'Utilities' : 'usermanual/utilities.md'
+    - 'Running on clusters' : 'usermanual/cluster.md'
+    - 'CUDA aware openMPI' : 'usermanual/openmpi_setup.md'
+    - 'Plotting' : 'usermanual/plotting.md'
+
+
+  - 'Physical models' :
+    - 'SPH' :
+      - 'Scalling test' : 'models/sph/scalling.md'
+
+  - 'Develloper Doc' :
+    - 'Git guide' : 'devdoc/git_guide.md'
+    - 'VSCode setup' : 'devdoc/vscode-setup.md'
+    - 'Documentation' : 'devdoc/building_the_doc.md'
+    - 'Release process' : 'devdoc/release_process.md'
+    - 'Using the logs' : 'devdoc/log_system.md'
+    - 'Local LLVM' : 'devdoc/using_local_llvm.md'
+    - 'Codebase Organisation' : 'devdoc/codebase_org.md'
+    - 'Testing' : 'devdoc/testing.md'
+    - 'Conventions' : 'devdoc/coding_conventions.md'
+    - 'Code coverage' : 'devdoc/code_coverage.md'
+    - 'Profiling' : 'devdoc/profiling.md'
+    - 'Types' : 'devdoc/types.md'
+    - 'Communication protocols' : 'devdoc/communication_protocol.md'
+    - 'Coordinate systems' : 'devdoc/coordinates_systems.md'
+    - 'Radix Tree' : 'devdoc/tree_usage.md'
+    - 'Scheduler' : 'devdoc/mpi_scheduler.md'
+    - 'PatchData' : 'devdoc/scheduler/patchdata.md'
+    - 'PatchList' : 'devdoc/scheduler/patchlist.md'
+    - 'PatchTree' : 'devdoc/scheduler/patchtree.md'
+    - 'SolverGraph Migration' : 'devdoc/solvergraph_migration_guide.md'
+
+  - 'Sycl guide' :
+
+    - 'SYCL tricks' : 'syclguide/sycl_tricks.md'
+
+  - 'C++ guide' :
+
+    - 'Replacing preprocessors' : 'cppguide/replacing_preproc.md'
+    - 'Programming patterns' : 'cppguide/programming_patterns.md'
+    - 'Policy design' : 'cppguide/design_by_policy.md'
+    - 'Low level tricks' : 'cppguide/low_level_tricks.md'
+    - 'Dirty tricks' : 'cppguide/dirty_tricks.md'
+
+
+
+theme:
+  name: material
+  icon:
+    repo: fontawesome/brands/github
+
+  features:
+    - navigation.instant
+    - navigation.instant.progress
+
+    - content.code.copy
+    - content.code.select
+
+    - content.tooltips
+
+  custom_dir: overrides
+  logo: assets/logo.png
+
+  favicon: assets/logo.ico
+
+  palette:
+
+    # Palette toggle for light mode
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      #primary: grey
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+
+    # Palette toggle for dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      #primary: grey
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+
+extra:
+  generator: false
+
+extra_css:
+  - stylesheets/extra.css
+
+plugins:
+  - git-authors
+  - search
+  - git-revision-date-localized:
+      enable_creation_date: true
+
+
+markdown_extensions:
+  # Python Markdown
+  - abbr
+  - admonition
+  - def_list
+  - footnotes
+  - md_in_html
+  - attr_list
+  - toc:
+      permalink: true
+
+  # Python Markdown Extensions
+  - pymdownx.arithmatex:
+      generic: true
+  - pymdownx.betterem:
+      smart_enable: all
+  - pymdownx.caret
+  - pymdownx.details
+  - pymdownx.emoji:
+      emoji_index: !!python/name:material.extensions.emoji.twemoji
+      emoji_generator: !!python/name:material.extensions.emoji.to_svg
+  - pymdownx.highlight
+  - pymdownx.inlinehilite
+  - pymdownx.keys
+  - pymdownx.mark
+  - pymdownx.smartsymbols
+  - pymdownx.superfences
+  - pymdownx.tabbed:
+      alternate_style: true
+  - pymdownx.tasklist:
+      custom_checkbox: true
+  - pymdownx.tilde
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+
+  - pymdownx.snippets:
+      auto_append:
+        - includes/abbreviations.md
+
+
+
+extra_javascript:
+  - javascripts/mathjax.js
+  - https://polyfill.io/v3/polyfill.min.js?features=es6
+  - https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js

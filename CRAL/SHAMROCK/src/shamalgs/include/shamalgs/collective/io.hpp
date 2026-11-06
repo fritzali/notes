@@ -1,0 +1,283 @@
+// -------------------------------------------------------//
+//
+// SHAMROCK code for hydrodynamics
+// Copyright (c) 2021-2026 Timothée David--Cléris <tim.shamrock@proton.me>
+// SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
+// Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
+//
+// -------------------------------------------------------//
+
+#pragma once
+
+/**
+ * @file io.hpp
+ * @author Timothée David--Cléris (tim.shamrock@proton.me)
+ * @brief
+ *
+ */
+
+#include "shambase/narrowing.hpp"
+#include "shamalgs/collective/indexing.hpp"
+#include "shambackends/SyclMpiTypes.hpp"
+#include "shambackends/typeAliasVec.hpp"
+#include "shamcomm/mpiErrorCheck.hpp"
+
+namespace shamalgs::collective {
+
+    /**
+     * @brief Writes data to an MPI file in a collective manner.
+     *
+     * @tparam T The type of data to be written.
+     * @param fh The MPI file handle.
+     * @param ptr_data Pointer to the data to be written.
+     * @param data_cnt Number of elements of type T to be written.
+     * @param file_head_ptr The current file head pointer, which is updated after the write
+     * operation.
+     *
+     */
+    template<class T>
+    void viewed_write_all_fetch(MPI_File fh, T *ptr_data, u64 data_cnt, u64 &file_head_ptr) {
+        auto dtype = get_mpi_type<T>();
+
+        i32 sz;
+        shamcomm::mpi::Type_size(dtype, &sz);
+
+        ViewInfo view = fetch_view(u64(sz) * data_cnt);
+
+        u64 disp = file_head_ptr + view.head_offset;
+
+        shamcomm::mpi::File_set_view(fh, disp, dtype, dtype, "native", MPI_INFO_NULL);
+
+        shamcomm::mpi::File_write_all(fh, ptr_data, data_cnt, dtype, MPI_STATUS_IGNORE);
+
+        file_head_ptr = view.total_byte_count + file_head_ptr;
+    }
+
+    /**
+     * @brief Writes data to an MPI file in a collective manner and updates the file head pointer.
+     *
+     * @tparam T The type of data to be written.
+     * @param fh The MPI file handle.
+     * @param ptr_data Pointer to the data to be written.
+     * @param data_cnt Number of elements of type T to be written.
+     * @param total_cnt Total number of elements of type T in the file.
+     * @param file_head_ptr The current file head pointer, which is updated after the write
+     * operation.
+     *
+     */
+    template<class T>
+    void viewed_write_all_fetch_known_total_size(
+        MPI_File fh, T *ptr_data, u64 data_cnt, u64 total_cnt, u64 &file_head_ptr) {
+        auto dtype = get_mpi_type<T>();
+
+        i32 sz;
+        shamcomm::mpi::Type_size(dtype, &sz);
+
+        ViewInfo view = fetch_view_known_total(u64(sz) * data_cnt, u64(sz) * total_cnt);
+
+        u64 disp = file_head_ptr + view.head_offset;
+
+        shamcomm::mpi::File_set_view(fh, disp, dtype, dtype, "native", MPI_INFO_NULL);
+
+        shamcomm::mpi::File_write_all(fh, ptr_data, data_cnt, dtype, MPI_STATUS_IGNORE);
+
+        file_head_ptr = view.total_byte_count + file_head_ptr;
+    }
+
+    /**
+     * @brief Writes a string to a file using MPI and updates the file head pointer.
+     *
+     * Note that all processes should call this function with the same content
+     *
+     * @param fh MPI file handle
+     * @param s string to write
+     * @param file_head_ptr file head pointer
+     */
+    inline void write_header_raw(MPI_File fh, std::string s, u64 &file_head_ptr) {
+
+        shamcomm::mpi::File_set_view(
+            fh, file_head_ptr, MPI_BYTE, MPI_CHAR, "native", MPI_INFO_NULL);
+
+        if (shamcomm::world_rank() == 0) {
+            shamcomm::mpi::File_write(fh, s.c_str(), s.size(), MPI_CHAR, MPI_STATUS_IGNORE);
+        }
+
+        file_head_ptr = file_head_ptr + s.size();
+    }
+
+    /**
+     * @brief Reads a string of length len from a file using MPI and updates the file head pointer.
+     *
+     * @param fh MPI file handle
+     * @param len length of string to read
+     * @param file_head_ptr file head pointer
+     * @return string read from file
+     */
+    inline std::string read_header_raw(MPI_File fh, size_t len, u64 &file_head_ptr) {
+
+        shamcomm::mpi::File_set_view(
+            fh, file_head_ptr, MPI_BYTE, MPI_CHAR, "native", MPI_INFO_NULL);
+        std::string s;
+        s.resize(len);
+
+        shamcomm::mpi::File_read(fh, s.data(), s.size(), MPI_CHAR, MPI_STATUS_IGNORE);
+
+        file_head_ptr = file_head_ptr + s.size();
+
+        return s;
+    }
+
+    /**
+     * @brief Writes a size_t to a file using MPI and updates the file head pointer.
+     *
+     * @param fh MPI file handle
+     * @param val value to write
+     * @param file_head_ptr file head pointer
+     */
+    inline void write_header_val(MPI_File fh, size_t val, u64 &file_head_ptr) {
+
+        shamcomm::mpi::File_set_view(
+            fh, file_head_ptr, MPI_BYTE, MPI_CHAR, "native", MPI_INFO_NULL);
+
+        if (shamcomm::world_rank() == 0) {
+            shamcomm::mpi::File_write(fh, &val, 1, get_mpi_type<size_t>(), MPI_STATUS_IGNORE);
+        }
+
+        file_head_ptr = file_head_ptr + sizeof(size_t);
+    }
+
+    /**
+     * @brief Writes data at a given offset in a file using MPI.
+     *
+     * @param fh MPI file handle
+     * @param buf pointer to the data to be written
+     * @param len number of elements of type T to be written
+     * @param file_head_ptr offset in the file where the data should be written
+     */
+    template<class T>
+    inline void write_at(MPI_File fh, const void *buf, size_t len, u64 file_head_ptr) {
+
+        shamcomm::mpi::File_write_at(
+            fh,
+            file_head_ptr,
+            buf,
+            shambase::narrow_or_throw<int>(len),
+            get_mpi_type<T>(),
+            MPI_STATUS_IGNORE);
+    }
+
+    /**
+     * @brief Writes a large byte buffer at a given offset in a file using MPI.
+     *
+     * This function splits the transfer into chunks of at most 1 GiB and delegates
+     * each chunk to write_at<u8>. Use this instead of write_at when len may exceed
+     * the range safely representable as an MPI count (write_at narrows len to int).
+     *
+     * @param fh MPI file handle
+     * @param buf pointer to the bytes to be written
+     * @param len number of bytes to write
+     * @param file_head_ptr offset in the file where the data should be written
+     */
+    inline void write_at_large(MPI_File fh, const u8 *buf, size_t len, u64 file_head_ptr) {
+
+        size_t max_message = 1 << 30;
+
+        for (size_t offset = 0; offset < len; offset += max_message) {
+            const u8 *buf_ptr = buf + offset;
+            size_t msg_len    = std::min(max_message, len - offset);
+            write_at<u8>(fh, buf_ptr, msg_len, file_head_ptr + offset);
+        }
+    }
+
+    /**
+     * @brief Reads data at a given offset in a file using MPI.
+     *
+     * @param fh MPI file handle
+     * @param buf pointer to the data that should be read
+     * @param len number of elements of type T to be read
+     * @param file_head_ptr offset in the file where the data should be read
+     */
+    template<class T>
+    inline void read_at(MPI_File fh, void *buf, size_t len, u64 file_head_ptr) {
+
+        shamcomm::mpi::File_read_at(
+            fh,
+            file_head_ptr,
+            buf,
+            shambase::narrow_or_throw<int>(len),
+            get_mpi_type<T>(),
+            MPI_STATUS_IGNORE);
+    }
+
+    /**
+     * @brief Reads a large byte buffer at a given offset in a file using MPI.
+     *
+     * This function splits the transfer into chunks of at most 1 GiB and delegates
+     * each chunk to read_at<u8>. Use this instead of read_at when len may exceed
+     * the range safely representable as an MPI count (read_at narrows len to int).
+     *
+     * @param fh MPI file handle
+     * @param buf pointer to the buffer that should receive the bytes
+     * @param len number of bytes to read
+     * @param file_head_ptr offset in the file where the data should be read
+     */
+    inline void read_at_large(MPI_File fh, u8 *buf, size_t len, u64 file_head_ptr) {
+        size_t max_message = 1 << 30;
+
+        for (size_t offset = 0; offset < len; offset += max_message) {
+            u8 *buf_ptr    = buf + offset;
+            size_t msg_len = std::min(max_message, len - offset);
+            read_at<u8>(fh, buf_ptr, msg_len, file_head_ptr + offset);
+        }
+    }
+
+    /**
+     * @brief Reads a size_t from a file using MPI and updates the file head pointer.
+     *
+     * @param fh MPI file handle
+     * @param file_head_ptr file head pointer
+     * @return size_t read from file
+     */
+    inline size_t read_header_val(MPI_File fh, u64 &file_head_ptr) {
+
+        size_t val = 0;
+        shamcomm::mpi::File_set_view(
+            fh, file_head_ptr, MPI_BYTE, MPI_CHAR, "native", MPI_INFO_NULL);
+
+        shamcomm::mpi::File_read(fh, &val, 1, get_mpi_type<size_t>(), MPI_STATUS_IGNORE);
+
+        file_head_ptr = file_head_ptr + sizeof(size_t);
+
+        return val;
+    }
+
+    /**
+     * @brief Writes a string to a file using MPI and updates the file head pointer.
+     *        The string is preceded by its length.
+     *
+     * @param fh MPI file handle
+     * @param s string to write
+     * @param file_head_ptr file head pointer
+     */
+    inline void write_header(MPI_File fh, std::string s, u64 &file_head_ptr) {
+
+        write_header_val(fh, s.size(), file_head_ptr);
+        write_header_raw(fh, s, file_head_ptr);
+    }
+
+    /**
+     * @brief Reads a string from a file using MPI and updates the file head pointer.
+     *        The string is preceded by its length.
+     *
+     * @param fh MPI file handle
+     * @param file_head_ptr file head pointer
+     * @return string read from file
+     */
+    inline std::string read_header(MPI_File fh, u64 &file_head_ptr) {
+
+        size_t len    = read_header_val(fh, file_head_ptr);
+        std::string s = read_header_raw(fh, len, file_head_ptr);
+        return s;
+    }
+
+} // namespace shamalgs::collective

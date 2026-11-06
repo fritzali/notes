@@ -1,0 +1,87 @@
+name: Src checks
+
+
+on:
+  workflow_call:
+
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+
+
+jobs:
+
+  base_source_checks:
+    name: "Base source checks"
+    runs-on: ubuntu-latest
+    steps:
+
+    #### Checkout part ####
+    # Checkout merge commit if PR otherwise default
+    - name : Reconfigure git
+      run:  |
+        git config --global --add safe.directory '*'
+        git config --global --list
+
+    - uses: actions/checkout@v7
+      if: github.event_name == 'pull_request_target'
+      with:
+        fetch-depth: 0
+        ref: "refs/pull/${{ github.event.number }}/merge"
+
+    - uses: actions/checkout@v7
+      if: github.event_name != 'pull_request_target'
+      with:
+        fetch-depth: 0
+
+    - name: Show diff against main
+      if: github.event_name == 'pull_request_target'
+      run: git diff ${{ github.event.pull_request.base.sha }} HEAD
+    #### End Checkout part ####
+
+    - uses: actions/setup-python@v5
+      with:
+        python-version: '3.14'
+
+    - uses: pre-commit/action@v3.0.1
+
+    - name: make file comment
+      if: always()
+      run: |
+        echo "## Pre-commit check report" > ./report_a_precommit.md
+
+    - name: make file comment
+      if: success()
+      run: |
+        echo "Pre-commit check: ✅
+        \`\`\`
+        $(pre-commit run --all-files)
+        \`\`\`
+
+        Test pipeline can run.
+        " >> ./report_a_precommit.md
+
+    - name : Generate diff
+      if: failure()
+      run: git diff > diff-pre-commit
+
+    - name : Cat diff
+      if: failure()
+      run: cat diff-pre-commit
+
+    - name: Run pre-commit-report
+      if: failure()
+      run: python3 buildbot/precommit_report.py >> ./report_a_precommit.md
+
+    - name: rm tmpfiles
+      if: failure()
+      run: rm diff-pre-commit log_precommit_*
+
+    - name: Show diff
+      if: failure()
+      run: git diff
+
+    - uses: actions/upload-artifact@v7
+      if: always()
+      with:
+        name: report_precommit
+        path: ./report_a_precommit.md

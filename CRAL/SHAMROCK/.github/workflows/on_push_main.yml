@@ -1,0 +1,53 @@
+name: On Push
+
+# Controls when the workflow will run
+on:
+  # Triggers the workflow on push or pull request events but only for the "main" branch
+  push:
+    branches:
+      - main
+      - release/*
+
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+
+  check_codecov_secret:
+    name: Check Codecov secret
+    runs-on: ubuntu-latest
+    steps:
+      - name: Debug Codecov token
+        run: |
+          if [ -z "${{ secrets.CODECOV_TOKEN }}" ]; then
+            echo "TOKEN IS EMPTY"
+            exit 1
+          else
+            echo "TOKEN EXISTS"
+          fi
+
+  main_workflow:
+    name: CI
+    uses: ./.github/workflows/main_workflow.yml
+    secrets:
+      CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+    with:
+      run_build_push_docker: true
+      light_ci: false
+
+  collect_metrics:
+    name: Collect metrics
+    needs: [main_workflow]
+    uses: ./.github/workflows/collect_metrics.yml
+
+  upload_metrics_history:
+    name: Upload metrics history
+    needs: [collect_metrics]
+    permissions:
+      contents: write
+    uses: ./.github/workflows/upload_metrics_history.yml
+    with:
+      push: true

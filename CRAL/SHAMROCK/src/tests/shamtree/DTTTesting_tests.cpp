@@ -1,0 +1,498 @@
+// -------------------------------------------------------//
+//
+// SHAMROCK code for hydrodynamics
+// Copyright (c) 2021-2026 Timothée David--Cléris <tim.shamrock@proton.me>
+// SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
+// Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
+//
+// -------------------------------------------------------//
+
+#include "shambase/time.hpp"
+#include "shamalgs/impl_registry.hpp"
+#include "shamalgs/primitives/mock_vector.hpp"
+#include "shambackends/DeviceBuffer.hpp"
+#include "shambackends/fmt_bindings/fmt_defs.hpp"
+#include "shambackends/math.hpp"
+#include "shambackends/vec.hpp"
+#include "shamcomm/logs.hpp"
+#include "shammath/AABB.hpp"
+#include "shamsys/NodeInstance.hpp"
+#include "shamtest/shamtest.hpp"
+#include "shamtree/CLBVHDualTreeTraversal.hpp"
+#include "shamtree/CellIterator.hpp"
+#include "shamtree/CompressedLeafBVH.hpp"
+#include "shamtree/details/dtt_reference.hpp"
+#include <set>
+#include <vector>
+
+using Tmorton = u64;
+using Tvec    = f64_3;
+using Tscal   = shambase::VecComponent<Tvec>;
+
+inline void test_is_symmetric(const std::vector<u32_2> &interactions) {
+    std::set<std::pair<u32, u32>> unique_pairs;
+
+    for (const auto &interaction : interactions) {
+        unique_pairs.insert({interaction.x(), interaction.y()});
+    }
+
+    REQUIRE_EQUAL(unique_pairs.size(), interactions.size());
+
+    u32 offenses = 0;
+    for (const auto &interaction : interactions) {
+        const auto reversed = std::pair<u32, u32>{interaction.y(), interaction.x()};
+        if (!unique_pairs.count(reversed)) {
+            offenses++;
+        }
+    }
+
+    // here we check only on the number of offences to avoid having giant logs
+    REQUIRE_EQUAL(offenses, 0);
+}
+
+inline bool is_sort_equal(std::vector<u32_2> a, std::vector<u32_2> b) {
+    if (a.size() != b.size()) {
+        return false;
+    }
+
+    auto a_copy = a;
+    auto b_copy = b;
+
+    std::sort(a_copy.begin(), a_copy.end(), [](u32_2 a, u32_2 b) {
+        return (a.x() == b.x()) ? (a.y() < b.y()) : (a.x() < b.x());
+    });
+    std::sort(b_copy.begin(), b_copy.end(), [](u32_2 a, u32_2 b) {
+        return (a.x() == b.x()) ? (a.y() < b.y()) : (a.x() < b.x());
+    });
+
+    for (u32 i = 0; i < a_copy.size(); i++) {
+        if (!sham::equals(a_copy[i], b_copy[i])) {
+            return false;
+        }
+    }
+    return true;
+}
+
+template<class Tvec, class Tscal>
+inline Tscal mac(shammath::AABB<Tvec> a, shammath::AABB<Tvec> b) {
+    Tvec s_a      = (a.upper - a.lower);
+    Tvec s_b      = (b.upper - b.lower);
+    Tvec r_a      = (a.upper + a.lower) / 2;
+    Tvec r_b      = (b.upper + b.lower) / 2;
+    Tvec delta_ab = r_a - r_b;
+
+    Tscal delta_ab_sq = sham::dot(delta_ab, delta_ab);
+
+    if (delta_ab_sq == 0) {
+        return 100000000;
+    }
+
+    Tscal s_a_sq = sham::dot(s_a, s_a);
+    Tscal s_b_sq = sham::dot(s_b, s_b);
+
+    Tscal theta_sq = (sycl::sqrt(s_a_sq) + sycl::sqrt(s_b_sq)) / sycl::sqrt(delta_ab_sq);
+
+    return theta_sq;
+}
+
+inline std::vector<f64> compute_theta_interactions(
+    const shamtree::CompressedLeafBVH<Tmorton, Tvec, 3> &bvh,
+    const std::vector<u32_2> &interactions) {
+
+    auto trav = bvh.get_traverser_host();
+
+    auto &aabb_min = trav.aabb_min;
+    auto &aabb_max = trav.aabb_max;
+
+    std::vector<f64> theta_interactions;
+    for (auto &interaction : interactions) {
+        u32 id_a = interaction.x();
+        u32 id_b = interaction.y();
+
+        shammath::AABB<Tvec> aabb_a = {aabb_min[id_a], aabb_max[id_a]};
+        shammath::AABB<Tvec> aabb_b = {aabb_min[id_b], aabb_max[id_b]};
+
+        f64 theta = mac<f64_3, f64>(aabb_a, aabb_b);
+
+        if (theta == 100000000) {
+            continue;
+        }
+        theta_interactions.push_back(theta);
+    }
+    return theta_interactions;
+}
+
+inline void validate_dtt_results(
+    const sham::DeviceBuffer<Tvec> &positions,
+    const shamtree::CompressedLeafBVH<Tmorton, Tvec, 3> &bvh,
+    Tscal theta_crit,
+    shamtree::DTTResult &result,
+    bool ordered_result,
+    const std::vector<u32_2> &m2l_ref,
+    const std::vector<u32_2> &p2p_ref) {
+
+    __shamrock_stack_entry();
+
+    std::vector<u32_2> internal_node_interactions = result.node_interactions_m2l.copy_to_stdvec();
+    std::vector<u32_2> unrolled_interact          = result.node_interactions_p2p.copy_to_stdvec();
+
+    REQUIRE_EQUAL(internal_node_interactions.size(), m2l_ref.size());
+    REQUIRE_EQUAL(unrolled_interact.size(), p2p_ref.size());
+
+    REQUIRE_EQUAL_CUSTOM_COMP(internal_node_interactions, m2l_ref, is_sort_equal);
+    REQUIRE_EQUAL_CUSTOM_COMP(unrolled_interact, p2p_ref, is_sort_equal);
+
+    u32 Npart    = positions.get_size();
+    u32 Npart_sq = Npart * Npart;
+
+    logger::raw_ln(
+        "node/node               :",
+        internal_node_interactions.size(),
+        " ratio :",
+        (double) internal_node_interactions.size() / Npart_sq);
+    logger::raw_ln(
+        "P2P                     :",
+        unrolled_interact.size(),
+        " ratio :",
+        (double) unrolled_interact.size() / Npart_sq);
+
+    shamtree::CellIteratorHost cell_it_bind = bvh.get_cell_iterator_host();
+    auto cell_it                            = cell_it_bind.get_read_access();
+
+    std::vector<std::tuple<u32, u32>> part_interact_node_node{};
+    std::vector<std::tuple<u32, u32>> part_interact_leaf_leaf{};
+
+    if (ordered_result) {
+        logger::raw_ln("testing ordered result");
+
+        REQUIRE(result.is_ordered());
+        REQUIRE(bool(result.ordered_result));
+
+        if (result.ordered_result.has_value()) {
+
+            auto test_ordered = [](std::vector<u32_2> &part_interact) {
+                u32 offenses = 0;
+
+                u32 last_id_a = 0;
+                for (auto r : part_interact) {
+                    u32 id_a = r.x();
+                    u32 id_b = r.y();
+
+                    if (id_a < last_id_a) {
+                        offenses++;
+                    }
+
+                    last_id_a = id_a;
+                }
+                return offenses;
+            };
+
+            REQUIRE_EQUAL(test_ordered(unrolled_interact), 0);
+            REQUIRE_EQUAL(test_ordered(internal_node_interactions), 0);
+
+            auto m2l = result.node_interactions_m2l.copy_to_stdvec();
+            auto p2p = result.node_interactions_p2p.copy_to_stdvec();
+
+            auto m2l_offset = result.ordered_result->offset_m2l.copy_to_stdvec();
+            auto p2p_offset = result.ordered_result->offset_p2p.copy_to_stdvec();
+
+            // test that if I look in slot i I find only stuff with i in x part
+
+            u32 m2l_sorting_offenses = 0;
+            for (u32 i = 0; i < Npart; i++) {
+                for (u32 j = m2l_offset[i]; j < m2l_offset[i + 1]; j++) {
+                    u32_2 interact = m2l[j];
+                    if (interact.x() != i) {
+                        m2l_sorting_offenses++;
+                    }
+                }
+            }
+
+            u32 p2p_sorting_offenses = 0;
+            for (u32 i = 0; i < Npart; i++) {
+                for (u32 j = p2p_offset[i]; j < p2p_offset[i + 1]; j++) {
+                    u32_2 interact = p2p[j];
+                    if (interact.x() != i) {
+                        p2p_sorting_offenses++;
+                    }
+                }
+            }
+
+            REQUIRE_EQUAL(m2l_sorting_offenses, 0);
+            REQUIRE_EQUAL(p2p_sorting_offenses, 0);
+        }
+
+    } else {
+        REQUIRE(!result.is_ordered());
+        REQUIRE(!bool(result.ordered_result));
+    }
+
+    for (auto r : internal_node_interactions) {
+
+        u32 node_a = r.x();
+        u32 node_b = r.y();
+
+        cell_it.for_each_in_cell(node_a, [&](u32 id_a) {
+            cell_it.for_each_in_cell(node_b, [&](u32 id_b) {
+                part_interact_node_node.push_back({id_a, id_b});
+            });
+        });
+    }
+
+    for (auto r : unrolled_interact) {
+
+        u32 leaf_a = r.x();
+        u32 leaf_b = r.y();
+
+        cell_it.for_each_in_cell(leaf_a, [&](u32 id_a) {
+            cell_it.for_each_in_cell(leaf_b, [&](u32 id_b) {
+                part_interact_leaf_leaf.push_back({id_a, id_b});
+            });
+        });
+    }
+
+    logger::raw_ln(
+        "part interact node/node :",
+        part_interact_node_node.size(),
+        " ratio :",
+        (double) part_interact_node_node.size() / Npart_sq);
+    logger::raw_ln(
+        "part interact leaf/leaf :",
+        part_interact_leaf_leaf.size(),
+        " ratio :",
+        (double) part_interact_leaf_leaf.size() / Npart_sq);
+
+    logger::raw_ln("sum :", part_interact_node_node.size() + part_interact_leaf_leaf.size());
+
+    std::set<std::pair<u32, u32>> part_interact{};
+    // insert both sets
+    for (auto [id_a, id_b] : part_interact_node_node) {
+        part_interact.insert({id_a, id_b});
+    }
+    for (auto [id_a, id_b] : part_interact_leaf_leaf) {
+        part_interact.insert({id_a, id_b});
+    }
+
+    u32 missing_pairs = 0;
+    // now check that all pairs exist in that list
+    for (u32 i = 0; i < Npart; i++) {
+        for (u32 j = 0; j < Npart; j++) {
+            if (part_interact.find({i, j}) == part_interact.end()) {
+                // logger::raw_ln("pair not found :", i, j);
+                missing_pairs++;
+            }
+        }
+    }
+
+    REQUIRE_EQUAL(missing_pairs, 0);
+    REQUIRE_EQUAL(part_interact.size(), Npart_sq);
+
+    test_is_symmetric(internal_node_interactions);
+    test_is_symmetric(unrolled_interact);
+
+    auto theta_m2l = compute_theta_interactions(bvh, internal_node_interactions);
+    auto theta_p2p = compute_theta_interactions(bvh, unrolled_interact);
+
+    f64 quiet_nan = std::numeric_limits<Tscal>::quiet_NaN();
+
+    f64 theta_max_m2l = (theta_m2l.size() > 0)
+                            ? *std::max_element(theta_m2l.begin(), theta_m2l.end())
+                            : quiet_nan;
+    f64 theta_max_p2p = (theta_p2p.size() > 0)
+                            ? *std::max_element(theta_p2p.begin(), theta_p2p.end())
+                            : quiet_nan;
+
+    f64 theta_min_m2l = (theta_m2l.size() > 0)
+                            ? *std::min_element(theta_m2l.begin(), theta_m2l.end())
+                            : quiet_nan;
+    f64 theta_min_p2p = (theta_p2p.size() > 0)
+                            ? *std::min_element(theta_p2p.begin(), theta_p2p.end())
+                            : quiet_nan;
+
+    f64 theta_avg_m2l
+        = (theta_m2l.size() > 0)
+              ? std::accumulate(theta_m2l.begin(), theta_m2l.end(), 0.0) / theta_m2l.size()
+              : quiet_nan;
+    f64 theta_avg_p2p
+        = (theta_p2p.size() > 0)
+              ? std::accumulate(theta_p2p.begin(), theta_p2p.end(), 0.0) / theta_p2p.size()
+              : quiet_nan;
+
+    logger::raw_ln("theta_crit :", theta_crit);
+    logger::raw_ln("theta_max_m2l :", theta_max_m2l);
+    logger::raw_ln("theta_max_p2p :", theta_max_p2p);
+
+    logger::raw_ln("theta_min_m2l :", theta_min_m2l);
+    logger::raw_ln("theta_min_p2p :", theta_min_p2p);
+
+    logger::raw_ln("theta_avg_m2l :", theta_avg_m2l);
+    logger::raw_ln("theta_avg_p2p :", theta_avg_p2p);
+
+    logger::raw_ln("M2L per cell :", theta_m2l.size() / f64(bvh.structure.get_total_cell_count()));
+    logger::raw_ln("P2P per cell :", theta_p2p.size() / f64(bvh.structure.get_total_cell_count()));
+
+    logger::raw_ln("M2L per part :", theta_m2l.size() / f64(positions.get_size()));
+    logger::raw_ln("P2P per part :", theta_p2p.size() / f64(positions.get_size()));
+}
+
+void dtt_test(
+    u32 Npart,
+    u32 reduction_level,
+    Tscal theta_crit,
+    bool ordered_result,
+    bool allow_leaf_lowering) {
+    __shamrock_stack_entry();
+
+    logger::raw_ln(
+        sham::format(
+            "dtt test --- Npart : {}, reduction_level : {}, theta_crit : {}, ordered_result : {}, "
+            "allow_leaf_lowering : {}",
+            Npart,
+            reduction_level,
+            theta_crit,
+            ordered_result,
+            allow_leaf_lowering));
+
+    auto dev_sched = shamsys::instance::get_compute_scheduler_ptr();
+    auto &q        = dev_sched->get_queue();
+
+    shammath::AABB<Tvec> bb = shammath::AABB<Tvec>({-1, -1, -1}, {1, 1, 1});
+
+    // build a vector of random positions
+    std::vector<Tvec> positions
+        = shamalgs::primitives::mock_vector<Tvec>(0x111, Npart, bb.lower, bb.upper);
+
+    sham::DeviceBuffer<Tvec> partpos_buf(positions.size(), dev_sched);
+    partpos_buf.copy_from_stdvec(positions);
+
+    auto bvh = shamtree::CompressedLeafBVH<Tmorton, Tvec, 3>::make_empty(dev_sched);
+
+    bvh.rebuild_from_positions(partpos_buf, bb, reduction_level);
+
+    std::vector<u32_2> m2l_ref{};
+    std::vector<u32_2> p2p_ref{};
+
+    auto equals_unordered = [](std::vector<u32_2> a, std::vector<u32_2> b) -> bool {
+        if (a.size() != b.size()) {
+            return false;
+        }
+
+        auto comp = [](const u32_2 &v1, const u32_2 &v2) {
+            if (v1.x() != v2.x())
+                return v1.x() < v2.x();
+            return v1.y() < v2.y();
+        };
+
+        std::sort(a.begin(), a.end(), comp);
+        std::sort(b.begin(), b.end(), comp);
+
+        return sham::equals(a, b);
+    };
+
+    {
+        shambase::Timer timer;
+        timer.start();
+        auto result = shamtree::details::DTTCpuReference<Tmorton, Tvec, 3>::dtt(
+            shamsys::instance::get_compute_scheduler_ptr(),
+            bvh,
+            theta_crit,
+            ordered_result,
+            allow_leaf_lowering);
+        timer.stop();
+        logger::raw_ln("DTTCpuReference :", timer.get_time_str());
+
+        m2l_ref = result.node_interactions_m2l.copy_to_stdvec();
+        p2p_ref = result.node_interactions_p2p.copy_to_stdvec();
+
+        validate_dtt_results(
+            partpos_buf, bvh, theta_crit, result, ordered_result, m2l_ref, p2p_ref);
+    }
+
+    if (!shamalgs::impl_registry::is_impl_set("clbvh_dual_tree_traversal")) {
+        shamalgs::impl_registry::autoselect_impl(
+            "clbvh_dual_tree_traversal", shamsys::instance::get_compute_scheduler_ptr());
+    }
+    auto current_impl = shamalgs::impl_registry::get_current_impl("clbvh_dual_tree_traversal");
+
+    for (const std::string &impl :
+         shamalgs::impl_registry::get_default_impl_list("clbvh_dual_tree_traversal")) {
+        shamalgs::impl_registry::set_impl("clbvh_dual_tree_traversal", impl);
+
+        shambase::Timer timer;
+        timer.start();
+        auto result = shamtree::clbvh_dual_tree_traversal(
+            shamsys::instance::get_compute_scheduler_ptr(),
+            bvh,
+            theta_crit,
+            ordered_result,
+            allow_leaf_lowering);
+        timer.stop();
+        logger::raw_ln(impl, " :", timer.get_time_str());
+
+        validate_dtt_results(
+            partpos_buf, bvh, theta_crit, result, ordered_result, m2l_ref, p2p_ref);
+
+        std::vector<u32_2> internal_node_interactions
+            = result.node_interactions_m2l.copy_to_stdvec();
+        std::vector<u32_2> unrolled_interact = result.node_interactions_p2p.copy_to_stdvec();
+
+        REQUIRE_EQUAL_CUSTOM_COMP(internal_node_interactions, m2l_ref, equals_unordered);
+        REQUIRE_EQUAL_CUSTOM_COMP(unrolled_interact, p2p_ref, equals_unordered);
+    }
+
+    // reset to current impl
+    shamalgs::impl_registry::set_impl("clbvh_dual_tree_traversal", current_impl);
+}
+
+inline void dtt_test_empty(bool ordered_result, bool allow_leaf_lowering) {
+    __shamrock_stack_entry();
+
+    auto dev_sched = shamsys::instance::get_compute_scheduler_ptr();
+    auto &q        = dev_sched->get_queue();
+    auto bvh       = shamtree::CompressedLeafBVH<Tmorton, Tvec, 3>::make_empty(dev_sched);
+
+    if (!shamalgs::impl_registry::is_impl_set("clbvh_dual_tree_traversal")) {
+        shamalgs::impl_registry::autoselect_impl(
+            "clbvh_dual_tree_traversal", shamsys::instance::get_compute_scheduler_ptr());
+    }
+    auto current_impl = shamalgs::impl_registry::get_current_impl("clbvh_dual_tree_traversal");
+
+    for (const std::string &impl :
+         shamalgs::impl_registry::get_default_impl_list("clbvh_dual_tree_traversal")) {
+        shamalgs::impl_registry::set_impl("clbvh_dual_tree_traversal", impl);
+
+        auto run_dtt = [&]() {
+            shamtree::clbvh_dual_tree_traversal(
+                shamsys::instance::get_compute_scheduler_ptr(),
+                bvh,
+                0.5,
+                ordered_result,
+                allow_leaf_lowering);
+        };
+
+        REQUIRE_EXCEPTION_THROW(run_dtt(), std::invalid_argument);
+    }
+    // reset to current impl
+    shamalgs::impl_registry::set_impl("clbvh_dual_tree_traversal", current_impl);
+}
+
+inline void dtt_tests(bool ordered_result, bool allow_leaf_lowering) {
+    __shamrock_stack_entry();
+    // dtt_test(50000, 1, 0.5, ordered_result, allow_leaf_lowering);
+    dtt_test(1000, 1, 0.5, ordered_result, allow_leaf_lowering);
+    dtt_test(1000, 1, 0.0, ordered_result, allow_leaf_lowering);
+    dtt_test(1, 1, 0.5, ordered_result, allow_leaf_lowering);
+    dtt_test_empty(ordered_result, allow_leaf_lowering);
+}
+
+NEW_TEST(Unittest, "shamtree::clbvh_dual_tree_traversal(unordered)", 1) { dtt_tests(false, false); }
+
+NEW_TEST(Unittest, "shamtree::clbvh_dual_tree_traversal(ordered)", 1) { dtt_tests(true, false); }
+
+NEW_TEST(Unittest, "shamtree::clbvh_dual_tree_traversal(unordered, allow_leaf_lowering)", 1) {
+    dtt_tests(false, true);
+}
+
+NEW_TEST(Unittest, "shamtree::clbvh_dual_tree_traversal(ordered, allow_leaf_lowering)", 1) {
+    dtt_tests(true, true);
+}

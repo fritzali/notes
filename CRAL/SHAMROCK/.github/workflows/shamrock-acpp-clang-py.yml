@@ -1,0 +1,116 @@
+name: Acpp/clang (pylib)
+
+
+on:
+  workflow_call:
+
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+
+jobs:
+
+
+  shamrock_acpp:
+    name: AdaptiveCpp clang-${{ matrix.clang }} ${{ matrix.backend }}:${{matrix.arch}} ${{matrix.label}} (pylib)
+    runs-on: ubuntu-latest
+
+    container:
+      image: ${{ matrix.container }}
+
+    strategy:
+      matrix:
+        include:
+          - clang: 15
+            backend: omp
+            arch: none
+            runtest: yes
+            label: "ubuntu 22"
+            container: ghcr.io/shamrock-code/shamrock-ci:ubuntu22
+          - clang: 18
+            backend: omp
+            arch: none
+            runtest: yes
+            label: "ubuntu 24"
+            container: ghcr.io/shamrock-code/shamrock-ci:ubuntu24
+
+    timeout-minutes: 180
+    steps:
+      #### Checkout part ####
+      # Checkout merge commit if PR otherwise default
+      - name : Reconfigure git
+        run:  |
+          git config --global --add safe.directory '*'
+          git config --global --list
+      - uses: actions/checkout@v7
+        if: github.event_name == 'pull_request_target'
+        with:
+          fetch-depth: 0
+          submodules: recursive
+          ref: "refs/pull/${{ github.event.number }}/merge"
+
+      - uses: actions/checkout@v7
+        if: github.event_name != 'pull_request_target'
+        with:
+          fetch-depth: 0
+          submodules: recursive
+
+      - name: Show diff against main
+        if: github.event_name == 'pull_request_target'
+        run: git diff ${{ github.event.pull_request.base.sha }} HEAD
+      #### End Checkout part ####
+
+      - name: ls local
+        run : ls -la
+
+      - name: install LLVM
+        run: |
+          echo "APT::Acquire::Retries \"10\";" | sudo tee -a /etc/apt/apt.conf.d/80-retries
+          sudo apt update && \
+          ./tools/apt_install_llvm.sh ${{matrix.clang}}
+
+      # if ubuntu container
+      - name : Install ubuntu dependencies
+        run: |
+          sudo ln -fs /usr/share/zoneinfo/Europe/Paris /etc/localtime
+          export DEBIAN_FRONTEND=noninteractive
+          sudo apt update
+          sudo apt remove -y texlive-full
+          sudo apt-get install -y \
+            texlive-latex-base \
+            texlive-latex-recommended \
+            texlive-latex-extra \
+            texlive-fonts-recommended \
+            dvipng \
+            ghostscript
+
+      - name: install ffmpeg
+        run: |
+          sudo apt install -y ffmpeg
+
+      - name: install gfortran (for run_compare_shamrock_ph_disc.py)
+        run: |
+          sudo apt install -y gfortran
+
+      - name: Setup env
+        run : |
+          ./env/new-env --machine debian-generic.acpp --builddir build -- --backend ${{ matrix.backend }} --arch ${{ matrix.arch }}
+
+      - name: Init py venv
+        run :  |
+          python3 -m venv .pyvenv
+
+      # -e was removed as shamrock executable is not installed otherwise
+      - name: Pip install Shamrock
+        shell: bash # In docker container github action default to sh
+        run : |
+          source .pyvenv/bin/activate
+          cd build
+          pip install --verbose .
+
+      - name: Try shamrock startup
+        shell: bash # In docker container github action default to sh
+        run: |
+          source .pyvenv/bin/activate
+          ACPP_VISIBILITY_MASK=omp \
+          ACPP_DEBUG_LEVEL=3 \
+          python3 -c "import shamrock;shamrock.change_loglevel(125);shamrock.sys.init('0:0')"

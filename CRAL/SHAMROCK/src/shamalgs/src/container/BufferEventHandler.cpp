@@ -1,0 +1,141 @@
+// -------------------------------------------------------//
+//
+// SHAMROCK code for hydrodynamics
+// Copyright (c) 2021-2026 Timothée David--Cléris <tim.shamrock@proton.me>
+// SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
+// Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
+//
+// -------------------------------------------------------//
+
+/**
+ * @file BufferEventHandler.cpp
+ * @author Timothée David--Cléris (tim.shamrock@proton.me)
+ * @brief
+ *
+ */
+
+#include "shamalgs/container/BufferEventHandler.hpp"
+#include "shamcomm/logs.hpp"
+#include <random>
+
+u32 shamalgs::gen_buf_hash() {
+    constexpr u32 u32_max = 0xFFFFFFFF;
+    static std::mt19937 gengine{0};
+    return std::uniform_int_distribution<u32>(0, u32_max)(gengine);
+}
+
+void shamalgs::BufferEventHandler::add_read_dependancies(std::vector<sycl::event> &depends_list) {
+
+    if (!up_to_date_events) {
+        std::string err
+            = get_hash_log()
+              + "cannot create a read dependency: the event state was not updated after the "
+                "last event usage";
+
+        throw shambase::make_except_with_loc<std::runtime_error>(err);
+    }
+
+    up_to_date_events = false;
+    last_event_create = READ;
+
+    depends_list.push_back(event_last_write);
+
+    shamlog_debug_sycl_ln("[USMBuffer]", get_hash_log(), "add read dependency");
+}
+
+void shamalgs::BufferEventHandler::add_read_write_dependancies(
+    std::vector<sycl::event> &depends_list) {
+
+    if (!up_to_date_events) {
+        std::string err
+            = get_hash_log()
+              + "cannot create a read-write dependency: the event state was not updated after "
+                "the last event usage";
+
+        throw shambase::make_except_with_loc<std::runtime_error>(err);
+    }
+
+    up_to_date_events = false;
+    last_event_create = READ_WRITE;
+
+    depends_list.push_back(event_last_write);
+    for (const sycl::event &e : event_last_read) {
+        depends_list.push_back(e);
+    }
+    shamlog_debug_sycl_ln("[USMBuffer]", get_hash_log(), "add read write dependency");
+
+    event_last_read  = {};
+    event_last_write = {};
+
+    shamlog_debug_sycl_ln("[USMBuffer]", get_hash_log(), "reset event list");
+}
+
+void shamalgs::BufferEventHandler::register_read_event(const sycl::event &e) {
+
+    if (up_to_date_events) {
+        std::string err
+            = (get_hash_log()
+               + "cannot register a read event: no dependency was fetched before this "
+                 "registration");
+
+        throw shambase::make_except_with_loc<std::runtime_error>(err);
+    }
+
+    if (last_event_create != READ) {
+        std::string err
+            = (get_hash_log()
+               + "cannot register a read event: the last dependency created was not a read "
+                 "dependency");
+
+        throw shambase::make_except_with_loc<std::runtime_error>(err);
+    }
+
+    up_to_date_events = true;
+    event_last_read.push_back(e);
+
+    shamlog_debug_sycl_ln("[USMBuffer]", get_hash_log(), "append last read");
+}
+
+void shamalgs::BufferEventHandler::register_read_write_event(const sycl::event &e) {
+    shamlog_debug_sycl_ln("[USMBuffer]", get_hash_log(), "set last write");
+    if (up_to_date_events) {
+        std::string err
+            = (get_hash_log()
+               + "cannot register a read-write event: no dependency was fetched before this "
+                 "registration");
+
+        throw shambase::make_except_with_loc<std::runtime_error>(err);
+    }
+
+    if (last_event_create != READ_WRITE) {
+        std::string err
+            = (get_hash_log()
+               + "cannot register a read-write event: the last dependency created was not a "
+                 "read-write dependency");
+
+        throw shambase::make_except_with_loc<std::runtime_error>(err);
+    }
+
+    up_to_date_events = true;
+    event_last_write  = e;
+}
+
+void shamalgs::BufferEventHandler::synchronize() {
+
+    shamlog_debug_sycl_ln("[USMBuffer]", get_hash_log(), "synchronize");
+
+    if (!up_to_date_events) {
+        std::string err
+            = (get_hash_log() + "cannot synchronize: the event state is not up to date");
+
+        throw shambase::make_except_with_loc<std::runtime_error>(err);
+    }
+
+    event_last_write.wait_and_throw();
+    for (sycl::event e : event_last_read) {
+        e.wait_and_throw();
+    }
+
+    event_last_read  = {};
+    event_last_write = {};
+}

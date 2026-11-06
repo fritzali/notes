@@ -1,0 +1,231 @@
+// -------------------------------------------------------//
+//
+// SHAMROCK code for hydrodynamics
+// Copyright (c) 2021-2026 Timothée David--Cléris <tim.shamrock@proton.me>
+// SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
+// Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
+//
+// -------------------------------------------------------//
+
+/**
+ * @file GeneratorMCDisc.cpp
+ * @author Timothée David--Cléris (tim.shamrock@proton.me)
+ * @author Yona Lapeyre (yona.lapeyre@ens-lyon.fr)
+ * @brief
+ *
+ */
+
+#include "shambase/constants.hpp"
+#include "shambase/exception.hpp"
+#include "sham/format/format.hpp"
+#include "shamalgs/collective/indexing.hpp"
+#include "shamalgs/random.hpp"
+#include "shammodels/sph/math/density.hpp"
+#include "shammodels/sph/modules/setup/GeneratorMCDisc.hpp"
+
+template<class Tvec, template<class> class SPHKernel>
+auto shammodels::sph::modules::GeneratorMCDisc<Tvec, SPHKernel>::DiscIterator::compute_fmax()
+    -> Tscal {
+    // f_func is not necessarily monotonic so the rejection sampling
+    // envelope has to be the max over the whole range, not f_func(r_out)
+
+    // dichotomic search of the max of f_func (assumed unimodal) on [r_in, r_out]
+    constexpr Tscal rel_tol = 1e-8;
+    constexpr u32 max_iter  = 200;
+
+    Tscal a = r_in;
+    Tscal b = r_out;
+
+    Tscal f_prev = sycl::fmax(f_func(a), f_func(b));
+    Tscal f_est  = f_prev;
+
+    for (u32 iter = 0; iter < max_iter; iter++) {
+        Tscal m     = (a + b) / 2;
+        Tscal delta = (b - a) * Tscal(1e-3);
+
+        Tscal f1 = f_func(m - delta);
+        Tscal f2 = f_func(m + delta);
+
+        // keep the half containing the max
+        if (f1 < f2) {
+            a = m - delta;
+        } else {
+            b = m + delta;
+        }
+
+        f_est = sycl::fmax(f1, f2);
+
+        if (sycl::fabs(f_est - f_prev) <= rel_tol * sycl::fabs(f_est)) {
+            break;
+        }
+        f_prev = f_est;
+    }
+
+    // the max may sit on the boundary if f_func is monotonic
+    return sycl::fmax(f_est, sycl::fmax(f_func(r_in), f_func(r_out)));
+}
+
+template<class Tvec, template<class> class SPHKernel>
+auto shammodels::sph::modules::GeneratorMCDisc<Tvec, SPHKernel>::DiscIterator::next(u64 seed)
+    -> DiscOutput {
+
+    std::mt19937_64 eng_local(seed); // ensure that 1 part = 1 random draw
+
+    auto find_r = [&]() {
+        while (true) {
+            Tscal u2 = shamalgs::primitives::mock_value<Tscal>(eng_local, 0, fmax);
+            Tscal r  = shamalgs::primitives::mock_value<Tscal>(eng_local, r_in, r_out);
+            Tscal f  = f_func(r);
+            // fmax is only converged to a relative 1e-8, so allow for slight overshoots.
+            // A larger one means the max was missed (f_func not unimodal) and the sampled
+            // distribution would be silently biased
+            if (f > fmax * Tscal(1 + 1e-6)) {
+                throw shambase::make_except_with_loc<std::runtime_error>(sham::format(
+                    "GeneratorMCDisc: r * sigma_profile(r) = {} at r = {} exceeds the "
+                    "rejection sampling bound fmax = {}",
+                    f,
+                    r,
+                    fmax));
+            }
+            if (u2 < f) {
+                return r;
+            }
+        }
+    };
+
+    auto theta = shamalgs::primitives::mock_value<Tscal>(eng_local, 0, _2pi);
+    auto Gauss = shamalgs::random::mock_gaussian<Tscal>(eng_local);
+
+    // depends on sigma profile
+    Tscal r     = find_r();
+    Tscal sigma = sigma_profile(r);
+
+    // depends on H profile & sigma profile (through r)
+    Tscal H = H_profile(r);
+    Tscal z = H * Gauss;
+
+    auto pos = sycl::vec<Tscal, 3>{r * sycl::cos(theta), r * sycl::sin(theta), z};
+
+    // extrapolate the density from sigma profile
+    Tscal fs  = 1;
+    Tscal rho = (sigma * fs) * sycl::exp(-z * z / (2 * H * H));
+
+    DiscOutput out{.pos = pos, .rho = rho};
+
+    // increase counter + check if finished
+    current_index++;
+    if (current_index == Npart) {
+        done = true;
+    }
+
+    return out;
+}
+
+template<class Tvec, template<class> class SPHKernel>
+bool shammodels::sph::modules::GeneratorMCDisc<Tvec, SPHKernel>::is_done() {
+    return generator.is_done();
+}
+
+template<class Tvec, template<class> class SPHKernel>
+shamrock::patch::PatchDataLayer shammodels::sph::modules::GeneratorMCDisc<Tvec, SPHKernel>::next_n(
+    u32 nmax) {
+
+    using namespace shamrock::patch;
+    PatchScheduler &sched = shambase::get_check_ref(context.sched);
+
+    std::vector<DiscOutput> pos_data;
+
+    // Fill pos_data if the scheduler has some patchdata in this rank
+    if (!generator.is_done()) {
+        u64 loc_gen_count = nmax;
+        pos_data          = generator.next_n(loc_gen_count);
+    }
+
+    // extract data from disc output
+    std::vector<Tvec> vec_pos;
+    std::vector<Tscal> vec_rho;
+
+    vec_pos.reserve(pos_data.size());
+    vec_rho.reserve(pos_data.size());
+
+    for (DiscOutput o : pos_data) {
+        vec_pos.push_back(o.pos);
+        vec_rho.push_back(o.rho);
+    }
+
+    // compute the hpart from the rho
+    std::vector<Tscal> vec_h;
+    vec_h.reserve(pos_data.size());
+    for (Tscal rho : vec_rho) {
+        vec_h.push_back(shamrock::sph::h_rho(pmass, rho, Kernel::hfactd) * init_h_factor);
+    }
+
+    // compute velocities
+    std::vector<Tvec> vec_vel;
+    vec_vel.reserve(pos_data.size());
+    for (size_t i = 0; i < vec_pos.size(); i++) {
+        Tvec vel = vel_profile(vec_pos[i]);
+        vec_vel.push_back(vel);
+    }
+
+    // compute the cs
+    bool need_cs = solver_config.is_eos_locally_isothermal();
+
+    std::vector<Tscal> vec_cs;
+    if (need_cs) {
+        if (!cs_profile) {
+            throw shambase::make_except_with_loc<std::invalid_argument>(
+                "With this EOS you need to provide a cs_profile");
+        }
+        vec_cs.reserve(pos_data.size());
+        for (size_t i = 0; i < vec_pos.size(); i++) {
+            Tscal cs = cs_profile(vec_pos[i]);
+            vec_cs.push_back(cs);
+        }
+    }
+
+    // Make a patchdata from pos_data
+    PatchDataLayer tmp(sched.get_layout_ptr_old());
+    if (!pos_data.empty()) {
+        tmp.resize(pos_data.size());
+        tmp.fields_raz();
+
+        {
+            u32 len = pos_data.size();
+            PatchDataField<Tvec> &f
+                = tmp.get_field<Tvec>(sched.pdl_old().get_field_idx<Tvec>("xyz"));
+            f.override(vec_pos, len);
+        }
+
+        {
+            u32 len = pos_data.size();
+            PatchDataField<Tvec> &f
+                = tmp.get_field<Tvec>(sched.pdl_old().get_field_idx<Tvec>("vxyz"));
+            f.override(vec_vel, len);
+        }
+        {
+            u32 len = vec_pos.size();
+            PatchDataField<Tscal> &f
+                = tmp.get_field<Tscal>(sched.pdl_old().get_field_idx<Tscal>("hpart"));
+            f.override(vec_h, len);
+        }
+
+        if (need_cs) {
+            u32 len = vec_pos.size();
+            PatchDataField<Tscal> &f
+                = tmp.get_field<Tscal>(sched.pdl_old().get_field_idx<Tscal>("soundspeed"));
+            f.override(vec_cs, len);
+        }
+    }
+
+    return tmp;
+}
+
+using namespace shammath;
+template class shammodels::sph::modules::GeneratorMCDisc<f64_3, M4>;
+template class shammodels::sph::modules::GeneratorMCDisc<f64_3, M6>;
+template class shammodels::sph::modules::GeneratorMCDisc<f64_3, M8>;
+
+template class shammodels::sph::modules::GeneratorMCDisc<f64_3, C2>;
+template class shammodels::sph::modules::GeneratorMCDisc<f64_3, C4>;
+template class shammodels::sph::modules::GeneratorMCDisc<f64_3, C6>;

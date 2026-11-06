@@ -1,0 +1,6 @@
+coverage_*
+test_report
+log_full*
+
+interfaces_*
+patches_*

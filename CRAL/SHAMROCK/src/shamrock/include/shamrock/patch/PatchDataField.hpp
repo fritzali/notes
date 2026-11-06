@@ -1,0 +1,683 @@
+// -------------------------------------------------------//
+//
+// SHAMROCK code for hydrodynamics
+// Copyright (c) 2021-2026 Timothée David--Cléris <tim.shamrock@proton.me>
+// SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
+// Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
+//
+// -------------------------------------------------------//
+
+#pragma once
+
+/**
+ * @file PatchDataField.hpp
+ * @author Léodasce Sewanou (leodasce.sewanou@ens-lyon.fr)
+ * @author Timothée David--Cléris (tim.shamrock@proton.me)
+ * @brief
+ */
+
+#include "shambase/exception.hpp"
+#include "shambase/memory.hpp"
+#include "shambase/narrowing.hpp"
+#include "shambase/stacktrace.hpp"
+#include "shamalgs/details/numeric/numeric.hpp"
+#include "shamalgs/memory.hpp"
+#include "shamalgs/numeric.hpp"
+#include "shamalgs/serialize.hpp"
+#include "shambackends/DeviceBuffer.hpp"
+#include "shambackends/kernel_call.hpp"
+#include "shambackends/sycl_utils.hpp"
+#include "shamrock/legacy/patch/base/enabled_fields.hpp"
+#include "shamrock/patch/PatchDataFieldSpan.hpp"
+#include "shamsys/NodeInstance.hpp"
+#include "shamsys/legacy/log.hpp"
+#include <array>
+#include <memory>
+#include <random>
+#include <set>
+#include <string>
+#include <utility>
+#include <vector>
+
+template<class T>
+class PatchDataField {
+
+    ///////////////////////////////////
+    // constexpr utilities (using & constexpr vals)
+    ///////////////////////////////////
+
+    static constexpr bool isprimitive = std::is_same<T, f32>::value || std::is_same<T, f64>::value
+                                        || std::is_same<T, u32>::value
+                                        || std::is_same<T, u64>::value;
+
+    // clang-format off
+    static constexpr bool is_in_type_list =
+        #define X(args) std::is_same<T, args>::value ||
+        XMAC_LIST_ENABLED_FIELD false
+        #undef X
+        ;
+
+    static_assert(
+        is_in_type_list,
+        "PatchDataField must be one of those types : "
+
+        #define X(args) #args " "
+        XMAC_LIST_ENABLED_FIELD
+        #undef X
+    );
+    // clang-format on
+
+    template<bool B, class Tb = void>
+    using enable_if_t = typename std::enable_if<B, Tb>;
+
+    using EnableIfPrimitive = enable_if_t<isprimitive>;
+
+    using EnableIfVec = enable_if_t<is_in_type_list && (!isprimitive)>;
+
+    ////////////////////////////////////////////////////////////////////////////////////////////////
+    // member fields
+    ////////////////////////////////////////////////////////////////////////////////////////////////
+
+    sham::DeviceBuffer<T> buf;
+
+    std::string field_name;
+
+    u32 nvar; // number of variable per object
+
+    inline void check_nvar() const {
+        if (nvar == 0) {
+            throw shambase::make_except_with_loc<std::runtime_error>("nvar is 0 is not allowed");
+        }
+    }
+
+    ////////////////////////////////////////////////////////////////////////////////////////////////
+    // Constructors
+    ////////////////////////////////////////////////////////////////////////////////////////////////
+
+    public:
+    inline PatchDataField(PatchDataField &&other) noexcept
+        : buf(std::move(other.buf)), field_name(std::move(other.field_name)),
+          nvar(std::move(other.nvar)) {} // move constructor
+
+    inline PatchDataField &operator=(PatchDataField &&other) noexcept {
+        buf        = std::move(other.buf);
+        field_name = std::move(other.field_name);
+        nvar       = std::move(other.nvar);
+
+        return *this;
+    } // move assignment
+
+    // TODO find a way to add particles easily cf setup require public vector
+
+    using Field_type = T;
+
+    inline PatchDataField(std::string name, u32 nvar)
+        : field_name(std::move(name)), nvar(nvar),
+          buf(0, shamsys::instance::get_compute_scheduler_ptr()) {
+        check_nvar();
+    };
+
+    inline PatchDataField(std::string name, u32 nvar, u32 obj_cnt)
+        : field_name(std::move(name)), nvar(nvar),
+          buf(obj_cnt * nvar, shamsys::instance::get_compute_scheduler_ptr()) {
+        check_nvar();
+    };
+
+    inline PatchDataField(const PatchDataField &other)
+        : field_name(other.field_name), nvar(other.nvar), buf(other.buf.copy()) {
+        check_nvar();
+    }
+
+    inline PatchDataField(sham::DeviceBuffer<T> &&moved_buf, std::string name, u32 nvar)
+        : field_name(name), nvar(nvar), buf(std::forward<sham::DeviceBuffer<T>>(moved_buf)) {
+        check_nvar();
+    }
+
+    PatchDataField &operator=(const PatchDataField &other) = delete;
+
+    ////////////////////////////////////////////////////////////////////////////////////////////////
+    // member functions
+    ////////////////////////////////////////////////////////////////////////////////////////////////
+
+    inline PatchDataField duplicate() const {
+        const PatchDataField &current = *this;
+        return PatchDataField(current);
+    }
+
+    inline PatchDataField duplicate(std::string new_name) const {
+        const PatchDataField &current = *this;
+        PatchDataField ret            = PatchDataField(current);
+        ret.field_name                = new_name;
+        return ret;
+    }
+
+    inline std::unique_ptr<PatchDataField> duplicate_to_ptr() const {
+        const PatchDataField &current = *this;
+        return std::make_unique<PatchDataField>(current);
+    }
+
+    inline sham::DeviceBuffer<T> &get_buf() { return buf; }
+    inline const sham::DeviceBuffer<T> &get_buf() const { return buf; }
+
+    [[nodiscard]] inline bool is_empty() const { return get_obj_cnt() == 0; }
+
+    [[nodiscard]] inline u64 memsize() const { return buf.get_mem_usage(); }
+
+    [[nodiscard]] inline const u32 &get_nvar() const { return nvar; }
+
+    [[nodiscard]] inline u32 get_obj_cnt() const {
+        size_t sz = buf.get_size();
+        if (sz % nvar != 0) {
+            throw shambase::make_except_with_loc<std::runtime_error>(sham::format(
+                "the size of the buffer ({}) is not a multiple of the number of variables ({})",
+                sz,
+                nvar));
+        }
+        return shambase::narrow_or_throw<u32>(sz / nvar);
+    }
+
+    /**
+     * @brief Get the number of values stored in the field.
+     *
+     * This function was introduced to replace the legacy one size() which could be confused with
+     * the of the buffer, which is not required to be the same.
+     *
+     * @return u32 the total number of values of the field, which is the product of the number of
+     * objects and the number of variables per object.
+     */
+    [[nodiscard]] inline u32 get_val_cnt() const {
+        return shambase::narrow_or_throw<u32>(buf.get_size());
+    }
+
+    [[nodiscard]] inline const std::string &get_name() const { return field_name; }
+
+    // TODO add overflow check
+    void resize(u32 new_obj_cnt);
+
+    void reserve(u32 new_obj_cnt);
+
+    void expand(u32 obj_to_add);
+
+    void shrink(u32 obj_to_rem);
+
+    void insert_element(T v);
+
+    void apply_offset(T off);
+
+    void insert(const PatchDataField<T> &f2);
+
+    void overwrite(const PatchDataField<T> &f2, u32 obj_cnt);
+
+    void overwrite(const sham::DeviceBuffer<T> &f2, u32 len);
+
+    void override(sycl::buffer<T> &data, u32 cnt);
+
+    void override(std::vector<T> &data, u32 cnt);
+
+    void override(const T val);
+
+    inline void synchronize_buf() { buf.synchronize(); }
+
+    inline std::vector<T> copy_to_stdvec() {
+        auto tmp = buf.copy_to_stdvec();
+        tmp.resize(get_val_cnt());
+        return tmp;
+    }
+
+    ////////////////////////////////////////////////////////////////////////////////////////////////
+    // Span utilities
+    ////////////////////////////////////////////////////////////////////////////////////////////////
+
+    /**
+     * @brief Returns a shamrock::PatchDataFieldSpan pointing to the current PatchDataField.
+     *
+     * @tparam nvar The number of variables in the span.
+     * @return A shamrock::PatchDataFieldSpan pointing to this PatchDataField.
+     */
+    template<u32 nvar, bool is_pointer_access = shamrock::access_t_span>
+    inline shamrock::PatchDataFieldSpan<T, nvar, is_pointer_access> get_span() {
+        StackEntry stack_loc{};
+        return shamrock::PatchDataFieldSpan<T, nvar, is_pointer_access>(*this, 0, get_obj_cnt());
+    }
+
+    /**
+     * @brief Returns a shamrock::PatchDataFieldSpan pointing to the current PatchDataField.
+     *
+     * @return A shamrock::PatchDataFieldSpan pointing to this PatchDataField with dynamic number
+     * of variables.
+     */
+    inline shamrock::PatchDataFieldSpan<T, shamrock::dynamic_nvar> get_span_nvar_dynamic() {
+        StackEntry stack_loc{};
+        return get_span<shamrock::dynamic_nvar, shamrock::access_t_span>();
+    }
+
+    inline shamrock::PatchDataFieldSpan<T, shamrock::dynamic_nvar, shamrock::access_t_pointer>
+    get_pointer_span() {
+        StackEntry stack_loc{};
+        return get_span<shamrock::dynamic_nvar, shamrock::access_t_pointer>();
+    }
+
+    ////////////////////////////////////////////////////////////////////////////////////////////////
+    // get_subsets utilities
+    ////////////////////////////////////////////////////////////////////////////////////////////////
+
+    /**
+     * @brief Get the ids set where object
+     *
+     * @tparam Lambdacd
+     * @tparam Args
+     * @param cd_true
+     * @param args
+     * @return std::set<u32>
+     */
+    template<class Lambdacd, class... Args>
+    inline std::set<u32> get_ids_set_where(Lambdacd &&cd_true, Args... args) {
+        StackEntry stack_loc{};
+        std::set<u32> idx_cd{};
+        if (get_obj_cnt() > 0) {
+            auto acc = get_buf().copy_to_stdvec();
+
+            for (u32 i = 0; i < get_obj_cnt(); i++) {
+                if (cd_true(acc, i * nvar, args...)) {
+                    idx_cd.insert(i);
+                }
+            }
+        }
+        return idx_cd;
+    }
+
+    /**
+     * @brief Same function as @see PatchDataField#get_ids_set_where but return a std::vector of the
+     * found index
+     *
+     * @tparam Lambdacd
+     * @tparam Args
+     * @param cd_true
+     * @param args
+     * @return std::vector<u32>
+     */
+    template<class Lambdacd, class... Args>
+    inline std::vector<u32> get_ids_vec_where(Lambdacd &&cd_true, Args &&...args) {
+        StackEntry stack_loc{};
+        std::vector<u32> idx_cd{};
+        if (get_obj_cnt() > 0) {
+            auto acc = buf.copy_to_stdvec();
+
+            for (u32 i = 0; i < get_obj_cnt(); i++) {
+                if (std::forward<Lambdacd>(cd_true)(acc, i * nvar, std::forward<Args>(args)...)) {
+                    idx_cd.push_back(i);
+                }
+            }
+        }
+        return idx_cd;
+    }
+
+    /**
+     * @brief Same function as @see PatchDataField#get_ids_set_where but return a optional
+     * sycl::buffer of the found index
+     *
+     * @tparam Lambdacd
+     * @tparam Args
+     * @param cd_true
+     * @param args
+     * @return std::vector<u32>
+     */
+    template<class Lambdacd, class... Args>
+    inline std::tuple<std::optional<sycl::buffer<u32>>, u32> get_ids_buf_where(
+        Lambdacd &&cd_true, Args... args) {
+        StackEntry stack_loc{};
+
+        if (get_obj_cnt() > 0) {
+
+            // buffer of booleans to store result of the condition
+            sycl::buffer<u32> mask(get_obj_cnt());
+
+            sham::EventList depends_list;
+            const T *acc = buf.get_read_access(depends_list);
+
+            sham::DeviceQueue &q = shamsys::instance::get_compute_scheduler().get_queue();
+
+            auto e = q.submit(depends_list, [&, args...](sycl::handler &cgh) {
+                sycl::accessor acc_mask{mask, cgh, sycl::write_only, sycl::no_init};
+                u32 nvar_field = nvar;
+
+                shambase::parallel_for(
+                    cgh, get_obj_cnt(), "PatchdataField::get_ids_buf_where", [=](u32 id) {
+                        acc_mask[id] = cd_true(acc, id * nvar_field, args...);
+                    });
+            });
+
+            buf.complete_event_state(e);
+
+            return shamalgs::numeric::stream_compact(
+                shamsys::instance::get_compute_queue(), mask, get_obj_cnt());
+        } else {
+            return {std::nullopt, 0};
+        }
+    }
+
+    template<class Lambdacd, class... Args>
+    inline sham::DeviceBuffer<u32> get_ids_where_recycle_buffer(
+        sham::DeviceBuffer<u32> &mask, Lambdacd &&cd_true, Args... args) const {
+        StackEntry stack_loc{};
+
+        auto dev_sched       = shamsys::instance::get_compute_scheduler_ptr();
+        sham::DeviceQueue &q = shambase::get_check_ref(dev_sched).get_queue();
+
+        auto obj_cnt = get_obj_cnt();
+        if (obj_cnt > 0) {
+            // buffer of booleans to store result of the condition
+            mask.resize(obj_cnt);
+
+            sham::kernel_call(
+                q,
+                sham::MultiRef{buf},
+                sham::MultiRef{mask},
+                obj_cnt,
+                [=, nvar_field = nvar](u32 id, const T *__restrict acc, u32 *__restrict acc_mask) {
+                    acc_mask[id] = cd_true(acc, id * nvar_field, args...);
+                });
+
+            return shamalgs::stream_compact(dev_sched, mask, obj_cnt);
+        } else {
+            return sham::DeviceBuffer<u32>(0, dev_sched);
+        }
+    }
+
+    /**
+     * @brief Same function as @see PatchDataField#get_ids_set_where but return a optional
+     * sycl::buffer of the found index
+     *
+     * @tparam Lambdacd
+     * @tparam Args
+     * @param cd_true
+     * @param args
+     * @return std::vector<u32>
+     */
+    template<class Lambdacd, class... Args>
+    inline sham::DeviceBuffer<u32> get_ids_where(Lambdacd &&cd_true, Args... args) const {
+        StackEntry stack_loc{};
+
+        auto dev_sched       = shamsys::instance::get_compute_scheduler_ptr();
+        sham::DeviceQueue &q = shambase::get_check_ref(dev_sched).get_queue();
+
+        auto obj_cnt = get_obj_cnt();
+        if (obj_cnt > 0) {
+            // buffer of booleans to store result of the condition
+            sham::DeviceBuffer<u32> mask(obj_cnt, dev_sched);
+
+            sham::kernel_call(
+                q,
+                sham::MultiRef{buf},
+                sham::MultiRef{mask},
+                obj_cnt,
+                [=, nvar_field = nvar](u32 id, const T *__restrict acc, u32 *__restrict acc_mask) {
+                    acc_mask[id] = cd_true(acc, id * nvar_field, args...);
+                });
+
+            return shamalgs::stream_compact(dev_sched, mask, obj_cnt);
+        } else {
+            return sham::DeviceBuffer<u32>(0, dev_sched);
+        }
+    }
+
+    ////////////////////////////////////////////////////////////////////////////////////////////////
+    //
+    ////////////////////////////////////////////////////////////////////////////////////////////////
+
+    template<class Lambdacd>
+    void check_err_range(Lambdacd &&cd_true, T vmin, T vmax, std::string add_log = "");
+
+    void extract_element(u32 pidx, PatchDataField<T> &to);
+    void extract_elements(const sham::DeviceBuffer<u32> &idxs, PatchDataField<T> &to);
+
+    bool check_field_match(PatchDataField<T> &f2);
+
+    inline void field_raz() {
+        shamlog_debug_ln("PatchDataField", "raz : ", field_name);
+        override(shambase::VectorProperties<T>::get_zero());
+    }
+
+    /**
+     * @brief Copy all objects in idxs to pfield
+     *
+     * @param idxs
+     * @param pfield
+     */
+    void append_subset_to(const std::vector<u32> &idxs, PatchDataField &pfield);
+    void append_subset_to(sycl::buffer<u32> &idxs_buf, u32 sz, PatchDataField &pfield);
+    void append_subset_to(
+        const sham::DeviceBuffer<u32> &idxs_buf, u32 sz, PatchDataField &pfield) const;
+
+    inline PatchDataField make_new_from_subset(sham::DeviceBuffer<u32> &idxs_buf, u32 sz) {
+        PatchDataField pfield(field_name, nvar);
+        append_subset_to(idxs_buf, sz, pfield);
+        return pfield;
+    }
+
+    void gen_mock_data(u32 obj_cnt, std::mt19937 &eng);
+
+    /**
+     * @brief this function remaps the patchdatafield like so
+     *   val[id] = val[index_map[id]]
+     *   index map describe : at index i, we will have the value that was at index_map[i]
+     *
+     * This function can be used to apply the result of a sort to the field
+     *
+     * @param index_map
+     * @param len the length of the map (must match with the current count)
+     */
+    void index_remap(sham::DeviceBuffer<u32> &index_map, u32 len);
+
+    /// permut the variables of the field according to the permut
+    void permut_vars(const std::vector<u32> &permut);
+
+    /**
+     * @brief this function remaps the patchdatafield like so
+     *   val[id] = val[index_map[id]]
+     *   index map describe : at index i, we will have the value that was at index_map[i]
+     * This function will resize the current field to the specified length
+     *
+     * This function can be used to apply the result of a sort to the field
+     *
+     * @param index_map
+     * @param len the length of the map
+     */
+    void index_remap_resize(sham::DeviceBuffer<u32> &index_map, u32 len);
+
+    /**
+     * @brief remove the ids from the field
+     *
+     * @param indexes
+     * @param len
+     */
+    void remove_ids(const sham::DeviceBuffer<u32> &indexes, u32 len);
+
+    /**
+     * @brief minimal serialization
+     * assuming the user know the layout of the field
+     *
+     * @param serializer
+     */
+    void serialize_buf(shamalgs::SerializeHelper &serializer);
+
+    /**
+     * @brief deserialize a field inverse of serialize_buf
+     *
+     * @param serializer
+     * @param field_name
+     * @param nvar
+     * @return PatchDataField
+     */
+    static PatchDataField deserialize_buf(
+        shamalgs::SerializeHelper &serializer, std::string field_name, u32 nvar);
+
+    /**
+     * @brief record the size usage of the serialization using serialize_buf
+     *
+     * @return u64
+     */
+    shamalgs::SerializeSize serialize_buf_byte_size();
+
+    /**
+     * @brief serialize everything in the class
+     *
+     * @param serializer
+     */
+    void serialize_full(shamalgs::SerializeHelper &serializer);
+
+    /**
+     * @brief deserialize a field inverse of serialize_full
+     *
+     * @param serializer
+     * @return PatchDataField
+     */
+    static PatchDataField deserialize_full(shamalgs::SerializeHelper &serializer);
+
+    /**
+     * @brief give the size usage of serialize_full
+     *
+     * @return u64
+     */
+    shamalgs::SerializeSize serialize_full_byte_size();
+
+    T compute_max() const;
+    T compute_min() const;
+    T compute_sum() const;
+
+    shambase::VecComponent<T> compute_dot_sum();
+
+    bool has_nan();
+    bool has_inf();
+    bool has_nan_or_inf();
+
+    ////////////////////////////////////////////////////////////////////////////////////////////////
+    // static member functions
+    ////////////////////////////////////////////////////////////////////////////////////////////////
+
+    static PatchDataField<T> mock_field(u64 seed, u32 obj_cnt, std::string name, u32 nvar);
+    static PatchDataField<T> mock_field(
+        u64 seed, u32 obj_cnt, std::string name, u32 nvar, T vmin, T vmax);
+};
+
+// TODO add overflow check
+template<class T>
+inline void PatchDataField<T>::resize(u32 new_obj_cnt) {
+    buf.resize(shambase::narrow_or_throw<u32>(u64(new_obj_cnt) * u64(nvar)));
+}
+
+template<class T>
+inline void PatchDataField<T>::reserve(u32 new_obj_cnt) {
+
+    u32 add_cnt = shambase::narrow_or_throw<u32>(u64(new_obj_cnt) * u64(nvar));
+    buf.reserve(add_cnt);
+}
+
+template<class T>
+inline void PatchDataField<T>::expand(u32 obj_to_add) {
+    resize(get_obj_cnt() + obj_to_add);
+}
+
+template<class T>
+inline void PatchDataField<T>::shrink(u32 obj_to_rem) {
+
+    if (obj_to_rem > get_obj_cnt()) {
+
+        throw shambase::make_except_with_loc<std::invalid_argument>(
+            "impossible to remove more object than there is in the patchdata field");
+    }
+
+    resize(get_obj_cnt() - obj_to_rem);
+}
+
+template<class T>
+inline void PatchDataField<T>::overwrite(const PatchDataField<T> &f2, u32 obj_cnt) {
+    StackEntry stack_loc{};
+    buf.copy_from(f2.buf, obj_cnt * f2.nvar);
+}
+
+template<class T>
+inline void PatchDataField<T>::overwrite(const sham::DeviceBuffer<T> &f2, u32 len) {
+    StackEntry stack_loc{};
+    buf.copy_from(f2, len);
+}
+
+template<class T>
+inline void PatchDataField<T>::override(sycl::buffer<T> &data, u32 cnt) {
+    StackEntry stack_loc{};
+    buf.copy_from_sycl_buffer(data, cnt);
+}
+
+template<class T>
+inline void PatchDataField<T>::override(std::vector<T> &data, u32 cnt) {
+    StackEntry stack_loc{};
+    buf.copy_from_stdvec(data, cnt);
+}
+
+template<class T>
+inline void PatchDataField<T>::override(const T val) {
+    StackEntry stack_loc{};
+    buf.fill(val);
+}
+
+class PatchDataRangeCheckError : public std::exception {
+    public:
+    explicit PatchDataRangeCheckError(const char *message) : msg_(message) {}
+
+    explicit PatchDataRangeCheckError(const std::string &message) : msg_(message) {}
+
+    ~PatchDataRangeCheckError() noexcept override = default;
+
+    [[nodiscard]] const char *what() const noexcept override { return msg_.c_str(); }
+
+    protected:
+    std::string msg_;
+};
+
+template<class T>
+template<class Lambdacd>
+inline void PatchDataField<T>::check_err_range(
+    Lambdacd &&cd_true, T vmin, T vmax, std::string add_log) {
+    StackEntry stack_loc{};
+
+    if (is_empty()) {
+        return;
+    }
+
+    if (nvar != 1) {
+        shambase::throw_unimplemented();
+    }
+
+    bool error = false;
+    {
+        auto acc    = buf.copy_to_stdvec();
+        u32 err_cnt = 0;
+
+        for (u32 i = 0; i < get_val_cnt(); i++) {
+            if (!cd_true(acc[i], vmin, vmax)) {
+                logger::err_ln(
+                    "PatchDataField",
+                    "obj =",
+                    i,
+                    "->",
+                    acc[i],
+                    "not in range [",
+                    vmin,
+                    ",",
+                    vmax,
+                    "]");
+                error = true;
+                err_cnt++;
+                if (err_cnt > 50) {
+                    logger::err_ln("PatchDataField", "...");
+                    break;
+                }
+            }
+        }
+    }
+
+    if (error) {
+        logger::err_ln("PatchDataField", "additional infos :", add_log);
+        throw shambase::make_except_with_loc<PatchDataRangeCheckError>("obj not in range");
+    }
+}
