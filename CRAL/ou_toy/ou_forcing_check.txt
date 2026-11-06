@@ -1,0 +1,7 @@
+forcing modes (half space, 1<|k|<3): 43   T = 1.0   zeta = 1.0   seed = 42
+exact dt/T=0.05: T_fit(coeffs)=1.010  T_fit(field)=0.995  T_integral=1.000  [predicted 1.000]   var/var_exact=1.006  [predicted 1.000]
+exact dt/T=0.50: T_fit(coeffs)=0.981  T_fit(field)=0.990  T_integral=0.990  [predicted 1.000]   var/var_exact=0.998  [predicted 1.000]
+euler dt/T=0.05: T_fit(coeffs)=0.975  T_fit(field)=0.962  T_integral=0.968  [predicted 0.975]   var/var_exact=1.021  [predicted 1.026]
+euler dt/T=0.50: T_fit(coeffs)=0.721  T_fit(field)=0.757  T_integral=0.744  [predicted 0.721]   var/var_exact=1.345  [predicted 1.333]
+max |k.fhat|/(|k||fhat|) = 7.70e-16   max |k x fhat|/(|k||fhat|) = 1.00e+00   (zeta=1 -> first ~0; zeta=0 -> second ~0)
+saved ou_forcing_check.png
