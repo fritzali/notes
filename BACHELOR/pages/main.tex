@@ -1,0 +1,149 @@
+\input{header}
+\setmainfont{Latin Modern Roman}
+\setmathfont{Latin Modern Math}
+
+\title{\Large\textbf{Revisiting Neutrinos via Charm Decays in Astrophysical Sources}}%
+\author{Fritz Ali Agildere%
+		\vspace{-0.5ex}\\\small\href{mailto:fritz.agildere@udo.edu}{fritz.agildere@udo.edu}%
+		\\\small\textit{Erasmus Mundus Joint Master in Astrophysics and Space Science}}%
+\date{\small \today}
+
+\fancyhead[C]{\textit{Revisiting Neutrinos via Charm Decays in Astrophysical Sources}}
+\fancyfoot[R]{\textit{Master in Astrophysics and Space Science}}
+\fancyfoot[L]{\textit{Bachelor Thesis Addendum and Revisions}}
+\fancypagestyle{plain}{
+	\fancyhead[C]{}
+	\fancyfoot[R]{\textit{Master in Astrophysics and Space Science}}
+	\fancyfoot[L]{\textit{Bachelor Thesis Addendum and Revisions}}
+}
+
+\hypersetup{
+	pdfauthor={Fritz Ali Agildere},
+	pdftitle={Revisiting Neutrinos via Charm Decays in Astrophysical Sources}
+}
+
+\ExecuteBibliographyOptions{maxbibnames=1, minbibnames=1}
+\graphicspath{{../plots/}}
+\usepackage{multicol}
+
+\DeclareNameFormat{first}{\ifnumequal{\value{listcount}}{1}{\namepartfamily}{}}
+\DeclareCiteCommand{\cite}[\mkbibparens]
+	{\usebibmacro{prenote}}%
+	{\usebibmacro{citeindex}%
+	 \printtext[bibhyperref]{\printnames[first][1-1]{labelname}\setunit{\addspace}\printfield{labelyear}\printfield{extrayear}}}%
+	{\multicitedelim}%
+	{\usebibmacro{postnote}}%
+\AtEveryCitekey{\renewbibmacro*{name:andothers}{}}
+
+\newcommand{\fig}[4]{%
+	{\setlength{\intextsep}{3pt plus 1pt minus 1pt}\captionsetup[figure]{skip=2pt, width=#4\textwidth}%
+	\begin{figure}[H]
+		\centering
+		\includegraphics[width=#4\textwidth, draft=false]{#1}
+		\caption{#2}
+		\label{#3}
+	\end{figure}}}
+
+\newcommand{\figsection}[1]{\vspace{0.25\baselineskip}{\centering\normalfont\large\bfseries #1\par}\vspace{0.25\baselineskip}}
+
+\raggedbottom
+\hyphenpenalty=10000
+\exhyphenpenalty=10000
+\emergencystretch=2em
+
+\begin{document}
+
+	\onecolumn
+		\maketitle
+		\begin{abstract}
+			A recheck of the code behind my bachelor thesis found a unit error in the conversion of cross sections, a mismatched normalization
+			of the charm cross section and an unbounded optical depth, and a vectorized rebuild with improved integration runs about sixty
+			times faster. With these corrected, magnetar results hold and charm separates more clearly from pions and kaons, while charm
+			in the accretion disk takes over at much higher energies than stated in the thesis.
+		\end{abstract}
+
+	\begin{multicols}{2}
+
+	\section{Corrections}
+
+	The thesis code was rebuilt as one vectorized program. It reproduces charm spectra to \num{1e-6} relative precision using the thesis settings,
+	while every parametrization agrees with its source and the method itself stands.
+
+	\textbf{Units:} Cooling factor and optical depth convert cross sections from millibarn to square centimetres with the factor that belongs to
+	barn. Each target therefore acted a thousand times denser than stated.
+
+	\textbf{Charm:} In the thesis code, the charm cross section was divided by an extra factor of roughly \num{22} after its integral over the
+	entire energy fraction range was compared to data from forward measurements \cite{aaij2016}. Most of that integral however comes from energy
+	fractions far below the measured window, and inside the window the parametrization \cite{gonc2007} already gives \num{1.07} times the data,
+	so no extra factor was needed.
+
+	\textbf{Depth:} The optical depth multiplied spectra without bound, although the share of interacting protons cannot exceed unity.
+	The corrected model uses the interaction probability instead, matching the thesis variant without optical depth as long as
+	the ejecta stay opaque.
+
+	\textbf{Numerics:} Trapezoid weights replace the first order sum, a stable exponential removes a cancellation in the cooling factor and
+	the vectorized integration runs about sixty times faster.
+
+	\section{Magnetar}
+
+	All figures compare the thesis on the left with the corrected results on the right and are normalized to the charm peak, shaded bands mark
+	a factor of three around charm, and the reference \cite{carp2020} given in \bCref{fig:ref} shows pions and kaons with and without muon decay.
+	In the light curves depicted in \bCref{fig:light} charm still peaks first followed by kaons and pions, but all cooling features move to earlier
+	times by about one decade. Charm now peaks after \qty{7.1e3}{\second} shortly after the spindown time of \qty{3.2e3}{\second} as is described in
+	the reference, instead of after \qty{4.9e4}{\second} in the thesis.
+
+	The charm composition in \bCref{fig:charm} holds, with $D^0$ and $D^+$ carrying shares of \num{0.51} and \num{0.38} at the maximum and
+	the individual peaks ordered by lifetime.
+
+	In the fluence of \bCref{fig:fluence} charm exceeds both meson components above \qty{2.9e9}{\GeV} and leads the larger one at
+	\qty{1e10}{\GeV} by a factor of \num{14.5} instead of \num{3.0} so that even the lower edge of its band clears pions and kaons. The
+	discrepancy that the thesis attributed to the optical depth disappears with the unit correction, and the initial proton energy of the
+	thesis remains the correct evaluation of the formula given in the reference.
+
+	\section{Accretion Disk}
+
+	The disk result changes. Still, the charm composition in \bCref{fig:diskcharm} keeps its shape. However, at the stated density of
+	\qty{1e14}{\per\cubic\centi\metre} pions instead of kaons dominate the low energies in \bCref{fig:diskfluence} and charm
+	takes over only above \qty{1.6e10}{\GeV} instead of \qty{3.7e8}{\GeV} in the thesis. At \qty{1e11}{\GeV} it leads by a
+	factor of \num{2.3} instead of \num{6.8} so that its lower band edge stays below the kaons. As \bCref{fig:density} shows,
+	the thesis takeover energy returns only near \qty{4.6e15}{\per\cubic\centi\metre} which lies more than one decade above
+	the stated density.
+
+	\section{Conclusion}
+
+	Overall, the thesis method stands while the magnetar conclusions become stronger, with the disk
+	conclusions holding only for a much denser target.
+
+	\vspace{1ex}
+	\printbibliography[heading=none]
+
+	\end{multicols}
+
+	\clearpage
+
+	\figsection{Magnetar Scenario}
+
+	\fig{referenceMagnetar.pdf}{Reference light curve at $E_\nu = \qty{1e9}{\GeV}$ and fluence \cite{carp2020} normalized to the charm peak.}{fig:ref}{0.942}
+
+	\fig{comparedMagnetarLightCurve.pdf}{Light curves at $E_\nu = \qty{1e9}{\GeV}$ normalized to the charm maximum.}{fig:light}{0.942}
+
+	\fig{comparedMagnetarFluence.pdf}{Fluence normalized to the charm peak of the widest time window.}{fig:fluence}{0.942}
+
+	\fig{comparedMagnetarCharm.pdf}{Charm hadrons in the light curve normalized to the total charm maximum.}{fig:charm}{0.942}
+
+	\figsection{Accretion Disk Scenario}
+
+	\fig{comparedDiskCharm.pdf}{Charm hadrons in the disk spectrum normalized to the total charm maximum.}{fig:diskcharm}{0.942}
+
+	\fig{comparedDiskFluence.pdf}{Disk spectra by parent normalized to the charm maximum.}{fig:diskfluence}{0.942}
+
+	\fig{correctedDiskDensity.pdf}{Neutrino energy at which charm overtakes pions and kaons in the disk against density after the corrections,
+	compared with the thesis value at its stated density.}{fig:density}{0.538}
+
+	\vfill
+
+	\noindent\small\textit{Declaration:} The author acknowledges the use of artificial intelligence products by Anthropic, specifically of the
+	models Claude 5.5 Sonnet and Claude 5.5 Opus for rechecking and rebuilding the code, preparing the figures and drafting this summary. The
+	author independently verified all outcomes and maintains full accountability for this document.
+
+\end{document}
