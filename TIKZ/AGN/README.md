@@ -1,4 +1,4 @@
-## Unified AGN Model
+## Unified Active Galactic Nucleus Model
 
 ### Contents
 
