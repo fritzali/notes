@@ -23,7 +23,7 @@ And to clean up any auxiliary files afterwards:
 
 ### Inspiration
 
-- [V. Beckmann & C. R. Shrader 2012](https://doi.org/10.22323/1.176.0069)
+- [M. L. Menzel, V. Beckmann & C. R. Shrader 2012](https://doi.org/10.22323/1.176.0069)
 - [J. Thorne, A. Robotham, L. Davies & S. Bellstedt 2022](https://doi.org/10.5281/zenodo.6381013)
-- [C. M. Urry and P. Padovani 1995](https://doi.org/10.1086/133630)
+- [C. M. Urry & P. Padovani 1995](https://doi.org/10.1086/133630)
 - [E. Alexander 2022](https://emmaalexander.github.io/resources.html)
