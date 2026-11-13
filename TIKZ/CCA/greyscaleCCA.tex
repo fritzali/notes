@@ -58,7 +58,7 @@
   % towards its head, the fork stays light towards the disk and darkens towards the feedback side
   cycle/.style={top color=regA,bottom color=regB},
   fork/.style={left color=forkA,right color=forkB},
-  eddy/.style={line width=0.45pt,eddyc,-{Stealth[length=3pt,width=3pt]}},
+  eddy/.style={line width=0.45pt,eddyc},
   lab/.style={font=\footnotesize,inner sep=1pt},
   lead/.style={line width=0.4pt,black,preaction={draw=white,line width=2pt,line cap=round}},
   edge/.style={font=\scriptsize,inner sep=2pt},
@@ -226,8 +226,9 @@
     \draw[shockc,line width=0.4pt] ($(bub\k)+(\a-55:\r+\dr)$)
       arc[start angle=\a-55,end angle=\a+55,radius=\r+\dr];
 }
-% turbulent eddies stirred up around the bubbles, small inward spirals given by centre, outer radius,
-% start angle and the angle turned, negative for clockwise
+% turbulent eddies stirred up around the bubbles, small spirals widening outwards, given by centre,
+% outer radius, start angle and the angle turned, negative for clockwise, the head continues the
+% spiral along its tangent from the outer end
 \foreach \x/\y/\r/\b/\t in {
     13.00/2.45/0.17/0/-340,
     14.23/4.55/0.17/90/340,
@@ -236,9 +237,14 @@
     14.20/0.71/0.17/0/-340,
     14.95/2.12/0.17/90/340,
     13.51/0.80/0.17/180/-340,
-    12.22/4.10/0.17/270/340}
+    12.22/4.10/0.17/270/340}{
   \draw[eddy] plot[smooth,domain=0:\t,samples=36,variable=\u]
-    ({\x+\r*(1-0.45*\u/\t)*cos(\b+\u)},{\y+\r*(1-0.45*\u/\t)*sin(\b+\u)});
+    ({\x+\r*(0.45+0.55*\u/\t)*cos(\b+\u)},{\y+\r*(0.45+0.55*\u/\t)*sin(\b+\u)});
+  \pgfmathsetmacro{\e}{\t+4*sign(\t)}
+  \coordinate (q0) at ({\x+\r*cos(\b+\t)},{\y+\r*sin(\b+\t)});
+  \coordinate (q1) at ({\x+\r*(0.45+0.55*\e/\t)*cos(\b+\e)},{\y+\r*(0.45+0.55*\e/\t)*sin(\b+\e)});
+  \draw[eddy,-{Stealth[length=3pt,width=3pt]}] (q0) -- ($(q0)!3pt!(q1)$);
+}
 
 % self regulation, the feedback heats the halo and the halo cools back into the feeding rain
 \shade[cycle]
