@@ -9,3 +9,17 @@ Feel free to use and modify these files as you please, although I would apprecia
 
 > [!NOTE]
 > Adopted from F. A. Agildere
+
+> [!TIP]
+> Inspired by F. A. Agildere
+
+> [!IMPORTANT]
+> Credit: F. A. Agildere
+
+> [!WARNING]
+> F. A. Agildere
+
+> [!CAUTION]
+> Fritz Ali Agildere
+
+> Sorry, I just wanted an excuse to try out all the GitHub markdown alerts.
