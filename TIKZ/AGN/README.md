@@ -2,6 +2,11 @@
 
 With inspiration taken from:
 
+### Contents
+
+- Model Sketch: [greyscale](https://cdn.jsdelivr.net/gh/fritzali/notes@main/TIKZ/AGN/greyscaleAGN.pdf) [color](https://cdn.jsdelivr.net/gh/fritzali/notes@main/TIKZ/AGN/colorAGN.pdf)
+- Emission Bands: [greyscale](https://cdn.jsdelivr.net/gh/fritzali/notes@main/TIKZ/AGN/greyscaleAGNbands.pdf) [color](https://cdn.jsdelivr.net/gh/fritzali/notes@main/TIKZ/AGN/colorAGNbands.pdf)
+
 ### Compilation
 
 For a single figure, run:
