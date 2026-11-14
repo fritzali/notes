@@ -1,0 +1,482 @@
+% greyscaleOU.tex
+% stochastic forcing of interstellar turbulence, from the drivers in a galactic disk to the forcing
+% of a periodic simulation box and its memory over time, greyscale
+% standalone, compile with pdflatex
+%
+% layout of this file
+%   1  geometry
+%   2  palette, styles, shadings and fadings
+%   3  helper macros
+%   4  the figure
+
+\documentclass[tikz,border=6pt]{standalone}
+\usepackage[scaled]{helvet}
+\renewcommand{\familydefault}{\sfdefault}
+\usetikzlibrary{arrows.meta,calc,fadings}
+\usepgfmodule{nonlineartransformations}
+
+
+% 1  geometry
+
+% galactic disk centre, radius, and the ratio of its apparent to true depth, set by the inclination,
+% points in the disk plane are given face on as (X,Y) and drawn at ({dx(X)},{dy(Y)})
+\def\cx{4.3}\def\cy{0.1}\def\R{4}\def\q{0.36}
+% simulation box: lower left front corner, edge, and the offset of the back face
+\def\bx{9}\def\by{-1.4}\def\bs{2.6}\def\ox{0.8}\def\oy{0.55}
+% snapshots: left edge of the first and the step between them along the time axis, the side of the
+% frame each is drawn in, and its apparent width and the height of its far left side, as tall as the
+% back edge of the box, while its near right side reaches from just above the front bottom edge of
+% the box to just above its back top edge, so the snapshots look as near as the box, giving how far
+% the right side reaches beyond the left at top and bottom, and the bottom of the left side
+\def\sx{13.3}\def\stx{0.68}\def\sL{2.4}\def\sw{1.08}\def\sH{2.6}
+\pgfmathsetmacro{\sfb}{-1.3}\pgfmathsetmacro{\sft}{1.85}
+\pgfmathsetmacro{\fd}{(\sft-\sfb-\sH)/2}\pgfmathsetmacro{\sy}{\sfb+\fd}
+% label rows above and below the figure
+\def\yt{2.45}\def\yb{-2.3}
+\tikzset{declare function={
+  dx(\X)=\cx+\X;
+  dy(\Y)=\cy+\q*\Y;
+  % logarithmic spiral, radius at angle t in radians, and the width of an arm tapering to both ends
+  arm(\t)=0.55*exp(0.3*\t);
+  armw(\t)=0.4*sin(180*\t/6.3);
+  % magnetic field line along the same spiral, smooth except for a short rippled stretch around
+  % t = c, where the instability grows
+  bfr(\t,\c)=arm(\t)+0.15*exp(-((\t-\c)/0.26)^2)*sin(1150*(\t-\c));
+}}
+
+
+% 2  palette, styles, shadings and fadings
+
+% every colour of the figure, in greys, darker for denser gas
+% diffuse gas of the disk and its spiral arms, gas, patches and filaments in the box and snapshots
+\colorlet{diskc}{black!32}\colorlet{armc}{black}
+\colorlet{gasA}{black!17}\colorlet{gasB}{black!3}\colorlet{patchc}{black}\colorlet{filc}{black}
+% dense clouds, bulge, supernova shells, field lines, protostellar jets and their young stars
+\colorlet{cloudA}{black!45}\colorlet{cloudB}{black!68}
+\colorlet{bulgeA}{white}\colorlet{bulgeB}{black!38}
+\colorlet{shellc}{black!58}\colorlet{fieldc}{black!50}
+\colorlet{lobec}{black}\colorlet{starc}{black!80}
+% stirring arrows, arrows of infall, time axis, edges and hidden edges, and secondary text
+\colorlet{stirc}{black!50}\colorlet{drivec}{black!62}\colorlet{flowc}{black!70}
+\colorlet{edgec}{black!60}\colorlet{hidc}{black!35}\colorlet{subc}{black!65}
+
+% the diffuse disk thins out to fully transparent at its edge
+\tikzfading[name=diskfade,inner color=transparent!15,outer color=transparent!100]
+% soft patches of denser gas
+\tikzfading[name=fuzzy,inner color=transparent!0,outer color=transparent!100]
+% supernova shells are transparent bubbles, faint inside and limb brightened at their rim
+\pgfdeclareradialshading{shellmask}{\pgfpoint{0bp}{0bp}}{color(0bp)=(transparent!88);
+  color(14bp)=(transparent!80);color(21bp)=(transparent!45);color(24bp)=(transparent!30);
+  color(25bp)=(transparent!28);color(25.3bp)=(transparent!100);color(50bp)=(transparent!100)}
+\begin{tikzfadingfrompicture}[name=shellfade]
+  \shade[shading=shellmask] (0,0) circle (25bp);
+\end{tikzfadingfrompicture}
+% protostellar jets diffuse into the background towards their tips, the shading box maps 25bp to 75bp
+% onto the lobe
+\pgfdeclarehorizontalshading{lobe}{100bp}{color(0bp)=(lobec!70);color(25bp)=(lobec!70);
+  color(45bp)=(lobec!40);color(62bp)=(lobec!14);color(75bp)=(lobec!4);color(100bp)=(lobec!4)}
+
+\tikzset{
+  cloud/.style={top color=cloudA,bottom color=cloudB},
+  drive/.style={-{Stealth[length=4pt,width=3.4pt]},line width=0.6pt,drivec},
+  flow/.style={-{Stealth[length=5pt,width=4pt]},line width=0.6pt,flowc},
+  field/.style={line width=0.45pt,fieldc},
+  stirshaft/.style={line width=2.4pt,stirc},
+  stirtip/.style={-{Stealth[length=7.5pt,width=7.5pt]},line width=2.4pt,stirc},
+  stirshaftthin/.style={line width=1.6pt,stirc},
+  stirtipthin/.style={-{Stealth[length=5.5pt,width=5.5pt]},line width=1.6pt,stirc},
+  lab/.style={font=\small,inner sep=1pt,text height=1.6ex,text depth=0.3ex},
+  sublab/.style={font=\scriptsize,text=subc,inner sep=0.3pt,text height=1.25ex,text depth=0.3ex},
+  lead/.style={line width=0.4pt,black,preaction={draw=white,line width=2pt,line cap=round}},
+}
+
+
+% 3  helper macros
+
+% dense clump of radius #1 at the origin, a lumpy blob
+\newcommand{\cloud}[1]{\shade[cloud] plot[smooth cycle,tension=0.9,domain=0:315,samples=8,variable=\t]
+  ({#1*(1+0.1*rand)*cos(\t)},{#1*(1+0.1*rand)*sin(\t)});}
+% molecular clouds, single clumps at x and y with radius r, drawn with outlines from seed s
+\newcommand{\mclouds}[1]{\foreach \x/\y/\r/\s in {#1}
+  {\begin{scope}[shift={(\x,\y)}]\pgfmathsetseed{\s}\cloud{\r}\end{scope}}}
+% collapsing cloud, a clump of radius #3 at (#1,#2) with gas falling in from all sides, leaving the
+% side at #5 degrees free for a pointer
+\newcommand{\collapse}[5]{\begin{scope}[shift={(#1,#2)}]\pgfmathsetseed{#4}
+  \cloud{#3}
+  \foreach \a in {0,60,...,300}{
+    \pgfmathsetmacro{\aa}{\a+#5+30}
+    \draw[drive] ({(#3+0.3)*cos(\aa)},{0.75*(#3+0.3)*sin(\aa)})
+      -- ({(#3+0.08)*cos(\aa)},{0.75*(#3+0.08)*sin(\aa)});}
+  \end{scope}}
+% protostellar jet from a young star at (#1,#2), its axis #3 degrees from the vertical, with two narrow
+% lobes of length #4 fading out towards their tips
+\newcommand{\pjet}[4]{\begin{scope}[shift={(#1,#2)},rotate=90+#3]
+  \foreach \s in {0,180}
+    \shade[shading=lobe,rotate=\s]
+      plot[domain=0.04:#4,samples=40,smooth,variable=\x] (\x,{0.055*abs(sin(180*\x/#4))^0.75})
+      -- plot[domain=#4:0.04,samples=40,smooth,variable=\x] (\x,{-0.055*abs(sin(180*\x/#4))^0.75})
+      -- cycle;
+  \fill[starc] (0,0) circle (0.045);\end{scope}}
+% supernova shell of radius #3 at (#1,#2), a transparent bubble sitting in the disk with its centre a
+% height #4 above the disk plane, the part below the plane seen dimmed through the gas of the disk,
+% and the circle where it cuts the plane, its ellipse touching the outline of the sphere exactly, at
+% the angles t on the ellipse and p on the outline worked out from the projection
+\newcommand{\snshell}[4]{\begin{scope}[shift={(#1,#2)}]
+  \pgfmathsetmacro{\hc}{#4*sqrt(1-\q*\q)}\pgfmathsetmacro{\ri}{sqrt(#3*#3-#4*#4)}
+  \pgfmathsetmacro{\tt}{asin(-\q*#4/(\ri*sqrt(1-\q*\q)))}
+  \pgfmathsetmacro{\pp}{atan2(\q*\ri*sin(\tt)-\hc,\ri*cos(\tt))}
+  \begin{scope}
+    \clip ({\ri*cos(180-\tt)},{\q*\ri*sin(180-\tt)})
+      arc[start angle=180-\tt,end angle=360+\tt,x radius=\ri,y radius=\q*\ri]
+      arc[start angle=\pp,end angle=180-\pp,radius=#3] -- cycle;
+    \fill[shellc,path fading=shellfade] (0,\hc) circle (#3);
+  \end{scope}
+  \begin{scope}
+    \clip ({\ri*cos(180-\tt)},{\q*\ri*sin(180-\tt)})
+      arc[start angle=180-\tt,end angle=360+\tt,x radius=\ri,y radius=\q*\ri]
+      arc[start angle=\pp,end angle=-180-\pp,radius=#3] -- cycle;
+    \fill[shellc,path fading=shellfade,opacity=0.4] (0,\hc) circle (#3);
+  \end{scope}
+  \draw[shellc!70,line width=0.35pt] (0,0) ellipse[x radius=\ri,y radius=\q*\ri];
+  \end{scope}}
+
+% spiral arm turned by #1 degrees in the disk plane, three nested bands tapering to both ends, so the
+% arm is densest along its crest and thins out to either side
+\newcommand{\armband}[2]{
+  \fill[armc,opacity=0.11]
+    plot[domain=0:6.3,samples=90,smooth,variable=\t]
+      ({dx((arm(\t)+#2*armw(\t))*cos(deg(\t)+#1))},{dy((arm(\t)+#2*armw(\t))*sin(deg(\t)+#1))})
+    -- plot[domain=6.3:0,samples=90,smooth,variable=\t]
+      ({dx((arm(\t)-#2*armw(\t))*cos(deg(\t)+#1))},{dy((arm(\t)-#2*armw(\t))*sin(deg(\t)+#1))})
+    -- cycle;}
+\newcommand{\spiralarm}[1]{\foreach \f in {1,0.62,0.3} {\armband{#1}{\f}}}
+
+% magnetic field line turned by #1 degrees between the arms, following their spiral from t = #3 to
+% 6.1, rippled around t = #2, with a small head giving the direction of the field
+\newcommand{\fieldline}[3]{
+  \draw[field] plot[domain=#3:6.1,samples=220,smooth,variable=\t]
+    ({dx(bfr(\t,#2)*cos(deg(\t)+#1))},{dy(bfr(\t,#2)*sin(deg(\t)+#1))});
+  \draw[field,-{Stealth[length=3.6pt,width=3pt]}]
+    ({dx(bfr(#3+0.4,#2)*cos(deg(#3+0.4)+#1))},{dy(bfr(#3+0.4,#2)*sin(deg(#3+0.4)+#1))})
+    -- ({dx(bfr(#3+0.45,#2)*cos(deg(#3+0.45)+#1))},{dy(bfr(#3+0.45,#2)*sin(deg(#3+0.45)+#1))});}
+
+% wispy filament through the listed points, a soft core with wider and fainter halos around it, so it
+% has no outline and fades smoothly into the gas around it, weight #1
+\newcommand{\fil}[2]{
+  \foreach \w/\o in {11/0.016,7.5/0.022,4.5/0.028,2.2/0.032}
+    \draw[line width=#1*\w pt,filc,opacity=\o,line cap=round,line join=round]
+      plot[smooth,tension=0.7] coordinates {#2};}
+% filaments of the box and of a snapshot, random walks with a slowly turning heading, made by
+% genfil.py and fixed here, so every compile and every snapshot draws the same pattern, in the frame
+% of the box from its lower left front corner, and of a snapshot from its corner
+% filaments begin
+\newcommand{\boxfilaments}{
+  \fil{1}{(2.80,2.56) (2.71,2.41) (2.66,2.25) (2.65,2.08) (2.75,1.94) (2.76,1.77) (2.79,1.60)
+    (2.84,1.44) (2.95,1.31)}
+  \fil{0.7}{(1.82,2.65) (1.67,2.56) (1.51,2.51) (1.34,2.56) (1.18,2.58) (1.02,2.65)}
+  \fil{0.7}{(0.38,0.72) (0.46,0.87) (0.47,1.04) (0.47,1.21) (0.57,1.35) (0.64,1.50)}
+  \fil{0.7}{(2.12,1.57) (1.99,1.46) (1.88,1.34) (1.96,1.19) (2.04,1.04) (2.16,0.92) (2.21,0.76)}
+  \fil{1}{(1.74,0.28) (1.59,0.19) (1.46,0.09) (1.32,-0.01) (1.20,-0.12) (1.16,-0.29) (1.13,-0.46)}
+  \fil{0.7}{(2.98,0.34) (2.87,0.48) (2.82,0.64) (2.81,0.81) (2.82,0.98) (2.85,1.14) (2.93,1.29)}
+  \fil{0.7}{(0.25,1.33) (0.41,1.31) (0.57,1.37) (0.69,1.49) (0.81,1.62) (0.97,1.66) (1.14,1.71)
+    (1.29,1.79)}
+  \fil{1}{(1.46,1.26) (1.29,1.30) (1.13,1.33) (0.96,1.37) (0.81,1.30) (0.65,1.35) (0.63,1.52)}
+  \fil{0.7}{(0.76,2.94) (0.59,2.96) (0.43,2.99) (0.26,3.03) (0.09,3.03) (-0.07,2.98) (-0.18,2.85)}
+  \fil{1}{(0.42,0.45) (0.28,0.36) (0.13,0.27) (0.05,0.12) (-0.06,-0.01) (-0.14,-0.16) (-0.15,-0.33)
+    (-0.17,-0.50) (-0.30,-0.61)}
+  \fil{0.7}{(1.13,0.83) (0.97,0.77) (0.81,0.72) (0.64,0.70) (0.48,0.75) (0.34,0.84) (0.21,0.96)}
+  \fil{0.7}{(0.44,0.33) (0.60,0.39) (0.77,0.39) (0.94,0.40) (1.11,0.39) (1.26,0.33) (1.34,0.18)
+    (1.46,0.06) (1.53,-0.09) (1.60,-0.25)}
+  \fil{0.7}{(0.58,1.52) (0.47,1.39) (0.34,1.27) (0.24,1.14) (0.28,0.97) (0.31,0.80)}
+  \fil{1}{(0.95,0.33) (0.94,0.50) (1.08,0.60) (1.23,0.66) (1.37,0.76) (1.50,0.87) (1.66,0.93)
+    (1.81,1.01) (1.97,1.08)}
+  \fil{1}{(0.31,0.25) (0.39,0.10) (0.43,-0.06) (0.33,-0.19) (0.30,-0.36) (0.29,-0.53) (0.18,-0.66)
+    (0.08,-0.80) (-0.08,-0.85) (-0.07,-1.02)}
+  \fil{0.7}{(1.84,2.23) (1.97,2.12) (2.02,1.96) (2.11,1.81) (2.06,1.65) (1.96,1.51) (1.93,1.34)
+    (2.00,1.19) (2.00,1.02)}
+  \fil{0.7}{(2.79,1.78) (2.63,1.71) (2.51,1.59) (2.37,1.49) (2.23,1.40) (2.06,1.45)}
+  \fil{0.7}{(1.37,2.22) (1.21,2.29) (1.13,2.44) (1.02,2.57) (0.86,2.62) (0.69,2.61) (0.54,2.52)
+    (0.41,2.42)}
+  \fil{1}{(0.89,2.12) (0.76,2.23) (0.70,2.39) (0.65,2.55) (0.58,2.70) (0.55,2.87)}
+  \fil{1}{(0.71,2.69) (0.71,2.52) (0.59,2.40) (0.51,2.25) (0.39,2.12) (0.35,1.96) (0.33,1.79)
+    (0.38,1.63) (0.47,1.48) (0.43,1.32)}
+  \fil{0.7}{(0.86,2.73) (0.86,2.90) (0.82,3.07) (0.76,3.23) (0.72,3.39) (0.55,3.44) (0.39,3.42)
+    (0.22,3.39) (0.05,3.39)}
+  \fil{0.7}{(2.98,2.48) (2.93,2.65) (2.90,2.82) (2.89,2.99) (3.00,3.12) (3.14,3.22) (3.29,3.29)
+    (3.44,3.38)}
+  \fil{1}{(2.23,0.97) (2.17,1.13) (2.16,1.30) (2.21,1.46) (2.30,1.61) (2.43,1.72)}
+  \fil{0.7}{(2.51,0.93) (2.59,0.78) (2.50,0.64) (2.43,0.48) (2.38,0.32) (2.26,0.21)}
+  \fil{1}{(2.25,0.75) (2.09,0.79) (1.93,0.84) (1.76,0.87) (1.64,0.99) (1.51,1.10)}
+  \fil{1}{(1.02,1.15) (0.89,1.04) (0.75,0.94) (0.62,0.83) (0.46,0.79) (0.31,0.71) (0.14,0.76)}
+  \fil{0.7}{(3.00,2.19) (3.16,2.24) (3.31,2.31) (3.43,2.43) (3.58,2.52) (3.75,2.50) (3.90,2.42)
+    (4.06,2.38) (4.14,2.23)}
+  \fil{0.7}{(2.15,0.76) (2.16,0.59) (2.09,0.44) (2.01,0.29) (1.89,0.17) (1.91,-0.00) (1.82,-0.15)
+    (1.82,-0.32)}
+  \fil{1}{(2.93,2.55) (2.84,2.70) (2.71,2.80) (2.55,2.88) (2.47,3.03) (2.43,3.19) (2.39,3.36)
+    (2.36,3.52)}
+  \fil{0.7}{(2.60,0.68) (2.51,0.82) (2.44,0.98) (2.34,1.11) (2.19,1.20) (2.06,1.30) (2.03,1.47)
+    (2.06,1.64) (2.20,1.73)}}
+\newcommand{\snapfilaments}{
+  \fil{1}{(1.95,0.41) (1.79,0.38) (1.64,0.32) (1.50,0.24) (1.38,0.13) (1.24,0.06) (1.11,-0.03)
+    (0.96,-0.10)}
+  \fil{0.7}{(1.05,1.22) (1.04,1.06) (1.01,0.91) (1.00,0.75) (1.01,0.59) (0.94,0.44) (0.83,0.33)
+    (0.68,0.27) (0.57,0.16)}
+  \fil{1}{(1.51,0.85) (1.65,0.92) (1.81,0.90) (1.97,0.89) (2.11,0.83) (2.25,0.74) (2.36,0.63)
+    (2.45,0.50)}
+  \fil{0.7}{(1.53,1.24) (1.43,1.12) (1.35,0.98) (1.19,0.94) (1.04,0.96) (0.88,1.00) (0.73,0.95)
+    (0.63,0.83)}
+  \fil{1}{(1.95,1.11) (1.90,1.27) (1.80,1.39) (1.66,1.47) (1.50,1.47) (1.36,1.40) (1.20,1.38)
+    (1.04,1.36)}
+  \fil{0.7}{(2.05,0.57) (2.20,0.60) (2.35,0.66) (2.43,0.80) (2.50,0.94) (2.62,1.05)}
+  \fil{1}{(1.27,2.13) (1.14,2.04) (0.98,2.03) (0.88,1.91) (0.76,1.81) (0.65,1.69)}
+  \fil{0.7}{(1.14,0.62) (1.29,0.60) (1.45,0.56) (1.61,0.58) (1.75,0.64) (1.88,0.74) (1.96,0.88)
+    (2.02,1.03)}}
+% filaments end
+% soft patch of denser gas at #1 with radius #2 and #3 percent strength
+\newcommand{\gaspatch}[3]{\fill[patchc!#3,path fading=fuzzy] (#1) circle (#2);}
+
+% stirring arrow wiggling from #1 through #4 to #7, two beziers with controls #2, #3 and #5, #6, its
+% head on a short straight piece at the end, and the shaft ending where that piece starts with the
+% same direction, so shaft and head line up and the head stays sharp
+\newcommand{\stirS}[7]{
+  \path ($#7!0.3cm!#6$) coordinate (sq);
+  \draw[stirshaft] #1 .. controls #2 and #3 .. #4 .. controls #5 and ($(sq)+#6-#7$) .. (sq);
+  \draw[stirtip] (sq) -- #7;}
+% stirring arrows of the snapshots, made by gensnap.py and fixed here: the shafts in the frame of each
+% snapshot, drawn under its nonlinear mapping, and the heads on the page, each on a short straight
+% piece that continues the shaft, every head inside its snapshot and either hidden by or clear of
+% the snapshot in front of it
+% snaparrows begin
+\newcommand{\snapshaftsa}{
+    \draw[stirshaftthin] (0.400,1.780) .. controls (0.600,1.920) and (0.880,1.910) .. (1.150,1.960)
+      .. controls (1.400,2.010) and (1.177,2.070) .. (1.507,2.040);
+    \draw[stirshaftthin] (2.020,1.500) .. controls (2.050,1.200) and (1.950,0.980) .. (1.900,0.760)
+      .. controls (1.860,0.560) and (2.041,0.568) .. (1.821,0.448);
+    \draw[stirshaftthin] (0.800,0.400) .. controls (0.670,0.520) and (0.650,0.780) .. (0.600,1.000)
+      .. controls (0.550,1.180) and (0.515,1.165) .. (0.545,1.375);}
+\newcommand{\snapheadsa}{
+    \draw[stirtipthin] (0.678,2.333) -- (0.878,2.316);
+    \draw[stirtipthin] (0.819,0.350) -- (0.698,0.192);
+    \draw[stirtipthin] (0.245,1.499) -- (0.257,1.698);}
+\newcommand{\snapshaftsb}{
+    \draw[stirshaftthin] (0.271,1.537) .. controls (0.425,1.727) and (0.697,1.794) .. (0.942,1.917)
+      .. controls (1.169,2.034) and (1.017,2.045) .. (1.342,2.107);
+    \draw[stirshaftthin] (1.906,1.714) .. controls (2.017,1.434) and (1.982,1.195) .. (1.994,0.970)
+      .. controls (2.011,0.767) and (2.123,0.765) .. (1.945,0.590);
+    \draw[stirshaftthin] (1.136,0.321) .. controls (0.978,0.400) and (0.887,0.645) .. (0.778,0.842)
+      .. controls (0.681,1.002) and (0.651,0.977) .. (0.622,1.187);}
+\newcommand{\snapheadsb}{
+    \draw[stirtipthin] (0.604,2.397) -- (0.765,2.515);
+    \draw[stirtipthin] (0.875,0.523) -- (0.803,0.336);
+    \draw[stirtipthin] (0.280,1.286) -- (0.269,1.486);}
+\newcommand{\snapshaftsc}{
+    \draw[stirshaftthin] (0.257,1.302) .. controls (0.360,1.524) and (0.608,1.655) .. (0.817,1.833)
+      .. controls (1.008,2.001) and (0.941,2.014) .. (1.241,2.153);
+    \draw[stirshaftthin] (1.800,1.870) .. controls (1.976,1.625) and (2.000,1.384) .. (2.066,1.169)
+      .. controls (2.132,0.976) and (2.220,0.967) .. (2.089,0.753);
+    \draw[stirshaftthin] (1.294,0.307) .. controls (1.121,0.346) and (0.974,0.561) .. (0.820,0.727)
+      .. controls (0.687,0.858) and (0.668,0.817) .. (0.589,1.014);}
+\newcommand{\snapheadsc}{
+    \draw[stirtipthin] (0.559,2.443) -- (0.670,2.609);
+    \draw[stirtipthin] (0.940,0.725) -- (0.897,0.530);
+    \draw[stirtipthin] (0.265,1.089) -- (0.234,1.287);}
+\newcommand{\snapshaftsd}{
+    \draw[stirshaftthin] (-0.090,0.927) .. controls (-0.077,1.170) and (0.104,1.385) .. (0.230,1.629)
+      .. controls (0.345,1.856) and (0.322,1.890) .. (0.549,2.132);
+    \draw[stirshaftthin] (0.748,2.271) --
+      (1.128,2.031) .. controls (1.383,1.870) and (1.495,1.656) .. (1.638,1.481)
+      .. controls (1.771,1.326) and (1.852,1.329) .. (1.811,1.082);
+    \draw[stirshaftthin] (1.394,0.392) .. controls (1.220,0.364) and (1.002,0.508) .. (0.798,0.604)
+      .. controls (0.626,0.675) and (0.651,0.602) .. (0.504,0.755);}
+\newcommand{\snapheadsd}{
+    \draw[stirtipthin] (0.247,2.356) -- (0.311,2.545);
+    \draw[stirtipthin] (0.815,1.151) -- (0.803,0.951);
+    \draw[stirtipthin] (0.227,0.799) -- (0.156,0.986);}
+\newcommand{\snapshaftse}{
+    \draw[stirshaftthin] (0.063,0.676) .. controls (0.008,0.913) and (0.122,1.169) .. (0.177,1.438)
+      .. controls (0.224,1.689) and (0.202,1.733) .. (0.353,2.028);
+    \draw[stirshaftthin] (0.747,2.126) --
+      (0.929,2.073) .. controls (1.218,1.988) and (1.385,1.813) .. (1.570,1.684)
+      .. controls (1.741,1.572) and (1.818,1.595) .. (1.847,1.346);
+    \draw[stirshaftthin] (1.492,0.529) .. controls (1.332,0.454) and (1.083,0.533) .. (0.861,0.569)
+      .. controls (0.675,0.590) and (0.766,0.500) .. (0.582,0.606);}
+\newcommand{\snapheadse}{
+    \draw[stirtipthin] (0.159,2.223) -- (0.198,2.420);
+    \draw[stirtipthin] (0.831,1.484) -- (0.840,1.284);
+    \draw[stirtipthin] (0.262,0.627) -- (0.153,0.795);}
+% snaparrows end
+
+% labels in a row above the figure, the grey description under the label, and in a row below, the
+% description again under the label, each with a vertical pointer from its target #1
+\newcommand{\toplabel}[3]{\path #1 coordinate (lt);
+  \node[sublab,anchor=south] (ls) at (lt |- 0,\yt) {#3};
+  \node[lab,anchor=south] at (ls.north) {#2};
+  \draw[lead] (lt) -- (lt |- ls.south);}
+\newcommand{\botlabel}[3]{\path #1 coordinate (lt);
+  \node[lab,anchor=north] (lb) at (lt |- 0,\yb) {#2};
+  \node[sublab,anchor=north] at (lb.south) {#3};
+  \draw[lead] (lt) -- (lt |- lb.north);}
+
+% one snapshot #6 of the box, turned away from the viewer: drawn in its own frame from (0,0) to
+% (sL,sL), mapped onto a quadrilateral in a small picture of its own, which is then placed with the
+% lower left corner of the frame at (#1,#2), its right side taller than its left by fd at top and
+% bottom alike, as if the right side were nearer and the snapshot at the height of the viewer, with
+% its gas turned by #3 degrees, moved by #5, and an extra patch of gas at #4, and its stirring arrows
+% #6 from gensnap.py, so the forcing changes gradually from one snapshot to the next
+% the mapping takes (x,y) in the frame of a snapshot to the page: x across to the width sw, y up to
+% the height sH of the far left side, and both sides opening by fd towards the near right side,
+% worked in whole scaled points with e-TeX, as pgfmath would run out of range on these products
+\makeatletter
+\def\framemap{%
+  \pgf@xa=\pgf@x\pgf@ya=\pgf@y
+  \pgf@yb=\dimexpr\pgf@xa*\number\pgf@ya/\fLsp\relax
+  \pgf@x=\dimexpr\fxsp sp+\pgf@xa*\fwsp/\fLsp\relax
+  \pgf@y=\dimexpr\fysp sp+\pgf@xa*\fkdsp/\fLsp+\pgf@ya*\fHsp/\fLsp+\pgf@yb*\ftdsp/\fLsp\relax}
+% the lengths the mapping needs, in scaled points, for a snapshot with its frame corner at (#1,#2)
+\def\setframe#1#2{%
+  \pgfmathsetlength\pgf@xa{(#1)*1cm}\edef\fxsp{\number\pgf@xa}%
+  \pgfmathsetlength\pgf@xa{(#2)*1cm}\edef\fysp{\number\pgf@xa}%
+  \pgfmathsetlength\pgf@xa{\sL*1cm}\edef\fLsp{\number\pgf@xa}%
+  \pgfmathsetlength\pgf@xa{\sw*1cm}\edef\fwsp{\number\pgf@xa}%
+  \pgfmathsetlength\pgf@xa{\sH*1cm}\edef\fHsp{\number\pgf@xa}%
+  \pgfmathsetlength\pgf@xa{-\fd*1cm}\edef\fkdsp{\number\pgf@xa}%
+  \pgfmathsetlength\pgf@xa{2*\fd*1cm}\edef\ftdsp{\number\pgf@xa}}
+\makeatother
+% each snapshot is mapped near the origin of a small picture of its own, as the nonlinear mapping
+% breaks curves far from the origin, and that picture is then placed on the page
+\newcommand{\snapshot}[6]{
+  \node[inner sep=0pt,outer sep=0pt,anchor=south west] at (#1,{#2-\fd}) {\begin{tikzpicture}
+  \setframe{0}{0}
+  \useasboundingbox (0,-\fd) rectangle (\sw,{\sH+\fd});
+  \begin{scope}
+    \pgftransformnonlinear{\framemap}
+    \fill[white] (0,0) rectangle (\sL,\sL);
+    \begin{scope}
+      \clip (0,0) rectangle (\sL,\sL);
+      \shade[inner color=gasA,outer color=white] (0,0) rectangle (\sL,\sL);
+      \begin{scope}[shift={(#5)},rotate around={#3:(1.2,1.2)}]
+        \gaspatch{0.8,1.6}{0.65}{13}\gaspatch{1.7,0.7}{0.6}{11}\gaspatch{#4}{0.5}{12}
+        \snapfilaments
+      \end{scope}
+      \csname snapshafts#6\endcsname
+    \end{scope}
+    \draw[edgec,line width=0.5pt] (0,0) rectangle (\sL,\sL);
+  \end{scope}
+  \csname snapheads#6\endcsname
+  \end{tikzpicture}};}
+
+
+% 4  the figure
+
+\begin{document}
+\begin{tikzpicture}[font=\small]
+
+% galactic disk as diffuse gas thinning out to its edge, with two spiral arms
+\fill[diskc,path fading=diskfade] (\cx,\cy) ellipse[x radius=1.04*\R,y radius=1.04*\q*\R];
+\spiralarm{0}\spiralarm{180}
+
+% magnetic field threading the disk along the arms, rippled where the magnetorotational instability
+% grows
+\fieldline{48}{5.62}{4.6}\fieldline{68}{5.62}{4.6}\fieldline{228}{9}{4}\fieldline{248}{9}{4}
+% the pointer ends just above the inner line, where it rises into its topmost ripple
+\coordinate (mri) at ({dx(bfr(5.73,5.62)*cos(deg(5.73)+68))},
+  {dy(bfr(5.73,5.62)*sin(deg(5.73)+68))+0.12});
+
+% molecular clouds along the arms, two of them collapsing
+\mclouds{2.8/-0.1/0.09/21,3.08/-0.32/0.07/22,3.52/-0.56/0.07/23,5.45/-0.7/0.08/24,5.28/-0.88/0.055/25,
+  5.72/0.45/0.08/26,2.3/0.85/0.08/28,2.06/0.76/0.06/29,0.62/0.24/0.075/30,0.5/0.12/0.05/31,
+  2.2/-0.62/0.055/33,3.45/0.55/0.05/35,6.2/0.75/0.05/36}
+\collapse{4.62}{-0.74}{0.15}{15}{270}
+\collapse{5.1}{0.85}{0.13}{16}{90}
+
+% protostellar jets from young stars in the arms
+\pjet{1.0}{-0.35}{28}{0.34}
+\pjet{5.95}{-0.95}{15}{0.3}
+\pjet{2.6}{1.1}{-15}{0.3}
+
+% supernova shells, a large one and a younger, smaller one, both sitting in the disk
+\snshell{1.15}{0.42}{0.42}{0.1}
+\snshell{6.05}{0.0}{0.3}{0.08}
+
+% bulge as an oblate spheroid sunk into the disk, cut off at the bottom by the ellipse where it meets
+% the disk plane, the gas of the disk hides the part below
+\begin{scope}[shift={(\cx,\cy)}]
+  \pgfmathsetmacro{\ba}{0.7}\pgfmathsetmacro{\bb}{0.48}\pgfmathsetmacro{\cs}{-0.04}
+  \pgfmathsetmacro{\ri}{\ba*sqrt(1-(\cs/\bb)^2)}\pgfmathsetmacro{\as}{atan2(-\cs/\bb,\ri/\ba)}
+  \begin{scope}
+    \clip (-\ri,0) arc[start angle=180,end angle=360,x radius=\ri,y radius=\q*\ri]
+      arc[start angle=\as,end angle=180-\as,x radius=\ba,y radius=\bb] -- cycle;
+    \shade[inner color=bulgeA,outer color=bulgeB] (0,\cs+0.1)
+      ellipse[x radius=\ba+0.04,y radius=\bb+0.04];
+  \end{scope}
+\end{scope}
+
+% zoom region, a square patch on a spiral arm, and the zoom from it into the box
+\coordinate (zr) at ({dx(2.95)},{dy(-1.26)});
+\draw[edgec,line width=0.45pt] ($(zr)+(-0.18,-0.18)$) rectangle ($(zr)+(0.18,0.18)$);
+\draw[edgec,line width=0.4pt] ($(zr)+(0.18,0.18)$) -- (\bx,\by+\bs);
+\draw[edgec,line width=0.4pt] ($(zr)+(0.18,-0.18)$) -- (\bx,\by);
+
+% periodic simulation box, its hidden back edges, the turbulent gas inside, dense clumps, and the
+% large stirring arrows of the forcing, then its visible edges
+\coordinate (A) at (\bx,\by);\coordinate (B) at (\bx+\bs,\by);
+\coordinate (C) at (\bx+\bs,\by+\bs);\coordinate (D) at (\bx,\by+\bs);
+\coordinate (o) at (\ox,\oy);
+\path[fill=white] (A) -- (B) -- ($(B)+(o)$) -- ($(C)+(o)$) -- ($(D)+(o)$) -- (D) -- cycle;
+\begin{scope}
+  \clip (A) -- (B) -- ($(B)+(o)$) -- ($(C)+(o)$) -- ($(D)+(o)$) -- (D) -- cycle;
+  \shade[inner color=gasA,outer color=gasB] (A) -- (B) -- ($(B)+(o)$) -- ($(C)+(o)$) -- ($(D)+(o)$)
+    -- (D) -- cycle;
+  \begin{scope}[shift={(A)}]
+    \gaspatch{0.9,2.0}{0.75}{14}\gaspatch{2.4,1.0}{0.85}{12}\gaspatch{1.5,0.45}{0.55}{11}
+    \gaspatch{2.9,2.5}{0.55}{11}\gaspatch{0.5,0.9}{0.45}{10}
+    \boxfilaments
+  \end{scope}
+\end{scope}
+\draw[hidc,line width=0.4pt] ($(A)+(o)$) -- ($(B)+(o)$) ($(A)+(o)$) -- ($(D)+(o)$)
+  ($(A)+(o)$) -- (A);
+% clumps and stirring arrows, given for a box with its front corner at x = 10 and moved with it
+\begin{scope}[xshift=\bx cm-10cm]
+\foreach \x/\y/\r/\s in {10.75/0.2/0.13/1,11.55/0.85/0.12/2,10.95/-0.55/0.14/4,12.25/0.4/0.11/6,
+    12.95/1.4/0.1/8,11.6/-0.55/0.09/9,10.55/1.38/0.09/10}
+  \begin{scope}[shift={(\x,\y)}]\pgfmathsetseed{\s}\cloud{\r}\end{scope}
+\stirS{(10.55,0.95)}{(10.8,1.2)}{(11.0,1.14)}{(11.25,1.22)}{(11.5,1.3)}{(11.8,1.3)}{(12.05,1.12)}
+\stirS{(12.55,0.95)}{(12.72,0.65)}{(12.62,0.32)}{(12.66,0.02)}{(12.7,-0.28)}{(12.66,-0.52)}
+  {(12.45,-0.72)}
+\stirS{(12.05,-1.05)}{(11.8,-1.14)}{(11.55,-1.02)}{(11.3,-1.05)}{(11.05,-1.08)}{(10.85,-1.07)}
+  {(10.62,-0.97)}
+\stirS{(10.3,-0.6)}{(10.24,-0.36)}{(10.38,-0.18)}{(10.35,0.06)}{(10.32,0.28)}{(10.32,0.45)}{(10.38,0.62)}
+\stirS{(11.1,0.45)}{(11.3,0.52)}{(11.45,0.32)}{(11.65,0.2)}{(11.85,0.08)}{(11.95,-0.1)}{(12.02,-0.32)}
+\coordinate (force) at (11.3,-1.2);
+\end{scope}
+\draw[edgec,line width=0.5pt] (A) -- (B) -- (C) -- (D) -- cycle (B) -- ($(B)+(o)$) -- ($(C)+(o)$)
+  -- ($(D)+(o)$) -- (D) (C) -- ($(C)+(o)$);
+\coordinate (box) at ($(D)+(o)+(1.1,0.12)$);
+
+% snapshots of the forcing, drawn from the back, the gas of each turned and moved a little further,
+% and the time axis running below them
+\snapshot{\sx+4*\stx}{\sy}{68}{1.6,1.2}{-0.3,0}{e}
+\snapshot{\sx+3*\stx}{\sy}{52}{1.7,1.5}{-0.3,0}{d}
+\snapshot{\sx+2*\stx}{\sy}{30}{1.5,1.8}{0,0}{c}
+\snapshot{\sx+\stx}{\sy}{16}{1.1,1.3}{0,0}{b}
+\snapshot{\sx}{\sy}{0}{0.8,0.9}{0,0}{a}
+\coordinate (snap) at ({\sx+\sw/2},{\sy+\sH+\fd/2+0.12});
+\coordinate (t0) at ({\sx-0.15},{\sy-\fd-0.3});
+\coordinate (t1) at ({\sx+4*\stx+\sw+0.45},{\sy-\fd-0.3});
+\draw[flow] (t0) -- (t1);
+\coordinate (corr) at ($($(t0)!0.5!(t1)$)+(0,-0.12)$);
+
+% labels
+\toplabel{(1.15,{0.42+0.1*sqrt(1-\q*\q)+0.42+0.12})}{Supernova Shells}{Compressive}
+\toplabel{({dx(-0.57)},{dy(2.36)+0.05})}{Galactic Shear}{Solenoidal}
+\toplabel{(mri)}{Magnetorotational Instability}{Solenoidal}
+\toplabel{(box)}{Simulation Box}{Periodic}
+\toplabel{(snap)}{Snapshots}{Forcing Over Time}
+\botlabel{(1.1,-0.72)}{Protostellar Jets}{Mixed}
+\botlabel{(4.62,-1.01)}{Gravitational Collapse}{Compressive}
+\botlabel{($(zr)+(0,-0.3)$)}{Zoom Region}{Turbulent Gas}
+\botlabel{(force)}{Stochastic Forcing}{Ornstein Uhlenbeck}
+\botlabel{(corr)}{Correlation Time}{Pattern Lifetime}
+
+\end{tikzpicture}
+\end{document}
