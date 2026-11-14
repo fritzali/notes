@@ -1,0 +1,253 @@
+% greyscaleCGM.tex
+% inflows and outflows of a galaxy through its circumgalactic medium, greyscale
+% standalone, compile with pdflatex
+%
+% layout of this file
+%   1  geometry
+%   2  palette, styles, shadings and fadings
+%   3  helper macros
+%   4  the figure
+
+\documentclass[tikz,border=6pt]{standalone}
+\usepackage[scaled]{helvet}
+\renewcommand{\familydefault}{\sfdefault}
+\usetikzlibrary{arrows.meta,calc,fadings}
+
+
+% 1  geometry
+
+% galaxy axis tilted by tilt from the vertical, disk radius and apparent thickness, bulge radii
+\def\tilt{16}
+\def\rd{2.3}\def\bd{0.3}
+\def\rb{0.5}\def\bb{0.36}
+% halo radius, roughly the virial radius, not to scale with the disk
+\def\Rh{6.2}
+% widening of the fountain bases on the side of the wind, and the fraction of each loop over which
+% it dies away
+\def\fbase{0.3}\def\fbt{0.3}
+% label columns on both sides of the halo
+\def\xl{-7.2}\def\xr{7.2}
+\tikzset{declare function={
+  % wind cone centre line with sway amplitude a and phase p, half width opening by k
+  wc(\y,\a,\p)=\a*\y*sin(75*\y+\p);
+  ww(\y,\k)=0.3+\k*\y+0.012*\y*sin(130*\y);
+  % cold stream in its own frame from the far end at x = 0 to the disk at x = l, bowed by b,
+  % with a wiggle of phase p and a half width tapering towards the disk
+  sc(\x,\b,\p,\l)=\b*\x*(\l-\x)/\l^2+0.16*sin(75*\x+\p)*(1-\x/\l)^1.5;
+  sw(\x,\w,\l)=0.12+\w*(1-\x/\l)^1.6;
+  % cubic bezier through a, b, c, d and its derivative, for the fountain loops
+  bz(\t,\a,\b,\c,\d)=(1-\t)^3*\a+3*(1-\t)^2*\t*\b+3*(1-\t)*\t^2*\c+\t^3*\d;
+  bzd(\t,\a,\b,\c,\d)=3*(1-\t)^2*(\b-\a)+6*(1-\t)*\t*(\c-\b)+3*\t^2*(\d-\c);
+}}
+
+
+% 2  palette, styles, shadings and fadings
+
+% every colour of the figure, in greys, darker for denser gas
+\colorlet{halo0}{black!22}\colorlet{halo1}{black!12}
+\colorlet{halo2}{black!5.5}\colorlet{halo3}{black!1.5}
+\colorlet{windc}{black!36}\colorlet{streamc}{black!40}
+\colorlet{loopA}{black!25}\colorlet{loopB}{black!13}
+\colorlet{flowc}{black!70}
+\colorlet{diskA}{black!78}\colorlet{diskB}{black!45}
+\colorlet{bulgeA}{white}\colorlet{bulgeB}{black!35}
+\colorlet{cloudA}{black!30}\colorlet{cloudB}{black!50}
+
+% hot halo, the shading maps 25bp onto the halo radius
+\pgfdeclareradialshading{halo}{\pgfpoint{0bp}{0bp}}{color(0bp)=(halo0);color(6bp)=(halo1);
+  color(14bp)=(halo2);color(25bp)=(halo3);color(50bp)=(halo3)}
+% the winds and streams fade out by transparency, so they blend exactly into whatever lies behind,
+% a fitted fading maps the central 50bp of its picture onto the path, and the cones fade in three
+% linear steps, fully transparent from two thirds of their length on, well before their slanted ends
+\newcommand{\windsteps}{0/0.3/0/30,0.3/0.5/30/72,0.5/0.66/72/100,0.66/1/100/100}
+\begin{tikzfadingfrompicture}[name=windup]
+  \fill[transparent!0] (-50bp,-50bp) rectangle (50bp,-25bp);
+  \foreach \ya/\yb/\ta/\tb in \windsteps
+    \shade[bottom color=transparent!\ta,top color=transparent!\tb]
+      (-50bp,50*\ya bp-25bp) rectangle (50bp,50*\yb bp-25bp);
+  \fill[transparent!100] (-50bp,25bp) rectangle (50bp,50bp);
+\end{tikzfadingfrompicture}
+\begin{tikzfadingfrompicture}[name=winddown]
+  \fill[transparent!0] (-50bp,25bp) rectangle (50bp,50bp);
+  \foreach \ya/\yb/\ta/\tb in \windsteps
+    \shade[top color=transparent!\ta,bottom color=transparent!\tb]
+      (-50bp,25bp-50*\yb bp) rectangle (50bp,25bp-50*\ya bp);
+  \fill[transparent!100] (-50bp,-50bp) rectangle (50bp,-25bp);
+\end{tikzfadingfrompicture}
+\tikzfading[name=streamin,left color=transparent!100,middle color=transparent!25,
+  right color=transparent!0]
+
+\tikzset{
+  cloud/.style={top color=cloudA,bottom color=cloudB},
+  % fountain loops, lighter on their outer side away from the wind
+  loopleft/.style={left color=loopB,right color=loopA},
+  loopright/.style={left color=loopA,right color=loopB},
+  loopflow/.style={-{Stealth[length=4.5pt,width=3.6pt]},line width=0.5pt,black!55},
+  flow/.style={-{Stealth[length=5pt,width=4pt]},line width=0.6pt,flowc},
+  inflow/.style={line width=1.2pt,white,line cap=round},
+  inflowtip/.style={-{Stealth[length=6pt,width=5.5pt]},line width=1.2pt,white},
+  lab/.style={font=\small,inner sep=1pt},
+  sublab/.style={font=\scriptsize,text=black!65,inner sep=1pt},
+  lead/.style={line width=0.4pt,black,preaction={draw=white,line width=2pt,line cap=round}},
+}
+
+
+% 3  helper macros
+
+% wind on side #1 (1 up, -1 down) with sway amplitude #2 and phase #3, opening #4, length #5 and
+% fading #6, with the two fountain loops #7 (right) and #8 (left) behind it, each given as its bezier
+% points, half width, phase and arrow start: the loops start under the disk, and the halo is painted
+% again where they lie inside the wind, before the wind itself, so they stay fully hidden until they
+% emerge from behind the wind, which fades from solid at its base to fully transparent well before
+% its end
+\newcommand{\windfountains}[8]{
+  \setloop#7\shade[loopright] \loopband;
+  \setloop#8\shade[loopleft] \loopband;
+  \begin{scope}
+    \clip \conepath{#1}{#2}{#3}{#4}{#5};
+    \clip \pgfextra{\setloop#7}\loopband \pgfextra{\setloop#8}\loopband;
+    \shade[shading=halo] (0,0) circle (\Rh);
+  \end{scope}
+  \fill[windc,path fading=#6] \conepath{#1}{#2}{#3}{#4}{#5};
+  \looparrow{#7}\looparrow{#8}}
+\newcommand{\conepath}[5]{
+  plot[domain=0.2:#5,samples=200,smooth,variable=\y] ({wc(\y,#2,#3)-#1*ww(\y,#4)},{#1*\y})
+  -- plot[domain=#5:0.2,samples=200,smooth,variable=\y] ({wc(\y,#2,#3)+#1*ww(\y,#4)},{#1*\y}) -- cycle}
+
+% the current fountain loop, its points listed as x and y in the galaxy frame, half width, phase,
+% and where along it the flow arrow starts, just after the loop has cleared the wind, and whether its
+% left edge faces the wind
+\newcommand{\setloop}[4]{\xdef\fstart{#4}\pgfmathsetmacro{\pax}{{#1}[0]}\pgfmathsetmacro{\pay}{{#1}[1]}
+  \pgfmathsetmacro{\pbx}{{#1}[2]}\pgfmathsetmacro{\pby}{{#1}[3]}\pgfmathsetmacro{\pcx}{{#1}[4]}
+  \pgfmathsetmacro{\pcy}{{#1}[5]}\pgfmathsetmacro{\pdx}{{#1}[6]}\pgfmathsetmacro{\pdy}{{#1}[7]}
+  \xdef\pax{\pax}\xdef\pay{\pay}\xdef\pbx{\pbx}\xdef\pby{\pby}
+  \xdef\pcx{\pcx}\xdef\pcy{\pcy}\xdef\pdx{\pdx}\xdef\pdy{\pdy}\xdef\fwid{#2}\xdef\fph{#3}
+  \pgfmathsetmacro{\fin}{(\pby-\pay)*\pax>0?1:0}\xdef\fin{\fin}}
+% outline of the current loop, out along its left edge and back along its right edge, the edge on the
+% side of the wind, the left one if fin is 1, widened at the base, so it closes on the wind without a gap
+\newcommand{\loopband}{
+  plot[domain=0:1,samples=90,smooth,variable=\t]
+    ({bzx(\t)+(fo(\t)+fw(\t)+\fin*fb(\t))*fnx(\t)},{bzy(\t)+(fo(\t)+fw(\t)+\fin*fb(\t))*fny(\t)})
+  -- plot[domain=1:0,samples=90,smooth,variable=\t]
+    ({bzx(\t)+(fo(\t)-fw(\t)-(1-\fin)*fb(\t))*fnx(\t)},{bzy(\t)+(fo(\t)-fw(\t)-(1-\fin)*fb(\t))*fny(\t)})
+  -- cycle}
+% thin arrow along the centre of a loop, from where it has emerged from the wind, showing the flow
+\newcommand{\looparrow}[1]{\setloop#1
+  \draw[loopflow] plot[domain=\fstart:0.84,samples=50,smooth,variable=\t]
+    ({bzx(\t)+fo(\t)*fnx(\t)},{bzy(\t)+fo(\t)*fny(\t)});}
+
+% cold stream from #1 to #2 bowed by #3 with wiggle phase #4 and width #5, faded in from its far end
+% along fading angle #6 over a white underlay, so it fades to white and covers the halo edge,
+% with an arrow along its centre, its head set on a short straight piece over the rounded end of the
+% curved shaft, so the head stays sharp, and a point #7 a fraction #8 of the way in, beside the arrow
+\newcommand{\stream}[8]{
+  \path let \p1=($#2-#1$), \n1={veclen(\x1,\y1)/1cm}, \n2={atan2(\y1,\x1)} in
+    \pgfextra{\pgfmathsetmacro{\ls}{\n1}\pgfmathsetmacro{\ang}{\n2}\xdef\ls{\ls}\xdef\ang{\ang}};
+  \begin{scope}[shift={#1},rotate=\ang]
+    \def\streampath{plot[domain=0:\ls,samples=160,smooth] ({\x},{sc(\x,#3,#4,\ls)+sw(\x,#5,\ls)})
+      -- plot[domain=\ls:0,samples=160,smooth] ({\x},{sc(\x,#3,#4,\ls)-sw(\x,#5,\ls)}) -- cycle}
+    \fill[white] \streampath;
+    \fill[streamc,path fading=streamin,fading angle=#6] \streampath;
+    \draw[inflow] plot[domain=2.4:\ls-1.7,samples=80,smooth] ({\x},{sc(\x,#3,#4,\ls)});
+    \draw[inflowtip] ({\ls-1.9},{sc(\ls-1.9,#3,#4,\ls)}) -- ({\ls-1.6},{sc(\ls-1.6,#3,#4,\ls)});
+    \coordinate (#7) at ({#8*\ls},{sc(#8*\ls,#3,#4,\ls)+0.72*sw(#8*\ls,#5,\ls)});
+  \end{scope}}
+
+% the loop points as functions of t, from the points stored by \setloop, its unit normal to the left
+% of the direction of travel, its half width and the wobble of its centre line, both of which only set
+% in once the loop has left the wind, and the widening of its base
+\tikzset{declare function={
+  bzx(\t)=bz(\t,\pax,\pbx,\pcx,\pdx);
+  bzy(\t)=bz(\t,\pay,\pby,\pcy,\pdy);
+  bzdx(\t)=bzd(\t,\pax,\pbx,\pcx,\pdx);
+  bzdy(\t)=bzd(\t,\pay,\pby,\pcy,\pdy);
+  fnx(\t)=-bzdy(\t)/veclen(bzdx(\t),bzdy(\t));
+  fny(\t)=bzdx(\t)/veclen(bzdx(\t),bzdy(\t));
+  fw(\t)=\fwid*(1+0.25*sin(430*\t+\fph)*min(1,\t/0.35));
+  fo(\t)=0.1*sin(400*\t+2*\fph)*sin(180*\t)*min(1,\t/0.35);
+  fb(\t)=\fbase*max(0,1-\t/\fbt)^2;
+}}
+
+% rounded, slightly irregular cloud of radius #1
+\newcommand{\cloud}[1]{\shade[cloud] plot[smooth cycle,tension=0.9,domain=0:315,samples=8,variable=\t]
+  ({#1*(1+0.1*rand)*cos(\t)},{#1*(1+0.1*rand)*sin(\t)});}
+
+% labels in a column at x = xl on the left or xr on the right, each with a horizontal pointer from
+% its target #1 in the row of the label, all pointers ending at the column, and a short grey
+% description #3 under the label #2
+\newcommand{\leftlabel}[3]{\path #1 coordinate (lt);
+  \draw[lead] (lt) -- (lt -| xl);
+  \node[lab,anchor=east] (lb) at ($(lt -| xl)+(-0.05,0)$) {#2};
+  \node[sublab,anchor=north east] at (lb.south east) {#3};}
+\newcommand{\rightlabel}[3]{\path #1 coordinate (lt);
+  \draw[lead] (lt) -- (lt -| xr);
+  \node[lab,anchor=west] (lb) at ($(lt -| xr)+(0.05,0)$) {#2};
+  \node[sublab,anchor=north west] at (lb.south west) {#3};}
+
+
+% 4  the figure
+
+\begin{document}
+\begin{tikzpicture}[font=\small]
+
+% hot diffuse halo, densest around the galaxy, and its edge near the virial radius
+\shade[shading=halo] (0,0) circle (\Rh);
+\draw[black!40,line width=0.5pt,dash pattern=on 4pt off 3pt] (0,0) circle (\Rh);
+
+% cold streams from the cosmic web, tucked under the disk rim
+\stream{(7.4,5.6)}{($(\tilt:\rd-0.25)$)}{2.4}{0}{0.44}{-127}{sup}{0.586}
+\stream{(-7.0,-6.0)}{($(180+\tilt:\rd-0.25)$)}{2.2}{140}{0.36}{40}{slo}{0.42}
+
+\begin{scope}[rotate=\tilt]
+  % biconical wind leaving the disk along its axis, the two cones differ a little, with the galactic
+  % fountain branching off each cone, gas lifted by the wind that rains back onto the disk
+  % the faded ends of the winds reach past the halo, so they stay out of the bounding box
+  \begin{pgfinterruptboundingbox}
+  \windfountains{-1}{0.05}{150}{0.38}{5.9}{winddown}
+    {{0.5,0.0,1.25,-3.0,3.9,-3.5,1.25,0.0}{0.22}{200}{0.19}}
+    {{-0.55,0.0,-1.1,-2.45,-2.9,-2.7,-1.35,0.0}{0.17}{290}{0.16}}
+  \windfountains{1}{0.04}{0}{0.43}{6.3}{windup}
+    {{0.55,0.0,1.2,2.7,3.05,2.85,1.3,0.0}{0.18}{110}{0.29}}
+    {{-0.5,0.0,-1.25,2.75,-3.8,3.55,-1.25,0.0}{0.21}{20}{0.24}}
+  \end{pgfinterruptboundingbox}
+  % cold clouds entrained in the wind, x, y and radius in the galaxy frame
+  \pgfmathsetseed{3}
+  \foreach \x/\y/\r in {0.52/3.05/0.16,-0.5/3.7/0.13,0.98/4.4/0.18,-1.2/4.75/0.11,0.25/5.05/0.1,
+      -0.22/2.3/0.09,1.5/3.75/0.08,-0.95/4.05/0.07,0.6/4.2/0.06,-1.7/5.15/0.09,0.2/3.95/0.07,
+      -0.62/-3.15/0.15,0.42/-3.6/0.14,1.4/-4.74/0.17,-0.15/-4.5/0.11,0.95/-2.65/0.09,
+      -1.05/-4.1/0.08,0.8/-4.3/0.07,-0.35/-2.5/0.06,1.75/-4/0.07,-1.25/-4.55/0.06}
+    \begin{scope}[shift={(\x,\y)}]\cloud{\r}\end{scope}
+  % wind arrows fanning out inside each cone
+  \draw[flow] (0,1.2) .. controls (0.08,2.6) and (-0.06,3.6) .. (0.05,4.6);
+  \draw[flow] (0.3,1.4) .. controls (0.6,2.4) and (1.1,3.3) .. (1.55,4.3);
+  \draw[flow] (-0.3,1.4) .. controls (-0.55,2.5) and (-1.0,3.4) .. (-1.45,4.1);
+  \draw[flow] (0.02,-1.2) .. controls (-0.08,-2.4) and (0.06,-3.4) .. (-0.05,-4.3);
+  \draw[flow] (0.3,-1.4) .. controls (0.55,-2.4) and (0.95,-3.2) .. (1.35,-4.0);
+  \draw[flow] (-0.3,-1.4) .. controls (-0.6,-2.4) and (-1.0,-3.3) .. (-1.35,-4.25);
+  % galactic disk and bulge
+  \shade[left color=diskA,right color=diskA,middle color=diskB] (0,0) ellipse[x radius=\rd,y radius=\bd];
+  \shade[inner color=bulgeA,outer color=bulgeB] (0,0) ellipse[x radius=\rb,y radius=\bb];
+  % label anchors in the frame of the galaxy
+  \coordinate (wind) at (-1.62,3.281);
+  \coordinate (disk) at (-1.747,0.092);
+  \coordinate (clouds) at (1.4,-4.74);
+\end{scope}
+
+% component labels in two columns, the fountain target lies on the outer side of the lower right loop,
+% clear of its arrow, and the halo target in open background, each row placed so its pointer crosses
+% the dashed halo edge in a gap between dashes
+\coordinate (xl) at (\xl,0);\coordinate (xr) at (\xr,0);
+\leftlabel{(wind)}{Galactic Wind}{Outflow}
+\leftlabel{(-4.6,0.832)}{Hot Halo}{Diffuse Gas}
+\leftlabel{(disk)}{Galactic Disk}{Stars \& Cold Gas}
+\rightlabel{(sup)}{Cold Streams}{Inflow}
+\rightlabel{(3.06,-1.83)}{Galactic Fountain}{Recycling Gas}
+\rightlabel{(clouds)}{Entrained Clouds}{Swept Up Cold Gas}
+\rightlabel{($(-62:\Rh)+(0.12,0)$)}{Virial Radius}{Outer Halo Boundary}
+
+% widen the narrower side of the bounding box, so the halo sits in the middle of the figure
+\path let \p1=(current bounding box.south west),\p2=(current bounding box.north east),
+  \n1={max(-\x1,\x2)} in (-\n1,0) (\n1,0);
+
+\end{tikzpicture}
+\end{document}
