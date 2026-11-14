@@ -31,8 +31,8 @@
 \def\sx{13.3}\def\stx{0.68}\def\sL{2.4}\def\sw{1.08}\def\sH{2.6}
 \pgfmathsetmacro{\sfb}{-1.3}\pgfmathsetmacro{\sft}{1.85}
 \pgfmathsetmacro{\fd}{(\sft-\sfb-\sH)/2}\pgfmathsetmacro{\sy}{\sfb+\fd}
-% label rows above and below the figure
-\def\yt{2.45}\def\yb{-2.3}
+% label rows above and below the figure, and the end of pointers to labels left of the galaxy
+\def\yt{2.45}\def\yb{-2.3}\def\xl{0.05}
 \tikzset{declare function={
   dx(\X)=\cx+\X;
   dy(\Y)=\cy+\q*\Y;
@@ -51,11 +51,11 @@
 % diffuse gas of the disk and its spiral arms, gas, patches and filaments in the box and snapshots
 \colorlet{diskc}{black!32}\colorlet{armc}{black}
 \colorlet{gasA}{black!17}\colorlet{gasB}{black!3}\colorlet{patchc}{black}\colorlet{filc}{black}
-% dense clouds, bulge, supernova shells, field lines, protostellar jets and their young stars
+% dense clouds, bulge, supernova shells, field lines, protostellar jets, young stars and their glow
 \colorlet{cloudA}{black!45}\colorlet{cloudB}{black!68}
 \colorlet{bulgeA}{white}\colorlet{bulgeB}{black!38}
 \colorlet{shellc}{black!58}\colorlet{fieldc}{black!50}
-\colorlet{lobec}{black}\colorlet{starc}{black!80}
+\colorlet{lobec}{black}\colorlet{starc}{black!80}\colorlet{glowc}{white}
 % stirring arrows, arrows of infall, time axis, edges and hidden edges, and secondary text
 \colorlet{stirc}{black!50}\colorlet{drivec}{black!62}\colorlet{flowc}{black!70}
 \colorlet{edgec}{black!60}\colorlet{hidc}{black!35}\colorlet{subc}{black!65}
@@ -117,6 +117,18 @@
       -- plot[domain=#4:0.04,samples=40,smooth,variable=\x] (\x,{-0.055*abs(sin(180*\x/#4))^0.75})
       -- cycle;
   \fill[starc] (0,0) circle (0.045);\end{scope}}
+% stellar winds from a group of young stars at (#1,#2), glowing out of a soft darker halo, with gas
+% blown out to all sides, leaving the side at #3 degrees free for a pointer
+\newcommand{\winds}[3]{\begin{scope}[shift={(#1,#2)}]
+  \fill[armc,opacity=0.2,path fading=fuzzy] (0,0) circle (0.34);
+  \fill[glowc,path fading=fuzzy] (0,0) circle (0.17);
+  \foreach \a in {0,60,...,300}{
+    \pgfmathsetmacro{\aa}{\a+#3+30}
+    \draw[drive] ({0.2*cos(\aa)},{0.75*0.2*sin(\aa)}) -- ({0.42*cos(\aa)},{0.75*0.42*sin(\aa)});}
+  \foreach \x/\y/\r in {0/0/0.036,0.078/0.036/0.028,-0.068/0.03/0.026,0.022/-0.052/0.03}
+    \fill[starc] (\x,\y) circle (\r);
+  \end{scope}}
+
 % supernova shell of radius #3 at (#1,#2), a transparent bubble sitting in the disk with its centre a
 % height #4 above the disk plane, the part below the plane seen dimmed through the gas of the disk,
 % and the circle where it cuts the plane, its ellipse touching the outline of the sphere exactly, at
@@ -152,9 +164,9 @@
 \newcommand{\spiralarm}[1]{\foreach \f in {1,0.62,0.3} {\armband{#1}{\f}}}
 
 % magnetic field line turned by #1 degrees between the arms, following their spiral from t = #3 to
-% 6.1, rippled around t = #2, with a small head giving the direction of the field
-\newcommand{\fieldline}[3]{
-  \draw[field] plot[domain=#3:6.1,samples=220,smooth,variable=\t]
+% #4, rippled around t = #2, with a small head giving the direction of the field
+\newcommand{\fieldline}[4]{
+  \draw[field] plot[domain=#3:#4,samples=220,smooth,variable=\t]
     ({dx(bfr(\t,#2)*cos(deg(\t)+#1))},{dy(bfr(\t,#2)*sin(deg(\t)+#1))});
   \draw[field,-{Stealth[length=3.6pt,width=3pt]}]
     ({dx(bfr(#3+0.4,#2)*cos(deg(#3+0.4)+#1))},{dy(bfr(#3+0.4,#2)*sin(deg(#3+0.4)+#1))})
@@ -306,12 +318,17 @@
     \draw[stirtipthin] (0.262,0.627) -- (0.153,0.795);}
 % snaparrows end
 
-% labels in a row above the figure, the grey description under the label, and in a row below, the
-% description again under the label, each with a vertical pointer from its target #1
+% labels in a row above the figure, the grey description under the label, in a row below, the
+% description again under the label, each with a vertical pointer from its target #1, and left of
+% the galaxy, turned to read upwards, with a horizontal pointer
 \newcommand{\toplabel}[3]{\path #1 coordinate (lt);
   \node[sublab,anchor=south] (ls) at (lt |- 0,\yt) {#3};
   \node[lab,anchor=south] at (ls.north) {#2};
   \draw[lead] (lt) -- (lt |- ls.south);}
+\newcommand{\leftlabel}[3]{\path #1 coordinate (lt) (\xl,0) coordinate (lx);
+  \node[sublab,rotate=90,anchor=south] (ls) at (lt -| lx) {#3};
+  \node[lab,rotate=90,anchor=south] at (ls.north) {#2};
+  \draw[lead] (lt) -- (lt -| lx);}
 \newcommand{\botlabel}[3]{\path #1 coordinate (lt);
   \node[lab,anchor=north] (lb) at (lt |- 0,\yb) {#2};
   \node[sublab,anchor=north] at (lb.south) {#3};
@@ -376,8 +393,9 @@
 \spiralarm{0}\spiralarm{180}
 
 % magnetic field threading the disk along the arms, rippled where the magnetorotational instability
-% grows
-\fieldline{48}{5.62}{4.6}\fieldline{68}{5.62}{4.6}\fieldline{228}{9}{4}\fieldline{248}{9}{4}
+% grows, the lines on the left ending short of the young stars
+\fieldline{48}{5.62}{4.6}{6.1}\fieldline{68}{5.62}{4.6}{6.1}
+\fieldline{228}{9}{4}{5.85}\fieldline{248}{9}{4}{5.6}
 % the pointer ends just above the inner line, where it rises into its topmost ripple
 \coordinate (mri) at ({dx(bfr(5.73,5.62)*cos(deg(5.73)+68))},
   {dy(bfr(5.73,5.62)*sin(deg(5.73)+68))+0.12});
@@ -385,7 +403,7 @@
 % molecular clouds along the arms, two of them collapsing
 \mclouds{2.8/-0.1/0.09/21,3.08/-0.32/0.07/22,3.52/-0.56/0.07/23,5.45/-0.7/0.08/24,5.28/-0.88/0.055/25,
   5.72/0.45/0.08/26,2.3/0.85/0.08/28,2.06/0.76/0.06/29,0.62/0.24/0.075/30,0.5/0.12/0.05/31,
-  2.2/-0.62/0.055/33,3.45/0.55/0.05/35,6.2/0.75/0.05/36}
+  2.3/-0.35/0.055/33,3.45/0.55/0.05/35,6.2/0.75/0.05/36}
 \collapse{4.62}{-0.74}{0.15}{15}{270}
 \collapse{5.1}{0.85}{0.13}{16}{90}
 
@@ -393,6 +411,9 @@
 \pjet{1.0}{-0.35}{28}{0.34}
 \pjet{5.95}{-0.95}{15}{0.3}
 \pjet{2.6}{1.1}{-15}{0.3}
+
+% stellar winds from a group of young stars
+\winds{1.85}{-0.85}{270}
 
 % supernova shells, a large one and a younger, smaller one, both sitting in the disk
 \snshell{1.15}{0.42}{0.42}{0.1}
@@ -472,7 +493,8 @@
 \toplabel{(mri)}{Magnetorotational Instability}{Solenoidal}
 \toplabel{(box)}{Simulation Box}{Periodic}
 \toplabel{(snap)}{Snapshots}{Forcing Over Time}
-\botlabel{(1.1,-0.72)}{Protostellar Jets}{Mixed}
+\leftlabel{(0.835,-0.35)}{Protostellar Jets}{Mixed}
+\botlabel{(1.85,-1.05)}{Stellar Winds}{Compressive}
 \botlabel{(4.62,-1.01)}{Gravitational Collapse}{Compressive}
 \botlabel{($(zr)+(0,-0.3)$)}{Zoom Region}{Turbulent Gas}
 \botlabel{(force)}{Stochastic Forcing}{Ornstein Uhlenbeck}
