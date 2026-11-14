@@ -22,6 +22,6 @@ And to clean up any auxiliary files afterwards:
 
 ### Inspiration
 
-- [C. Federrath, J. Roman-Duval, R. S. Klessen, W. Schmidt & M.-M. Mac Low 2010](https://doi.org/10.1051/0004-6361/200912437)
+- [C. Federrath, J. Roman-Duval, R. S. Klessen, W. Schmidt & M. M. Mac Low 2010](https://doi.org/10.1051/0004-6361/200912437)
 - [P. Grete, B. W. O'Shea & K. Beckwith 2018](https://doi.org/10.3847/2041-8213/aac0f5)
 - [V. Eswaran & S. B. Pope 1988](https://doi.org/10.1016/0045-7930(88)90013-8)
